@@ -84,6 +84,7 @@ class Impor_Titik_Sampel_Dari_Excel(object):
                         arcpy.management.AlterField(output_table, field.name, new_name, new_name)
                 except Exception as e:
                     arcpy.AddWarning(f"Gagal mengubah nama field {field.name} menjadi {new_name}: {e}")
+        
         penyetaraan_header = [
             {
                 'excel_field': 'nomorsampel',
@@ -569,6 +570,7 @@ class Impor_Titik_Sampel_Dari_Excel(object):
                 'target_alias': 'Catatan'
             },
         ]
+        
         for mapping in penyetaraan_header:
             try:
                 arcpy.management.AlterField(
@@ -579,7 +581,7 @@ class Impor_Titik_Sampel_Dari_Excel(object):
                 )
             except Exception as e:
                 arcpy.AddWarning(f"Gagal mengubah field {mapping['excel_field']} menjadi {mapping['target_field']}: {e}")
-        # Hapus field yang ada di tabel hasil Excel tetapi tidak ada dalam penyetaraan_header
+
         try:
             mapped_targets = [m['target_field'] for m in penyetaraan_header]
             existing_fields = [f.name for f in arcpy.ListFields(output_table)]
@@ -696,13 +698,21 @@ class Impor_Titik_Sampel_Dari_Excel(object):
 
         temp_path = os.path.join(ds_path, "Titik_Sampel_Excel_Point")
         ts_path =  os.path.join(self.dataset_path, "Titik_Sampel")
-        arcpy.management.XYTableToPoint(
+        ts_table_path = os.path.join(self.gdb_path, "Titik_Sampel")
+
+        try:
+            arcpy.management.XYTableToPoint(
             in_table=output_table,
             out_feature_class=temp_path,
             x_field="Y",
-            y_field="X",
+            y_field="X",    
             coordinate_system=arcpy.SpatialReference(4326)
         )
+        except Exception as e:
+            if arcpy.Exists(ts_table_path):
+                arcpy.management.Delete(ts_table_path)
+            arcpy.AddError(f"Gagal mengkonversi tabel ke titik: {e}")
+            return
 
         arcpy.management.CopyFeatures(temp_path, ts_path)
 

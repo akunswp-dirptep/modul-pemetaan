@@ -622,7 +622,7 @@ data_pembanding_ketiga['nilai_setelah_pembobotan'] = data_pembanding_ketiga['ind
 nilai_pasar_data_individual = data_pembanding_pertama['nilai_setelah_pembobotan'] + data_pembanding_kedua['nilai_setelah_pembobotan'] + data_pembanding_ketiga['nilai_setelah_pembobotan']
 data_individual['nilai_pasar_per_m2'] = nilai_pasar_data_individual
 
-nilai_pasar_per_m2 = round(math.ceil(data_individual['nilai_pasar_per_m2'] * data_individual['fisik_tanah']['luas_tanah']) / 1_000_000) * 1_000_000
+nilai_pasar_per_m2 = round(math.ceil(data_individual['nilai_pasar_per_m2'] * data_individual['fisik_tanah']['luas_tanah']) / 1_000) * 1_000
 
 arcpy.AddMessage(math.ceil(data_individual['nilai_pasar_per_m2'] * data_individual['fisik_tanah']['luas_tanah']))
 data_individual['nilai_pasar'] = nilai_pasar_per_m2

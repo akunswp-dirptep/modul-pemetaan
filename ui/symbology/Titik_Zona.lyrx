@@ -17,7 +17,7 @@
       "description" : "Titik_Zona",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
-        "elevationSurfaceLayerURI" : "CIMPATH=Map/5e46c7e86f6f467581aeff2190d592e3.json"
+        "elevationSurfaceLayerURI" : "CIMPATH=Map/619d2b51d4104dcd8e1613953f45a134.json"
       },
       "expanded" : true,
       "layerType" : "Operational",
@@ -37,10 +37,1041 @@
         "type" : "CIMFeatureTable",
         "displayField" : "Surveyor",
         "editable" : true,
+        "fieldDescriptions" : [
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "OBJECTID",
+            "fieldName" : "OBJECTID",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Shape",
+            "fieldName" : "Shape",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "FID_Titik_Sampel",
+            "fieldName" : "FID_Titik_Sampel",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Nomor Sampel",
+            "fieldName" : "Nomor_Entry",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Nomor Identifikasi",
+            "fieldName" : "No_Identifikasi",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Nama Surveyor",
+            "fieldName" : "Surveyor",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Tanggal Pelaksanaan",
+            "fieldName" : "Tanggal_Pelaksanaan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Bangunan (B)/Ruko(R)/ Tanah Kosong (TK)",
+            "fieldName" : "Kd_Jenis_Bangunan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Alamat",
+            "fieldName" : "Alamat",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Kelurahan",
+            "fieldName" : "Kelurahan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Kecamatan",
+            "fieldName" : "Kecamatan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "X",
+            "fieldName" : "X",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Y",
+            "fieldName" : "Y",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Status Kepemilikan",
+            "fieldName" : "Status_Kepemilikan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Jenis Data",
+            "fieldName" : "Jenis_Data",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Tanggal Penawaran/Transaksi",
+            "fieldName" : "Tgl_Penawaran_Transaksi",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Harga Penawaran/Transaksi",
+            "fieldName" : "Harga_Penawaran_Transaksi",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Luas Tanah (m2)",
+            "fieldName" : "Luas_Tanah_m2",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Lebar Depan",
+            "fieldName" : "Lebar_Depan",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Panjang Kebelakang",
+            "fieldName" : "Panjang_Kebelakang",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Bentuk Tanah",
+            "fieldName" : "Bentuk_Tanah",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Elevasi Dari Jalan",
+            "fieldName" : "Elevasi_Dari_Jalan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Letak Tanah",
+            "fieldName" : "Letak_Tanah",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Kelas Jalan",
+            "fieldName" : "Kelas_Jalan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Lebar Jalan",
+            "fieldName" : "Lebar_Jalan",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Aksebilitas",
+            "fieldName" : "Aksebilitas",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Drainase",
+            "fieldName" : "Drainase",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Utilitas",
+            "fieldName" : "Utilitas",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Fasilitas",
+            "fieldName" : "Fasilitas",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Zoning/Peruntukan",
+            "fieldName" : "Zoning",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Luas Bangunan",
+            "fieldName" : "Luas_Bangunan",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Jenis",
+            "fieldName" : "Jenis",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Jumlah Lantai",
+            "fieldName" : "Jumlah_Lantai",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Tahun Pembuatan",
+            "fieldName" : "Tahun_Pembuatan",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Tahun Renovasi",
+            "fieldName" : "Tahun_Renovasi",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Kontruksi Atas",
+            "fieldName" : "Kontruksi_Atas",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Kontruksi Bawah",
+            "fieldName" : "Kontruksi_bawah",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Atap",
+            "fieldName" : "Atap",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Dinding",
+            "fieldName" : "Dinding",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Langit Langit",
+            "fieldName" : "LangitLangit",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Lantai",
+            "fieldName" : "Lantai",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Pagar",
+            "fieldName" : "Pagar",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Panjang Pagar",
+            "fieldName" : "Panjang_Pagar",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Luas Carport",
+            "fieldName" : "Luas_Carport",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Pintu/Jendela",
+            "fieldName" : "Pintu_Jendela",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Jumlah Fasilitas",
+            "fieldName" : "Jumlah_Fasilitas",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Keadaan Fisik",
+            "fieldName" : "Keadaan_Fisik",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Biaya Bangunan (m2)",
+            "fieldName" : "Biaya_Bangunan_m2",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "RCN",
+            "fieldName" : "RCN",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Tahun Penilaian",
+            "fieldName" : "Tahun_Penilaian",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Umur Efektif",
+            "fieldName" : "Umur_Efektif",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyusutan",
+            "fieldName" : "Penyusutan",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Nilai Bangunan",
+            "fieldName" : "Nilai_Bangunan",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Harga Penyesuaian",
+            "fieldName" : "Harga_Penyesuaian",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Nilai Bangunan (Rp)",
+            "fieldName" : "Nilai_Bangunan_Rp",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Harga Tanah (Rp)",
+            "fieldName" : "Harga_Tanah_Rp",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyesuaian Waktu",
+            "fieldName" : "Penyesuaian_Waktu",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyesuaian Status Kepemilikan",
+            "fieldName" : "Penyesuaian_Status_Kepemilikan",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Nilai Tanah",
+            "fieldName" : "nilluas",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Nilai Tanah (m2)",
+            "fieldName" : "nilai",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Akses",
+            "fieldName" : "akses",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyusutan Rumah (%)",
+            "fieldName" : "Penyusutan_Rumah",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyusutan Ruko (%)",
+            "fieldName" : "Penyusutan_Ruko",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Keterangan",
+            "fieldName" : "Keterangan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Pembanding",
+            "fieldName" : "Pembanding",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyusutan Rumah 1 (%)",
+            "fieldName" : "Penyusutan_Rumah_1",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyusutan Rumah 2 (%)",
+            "fieldName" : "Penyusutan_Rumah_2",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyusutan Ruko 1 (%)",
+            "fieldName" : "Penyusutan_Ruko_1",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Penyusutan Ruko 2 (%)",
+            "fieldName" : "Penyusutan_Ruko_2",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "N Sementara",
+            "fieldName" : "N_Sementara",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Responden",
+            "fieldName" : "Responden",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Catatan",
+            "fieldName" : "Catatan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Lokasi",
+            "fieldName" : "Lokasi",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Tahun",
+            "fieldName" : "Tahun",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "FID_Zona_Layer",
+            "fieldName" : "FID_Zona_Layer",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "NOZN",
+            "fieldName" : "NOZN",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "cluster",
+            "fieldName" : "cluster",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "WADMKK",
+            "fieldName" : "WADMKK",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "WADMPR",
+            "fieldName" : "WADMPR",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "JNSZN",
+            "fieldName" : "JNSZN",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "PENGGUNAAN",
+            "fieldName" : "PENGGUNAAN",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "HISTZONE",
+            "fieldName" : "HISTZONE",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "SMPBKREL",
+            "fieldName" : "SMPBKREL",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "SMPBAKU",
+            "fieldName" : "SMPBAKU",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "NILAIZN",
+            "fieldName" : "NILAIZN",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "JMLSMPL",
+            "fieldName" : "JMLSMPL",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "NILMIN",
+            "fieldName" : "NILMIN",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "NILMAKS",
+            "fieldName" : "NILMAKS",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "NILBULAT",
+            "fieldName" : "NILBULAT",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "THNNILAI",
+            "fieldName" : "THNNILAI",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "NILAIZN_LAMA",
+            "fieldName" : "NILAIZN_LAMA",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "NILBULAT_LAMA",
+            "fieldName" : "NILBULAT_LAMA",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Luas_M2",
+            "fieldName" : "Luas_M2",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "JENISSAMPEL",
+            "fieldName" : "JENISSAMPEL",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "BEDA_ZONA",
+            "fieldName" : "BEDA_ZONA",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "INDEKS SAMPEL",
+            "fieldName" : "indeks_sampel",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          }
+        ],
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "znt_ds",
-          "workspaceConnectionString" : "DATABASE=D:\\Akmal\\Jobdesk\\Folder Uji Coba\\Uji Coba 3.4 v2\\ZoneNilaiTanah.gdb",
+          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Folder Uji Coba\\Uji Coba Perbaikan Bug0402\\ZoneNilaiTanah.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "Titik_Zona",
           "datasetType" : "esriDTFeatureClass"
@@ -58,7 +1089,7 @@
         {
           "type" : "CIMLabelClass",
           "expressionTitle" : "Custom",
-          "expression" : "def FindLabel([indeks_sampel], [Nomor_Entry], [nilai]):\n    angka = float(str([nilai]).replace(',', '.'))\n    rupiah = f\"{int(round(angka)):,}\".replace(\",\", \".\")\n\n    return (\n        \"<FNT size='7'>\"\n        \"Indeks: \" + str([indeks_sampel]) + \"\\n\"\n        \"Nomor Entry: \" + str([Nomor_Entry]) + \"\\n\"\n        \"Rp \" + rupiah +\n        \"</FNT>\"\n    )\n    ",
+          "expression" : "def FindLabel([indeks_sampel], [Nomor_Entry], [nilai]):\n    angka = float(str([nilai]).replace(',', '.'))\n    rupiah = f\"{int(round(angka)):,}\".replace(\",\", \".\")\n\n    return (\n        \"<FNT size='7'>\"\n        \"Indeks: \" + str([indeks_sampel]) + \"\\n\"\n        \"No Sampel: \" + str([Nomor_Entry]) + \"\\n\"\n        \"Rp \" + rupiah +\n        \"</FNT>\"\n    )\n    ",
           "expressionEngine" : "Python",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
@@ -305,7 +1336,6 @@
                 "type" : "CIMVectorMarker",
                 "enable" : true,
                 "name" : "New_37c388dd-23ba-4c46-b4ec-86f966ae7d25",
-                "colorLocked" : true,
                 "anchorPoint" : {
                   "x" : 0,
                   "y" : 0,
@@ -316,10 +1346,10 @@
                 "size" : 10,
                 "billboardMode3D" : "FaceNearPlane",
                 "frame" : {
-                  "xmin" : 0,
-                  "ymin" : 0,
-                  "xmax" : 17,
-                  "ymax" : 17
+                  "xmin" : -5,
+                  "ymin" : -5,
+                  "xmax" : 5,
+                  "ymax" : 5
                 },
                 "markerGraphics" : [
                   {
@@ -328,787 +1358,21 @@
                       "curveRings" : [
                         [
                           [
-                            11.41,
-                            8.5
+                            0,
+                            5
                           ],
                           {
-                            "b" : [
-                              [
-                                11.18,
-                                7.3700000000000001
-                              ],
-                              [
-                                11.41,
-                                8.0899999999999999
-                              ],
-                              [
-                                11.34,
-                                7.7199999999999998
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                10.5500000000000007,
-                                6.4500000000000002
-                              ],
-                              [
-                                11.0299999999999994,
-                                7.0199999999999996
-                              ],
-                              [
-                                10.82,
-                                6.71
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                9.6300000000000008,
-                                5.8200000000000003
-                              ],
-                              [
-                                10.2799999999999994,
-                                6.1799999999999997
-                              ],
-                              [
-                                9.9800000000000004,
-                                5.9699999999999998
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                8.5,
-                                5.5800000000000001
-                              ],
-                              [
-                                9.2799999999999994,
-                                5.6600000000000001
-                              ],
-                              [
-                                8.9000000000000004,
-                                5.5800000000000001
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                7.3700000000000001,
-                                5.8200000000000003
-                              ],
-                              [
-                                8.0899999999999999,
-                                5.5800000000000001
-                              ],
-                              [
-                                7.7199999999999998,
-                                5.6600000000000001
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                6.4500000000000002,
-                                6.4500000000000002
-                              ],
-                              [
-                                7.0199999999999996,
-                                5.9699999999999998
-                              ],
-                              [
-                                6.7199999999999998,
-                                6.1799999999999997
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                5.8200000000000003,
-                                7.3700000000000001
-                              ],
-                              [
-                                6.1799999999999997,
-                                6.71
-                              ],
-                              [
-                                5.9699999999999998,
-                                7.0199999999999996
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                5.5800000000000001,
-                                8.5
-                              ],
-                              [
-                                5.6600000000000001,
-                                7.7199999999999998
-                              ],
-                              [
-                                5.5800000000000001,
-                                8.0899999999999999
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                5.8200000000000003,
-                                9.6300000000000008
-                              ],
-                              [
-                                5.5800000000000001,
-                                8.9000000000000004
-                              ],
-                              [
-                                5.6600000000000001,
-                                9.2799999999999994
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                6.4500000000000002,
-                                10.5500000000000007
-                              ],
-                              [
-                                5.9699999999999998,
-                                9.9800000000000004
-                              ],
-                              [
-                                6.1799999999999997,
-                                10.2799999999999994
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                7.3700000000000001,
-                                11.18
-                              ],
-                              [
-                                6.7199999999999998,
-                                10.82
-                              ],
-                              [
-                                7.0199999999999996,
-                                11.0299999999999994
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                8.5,
-                                11.41
-                              ],
-                              [
-                                7.7199999999999998,
-                                11.34
-                              ],
-                              [
-                                8.0899999999999999,
-                                11.41
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                9.6300000000000008,
-                                11.18
-                              ],
-                              [
-                                8.9000000000000004,
-                                11.41
-                              ],
-                              [
-                                9.2799999999999994,
-                                11.34
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                10.5500000000000007,
-                                10.5500000000000007
-                              ],
-                              [
-                                9.9800000000000004,
-                                11.0299999999999994
-                              ],
-                              [
-                                10.2799999999999994,
-                                10.82
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                11.18,
-                                9.6300000000000008
-                              ],
-                              [
-                                10.82,
-                                10.2799999999999994
-                              ],
-                              [
-                                11.0299999999999994,
-                                9.9800000000000004
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                11.41,
-                                8.5
-                              ],
-                              [
-                                11.34,
-                                9.2799999999999994
-                              ],
-                              [
-                                11.41,
-                                8.9000000000000004
-                              ]
-                            ]
-                          }
-                        ],
-                        [
-                          [
-                            15.5399999999999991,
-                            8.5
-                          ],
-                          {
-                            "b" : [
-                              [
-                                14.99,
-                                11.24
-                              ],
-                              [
-                                15.5399999999999991,
-                                9.4700000000000006
-                              ],
-                              [
-                                15.3599999999999994,
-                                10.3800000000000008
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                13.48,
-                                13.48
-                              ],
-                              [
-                                14.6099999999999994,
-                                12.1
-                              ],
-                              [
-                                14.1099999999999994,
-                                12.85
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                11.24,
-                                14.98
-                              ],
-                              [
-                                12.85,
-                                14.1099999999999994
-                              ],
-                              [
-                                12.1,
-                                14.6099999999999994
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                8.5,
-                                15.5399999999999991
-                              ],
-                              [
-                                10.3900000000000006,
-                                15.3599999999999994
-                              ],
-                              [
-                                9.4700000000000006,
-                                15.5399999999999991
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                5.75,
-                                14.98
-                              ],
-                              [
-                                7.5300000000000002,
-                                15.5399999999999991
-                              ],
-                              [
-                                6.6100000000000003,
-                                15.3599999999999994
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                3.52,
-                                13.48
-                              ],
-                              [
-                                4.9000000000000004,
-                                14.6099999999999994
-                              ],
-                              [
-                                4.1500000000000004,
-                                14.1099999999999994
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                2.0099999999999998,
-                                11.24
-                              ],
-                              [
-                                2.8900000000000001,
-                                12.85
-                              ],
-                              [
-                                2.3900000000000001,
-                                12.1
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                1.46,
-                                8.5
-                              ],
-                              [
-                                1.6399999999999999,
-                                10.3800000000000008
-                              ],
-                              [
-                                1.46,
-                                9.4700000000000006
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                2.0099999999999998,
-                                5.7599999999999998
-                              ],
-                              [
-                                1.46,
-                                7.5300000000000002
-                              ],
-                              [
-                                1.6399999999999999,
-                                6.6100000000000003
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                3.52,
-                                3.52
-                              ],
-                              [
-                                2.3900000000000001,
-                                4.9000000000000004
-                              ],
-                              [
-                                2.8900000000000001,
-                                4.1500000000000004
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                5.75,
-                                2.02
-                              ],
-                              [
-                                4.1500000000000004,
-                                2.8900000000000001
-                              ],
-                              [
-                                4.9000000000000004,
-                                2.3900000000000001
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                8.5,
-                                1.46
-                              ],
-                              [
-                                6.6100000000000003,
-                                1.6399999999999999
-                              ],
-                              [
-                                7.5300000000000002,
-                                1.46
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                11.24,
-                                2.02
-                              ],
-                              [
-                                9.4700000000000006,
-                                1.46
-                              ],
-                              [
-                                10.3900000000000006,
-                                1.6399999999999999
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                13.48,
-                                3.52
-                              ],
-                              [
-                                12.1,
-                                2.3900000000000001
-                              ],
-                              [
-                                12.85,
-                                2.8900000000000001
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                14.99,
-                                5.7599999999999998
-                              ],
-                              [
-                                14.1099999999999994,
-                                4.1500000000000004
-                              ],
-                              [
-                                14.6099999999999994,
-                                4.9000000000000004
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                15.5399999999999991,
-                                8.5
-                              ],
-                              [
-                                15.3599999999999994,
-                                6.6100000000000003
-                              ],
-                              [
-                                15.5399999999999991,
-                                7.5300000000000002
-                              ]
-                            ]
-                          }
-                        ],
-                        [
-                          [
-                            17,
-                            8.5
-                          ],
-                          {
-                            "b" : [
-                              [
-                                16.3299999999999983,
-                                5.2000000000000002
-                              ],
-                              [
-                                17,
-                                7.3300000000000001
-                              ],
-                              [
-                                16.7800000000000011,
-                                6.2300000000000004
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                14.51,
-                                2.4900000000000002
-                              ],
-                              [
-                                15.8900000000000006,
-                                4.1600000000000001
-                              ],
-                              [
-                                15.2799999999999994,
-                                3.2599999999999998
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                11.8000000000000007,
-                                0.67000000000000004
-                              ],
-                              [
-                                13.74,
-                                1.72
-                              ],
-                              [
-                                12.84,
-                                1.1100000000000001
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                8.5,
-                                0
-                              ],
-                              [
-                                10.77,
-                                0.22
-                              ],
-                              [
-                                9.6699999999999999,
-                                0
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                5.2000000000000002,
-                                0.67000000000000004
-                              ],
-                              [
-                                7.3300000000000001,
-                                0
-                              ],
-                              [
-                                6.2300000000000004,
-                                0.22
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                2.4900000000000002,
-                                2.4900000000000002
-                              ],
-                              [
-                                4.1600000000000001,
-                                1.1100000000000001
-                              ],
-                              [
-                                3.2599999999999998,
-                                1.72
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                0.67000000000000004,
-                                5.2000000000000002
-                              ],
-                              [
-                                1.72,
-                                3.2599999999999998
-                              ],
-                              [
-                                1.1100000000000001,
-                                4.1600000000000001
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
+                            "a" : [
                               [
                                 0,
-                                8.5
+                                5
                               ],
                               [
-                                0.22,
-                                6.2300000000000004
+                                3.0638112388765348e-15,
+                                0
                               ],
-                              [
-                                0,
-                                7.3300000000000001
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                0.67000000000000004,
-                                11.8000000000000007
-                              ],
-                              [
-                                0,
-                                9.6699999999999999
-                              ],
-                              [
-                                0.22,
-                                10.77
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                2.4900000000000002,
-                                14.51
-                              ],
-                              [
-                                1.1100000000000001,
-                                12.84
-                              ],
-                              [
-                                1.72,
-                                13.74
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                5.2000000000000002,
-                                16.3299999999999983
-                              ],
-                              [
-                                3.2599999999999998,
-                                15.2799999999999994
-                              ],
-                              [
-                                4.1600000000000001,
-                                15.8900000000000006
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                8.5,
-                                17
-                              ],
-                              [
-                                6.2300000000000004,
-                                16.7800000000000011
-                              ],
-                              [
-                                7.3300000000000001,
-                                17
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                11.8000000000000007,
-                                16.3299999999999983
-                              ],
-                              [
-                                9.6699999999999999,
-                                17
-                              ],
-                              [
-                                10.77,
-                                16.7800000000000011
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                14.51,
-                                14.51
-                              ],
-                              [
-                                12.84,
-                                15.8900000000000006
-                              ],
-                              [
-                                13.74,
-                                15.2799999999999994
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                16.3299999999999983,
-                                11.8000000000000007
-                              ],
-                              [
-                                15.2799999999999994,
-                                13.74
-                              ],
-                              [
-                                15.8900000000000006,
-                                12.84
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                17,
-                                8.5
-                              ],
-                              [
-                                16.7800000000000011,
-                                10.77
-                              ],
-                              [
-                                17,
-                                9.6699999999999999
-                              ]
+                              0,
+                              1
                             ]
                           }
                         ]
@@ -1124,7 +1388,7 @@
                           "joinStyle" : "Round",
                           "lineStyle3D" : "Strip",
                           "miterLimit" : 10,
-                          "width" : 0,
+                          "width" : 1,
                           "height3D" : 1,
                           "anchor3D" : "Center",
                           "color" : {
@@ -1143,148 +1407,9 @@
                           "color" : {
                             "type" : "CIMRGBColor",
                             "values" : [
+                              169,
                               0,
-                              0,
-                              0,
-                              100
-                            ]
-                          }
-                        }
-                      ],
-                      "angleAlignment" : "Map"
-                    }
-                  }
-                ],
-                "scaleSymbolsProportionally" : true,
-                "respectFrame" : true
-              },
-              {
-                "type" : "CIMVectorMarker",
-                "enable" : true,
-                "anchorPoint" : {
-                  "x" : 0,
-                  "y" : 0,
-                  "z" : 0
-                },
-                "anchorPointUnits" : "Relative",
-                "dominantSizeAxis3D" : "Y",
-                "size" : 10,
-                "billboardMode3D" : "FaceNearPlane",
-                "frame" : {
-                  "xmin" : 0,
-                  "ymin" : 0,
-                  "xmax" : 17,
-                  "ymax" : 17
-                },
-                "markerGraphics" : [
-                  {
-                    "type" : "CIMMarkerGraphic",
-                    "geometry" : {
-                      "curveRings" : [
-                        [
-                          [
-                            17,
-                            8.5
-                          ],
-                          {
-                            "b" : [
-                              [
-                                8.5,
-                                0
-                              ],
-                              [
-                                17,
-                                3.8100000000000001
-                              ],
-                              [
-                                13.19,
-                                0
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                0,
-                                8.5
-                              ],
-                              [
-                                3.8100000000000001,
-                                0
-                              ],
-                              [
-                                0,
-                                3.8100000000000001
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                8.5,
-                                17
-                              ],
-                              [
-                                0,
-                                13.19
-                              ],
-                              [
-                                3.8100000000000001,
-                                17
-                              ]
-                            ]
-                          },
-                          {
-                            "b" : [
-                              [
-                                17,
-                                8.5
-                              ],
-                              [
-                                13.19,
-                                17
-                              ],
-                              [
-                                17,
-                                13.19
-                              ]
-                            ]
-                          }
-                        ]
-                      ]
-                    },
-                    "symbol" : {
-                      "type" : "CIMPolygonSymbol",
-                      "symbolLayers" : [
-                        {
-                          "type" : "CIMSolidStroke",
-                          "enable" : true,
-                          "capStyle" : "Round",
-                          "joinStyle" : "Round",
-                          "lineStyle3D" : "Strip",
-                          "miterLimit" : 10,
-                          "width" : 0,
-                          "height3D" : 1,
-                          "anchor3D" : "Center",
-                          "color" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              0,
-                              0,
-                              0,
-                              100
-                            ]
-                          }
-                        },
-                        {
-                          "type" : "CIMSolidFill",
-                          "enable" : true,
-                          "color" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              255,
-                              255,
-                              115,
+                              230,
                               100
                             ]
                           }
@@ -1314,7 +1439,7 @@
     {
       "type" : "CIMElevationSurfaceLayer",
       "name" : "Ground",
-      "uRI" : "CIMPATH=Map/5e46c7e86f6f467581aeff2190d592e3.json",
+      "uRI" : "CIMPATH=Map/619d2b51d4104dcd8e1613953f45a134.json",
       "useSourceMetadata" : true,
       "description" : "Ground",
       "expanded" : true,

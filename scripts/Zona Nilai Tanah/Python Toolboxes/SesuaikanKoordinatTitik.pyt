@@ -137,7 +137,6 @@ class Sesuaikan_Koordinat_Titik(object):
 
         self.upload_data_to_server(json_untuk_dikirim, self.use_production)
         self.reload_layer()
-        arcpy.AddMessage("Layer Titik Sampel berhasil dimuat ulang.")
         
         return
     
@@ -149,12 +148,11 @@ class Sesuaikan_Koordinat_Titik(object):
         for lyr in m.listLayers():
             if lyr.name in layer_name:
                 m.removeLayer(lyr)
-                arcpy.AddMessage("Layer lama dihapus.")
 
         # Tambahkan ulang layer dari source
         m.addDataFromPath(self.config_paths['path_titik_sampel'])
         m.addDataFromPath(self.config_paths['path_titik_sampel_individual'])
-        arcpy.AddMessage("Layer Titik Sampel berhasil dimuat ulang.")
+
 
     
     def get_config_values(self):

@@ -1,7 +1,7 @@
 {
   "type" : "CIMLayerDocument",
-  "version" : "2.5.0",
-  "build" : 22081,
+  "version" : "3.4.0",
+  "build" : 55405,
   "layers" : [
     "CIMPATH=map/zona_layer2.xml"
   ],
@@ -11,13 +11,15 @@
       "name" : "Zona_Layer",
       "uRI" : "CIMPATH=map/zona_layer2.xml",
       "sourceModifiedTime" : {
-        "type" : "TimeInstant"
+        "type" : "TimeInstant",
+        "start" : -62135596800000
       },
+      "metadataURI" : "CIMPATH=Metadata/f475f1c37b393f2b1a0d610467d959a8.xml",
       "useSourceMetadata" : true,
       "description" : "Zona_Layer",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
-        "mapElevationID" : "{3ADC2CB9-090B-4B33-89A2-F0091FFB39E1}"
+        "elevationSurfaceLayerURI" : "CIMPATH=Map/619d2b51d4104dcd8e1613953f45a134.json"
       },
       "expanded" : true,
       "layerType" : "Operational",
@@ -29,16 +31,18 @@
       "serviceLayerID" : -1,
       "refreshRate" : -1,
       "refreshRateUnit" : "esriTimeUnitsSeconds",
+      "blendingMode" : "Alpha",
+      "allowDrapingOnIntegratedMesh" : true,
       "autoGenerateFeatureTemplates" : true,
       "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "JENIS_ZONA",
+        "displayField" : "cluster",
         "editable" : true,
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "znt_ds",
-          "workspaceConnectionString" : "DATABASE=D:\\02. SIPENTA\\Data Test Run\\4 - Pembaruan ZNT\\ZoneNilaiTanah.gdb",
+          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Folder Uji Coba\\Uji Coba Perbaikan Bug0402\\ZoneNilaiTanah.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "Zona_Layer",
           "datasetType" : "esriDTFeatureClass"
@@ -49,6 +53,9 @@
       "htmlPopupEnabled" : true,
       "selectable" : true,
       "featureCacheType" : "Session",
+      "displayFiltersType" : "ByScale",
+      "featureBlendingMode" : "Alpha",
+      "layerEffectsMode" : "Layer",
       "labelClasses" : [
         {
           "type" : "CIMLabelClass",
@@ -63,6 +70,7 @@
             "canPlaceLabelOutsidePolygon" : true,
             "canRemoveOverlappingLabel" : true,
             "canStackLabel" : true,
+            "centerLabelAnchorType" : "Symbol",
             "connectionType" : "Unambiguous",
             "constrainOffset" : "NoConstraint",
             "contourAlignmentType" : "Page",
@@ -97,7 +105,8 @@
                   "visible" : true,
                   "splitAfter" : true
                 }
-              ]
+              ],
+              "trimStackingSeparators" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetCurvedFromLine",
@@ -145,6 +154,7 @@
             "polygonPlacementMethod" : "HorizontalInPolygon",
             "primaryOffset" : 1,
             "primaryOffsetUnit" : "Point",
+            "removeAmbiguousLabels" : "All",
             "removeExtraWhiteSpace" : true,
             "repetitionIntervalUnit" : "Map",
             "rotationProperties" : {
@@ -153,6 +163,7 @@
               "alignmentType" : "Straight"
             },
             "secondaryOffset" : 100,
+            "secondaryOffsetUnit" : "Percentage",
             "strategyPriorities" : {
               "type" : "CIMMaplexStrategyPriorities",
               "stacking" : 1,
@@ -164,7 +175,8 @@
             "thinningDistanceUnit" : "Point",
             "truncationMarkerCharacter" : ".",
             "truncationMinimumLength" : 1,
-            "truncationPreferredCharacters" : "aeiou"
+            "truncationPreferredCharacters" : "aeiou",
+            "polygonAnchorPointPerimeterInsetUnit" : "Point"
           },
           "name" : "Class 1",
           "priority" : -1,
@@ -243,7 +255,8 @@
                       ]
                     }
                   }
-                ]
+                ],
+                "angleAlignment" : "Map"
               },
               "textCase" : "Normal",
               "textDirection" : "LTR",
@@ -260,6 +273,7 @@
       ],
       "renderer" : {
         "type" : "CIMUniqueValueRenderer",
+        "sampleSize" : 10000,
         "colorRamp" : {
           "type" : "CIMRandomHSVColorRamp",
           "colorSpace" : {
@@ -287,7 +301,9 @@
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
                 "miterLimit" : 10,
-                "width" : 2,
+                "width" : 0.5,
+                "height3D" : 1,
+                "anchor3D" : "Center",
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
@@ -311,7 +327,8 @@
                   ]
                 }
               }
-            ]
+            ],
+            "angleAlignment" : "Map"
           }
         },
         "defaultSymbolPatch" : "Default",
@@ -338,7 +355,9 @@
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 2,
+                        "width" : 0.5,
+                        "height3D" : 1,
+                        "anchor3D" : "Center",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
@@ -362,7 +381,8 @@
                           ]
                         }
                       }
-                    ]
+                    ],
+                    "angleAlignment" : "Map"
                   }
                 },
                 "values" : [
@@ -391,7 +411,9 @@
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 2,
+                        "width" : 0.5,
+                        "height3D" : 1,
+                        "anchor3D" : "Center",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
@@ -415,7 +437,8 @@
                           ]
                         }
                       }
-                    ]
+                    ],
+                    "angleAlignment" : "Map"
                   }
                 },
                 "values" : [
@@ -433,6 +456,7 @@
           }
         ],
         "useDefaultSymbol" : true,
+        "isDefaultSymbolVisible" : true,
         "polygonSymbolColorTarget" : "Fill"
       },
       "scaleSymbols" : true,
@@ -442,13 +466,36 @@
       }
     }
   ],
-  "elevationSurfaces" : [
+  "binaryReferences" : [
     {
-      "type" : "CIMMapElevationSurface",
-      "elevationMode" : "BaseGlobeSurface",
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=Metadata/f475f1c37b393f2b1a0d610467d959a8.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\">\r\n\t<Esri>\r\n\t\t<CreaDate>20260205</CreaDate>\r\n\t\t<CreaTime>11200300</CreaTime>\r\n\t\t<ArcGISFormat>1.0</ArcGISFormat>\r\n\t\t<SyncOnce>TRUE</SyncOnce>\r\n\t</Esri>\r\n</metadata>\r\n"
+    }
+  ],
+  "rGBColorProfile" : "sRGB IEC61966-2.1",
+  "cMYKColorProfile" : "U.S. Web Coated (SWOP) v2",
+  "elevationSurfaceLayerDefinitions" : [
+    {
+      "type" : "CIMElevationSurfaceLayer",
       "name" : "Ground",
+      "uRI" : "CIMPATH=Map/619d2b51d4104dcd8e1613953f45a134.json",
+      "useSourceMetadata" : true,
+      "description" : "Ground",
+      "expanded" : true,
+      "layerType" : "Operational",
+      "showLegends" : false,
+      "visibility" : true,
+      "displayCacheType" : "Permanent",
+      "maxDisplayCacheAge" : 5,
+      "showPopups" : true,
+      "serviceLayerID" : -1,
+      "refreshRate" : -1,
+      "refreshRateUnit" : "esriTimeUnitsSeconds",
+      "blendingMode" : "Alpha",
+      "allowDrapingOnIntegratedMesh" : true,
+      "elevationMode" : "BaseGlobeSurface",
       "verticalExaggeration" : 1,
-      "mapElevationID" : "{3ADC2CB9-090B-4B33-89A2-F0091FFB39E1}",
       "color" : {
         "type" : "CIMRGBColor",
         "values" : [
@@ -458,11 +505,7 @@
           100
         ]
       },
-      "surfaceTINShadingMode" : "Smooth",
-      "visibility" : true,
-      "expanded" : true
+      "surfaceTINShadingMode" : "Smooth"
     }
-  ],
-  "rGBColorProfile" : "sRGB IEC61966-2-1 noBPC",
-  "cMYKColorProfile" : "U.S. Web Coated (SWOP) v2"
+  ]
 }

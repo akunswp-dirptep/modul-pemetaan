@@ -168,8 +168,10 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 "nik": self.username,
                 "data": data
             }
-
-            arcpy.AddMessage(json_yang_dikirim)
+            
+            if len(data) == 0:
+                arcpy.AddWarning("Tidak ada data jenis zona yang valid untuk dikirim ke server SIPENTA.")
+                return
             self.upload_data_valid_to_server(json_yang_dikirim)
         
         elif self.data_type == 'Jenis Zona Titik Sampel':
@@ -186,6 +188,10 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 "nik": self.username,
                 "data": data
             }
+
+            if len(data) == 0:
+                arcpy.AddWarning("Tidak ada data jenis zona yang valid untuk dikirim ke server SIPENTA.")
+                return
 
             self.upload_data_zoning_to_server(json_yang_dikirim)
         return
@@ -374,7 +380,6 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
 
     # Kode Utama
-
     def build_pembanding_data(self, titik_sampel_individual_fc, titik_sampel_path):
         """
         Bangun list data untuk upload berdasarkan aturan:
@@ -446,7 +451,6 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         
         return data_list
         
-
     def upload_data_pembanding_to_server(self, json_data ):
         """
         Fungsi untuk mengunggah data koordinat yang telah diperbarui ke server SIPENTA.
@@ -528,7 +532,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Returns list of dicts ready for JSON upload.
         """
         data_list = []
-        fields = ["Nomor_Entry","Tidak Digunakan"]
+        check_fields = ["Nomor_Entry","Tidak_Digunakan"]
         # Set untuk tracking nomor entry yang sudah diproses
         processed_entries = set()
 
@@ -545,7 +549,9 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             
             valid_sementara = {}
             if arcpy.Exists(titik_sampel_sementara_fc):
-                with arcpy.da.SearchCursor(titik_sampel_sementara_fc, fields) as cursor:
+                
+                with arcpy.da.SearchCursor(titik_sampel_sementara_fc, check_fields) as cursor:
+                    arcpy.AddMessage(f"Membaca data dari: {titik_sampel_sementara_fc}")
                     for row in cursor:
                         nomor_entry = int(row[0])
                         digunakan_atau_tidak = row[1]
@@ -556,15 +562,13 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 sys.exit(1)
 
             if arcpy.Exists(titik_sampel_individual_sementara_fc):
-                with arcpy.da.SearchCursor(titik_sampel_individual_sementara_fc, fields) as cursor:
+                with arcpy.da.SearchCursor(titik_sampel_individual_sementara_fc, check_fields) as cursor:
+                    arcpy.AddMessage(f"Membaca data dari: {titik_sampel_individual_sementara_fc}")
                     for row in cursor:
                         nomor_entry = int(row[0])
                         digunakan_atau_tidak = row[1]
                         valid_sementara[nomor_entry] = digunakan_atau_tidak
-            else:
-                self.delete_temporary_files(self.config_paths)
-                arcpy.AddWarning(f"Feature class sementara tidak ditemukan: {titik_sampel_sementara_fc}.")
-                sys.exit(1)
+            fields = ["Nomor_Entry"]
 
             # Proses titik_sampel_fc (tidak_digunakan: False)
             with arcpy.da.SearchCursor(titik_sampel_fc, fields) as cursor:
@@ -573,13 +577,15 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                     processed_entries.add(nomor_entry)
                     if nomor_entry in valid_sementara:
                         use_or_not = valid_sementara[nomor_entry]
-                        if use_or_not == 'true':
+                        del valid_sementara[nomor_entry]
+                        if use_or_not == '-1':
                             item = {
                                 "no_sampel": nomor_entry,
                                 "tidak_digunakan": False,
                                 "catatan": self.catatan or ""
                             }
                             data_list.append(item)
+                    
             
             # Proses titik_sampel_individual_fc (tidak_digunakan: True)
             with arcpy.da.SearchCursor(titik_sampel_individual_fc, fields) as cursor:
@@ -588,7 +594,8 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                     processed_entries.add(nomor_entry)
                     if nomor_entry in valid_sementara:
                         use_or_not = valid_sementara[nomor_entry]
-                        if use_or_not == 'false':
+                        del valid_sementara[nomor_entry]
+                        if use_or_not == '0':
                             item = {
                                 "no_sampel": nomor_entry,
                                 "tidak_digunakan": True,
@@ -600,21 +607,27 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 with arcpy.da.SearchCursor(titik_zona_path, fields) as cursor:
                     for row in cursor:
                         nomor_entry = int(row[0])
-                        if nomor_entry not in processed_entries:
-                            if nomor_entry in valid_sementara:
-                                use_or_not = valid_sementara[nomor_entry]
-                                if use_or_not == 'true':
-                                    item = {
-                                        "no_sampel": nomor_entry,
-                                        "tidak_digunakan": False,
-                                        "catatan": self.catatan or ""
+                        if nomor_entry in valid_sementara:
+                            use_or_not = valid_sementara[nomor_entry]
+                            del valid_sementara[nomor_entry]
+                            if use_or_not == '-1':
+                                item = {
+                                    "no_sampel": nomor_entry,
+                                    "tidak_digunakan": False,
+                                    "catatan": self.catatan or ""
                                     }
-                                    data_list.append(item)
+                                data_list.append(item)
 
-            else:
-                arcpy.AddWarning(f"Feature class sementara tidak ditemukan: {titik_sampel_sementara_fc}")
-                self.delete_temporary_files(self.config_paths)
-                sys.exit(1)
+            for nomor_entry, use_or_not in valid_sementara.items():
+                if use_or_not == '0':
+                    item = {
+                        "no_sampel": nomor_entry,
+                        "tidak_digunakan": True,
+                        "catatan": self.catatan or ""
+                    }
+                    data_list.append(item)
+
+
         except Exception as e:
             arcpy.AddError(f"Error building valid data: {str(e)}")
             self.delete_temporary_files(self.config_paths)

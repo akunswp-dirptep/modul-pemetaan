@@ -67,7 +67,7 @@ if "HISTZONE" not in field_names:
     arcpy.management.CalculateField(zl_path, "temp", expression, "PYTHON3", codeblock)
     
     # Menggabungkan NOZN dan temp menjadi HISTZONE (contoh: "1N", "2P")
-    arcpy.management.CalculateField(zl_path, "HISTZONE", "!NOZN! + !temp!", "PYTHON3")
+    arcpy.management.CalculateField(zl_path, "HISTZONE", "str(!NOZN!) + !temp!", "PYTHON3")
     
     # Menghapus field sementara
     arcpy.management.DeleteField(zl_path, "temp")
@@ -100,7 +100,7 @@ else:
     
     # Membuat field sementara untuk gabungan NOZN + temp2
     arcpy.management.AddField(zl_path, "temp", "STRING")
-    arcpy.management.CalculateField(zl_path, "temp", "!NOZN! + !temp2!", "PYTHON3")
+    arcpy.management.CalculateField(zl_path, "temp", "str(!NOZN!) + !temp2!", "PYTHON3")
     
     # Membuat field sementara untuk hasil akhir
     arcpy.management.AddField(zl_path, "temp3", "STRING")

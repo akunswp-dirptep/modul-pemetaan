@@ -1,0 +1,65 @@
+import os
+import arcpy
+
+arcpy.AddMessage("== Proses dimulai ==")
+
+# appdata = u'c:\znt\sys'
+appdata = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+conf_jalan_path = os.path.join(appdata, "jalan.dat")
+
+conf_file = open(conf_jalan_path, "r")
+list_config = conf_file.readlines()
+conf_file.close()
+
+dataset_path = ""
+jaringanjalan = ""
+jaringanjalan_path = ""
+simbologi_path = os.path.join(appdata, "SimbologiLebarJalanUpdate.lyr")
+
+for line in list_config:
+    line = line.replace("\n", "")
+    jalan_config = []
+    jalan_config = line.split(",")
+    if jalan_config[0] == "dataset":
+        dataset_path = jalan_config[1]
+    if jalan_config[0] == "jaringanjalan":
+        jaringanjalan = jalan_config[1].split(";")[0]
+        jaringanjalan_path = jalan_config[1].split(";")[1]
+
+field_names = [field.name for field in arcpy.ListFields(jaringanjalan_path)]
+if 'SimLJln2' not in field_names:
+    arcpy.AddField_management(jaringanjalan_path, 'SimLJln2', "TEXT")
+
+edit = arcpy.da.Editor(os.path.dirname(dataset_path))
+edit.startEditing(False, False)
+edit.startOperation()
+
+with arcpy.da.UpdateCursor(jaringanjalan_path, ["lb_jln", "SimLJln2"]) as rows:
+    for row in rows:
+        if row[0] == 0:
+            row[1] = "0"
+        elif row[0] > 0 and row[0] <= 1.5:
+            row[1] = "1.5"
+        elif row[0] > 1.5 and row[0] <= 3:
+            row[1] = "3"
+        elif row[0] > 3 and row[0] <= 5:
+            row[1] = "5"
+        elif row[0] > 5 and row[0] <= 8:
+            row[1] = "8"
+        elif row[0] > 8:
+            row[1] = "8+"
+        rows.updateRow(row)
+del rows, row
+
+edit.stopOperation()
+edit.stopEditing(True)
+
+if arcpy.Exists(jaringanjalan):
+    arcpy.Delete_management(jaringanjalan)
+
+arcpy.MakeFeatureLayer_management(jaringanjalan_path, jaringanjalan)
+arcpy.ApplySymbologyFromLayer_management(jaringanjalan, simbologi_path)
+
+arcpy.SetParameterAsText(0, jaringanjalan)
+
+arcpy.AddMessage("== Proses selesai ==")

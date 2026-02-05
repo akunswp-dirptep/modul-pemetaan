@@ -1,0 +1,1 @@
+xcopy "C:\PenilaianTanah\ui\Arcgis.Desktop.Config.daml" "%userprofile%\AppData\Local\ESRI" /Y

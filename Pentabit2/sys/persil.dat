@@ -1,0 +1,9 @@
+dataset,D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds
+persil,Persil;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\Persil
+persilline,PersilLine;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\PersilLine
+persilsplit,PersilSplit;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\PersilSplit
+persilcentroid,PersilCentroid;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\PersilCentroid
+persilmidpoint,PersilMidpoint;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\PersilMidpoint
+zonasi,Pertanian;1:Industri;2:Perkampungan;3:Perumahan Sederhana;4:Perumahan Menengah;5:Perumahan Mewah;6:Komersil;7
+bentuk,Segi Banyak Tidak Beraturan;1:Segitiga;2:Segi Empat Tidak Beraturan;3:Segi Empat Beraturan;4
+letak,Lain-lain;1:Normal;2:Tusuk sate;3:Hook;4

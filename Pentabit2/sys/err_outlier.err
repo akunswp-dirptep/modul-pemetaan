@@ -1,0 +1,31 @@
+outlier_u_klsjln_2,Start Time: 19 March 2025 13:18:08
+Running script ClustersOutliers...
+WARNING 000853: The default neighborhood search threshold was 1146,8076 Meters.
+ERROR 000906: Zero variance:  all of the values for your input field are likely the same.
+Failed to execute (ClustersOutliers).
+Failed at 19 March 2025 13:18:09 (Elapsed Time: 0,91 seconds)
+outlier_u_klsjln_3,Start Time: 19 March 2025 13:18:11
+Running script ClustersOutliers...
+WARNING 000853: The default neighborhood search threshold was 233,3331 Meters.
+ERROR 000906: Zero variance:  all of the values for your input field are likely the same.
+Failed to execute (ClustersOutliers).
+Failed at 19 March 2025 13:18:11 (Elapsed Time: 0,86 seconds)
+outlier_u_klsjln_4,Start Time: 19 March 2025 13:18:13
+Running script ClustersOutliers...
+WARNING 000853: The default neighborhood search threshold was 123,4801 Meters.
+ERROR 000906: Zero variance:  all of the values for your input field are likely the same.
+Failed to execute (ClustersOutliers).
+Failed at 19 March 2025 13:18:14 (Elapsed Time: 0,86 seconds)
+outlier_u_klsjln_5,Start Time: 19 March 2025 13:18:16
+Running script ClustersOutliers...
+WARNING 000853: The default neighborhood search threshold was 78,1497 Meters.
+ERROR 000906: Zero variance:  all of the values for your input field are likely the same.
+Failed to execute (ClustersOutliers).
+Failed at 19 March 2025 13:18:17 (Elapsed Time: 0,86 seconds)
+outlier_u_klsjln_7,Start Time: 19 March 2025 13:18:23
+Running script ClustersOutliers...
+WARNING 000845: A minimum of 30 input features for analysis is ideal.
+WARNING 000853: The default neighborhood search threshold was 63,0583 Meters.
+ERROR 000906: Zero variance:  all of the values for your input field are likely the same.
+Failed to execute (ClustersOutliers).
+Failed at 19 March 2025 13:18:24 (Elapsed Time: 0,86 seconds)

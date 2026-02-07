@@ -1,13 +1,13 @@
-dataset,D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds
-sisijalan,SisiJalan;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\SisiJalan
-jaringanjalan,Jaringan_Jalan;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\Jaringan_Jalan
-midpointjaringanjalan,MidpointJaringanJalan;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\MidpointJaringanJalan
+dataset,E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\znt_ds
+sisijalan,SisiJalan;E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\znt_ds\SisiJalan
+jaringanjalan,Jaringan_Jalan;E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\znt_ds\Jaringan_Jalan
+midpointjaringanjalan,MidpointJaringanJalan;E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\znt_ds\MidpointJaringanJalan
 simbologikelasjalan,SimbologiKelasJalan;C:\PenilaianTanah\Pentabit2\sys\SimbologiKelasJalan.lyr
 simbologilebarjalan,SimbologiLebarJalan;C:\PenilaianTanah\Pentabit2\sys\SimbologiLebarJalan.lyr
 kelasjalan,Lokal Setapak;1:Lokal Sekunder;2:Lokal Primer;3:Kolektor Sekunder;4:Kolektor Primer;5:Arteri Sekunder;6:Arteri Primer;7
-topologi_sisijalan,TopologiSisiJalan;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\TopologiSisiJalan
-topologi_jaringanjalan,TopologiJaringanJalan;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds\TopologiJaringanJalan
+topologi_sisijalan,TopologiSisiJalan;E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\znt_ds\TopologiSisiJalan
+topologi_jaringanjalan,TopologiJaringanJalan;E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\znt_ds\TopologiJaringanJalan
 template,C:\PenilaianTanah\Pentabit2\sys\template.gdb\ds_znt_template
 temporary,C:\PenilaianTanah\Pentabit2\sys\temporary.gdb
-nd,JaringanJalan_ND;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\ds_znt_template\JaringanJalan_ND
-jaringanjalannd,JaringanJalanForND;D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\ds_znt_template\JaringanJalanForND
+nd,JaringanJalan_ND;E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\ds_znt_template\JaringanJalan_ND
+jaringanjalannd,JaringanJalanForND;E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\ds_znt_template\JaringanJalanForND

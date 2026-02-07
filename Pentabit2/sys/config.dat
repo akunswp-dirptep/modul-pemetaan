@@ -1,7 +1,7 @@
-ws,D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama
+ws,E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba
 conf,C:\PenilaianTanah\Pentabit2\sys\config.dat
-gdb,D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb
-dataset,D:\Akmal\Jobdesk\NBT\Percobaan NBT\Uji Coba Pertama\znt_fgdb.gdb\znt_ds
+gdb,E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb
+dataset,E:\Akmal\Jobdesk\Uji Coba NBT\Uji Coba\znt_fgdb.gdb\znt_ds
 jalan,C:\PenilaianTanah\Pentabit2\sys\jalan.dat
 persil,C:\PenilaianTanah\Pentabit2\sys\persil.dat
 fasilitas,C:\PenilaianTanah\Pentabit2\sys\fasilitas.dat

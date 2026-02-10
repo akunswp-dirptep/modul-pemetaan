@@ -1,5 +1,5 @@
 import arcpy, os
-dirname = 'C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes'
+dirname = r'C:\PenilaianTanah\scripts\Zona Nilai Tanah\Pembaruan ZNT'
 all_files = os.listdir(dirname)
 pyt_files = []
 

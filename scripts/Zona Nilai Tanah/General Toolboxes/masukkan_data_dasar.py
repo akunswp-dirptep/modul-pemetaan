@@ -12,7 +12,6 @@ arcpy.env.outputMFlag = "Disabled"
 # ======================
 
 # Konfigurasi Path Aplikasi
-appdata = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sim_zona = r"C:\PenilaianTanah\ui\symbology\Simbologi_Jenis_Zona.lyrx"
 
 # Konfigurasi Path Project

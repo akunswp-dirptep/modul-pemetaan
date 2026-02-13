@@ -206,7 +206,7 @@ def penyesuaian_lebar_depan(lebar_depan_individu, lebar_depan_pembanding, persen
 def penyesuaian_bentuk_tanah(bentuk_tanah_individu, bentuk_tanah_pembanding, persentase=0.015):
     
     bobot_bentuk_tanah = [
-        {'deskripsi': 'Tidak Teratur', 'bobot': 1},
+        {'deskripsi': 'Tidak Beraturan', 'bobot': 1},
         {'deskripsi': 'Persegi Panjang/Trapesium', 'bobot': 2},
         {'deskripsi': 'Persegi/Normal', 'bobot': 3}
     ]

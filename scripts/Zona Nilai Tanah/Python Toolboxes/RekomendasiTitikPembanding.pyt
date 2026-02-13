@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import sys
 from penilaiantanahutils import zonalayer, samplepoint
@@ -120,14 +120,14 @@ class Rekomendasi_Titik_Pembanding(object):
                     "NEW_SELECTION",
                     where_clause
                 )
-                arcpy.AddMessage(f"\n✅ {len(top_10)} titik pembanding teratas telah dipilih di layer 'Titik_Zona'")
+                arcpy.AddMessage(f"\n? {len(top_10)} titik pembanding teratas telah dipilih di layer 'Titik_Zona'")
             else:
                 arcpy.management.SelectLayerByAttribute(
                     "Titik_Sampel",
                     "NEW_SELECTION",
                     where_clause
                 )
-                arcpy.AddMessage(f"\n✅ {len(top_10)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
+                arcpy.AddMessage(f"\n? {len(top_10)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
         
     
     

@@ -65,7 +65,7 @@ else:
         ""
     )
 zl_path = os.path.join(dataset_path, "Zona_Layer")
-sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Pada_Zona.lyrx")
+sim_path = os.path.join(symbology_folder, "Simbologi_Sesuaikan_Jenis_Zona.lyrx")
 
 arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
 arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)

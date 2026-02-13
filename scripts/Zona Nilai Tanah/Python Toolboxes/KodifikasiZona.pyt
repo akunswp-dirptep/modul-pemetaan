@@ -1,5 +1,5 @@
-import os, arcpy, json
-from penilaiantanahutils import zonalayer
+﻿import os, arcpy, json
+from penilaiantanahutils import zonalayer, upload_utils, samplepoint, systemutils
 
 # ======================
 # ENVIRONMENT SETTINGS
@@ -172,7 +172,7 @@ class Kodifikasi_Zona:
                         elif row[0] != row[1]:  # Jika berbeda
                             row[2] = row[0] + row[1]  # Gabungkan lama + baru
                     
-                    # Jika nilai lama panjang (≥3 karakter)
+                    # Jika nilai lama panjang (=3 karakter)
                     else:
                         if row[0][-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
                             row[2] = row[0]  # Pertahankan nilai lama

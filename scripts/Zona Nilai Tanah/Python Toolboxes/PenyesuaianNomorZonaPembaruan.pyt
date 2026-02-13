@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 import arcpy, os, sys
 from penilaiantanahutils import zonalayer, samplepoint
@@ -224,7 +224,7 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
                             elif row[0] != row[1]:  # Jika berbeda
                                 row[2] = row[0] + row[1]  # Gabungkan lama + baru
                         
-                        # Jika nilai lama panjang (≥3 karakter)
+                        # Jika nilai lama panjang (=3 karakter)
                         else:
                             if row[0][-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
                                 row[2] = row[0]  # Pertahankan nilai lama
@@ -262,7 +262,7 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
         )
 
         penjelasan.value = (
-            "⚠ ⚠ ⚠ CATATAN PENTING ⚠ ⚠ ⚠\n" 
+            "? ? ? CATATAN PENTING ? ? ?\n" 
             "Gunakan tool ini hingga tidak ditemukan peringatan lagi\n"
             "Tool ini berfungsi melakukan pemeriksaan kesesuaian\n"
             "antara Titik dan Zona Pembaruan\n\n"

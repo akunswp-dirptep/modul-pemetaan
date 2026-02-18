@@ -1,5 +1,6 @@
-import arcpy, os, json, sys, datetime
+﻿import arcpy, os, json, sys
 
+from datetime import datetime
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -10,10 +11,9 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.constant import NAMA_PROVINSI, KAB_KOTA
 from zntutils.document import validate_document_type, get_credentials
-from zntutils.upload_utils import main_upload_shapefile, main_upload
-from zntutils.zona_layer import get_config_values, check_if_there_selected_field, save_gdb
+from zntutils.upload_utils import main_upload
+from zntutils.zona_layer import get_config_values, check_if_there_selected_field
 
 # ======================
 # ENVIRONMENT SETTINGS
@@ -30,11 +30,6 @@ def is_internal():
     except Exception:
         return False
 
-def current_year():
-    try:
-        return int(datetime.now().year)
-    except Exception:
-        return None
 
 # Cryptography Functions
 def generate_key():
@@ -92,7 +87,6 @@ def get_preferred_server_connection():
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
             preferred_server = data.get('preferred_server', None)
-            arcpy.AddMessage(f"Preferred server dari config: {preferred_server}")
             return preferred_server
         else:
             return None
@@ -172,7 +166,7 @@ def reload_all_toolboxes_in_folder(toolbox_folder):
             try:
                 arcpy.ImportToolbox(pyt_path)
             except Exception as e:
-                arcpy.AddWarning(f"✗ Gagal memuat {pyt_file}: {str(e)}")
+                arcpy.AddWarning(f"? Gagal memuat {pyt_file}: {str(e)}")
             
     except Exception as e:
         arcpy.AddWarning(f"Error saat reload toolbox: {str(e)}")
@@ -200,17 +194,37 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Hitung_Luas_Zona_M2, Kodifikasi_Zona, Upload_Peta_Zona_Awal_Nilai_Tanah]
+        self.tools = [Hitung_Luas_Zona_M2, 
+                      Kodifikasi_Zona, 
+                      Upload_Peta_Zona_Awal_Nilai_Tanah]
 
 
 class Hitung_Luas_Zona_M2:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Hitung Luas Zona M2"
+        self.label = "Hitung Luas Zona"
         self.description = "Tools untuk menghitung luas zona dalam meter persegi pada Zona Layer"
 
     def getParameterInfo(self):
         """Define the tool parameters."""
+
+        penjelasan = arcpy.Parameter(
+            displayName="Apa yang dilakukan tool ini?",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+
+        penjelasan.value = (
+        "Menambahkan field Luas_M2 apabila belum tersedia, serta\n" 
+        "menghitung luas setiap fitur dalam satuan meter persegi (m²) dan\n"
+        "menyimpannya ke field tersebut. Jika field Luas_M2 sudah ada,\n"
+        "nilainya akan diperbarui dengan hasil perhitungan terbaru"
+        )
+
+        return [penjelasan]
+
         params = None
         return params
 
@@ -230,22 +244,43 @@ class Hitung_Luas_Zona_M2:
         return
 
     def execute(self, parameters, messages):
-        """The source code of the tool."""
+        """
+        Kondisi yang harus dipenuhi oleh tools ini:
+
+        1. Pastikan tidak ada field yang sedang dipilih (selected) di Zona_Layer.
+        2. Hapus topologi Zona_Layer_Topology jika ada.
+        3. Field Luas_M2 ditambahkan ke layer Zona_Layer dengan tipe data LONG (integer) dan diatur sebagai nullable.
+        4. Hitung luas setiap fitur di Zona_Layer dalam meter persegi dan simpan nilainya di field Luas_M2.
+        5. Jika field Luas_M2 sudah ada, perbarui nilainya dengan perhitungan terbaru.
+        6. Pastikan tools dapat dijalankan berulang kali tanpa menimbulkan error
+        """
+        
         config_dan_paths = get_config_values()
         dataset_path = config_dan_paths["dataset_path"]
+
+        # Pemenuhan kondisi No.1
         check_if_there_selected_field()
         zl = "Zona_Layer"
         topo = 'Zona_Layer_Topology'
         topologi = os.path.join(dataset_path, 'Zona_Layer_Topology')
 
-        if arcpy.Exists(topologi):
-            arcpy.management.RemoveFeatureClassFromTopology(topologi, "Zona_Layer")
+        try:
+            # Pemenuhan kondisi No.2
+            if arcpy.Exists(topologi):
+                arcpy.management.RemoveFeatureClassFromTopology(topologi, "Zona_Layer")
 
-        if arcpy.Exists(topo):
-            arcpy.management.Delete(topo)
+            if arcpy.Exists(topo):
+                arcpy.management.Delete(topo)
 
-        arcpy.management.AddField(zl, "Luas_M2", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED")
-        arcpy.management.CalculateField(zl, "Luas_M2", '!Shape.Area@meter!', "PYTHON3")
+            # Pemenuhan kondisi No.3 dan No.5
+            arcpy.management.AddField(zl, "Luas_M2", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED")
+            
+            # Pemenuhan kondisi No.4
+            arcpy.management.CalculateField(zl, "Luas_M2", '!Shape.Area@meter!', "PYTHON3")
+        
+        except Exception as e:
+            arcpy.AddWarning(f"Gagal menghitung luas zona: {str(e)}")
+
         return
 
     def postExecute(self, parameters):
@@ -421,14 +456,15 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah(object):
         self.label = "Upload Peta Zona Awal Nilai Tanah"
         self.description = ""
         self.canRunInBackground = False
-        self.is_gis_internal = is_internal()
-        self.preferred_server = get_preferred_server_connection()
-        self.current_year = current_year()
+
 
     def getParameterInfo(self):
         """Define parameter definitions"""
+        self.is_gis_internal = is_internal()
+        self.preferred_server = get_preferred_server_connection()
+        self.current_year = int(datetime.now().year)
         param0 = arcpy.Parameter(
-            displayName="NIK",
+            displayName="Nomor Induk Kependudukan (NIK)",
             name="username",
             datatype="GPString",
             parameterType="Required",
@@ -447,7 +483,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah(object):
             direction="Input")
 
         param3 = arcpy.Parameter(
-            displayName="Zona Layer",
+            displayName="Zona Layer (Feature Class)",
             name="feature_layer",
             datatype="GPFeatureLayer",  
             parameterType="Required",
@@ -465,6 +501,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah(object):
 
         if self.preferred_server:
             param4.value = self.preferred_server
+
         param4.filter.type = "ValueList"
         param4.filter.list = ["Produksi", "Belajar"]
         
@@ -533,5 +570,8 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah(object):
         use_production = True if server == "Produksi" or server == None else False
         
         validate_document_type(project_id, target='Pembuatan ZNT')
+        self.preferred_server = get_preferred_server_connection()
         main_upload(project_id, username, "Survei Batas Zona Awal Nilai Tanah", "Survei Batas Zona Awal Nilai Tanah", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
+        if len(parameters) > 4 and server != self.preferred_server:
+            renew_preferred_server(server)
         return        

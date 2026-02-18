@@ -1,4 +1,8 @@
 ﻿import arcpy, os, sys, requests, json, datetime
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import base64
 
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
@@ -14,6 +18,151 @@ from zntutils import document
 # ======================
 arcpy.env.outputZFlag = "Disabled"  # Menonaktifkan output Z values (elevasi)
 arcpy.env.outputMFlag = "Disabled"  # Menonaktifkan output M values (measure)
+
+# Cryptography Functions
+def generate_key():
+    password = 'bpnri-jakarta'
+    salt = b'Sisinga@2-Jakarta'  
+
+    # Derive proper key dari password
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    return key
+
+def simpan_ke_bin(data_terenkripsi, nama_file):
+    """Menyimpan data bytes ke dalam file biner."""
+    try:
+        with open(nama_file, 'wb') as file:
+            file.write(data_terenkripsi)
+        print(f"Pesan berhasil disimpan ke {nama_file}")
+    except IOError as e:
+        print(f"Terjadi kesalahan saat menulis ke file: {e}")
+
+def baca_dari_bin(nama_file):
+    """Membaca data bytes dari file biner."""
+    data_terenkripsi = None
+    try:
+        with open(nama_file, 'rb') as file:
+            data_terenkripsi = file.read()
+        print(f"Pesan berhasil dibaca dari {nama_file}")
+        return data_terenkripsi
+    except IOError as e:
+        print(f"Terjadi kesalahan saat membaca file: {e}")
+        return None
+    
+def encrypt_message(message: str, key: bytes, path) -> bytes:
+    fernet = Fernet(key)
+    encrypted_message = fernet.encrypt(message.encode())
+    simpan_ke_bin(encrypted_message, path)
+    return encrypted_message
+
+def decrypt_message(key: bytes, path) -> str:
+    encrypted_message = baca_dari_bin(path)
+    fernet = Fernet(key)
+    decrypted_message = fernet.decrypt(encrypted_message).decode()
+    data = json.loads(decrypted_message)
+    return data
+
+def get_preferred_server_connection():
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+
+    try:
+        if os.path.exists(config_path):
+            data = decrypt_message(generate_key(), config_path) 
+            preferred_server = data.get('preferred_server', None)
+            return preferred_server
+        else:
+            return None
+        
+    except Exception as e:
+        arcpy.AddError(f"Gagal membaca user config: {str(e)}")
+        return None
+    
+def setup_preferred_server_connection(preferred_server: str):
+
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+
+    try:
+        # Cek apakah file ada
+        if os.path.exists(config_path):
+            # File ada, baca isinya
+            try:
+                data = decrypt_message(generate_key(), config_path)                    
+                # Validasi format JSON
+                if 'preferred_server' not in data or not isinstance(data['preferred_server'], str):
+                    # Format tidak sesuai, buat struktur baru
+                    data = {"preferred_server": preferred_server}
+                
+                if data['preferred_server'] != preferred_server:
+                    data['preferred_server'] = preferred_server
+                    
+            except json.JSONDecodeError:
+                # File rusak/tidak valid, buat struktur baru
+                arcpy.AddWarning("File config.json rusak, membuat struktur baru...")
+                data = {"preferred_server": preferred_server}
+        else:
+            # File belum ada, buat struktur baru
+            # Pastikan direktori Menu ada
+            menu_dir = os.path.dirname(config_path)
+            if not os.path.exists(menu_dir):
+                os.makedirs(menu_dir)
+            
+            data = {"preferred_server": preferred_server}
+        
+
+        # Simpan kembali ke file
+        encrypt_message(json.dumps(data), generate_key(), config_path)
+        arcpy.AddMessage(f"Preferred server '{preferred_server}' berhasil disimpan ke config.")
+        return True
+        
+    except Exception as e:
+        arcpy.AddError(f"Gagal menyimpan user config: {str(e)}")
+        return False
+
+def reload_all_toolboxes_in_folder(toolbox_folder):
+     
+    if not os.path.exists(toolbox_folder):
+        arcpy.AddError(f"Folder toolbox tidak ditemukan: {toolbox_folder}")
+        return
+        
+     # Cari semua file .pyt di folder
+    pyt_files = [f for f in os.listdir(toolbox_folder) if f.endswith('.pyt')]
+    if not pyt_files:
+        arcpy.AddWarning(f"Tidak ada file .pyt ditemukan di {toolbox_folder}")
+        return
+        
+    try:
+        # Hapus dan reload menggunakan ImportToolbox (lebih reliable)
+        for pyt_file in pyt_files:
+            pyt_path = os.path.join(toolbox_folder, pyt_file)
+            try:
+                arcpy.ImportToolbox(pyt_path)
+            except Exception as e:
+                arcpy.AddWarning(f"Gagal memuat ulang {pyt_file}: {str(e)}")
+            
+    except Exception as e:
+        arcpy.AddWarning(f"Error saat reload toolbox: {str(e)}")
+
+def renew_preferred_server(server:str):
+    
+    setup_preferred_server_connection(server)
+    all_toolboxes_folder_need_reload = [
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT",
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT",
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT"
+            ]
+
+    try:
+        for folder in all_toolboxes_folder_need_reload:
+            reload_all_toolboxes_in_folder(folder)
+
+    except Exception as e:
+        arcpy.AddWarning(f"Gagal memuat ulang toolbox: {str(e)}")
 
 # ======================
 # HELPER FUNCTION SETUP
@@ -231,8 +380,6 @@ def update_project_config(last_sample_id, workspace_dir=None):
     with open(config_path, "w", encoding="utf-8") as config_file:
         json.dump(config_data, config_file, indent=4, ensure_ascii=False)
     
-    arcpy.AddMessage(f"Konfigurasi project diperbaharui last_sample_id = {last_sample_id}")
-
 def filter_new_samples(api_data, last_nomor_entry, data_type="data"):
     """
     Filter data baru berdasarkan Nomor_Entry.
@@ -360,511 +507,53 @@ def json_to_feature_class(json_path, ds_path, file_name,  spatial_ref, lokasi, t
     except Exception:
     # Fallback to WGS84 if unable to parse provided spatial ref
         target_sr = arcpy.SpatialReference(4326)
+    try:
+        with arcpy.da.InsertCursor(feature_class_path, insert_fields) as cursor:
+                for feature in features:
+                    properties = feature.get("properties", {})
+                    geometry = feature.get("geometry", {})
+                    coords = geometry.get("coordinates", [None, None])
 
-    with arcpy.da.InsertCursor(feature_class_path, insert_fields) as cursor:
-            for feature in features:
-                properties = feature.get("properties", {})
-                geometry = feature.get("geometry", {})
-                coords = geometry.get("coordinates", [None, None])
-
-                pt_geom = None
-                try:
-                    if coords and coords[0] is not None and coords[1] is not None:
-                        # GeoJSON uses [lon, lat] in WGS84
-                        wgs84 = arcpy.SpatialReference(4326)
-                        pt = arcpy.Point(coords[0], coords[1])
-                        pt_geom = arcpy.PointGeometry(pt, wgs84)
-
-                        # Project to target spatial reference if different
-                        if target_sr.factoryCode != 4326 and target_sr.name != wgs84.name:
-                            pt_geom = pt_geom.projectAs(target_sr)
-                except Exception as e:
-                    arcpy.AddWarning(f"Gagal membuat geometry untuk feature Nomor_Entry={properties.get('Nomor_Entry')}: {e}")
                     pt_geom = None
+                    try:
+                        if coords and coords[0] is not None and coords[1] is not None:
+                            # GeoJSON uses [lon, lat] in WGS84
+                            wgs84 = arcpy.SpatialReference(4326)
+                            pt = arcpy.Point(coords[0], coords[1])
+                            pt_geom = arcpy.PointGeometry(pt, wgs84)
 
-                # Build row values with special handling for N_Sementara, Lokasi, and Tahun
-                row = []
-                for fname in field_names:
-                    if fname == 'N_Sementara':
-                        # JSON key is 'N.Sementara' — fallback to existing key if present
-                        value = properties.get('N.Sementara', '')
-                    elif fname == 'Lokasi':
-                        value = lokasi
-                    elif fname == 'Tahun':
-                        value = tahun
-                    else:
-                        value = properties.get(fname, None)
-                    row.append(value)
+                            # Project to target spatial reference if different
+                            if target_sr.factoryCode != 4326 and target_sr.name != wgs84.name:
+                                pt_geom = pt_geom.projectAs(target_sr)
+                    except Exception as e:
+                        arcpy.AddWarning(f"Gagal membuat geometry untuk feature Nomor_Entry={properties.get('Nomor_Entry')}: {e}")
+                        pt_geom = None
 
-                row.append(pt_geom)
-                cursor.insertRow(row)
+                    # Build row values with special handling for N_Sementara, Lokasi, and Tahun
+                    row = []
+                    for fname in field_names:
+                        if fname == 'N_Sementara':
+                            # JSON key is 'N.Sementara' — fallback to existing key if present
+                            value = properties.get('N.Sementara', '')
+                        elif fname == 'Lokasi':
+                            value = lokasi
+                        elif fname == 'Tahun':
+                            value = tahun
+                        else:
+                            value = properties.get(fname, None)
+                        row.append(value)
+
+                    row.append(pt_geom)
+                    cursor.insertRow(row)
+
+        arcpy.management.Delete(json_path)
+
+    except Exception as e:
+        arcpy.AddError(f"Error saat memasukkan data ke feature class: {str(e)}")
 
 # ======================
 # MAIN PROCESSING
 # ======================
-
-def overwriteSamples(username, project_id, tahun, use_production):
-    """
-    FUNGSI UTAMA UNTUK MEMPROSES DATA TITIK SAMPEL
-    """
-    
-    # Validasi dan setup
-    zonalayer.check_if_there_selected_field()
-    config_paths = get_config_values()
-    
-    # Backup geodatabase
-    tools_label = 'Pembuatan_ZNT-Pengolahan_Titik_Sampel'
-    zonalayer.save_gdb(config_paths['ws_dir'], config_paths['gdb_path'], label=tools_label)
-
-    # Pemanggilan API menggunakan fungsi baru
-    api_data = call_sipenta_api(username, project_id, use_production)
-    
-    # Validasi response API
-    if not validate_api_response(api_data):
-        return
-
-
-
-    # Mendapatkan project dan map
-    aprx = arcpy.mp.ArcGISProject("CURRENT")
-    mapx = aprx.activeMap
-
-    # ========================
-    # PROSES TITIK_SAMPEL
-    # ========================
-    with open(config_paths['path_json'], 'w+') as f:
-        json.dump(api_data["data"], f, ensure_ascii=False)
-        
-    if int(api_data["jmlh_data"]) > 0:
-        # Konversi JSON ke Feature Class
-
-        json_to_feature_class(
-            json_path=config_paths['path_json'], 
-            ds_path=config_paths['dataset_path'], 
-            file_name="Titik_Sampel", 
-            spatial_ref=config_paths['coor'], 
-            lokasi=config_paths['lokasi'], 
-            tahun=tahun)
-        # Tambahkan ke map dan terapkan symbology
-        layer_ts = mapx.addDataFromPath(config_paths['path_titik_sampel'])
-        arcpy.management.ApplySymbologyFromLayer(layer_ts, config_paths['symbology_path_ts'])
-    else: 
-        arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan.")
-
-    # ========================
-    # PROSES TITIK_SAMPEL_INDIVIDUAL
-    # ========================
-    with open(config_paths['path_individual_json'], 'w') as f:
-        json.dump(api_data["data_individual"], f, ensure_ascii=False)
-
-    if int(api_data["jmlh_individual"]) > 0:
-
-        # Konversi JSON ke Feature Class
-        json_to_feature_class(
-            json_path=config_paths['path_individual_json'], 
-            ds_path=config_paths['dataset_path'], 
-            file_name="Titik_Sampel_Individual", 
-            spatial_ref=config_paths['coor'],
-            lokasi=config_paths['lokasi'], 
-            tahun=tahun)
-
-        # Tambahkan ke map dan terapkan symbology
-        layer_tsi = mapx.addDataFromPath(config_paths['path_titik_sampel_individual'])
-        arcpy.management.ApplySymbologyFromLayer(layer_tsi, config_paths['symbology_path_tsi'])
-    else:
-        arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
-
-    # Mendapatkan dan update last_nomor_entries
-    last_nomor_entries = get_last_nomor_entry(api_data)
-    update_project_config(last_nomor_entries)
-
-def addSamples(username, project_id, tahun, use_production):
-    """
-    Fungsi untuk menambahkan data sampel dari API SIPENTA ke dalam geodatabase.
-    Melakukan proses download data, konversi ke feature class, dan update dataset.
-    
-    Parameters:
-    username (str): NIK pengguna untuk autentikasi API
-    project_id (str): Nomor berkas proyek
-    tahun (str): Tahun data sampel yang akan diproses
-    """
-    
-    # Validasi seleksi field pada layer zona
-    zonalayer.check_if_there_selected_field()
-
-    # Mengakses konfigurasi
-    config_paths = get_config_values()
-
-    # Menyiapkan backup geodatabase
-    tools_label = 'Pembuatan_ZNT-Pengolahan_Titik_Sampel'
-    zonalayer.save_gdb(config_paths['ws_dir'], config_paths['gdb_path'], label=tools_label)
-
-    # Mengambil data Titik Sampel
-    api_data = call_sipenta_api(username, project_id, use_production)
-    
-    # Validasi response API
-    if not validate_api_response(api_data):
-        return
-
-    # Mendapatkan project dan map saat ini
-    aprx = arcpy.mp.ArcGISProject("CURRENT")
-    mapx = aprx.activeMap
-
-    # Mendapatkan nomor entry terbaru dari data API
-    new_last_nomor_entries = get_last_nomor_entry(api_data)
-
-    # Validasi compliance layer zona dan mendapatkan path workspace
-    zl_path = zonalayer.is_zona_layer_comply()
-    ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
-    config_path = os.path.join(ws_dir, "config.json")
-
-    # Membaca config.json untuk mendapatkan last_sample_id
-    config_data = {}
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as config_file:
-            try:
-                config_data = json.load(config_file)
-            except json.JSONDecodeError:
-                config_data = {}
-    
-    # Mendapatkan last_nomor_entries dari config atau set default 0
-    last_nomor_entries = config_data.get('last_sample_id', 0)
-    
-    # Mendefinisikan path untuk dataset
-    dataset_path = config_data.get('dataset_path', '')
-    path_titik_sampel = os.path.join(dataset_path, 'Titik_Sampel')
-    path_titik_sampel_individual = os.path.join(dataset_path, 'Titik_Sampel_Individual')
-
-    # ========================
-    # PROSES TITIK_SAMPEL (Data Utama)
-    # ========================
-
-    # CASE 1: Dataset Titik_Sampel belum ada dan ada data baru dari API
-    if not arcpy.Exists(path_titik_sampel) and int(api_data["jmlh_data"]) > 0:
-        with open(config_paths['path_json'], 'w+') as f:
-            json.dump(api_data["data"], f, ensure_ascii=False)
-            
-        if int(api_data["jmlh_data"]) > 0:
-            # Konversi JSON ke Feature Class
-
-            json_to_feature_class(
-                json_path=config_paths['path_json'], 
-                ds_path=config_paths['dataset_path'], 
-                file_name="Titik_Sampel", 
-                spatial_ref=config_paths['coor'], 
-                lokasi=config_paths['lokasi'], 
-                tahun=tahun)
-            # Tambahkan ke map dan terapkan symbology
-            layer_ts = mapx.addDataFromPath(config_paths['path_titik_sampel'])
-            arcpy.management.ApplySymbologyFromLayer(layer_ts, config_paths['symbology_path_ts'])
-        else: 
-            arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan.")
-  
-    # CASE 2: Dataset sudah ada dan ada data baru dari API (Update data)
-    elif int(api_data["jmlh_data"]) > 0 and arcpy.Exists(path_titik_sampel):
-        # Filter data baru berdasarkan Nomor_Entry
-        filtered_data = filter_new_samples(api_data, last_nomor_entries, "data")
-        choosen_list = filtered_data["features"]
-        
-        if len(choosen_list) > 0:
-            arcpy.AddMessage(f"Menambahkan {len(choosen_list)} data Titik_Sampel baru")
-            
-            # Simpan data filtered ke file sementara
-            with open(config_paths['path_sementara_json'], 'w+') as f:
-                json.dump(filtered_data, f, ensure_ascii=False)
-
-            json_to_feature_class(
-                json_path=config_paths['path_sementara_json'], 
-                ds_path=config_paths['dataset_path'], 
-                file_name="Titik_Sampel_Sementara", 
-                spatial_ref=config_paths['coor'], 
-                lokasi=config_paths['lokasi'], 
-                tahun=tahun)
-            
-            # Append data baru ke dataset existing
-            arcpy.management.Append(
-                inputs=config_paths['path_titik_sampel_sementara'],
-                target=config_paths['path_titik_sampel'],
-                schema_type="NO_TEST"
-            )
-            
-            # Refresh layer di peta jika sudah ada
-            refresh_layer_in_map(mapx, 'Titik_Sampel')
-            
-            # Bersihkan file temporary
-            arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
-            arcpy.management.Delete(config_paths['path_sementara_json'])
-                
-        else: 
-            arcpy.AddMessage('Tidak terdapat titik sampel penawaran/transaksi tambahan')
-
-    else:
-        arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan atau dataset tidak tersedia.")
-    
-    # ========================
-    # PROSES TITIK_SAMPEL_INDIVIDUAL (Data Individual)
-    # ========================
-
-    # CASE 1: Dataset Individual belum ada dan ada data baru
-    if not arcpy.Exists(path_titik_sampel_individual) and int(api_data["jmlh_individual"]) > 0:
-        with open(config_paths['path_individual_json'], 'w') as f:
-            json.dump(api_data["data_individual"], f, ensure_ascii=False)
-
-        if int(api_data["jmlh_individual"]) > 0:
-
-            # Konversi JSON ke Feature Class
-            json_to_feature_class(
-                json_path=config_paths['path_individual_json'], 
-                ds_path=config_paths['dataset_path'], 
-                file_name="Titik_Sampel_Individual", 
-                spatial_ref=config_paths['coor'],
-                lokasi=config_paths['lokasi'], 
-                tahun=tahun)
-
-            # Tambahkan ke map dan terapkan symbology
-            layer_tsi = mapx.addDataFromPath(config_paths['path_titik_sampel_individual'])
-            arcpy.management.ApplySymbologyFromLayer(layer_tsi, config_paths['symbology_path_tsi'])
-        else:
-            arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
-    
-    # CASE 2: Dataset Individual sudah ada dan ada data baru (Update)
-    elif arcpy.Exists(path_titik_sampel_individual) and int(api_data["jmlh_individual"]) > 0:
-        # Filter data individual baru
-        filtered_data_individual = filter_new_samples(api_data, last_nomor_entries, "data_individual")
-        choosen_list_individual = filtered_data_individual["features"]
-        
-        if len(choosen_list_individual) > 0:
-            arcpy.AddMessage(f"Menambahkan {len(choosen_list_individual)} data Titik_Sampel_Individual baru")
-            
-            # Simpan data filtered ke file sementara
-            with open(config_paths['path_sementara_json'], 'w+') as f:
-                json.dump(filtered_data_individual, f, ensure_ascii=False)
-
-            # Konversi dan update data individual
-            json_to_feature_class(
-                json_path=config_paths['path_sementara_json'], 
-                ds_path=config_paths['dataset_path'], 
-                file_name="Titik_Sampel_Sementara", 
-                spatial_ref=config_paths['coor'],
-                lokasi=config_paths['lokasi'], 
-                tahun=tahun)
-                       
-            # Append data baru ke dataset existing
-            arcpy.management.Append(
-                inputs=config_paths['path_titik_sampel_sementara'],
-                target=config_paths['path_titik_sampel_individual'],
-                schema_type="NO_TEST"
-            )
-            
-            # Refresh layer di peta jika sudah ada
-            refresh_layer_in_map(mapx, 'Titik_Sampel_Individual')
-            
-            # Bersihkan file temporary
-            arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
-            arcpy.management.Delete(config_paths['path_sementara_json'])
-        else: 
-            arcpy.AddMessage('Tidak terdapat titik sampel individual tambahan')
-    
-    else:
-        arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan atau dataset tidak tersedia.")
-
-    # Update last_sample_id di config dengan nilai terbaru dari API
-    update_project_config(new_last_nomor_entries, ws_dir)
-    arcpy.AddMessage("Proses penambahan data sampel selesai.")
-
-def updateSelectedFeature(username, project_id, tahun, use_production):
-
-    """
-    Fungsi untuk memperbarui feature yang dipilih dari data terbaru API SIPENTA.
-    
-    Parameters:
-    username (str): NIK pengguna untuk autentikasi API
-    project_id (str): Nomor berkas proyek
-    tahun (str): Tahun data sampel
-    """
-    
-    # Mengakses konfigurasi
-    config_paths = get_config_values()
-
-    # Menyiapkan backup geodatabase
-    tools_label = 'Pembuatan_ZNT-Pengolahan_Titik_Sampel'
-    zonalayer.save_gdb(config_paths['ws_dir'], config_paths['gdb_path'], label=tools_label)
-
-    # Mengambil data Titik Sampel
-    api_data = call_sipenta_api(username, project_id, use_production)
-    
-    # Validasi response API
-    if not validate_api_response(api_data):
-        return
-    
-
-    # Nama layer
-    titik_sampel_individual = "Titik_Sampel_Individual"
-    titik_sampel = "Titik_Sampel"
-
-    # Get selection dan Nomor_Entry values
-
-    selected_ids = {
-        'titik_sampel_individual': [],
-        'titik_sampel': []
-    }
-
-    selected_id = samplepoint.get_selected_oids(titik_sampel_individual)
-    selected_ids['titik_sampel_individual'] = selected_id
-
-    selected_id = samplepoint.get_selected_oids(titik_sampel)
-    selected_ids['titik_sampel'] = selected_id
-    
-    if len(selected_ids['titik_sampel_individual']) == 0 and len(selected_ids['titik_sampel']) == 0:
-        arcpy.AddError("Tidak ada feature yang dipilih dalam layer.")
-        sys.exit(1)
-    
-    try:
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        mapx = aprx.activeMap
-        # Mendapatkan nilai Nomor_Entry dari feature yang dipilih
-        nomor_entry_values = {
-            'titik_sampel_individual': [],
-            'titik_sampel': []
-        }
-        individual_sample_where_clause = f"{arcpy.Describe(titik_sampel_individual).OIDFieldName} IN ({','.join(map(str, selected_ids['titik_sampel_individual']))})"
-        general_sample_where_clause = f"{arcpy.Describe(titik_sampel).OIDFieldName} IN ({','.join(map(str, selected_ids['titik_sampel']))})"
-
-        
-        if len(selected_ids['titik_sampel_individual']) > 0:
-            # Use SearchCursor to get Nomor_Entry values
-            with arcpy.da.SearchCursor(titik_sampel_individual, ["OID@", "Nomor_Entry"], individual_sample_where_clause) as cursor:
-                for row in cursor:
-                    nomor_entry = row[1]
-                    nomor_entry_values['titik_sampel_individual'].append(nomor_entry)
-        if len(selected_ids['titik_sampel']) > 0:
-            with arcpy.da.SearchCursor(titik_sampel, ["OID@", "Nomor_Entry"], general_sample_where_clause) as cursor:
-                for row in cursor:
-                    nomor_entry = row[1]
-                    nomor_entry_values['titik_sampel'].append(nomor_entry)
-
-            
-        arcpy.AddMessage(f"Semua nilai Nomor_Entry: \nTitik Sampel:{nomor_entry_values['titik_sampel']}\nTitik Sampel Individual:{nomor_entry_values['titik_sampel_individual']}")
-
-        if len(nomor_entry_values['titik_sampel_individual']) > 0:
-        
-            # Filter data dari API berdasarkan Nomor_Entry yang dipilih
-            individual_features = api_data.get("data_individual", {}).get("features", [])
-            selected_features = [
-                feature for feature in individual_features 
-                if feature["properties"].get("Nomor_Entry") in nomor_entry_values['titik_sampel_individual']
-            ]
-        
-            if selected_features and arcpy.Exists(titik_sampel_individual):
-                # Buat FeatureCollection dari data yang dipilih
-                updated_data = {
-                    "type": "FeatureCollection",
-                    "features": selected_features
-                }
-            
-                # Simpan ke file JSON sementara
-                with open(config_paths['path_sementara_json'], 'w') as f:
-                    json.dump(updated_data, f, ensure_ascii=False)
-
-                # Konversi dan update data individual
-                json_to_feature_class(
-                json_path=config_paths['path_sementara_json'], 
-                ds_path=config_paths['dataset_path'], 
-                file_name="Titik_Sampel_Sementara", 
-                spatial_ref=config_paths['coor'],
-                lokasi=config_paths['lokasi'], 
-                tahun=tahun)
-
-                # UPDATE FEATURE YANG DIPILIH
-                # Hapus feature yang lama
-                with arcpy.da.UpdateCursor(titik_sampel_individual, ["OID@"], individual_sample_where_clause) as cursor:
-                    for row in cursor:
-                        cursor.deleteRow()
-
-                # Append data baru
-                arcpy.management.Append(
-                    inputs=config_paths['path_titik_sampel_sementara'],
-                    target=titik_sampel_individual,
-                    schema_type="NO_TEST"
-                )
-            
-                arcpy.AddMessage("Berhasil memperbarui feature yang dipilih dengan data terbaru dari API")
-                
-                # Bersihkan data temporary
-                arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
-                arcpy.management.Delete(config_paths['path_sementara_json'])
-
-                    
-                # Refresh layer di peta
-                refresh_layer_in_map(mapx, 'Titik_Sampel_Individual')
-            
-            else:
-                arcpy.AddWarning("Tidak ditemukan data terbaru di API untuk feature yang dipilih.")
-        
-        if len(nomor_entry_values['titik_sampel']) > 0:
-        
-            # Filter data titik sampel berdasarkan Nomor_Entry yang sama
-            titik_sampel_features = api_data.get("data", {}).get("features", [])
-            selected_titik_sampel = [
-                feature for feature in titik_sampel_features 
-                if feature["properties"].get("Nomor_Entry") in nomor_entry_values["titik_sampel"]
-            ]
-            
-            if selected_titik_sampel and arcpy.Exists(titik_sampel):
-                arcpy.AddMessage(f"Memperbarui {len(selected_titik_sampel)} data terkait di layer Titik_Sampel")
-                
-                # Buat where clause untuk Titik_Sampel berdasarkan Nomor_Entry
-                nomor_entry_str = ",".join(map(str, nomor_entry_values["titik_sampel"]))
-                where_clause_ts = f"Nomor_Entry IN ({nomor_entry_str})"
-                
-                # Hapus data lama di Titik_Sampel
-                with arcpy.da.UpdateCursor(titik_sampel, ["OID@"], where_clause_ts) as cursor:
-                    delete_count = 0
-                    for row in cursor:
-                        cursor.deleteRow()
-                        delete_count += 1
-                    arcpy.AddMessage(f"Menghapus {delete_count} feature lama di Titik_Sampel")
-                
-                # Buat FeatureCollection untuk Titik_Sampel
-                updated_data_ts = {
-                    "type": "FeatureCollection", 
-                    "features": selected_titik_sampel
-                }
-                
-                # Simpan dan konversi data baru
-                with open(config_paths['path_sementara_json'], 'w') as f:
-                    json.dump(updated_data_ts, f, ensure_ascii=False)
-                
-                json_to_feature_class(
-                json_path=config_paths['path_sementara_json'], 
-                ds_path=config_paths['dataset_path'], 
-                file_name="Titik_Sampel_Sementara", 
-                spatial_ref=config_paths['coor'],
-                lokasi=config_paths['lokasi'], 
-                tahun=tahun)
-        
-                # Append ke Titik_Sampel
-                arcpy.management.Append(
-                    inputs=config_paths['path_titik_sampel_sementara'],
-                    target=titik_sampel,
-                    schema_type="NO_TEST"
-                )
-                
-                # Bersihkan
-                arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
-                arcpy.management.Delete(config_paths['path_sementara_json'])
-
-                # Refresh layer
-                refresh_layer_in_map(mapx, 'Titik_Sampel')
-                    
-    except arcpy.ExecuteError:
-        raise
-
-    except Exception as e:
-        arcpy.AddError(f"Error dalam memperbarui feature yang dipilih: {str(e)}")
-        raise arcpy.ExecuteError
-    
-    arcpy.AddMessage("Proses pembaruan feature yang dipilih selesai.")
 
 class Toolbox(object):
     """Toolbox ArcGIS untuk plugin Sampel Sentuh Tanahku"""
@@ -872,19 +561,21 @@ class Toolbox(object):
         self.label = "Toolbox"
         self.alias = ""
         self.tools = [Sampel_Sentuh_Tanahku]
+
 class Sampel_Sentuh_Tanahku(object):
     """Tool utama untuk mengambil dan memproses data sampel tanah"""
     def __init__(self):
         self.label = "Sampel Sentuh Tanahku"
         self.description = "Tool untuk mengambil data titik sampel dari API SIPENTA"
+
         self.canRunInBackground = False
 
     def getParameterInfo(self):
         """Mendefinisikan parameter input tool"""
-        
+        self.preferred_server = get_preferred_server_connection()
         current_year = datetime.datetime.now().year
         input_nik = arcpy.Parameter(
-            displayName="NIK",
+            displayName="Nomor Induk Kependudukan (NIK)",
             name="username",
             datatype="GPString",
             parameterType="Required",
@@ -915,6 +606,9 @@ class Sampel_Sentuh_Tanahku(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        
+        if self.preferred_server:
+            input_link.value = self.preferred_server
 
         input_tahun.value = current_year
 
@@ -953,19 +647,499 @@ class Sampel_Sentuh_Tanahku(object):
         tahun = parameters[2].valueAsText
         metode = parameters[3].valueAsText
         
-        
 
         if self.operatorGIS:
             link = parameters[4].valueAsText 
             use_production = True if link == "Produksi" else False 
-            arcpy.AddMessage(f"Using {'Production' if use_production else 'Belajar'} API link")
+            arcpy.AddMessage(f"Menggunakan Link {'Produksi' if use_production else 'Belajar'} untuk API SIPENTA")
         else:
             use_production = True    
 
         if metode == 'Reset Seluruh Sampel':
-            overwriteSamples(username, project_id, tahun,  use_production)
+            self.overwriteSamples(username, project_id, tahun,  use_production)
         elif metode == 'Tambahkan Sampel Baru':
-            addSamples(username, project_id, tahun, use_production)
+            self.addSamples(username, project_id, tahun, use_production)
         elif metode == 'Perbarui Sampel Terpilih':
-            updateSelectedFeature(username, project_id, tahun, use_production)
+            self.updateSelectedFeature(username, project_id, tahun, use_production)
+        
+        self.preferred_server = get_preferred_server_connection()
+        if len(parameters) > 4 and link != self.preferred_server:
+            renew_preferred_server(link)
+
         return
+    
+    def overwriteSamples(self, username, project_id, tahun, use_production):
+        """
+        Fungsi untuk menghapus seluruh data sampel yang ada dan menggantinya dengan data terbaru dari API SIPENTA.
+        Melakukan proses download data, konversi ke feature class, dan update dataset.
+
+        Kondisi yang harus dipenuhi oleh fungsi di kode ini:
+        1. Validasi seleksi field pada layer zona
+        2. Backup geodatabase sebelum melakukan perubahan
+        3. Mengambil data dari API SIPENTA
+        4. Validasi response API
+        5. Konversi data JSON ke feature class untuk Titik_Sampel dan Titik_Sampel_Individual
+        6. Menambahkan layer ke map 
+        7. Mendapatkan nomor entry terakhir dari data API dan menyimpannya ke config untuk referensi di masa depan
+        """
+        
+        # Validasi dan setup
+        zonalayer.check_if_there_selected_field()
+        config_paths = get_config_values()
+        
+        # Backup geodatabase
+        tools_label = 'Pembuatan_ZNT-Pengolahan_Titik_Sampel'
+        zonalayer.save_gdb(config_paths['ws_dir'], config_paths['gdb_path'], label=tools_label)
+
+        # Pemanggilan API menggunakan fungsi baru
+        api_data = call_sipenta_api(username, project_id, use_production)
+        
+        # Validasi response API
+        if not validate_api_response(api_data):
+            return
+
+
+
+        # Mendapatkan project dan map
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        mapx = aprx.activeMap
+
+        # ========================
+        # PROSES TITIK_SAMPEL
+        # ========================
+        with open(config_paths['path_json'], 'w+') as f:
+            json.dump(api_data["data"], f, ensure_ascii=False)
+            
+        if int(api_data["jmlh_data"]) > 0:
+            # Konversi JSON ke Feature Class
+
+            json_to_feature_class(
+                json_path=config_paths['path_json'], 
+                ds_path=config_paths['dataset_path'], 
+                file_name="Titik_Sampel", 
+                spatial_ref=config_paths['coor'], 
+                lokasi=config_paths['lokasi'], 
+                tahun=tahun)
+            # Tambahkan ke map dan terapkan symbology
+            layer_ts = mapx.addDataFromPath(config_paths['path_titik_sampel'])
+
+        else: 
+            arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan.")
+
+        # ========================
+        # PROSES TITIK_SAMPEL_INDIVIDUAL
+        # ========================
+        with open(config_paths['path_individual_json'], 'w') as f:
+            json.dump(api_data["data_individual"], f, ensure_ascii=False)
+
+        if int(api_data["jmlh_individual"]) > 0:
+
+            # Konversi JSON ke Feature Class
+            json_to_feature_class(
+                json_path=config_paths['path_individual_json'], 
+                ds_path=config_paths['dataset_path'], 
+                file_name="Titik_Sampel_Individual", 
+                spatial_ref=config_paths['coor'],
+                lokasi=config_paths['lokasi'], 
+                tahun=tahun)
+
+            # Tambahkan ke map 
+            layer_tsi = mapx.addDataFromPath(config_paths['path_titik_sampel_individual'])
+
+        else:
+            arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
+
+        # Mendapatkan dan update last_nomor_entries
+        last_nomor_entries = get_last_nomor_entry(api_data)
+        update_project_config(last_nomor_entries)
+
+    def addSamples(self, username, project_id, tahun, use_production):
+
+        """
+        Fungsi untuk menambahkan data sampel dari API SIPENTA ke dalam geodatabase.
+        Melakukan proses download data, konversi ke feature class, dan update dataset.
+        
+        Parameters:
+        username (str): NIK pengguna untuk autentikasi API
+        project_id (str): Nomor berkas proyek
+        tahun (str): Tahun data sampel yang akan diproses
+        """
+        
+        # Validasi seleksi field pada layer zona
+        zonalayer.check_if_there_selected_field()
+
+        # Mengakses konfigurasi
+        config_paths = get_config_values()
+
+        # Menyiapkan backup geodatabase
+        tools_label = 'Pembuatan_ZNT-Pengolahan_Titik_Sampel'
+        zonalayer.save_gdb(config_paths['ws_dir'], config_paths['gdb_path'], label=tools_label)
+
+        # Mengambil data Titik Sampel
+        api_data = call_sipenta_api(username, project_id, use_production)
+        
+        # Validasi response API
+        if not validate_api_response(api_data):
+            return
+
+        # Mendapatkan project dan map saat ini
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        mapx = aprx.activeMap
+
+        # Mendapatkan nomor entry terbaru dari data API
+        new_last_nomor_entries = get_last_nomor_entry(api_data)
+
+        # Validasi compliance layer zona dan mendapatkan path workspace
+        zl_path = zonalayer.is_zona_layer_comply()
+        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
+        config_path = os.path.join(ws_dir, "config.json")
+
+        # Membaca config.json untuk mendapatkan last_sample_id
+        config_data = {}
+        if os.path.exists(config_path):
+            with open(config_path, "r", encoding="utf-8") as config_file:
+                try:
+                    config_data = json.load(config_file)
+                except json.JSONDecodeError:
+                    config_data = {}
+        
+        # Mendapatkan last_nomor_entries dari config atau set default 0
+        last_nomor_entries = config_data.get('last_sample_id', 0)
+        
+        # Mendefinisikan path untuk dataset
+        dataset_path = config_data.get('dataset_path', '')
+        path_titik_sampel = os.path.join(dataset_path, 'Titik_Sampel')
+        path_titik_sampel_individual = os.path.join(dataset_path, 'Titik_Sampel_Individual')
+
+        # ========================
+        # PROSES TITIK_SAMPEL (Data Utama)
+        # ========================
+
+        # CASE 1: Dataset Titik_Sampel belum ada dan ada data baru dari API
+        if not arcpy.Exists(path_titik_sampel) and int(api_data["jmlh_data"]) > 0:
+            with open(config_paths['path_json'], 'w+') as f:
+                json.dump(api_data["data"], f, ensure_ascii=False)
+                
+            if int(api_data["jmlh_data"]) > 0:
+                # Konversi JSON ke Feature Class
+
+                json_to_feature_class(
+                    json_path=config_paths['path_json'], 
+                    ds_path=config_paths['dataset_path'], 
+                    file_name="Titik_Sampel", 
+                    spatial_ref=config_paths['coor'], 
+                    lokasi=config_paths['lokasi'], 
+                    tahun=tahun)
+                # Tambahkan ke map dan terapkan symbology
+                layer_ts = mapx.addDataFromPath(config_paths['path_titik_sampel'])
+                arcpy.management.ApplySymbologyFromLayer(layer_ts, config_paths['symbology_path_ts'])
+            else: 
+                arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan.")
+
+        # CASE 2: Dataset sudah ada dan ada data baru dari API (Update data)
+        elif int(api_data["jmlh_data"]) > 0 and arcpy.Exists(path_titik_sampel):
+            # Filter data baru berdasarkan Nomor_Entry
+            filtered_data = filter_new_samples(api_data, last_nomor_entries, "data")
+            choosen_list = filtered_data["features"]
+            
+            if len(choosen_list) > 0:
+                arcpy.AddMessage(f"Menambahkan {len(choosen_list)} data Titik_Sampel baru")
+                
+                # Simpan data filtered ke file sementara
+                with open(config_paths['path_sementara_json'], 'w+') as f:
+                    json.dump(filtered_data, f, ensure_ascii=False)
+
+                json_to_feature_class(
+                    json_path=config_paths['path_sementara_json'], 
+                    ds_path=config_paths['dataset_path'], 
+                    file_name="Titik_Sampel_Sementara", 
+                    spatial_ref=config_paths['coor'], 
+                    lokasi=config_paths['lokasi'], 
+                    tahun=tahun)
+                
+                # Append data baru ke dataset existing
+                arcpy.management.Append(
+                    inputs=config_paths['path_titik_sampel_sementara'],
+                    target=config_paths['path_titik_sampel'],
+                    schema_type="NO_TEST"
+                )
+                
+                # Refresh layer di peta jika sudah ada
+                refresh_layer_in_map(mapx, 'Titik_Sampel')
+                
+                # Bersihkan file temporary
+                arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
+                arcpy.management.Delete(config_paths['path_sementara_json'])
+                    
+            else: 
+                arcpy.AddMessage('Tidak terdapat titik sampel penawaran/transaksi tambahan')
+
+        else:
+            arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan.")
+
+        # ========================
+        # PROSES TITIK_SAMPEL_INDIVIDUAL (Data Individual)
+        # ========================
+
+        # CASE 1: Dataset Individual belum ada dan ada data baru
+        if not arcpy.Exists(path_titik_sampel_individual) and int(api_data["jmlh_individual"]) > 0:
+            with open(config_paths['path_individual_json'], 'w') as f:
+                json.dump(api_data["data_individual"], f, ensure_ascii=False)
+
+            if int(api_data["jmlh_individual"]) > 0:
+
+                # Konversi JSON ke Feature Class
+                json_to_feature_class(
+                    json_path=config_paths['path_individual_json'], 
+                    ds_path=config_paths['dataset_path'], 
+                    file_name="Titik_Sampel_Individual", 
+                    spatial_ref=config_paths['coor'],
+                    lokasi=config_paths['lokasi'], 
+                    tahun=tahun)
+
+                # Tambahkan ke map dan terapkan symbology
+                layer_tsi = mapx.addDataFromPath(config_paths['path_titik_sampel_individual'])
+                arcpy.management.ApplySymbologyFromLayer(layer_tsi, config_paths['symbology_path_tsi'])
+            else:
+                arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
+
+        # CASE 2: Dataset Individual sudah ada dan ada data baru (Update)
+        elif arcpy.Exists(path_titik_sampel_individual) and int(api_data["jmlh_individual"]) > 0:
+            # Filter data individual baru
+            filtered_data_individual = filter_new_samples(api_data, last_nomor_entries, "data_individual")
+            choosen_list_individual = filtered_data_individual["features"]
+            
+            if len(choosen_list_individual) > 0:
+                arcpy.AddMessage(f"Menambahkan {len(choosen_list_individual)} data Titik_Sampel_Individual baru")
+                
+                # Simpan data filtered ke file sementara
+                with open(config_paths['path_sementara_json'], 'w+') as f:
+                    json.dump(filtered_data_individual, f, ensure_ascii=False)
+
+                # Konversi dan update data individual
+                json_to_feature_class(
+                    json_path=config_paths['path_sementara_json'], 
+                    ds_path=config_paths['dataset_path'], 
+                    file_name="Titik_Sampel_Sementara", 
+                    spatial_ref=config_paths['coor'],
+                    lokasi=config_paths['lokasi'], 
+                    tahun=tahun)
+                        
+                # Append data baru ke dataset existing
+                arcpy.management.Append(
+                    inputs=config_paths['path_titik_sampel_sementara'],
+                    target=config_paths['path_titik_sampel_individual'],
+                    schema_type="NO_TEST"
+                )
+                
+                # Refresh layer di peta jika sudah ada
+                refresh_layer_in_map(mapx, 'Titik_Sampel_Individual')
+                
+                # Bersihkan file temporary
+                arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
+                arcpy.management.Delete(config_paths['path_sementara_json'])
+            else: 
+                arcpy.AddMessage('Tidak terdapat titik sampel individual tambahan')
+        
+        else:
+            arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan atau dataset tidak tersedia.")
+
+        # Update last_sample_id di config dengan nilai terbaru dari API
+        update_project_config(new_last_nomor_entries, ws_dir)
+        arcpy.AddMessage("Proses penambahan data sampel selesai.")
+
+    def updateSelectedFeature(self, username, project_id, tahun, use_production):
+
+            """
+            Fungsi untuk memperbarui feature yang dipilih dari data terbaru API SIPENTA.
+            
+            Parameters:
+            username (str): NIK pengguna untuk autentikasi API
+            project_id (str): Nomor berkas proyek
+            tahun (str): Tahun data sampel
+            """
+            
+            # Mengakses konfigurasi
+            config_paths = get_config_values()
+
+            # Menyiapkan backup geodatabase
+            tools_label = 'Pembuatan_ZNT-Pengolahan_Titik_Sampel'
+            zonalayer.save_gdb(config_paths['ws_dir'], config_paths['gdb_path'], label=tools_label)
+
+            # Mengambil data Titik Sampel
+            api_data = call_sipenta_api(username, project_id, use_production)
+            
+            # Validasi response API
+            if not validate_api_response(api_data):
+                return
+            
+
+            # Nama layer
+            titik_sampel_individual = "Titik_Sampel_Individual"
+            titik_sampel = "Titik_Sampel"
+
+            # Get selection dan Nomor_Entry values
+
+            selected_ids = {
+                'titik_sampel_individual': [],
+                'titik_sampel': []
+            }
+
+            selected_id = samplepoint.get_selected_oids(titik_sampel_individual)
+            selected_ids['titik_sampel_individual'] = selected_id
+
+            selected_id = samplepoint.get_selected_oids(titik_sampel)
+            selected_ids['titik_sampel'] = selected_id
+            
+            if len(selected_ids['titik_sampel_individual']) == 0 and len(selected_ids['titik_sampel']) == 0:
+                arcpy.AddError("Tidak ada feature yang dipilih dalam layer.")
+                sys.exit(1)
+            
+            try:
+                aprx = arcpy.mp.ArcGISProject("CURRENT")
+                mapx = aprx.activeMap
+                # Mendapatkan nilai Nomor_Entry dari feature yang dipilih
+                nomor_entry_values = {
+                    'titik_sampel_individual': [],
+                    'titik_sampel': []
+                }
+                individual_sample_where_clause = f"{arcpy.Describe(titik_sampel_individual).OIDFieldName} IN ({','.join(map(str, selected_ids['titik_sampel_individual']))})"
+                general_sample_where_clause = f"{arcpy.Describe(titik_sampel).OIDFieldName} IN ({','.join(map(str, selected_ids['titik_sampel']))})"
+
+                
+                if len(selected_ids['titik_sampel_individual']) > 0:
+                    # Use SearchCursor to get Nomor_Entry values
+                    with arcpy.da.SearchCursor(titik_sampel_individual, ["OID@", "Nomor_Entry"], individual_sample_where_clause) as cursor:
+                        for row in cursor:
+                            nomor_entry = row[1]
+                            nomor_entry_values['titik_sampel_individual'].append(nomor_entry)
+                if len(selected_ids['titik_sampel']) > 0:
+                    with arcpy.da.SearchCursor(titik_sampel, ["OID@", "Nomor_Entry"], general_sample_where_clause) as cursor:
+                        for row in cursor:
+                            nomor_entry = row[1]
+                            nomor_entry_values['titik_sampel'].append(nomor_entry)
+
+                    
+                arcpy.AddMessage(f"Semua nilai Nomor_Entry: \nTitik Sampel:{nomor_entry_values['titik_sampel']}\nTitik Sampel Individual:{nomor_entry_values['titik_sampel_individual']}")
+
+                if len(nomor_entry_values['titik_sampel_individual']) > 0:
+                
+                    # Filter data dari API berdasarkan Nomor_Entry yang dipilih
+                    individual_features = api_data.get("data_individual", {}).get("features", [])
+                    selected_features = [
+                        feature for feature in individual_features 
+                        if feature["properties"].get("Nomor_Entry") in nomor_entry_values['titik_sampel_individual']
+                    ]
+                
+                    if selected_features and arcpy.Exists(titik_sampel_individual):
+                        # Buat FeatureCollection dari data yang dipilih
+                        updated_data = {
+                            "type": "FeatureCollection",
+                            "features": selected_features
+                        }
+                    
+                        # Simpan ke file JSON sementara
+                        with open(config_paths['path_sementara_json'], 'w') as f:
+                            json.dump(updated_data, f, ensure_ascii=False)
+
+                        # Konversi dan update data individual
+                        json_to_feature_class(
+                        json_path=config_paths['path_sementara_json'], 
+                        ds_path=config_paths['dataset_path'], 
+                        file_name="Titik_Sampel_Sementara", 
+                        spatial_ref=config_paths['coor'],
+                        lokasi=config_paths['lokasi'], 
+                        tahun=tahun)
+
+                        # UPDATE FEATURE YANG DIPILIH
+                        # Hapus feature yang lama
+                        with arcpy.da.UpdateCursor(titik_sampel_individual, ["OID@"], individual_sample_where_clause) as cursor:
+                            for row in cursor:
+                                cursor.deleteRow()
+
+                        # Append data baru
+                        arcpy.management.Append(
+                            inputs=config_paths['path_titik_sampel_sementara'],
+                            target=titik_sampel_individual,
+                            schema_type="NO_TEST"
+                        )
+                    
+                        arcpy.AddMessage("Berhasil memperbarui feature yang dipilih dengan data terbaru dari API")
+                        
+                        # Bersihkan data temporary
+                        arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
+                        arcpy.management.Delete(config_paths['path_sementara_json'])
+
+                            
+                        # Refresh layer di peta
+                        refresh_layer_in_map(mapx, 'Titik_Sampel_Individual')
+                    
+                    else:
+                        arcpy.AddWarning("Tidak ditemukan data terbaru di API untuk feature yang dipilih.")
+                
+                if len(nomor_entry_values['titik_sampel']) > 0:
+                
+                    # Filter data titik sampel berdasarkan Nomor_Entry yang sama
+                    titik_sampel_features = api_data.get("data", {}).get("features", [])
+                    selected_titik_sampel = [
+                        feature for feature in titik_sampel_features 
+                        if feature["properties"].get("Nomor_Entry") in nomor_entry_values["titik_sampel"]
+                    ]
+                    
+                    if selected_titik_sampel and arcpy.Exists(titik_sampel):
+                        arcpy.AddMessage(f"Memperbarui {len(selected_titik_sampel)} data terkait di layer Titik_Sampel")
+                        
+                        # Buat where clause untuk Titik_Sampel berdasarkan Nomor_Entry
+                        nomor_entry_str = ",".join(map(str, nomor_entry_values["titik_sampel"]))
+                        where_clause_ts = f"Nomor_Entry IN ({nomor_entry_str})"
+                        
+                        # Hapus data lama di Titik_Sampel
+                        with arcpy.da.UpdateCursor(titik_sampel, ["OID@"], where_clause_ts) as cursor:
+                            delete_count = 0
+                            for row in cursor:
+                                cursor.deleteRow()
+                                delete_count += 1
+                            arcpy.AddMessage(f"Menghapus {delete_count} feature lama di Titik_Sampel")
+                        
+                        # Buat FeatureCollection untuk Titik_Sampel
+                        updated_data_ts = {
+                            "type": "FeatureCollection", 
+                            "features": selected_titik_sampel
+                        }
+                        
+                        # Simpan dan konversi data baru
+                        with open(config_paths['path_sementara_json'], 'w') as f:
+                            json.dump(updated_data_ts, f, ensure_ascii=False)
+                        
+                        json_to_feature_class(
+                        json_path=config_paths['path_sementara_json'], 
+                        ds_path=config_paths['dataset_path'], 
+                        file_name="Titik_Sampel_Sementara", 
+                        spatial_ref=config_paths['coor'],
+                        lokasi=config_paths['lokasi'], 
+                        tahun=tahun)
+                
+                        # Append ke Titik_Sampel
+                        arcpy.management.Append(
+                            inputs=config_paths['path_titik_sampel_sementara'],
+                            target=titik_sampel,
+                            schema_type="NO_TEST"
+                        )
+                        
+                        # Bersihkan
+                        arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
+                        arcpy.management.Delete(config_paths['path_sementara_json'])
+
+                        # Refresh layer
+                        refresh_layer_in_map(mapx, 'Titik_Sampel')
+                            
+            except arcpy.ExecuteError:
+                raise
+
+            except Exception as e:
+                arcpy.AddError(f"Error dalam memperbarui feature yang dipilih: {str(e)}")
+                raise arcpy.ExecuteError
+            
+            arcpy.AddMessage("Proses pembaruan feature yang dipilih selesai.")
+
+

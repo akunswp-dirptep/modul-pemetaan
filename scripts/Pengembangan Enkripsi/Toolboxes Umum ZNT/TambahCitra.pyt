@@ -28,12 +28,15 @@ class Tambah_Citra_Basemap(object):
     def getParameterInfo(self):
         """Define parameter definitions"""
         file_citra = arcpy.Parameter(
-            displayName="File Citra",
+            displayName="File Citra (.tif/.tiff)",
             name="file_citra",
-            datatype="DERasterDataset",
+            datatype="File",
             parameterType="Required",
-            direction="Input")
-        
+            direction="Input"
+        )
+
+        file_citra.filter.list = ['tif', 'tiff']
+
         output_citra = arcpy.Parameter(
             name="output_citra",
             datatype="GPRasterLayer",
@@ -69,15 +72,17 @@ class Tambah_Citra_Basemap(object):
     def execute(self, parameters, messages):
         """The source code of the tool."""
         file_citra = parameters[0].valueAsText
-        citra_layer = "citra_layer"
-        arcpy.management.MakeRasterLayer(file_citra, citra_layer)
+        # Tidak bisa baca file (.ecw), Bug di Arcgis Pro 3.4, baca: https://support.esri.com/en-us/bug/when-dragging-an-enhanced-compression-wavelet-ecw-file-bug-000173123
+
+        if not file_citra.lower().endswith(('.tif', '.tiff')):
+            raise arcpy.ExecuteError("File harus berformat TIF.")
 
         config_dan_paths = get_config_values()
         simbology_path = os.path.join(config_dan_paths['symbology_folder'], "Simbologi_Jenis_Zona.lyrx")
 
         zl = "Zona_Layer"
-        arcpy.management.DefineProjection(citra_layer, config_dan_paths['coor'])
-        arcpy.SetParameter(1, citra_layer)
+
+        arcpy.SetParameter(1, file_citra)
         arcpy.management.MakeFeatureLayer(config_dan_paths['zl_path'], zl)
         arcpy.management.ApplySymbologyFromLayer(zl, simbology_path)
         arcpy.SetParameter(2, zl)

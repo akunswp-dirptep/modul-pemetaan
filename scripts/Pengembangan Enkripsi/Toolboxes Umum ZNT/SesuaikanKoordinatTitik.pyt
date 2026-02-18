@@ -1,7 +1,14 @@
 ﻿import arcpy
-from penilaiantanahutils.document import get_credentials as _get_creds_for_flag
-from penilaiantanahutils import zonalayer, samplepoint
 import os, json, requests, sys, math, re
+script_dir = os.path.dirname(__file__)
+parent_dir = os.path.dirname(script_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from zntutils import zona_layer as zonalayer
+from zntutils import sample_point as samplepoint
+from zntutils import document
+
 
 class Toolbox(object):
     def __init__(self):
@@ -56,7 +63,7 @@ class Sesuaikan_Koordinat_Titik(object):
         
         params = [nik, nomor_berkas, catatan]
         # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
-        self.is_gis_internal = bool(_get_creds_for_flag(credential_type="OperatorGISInternal", use_for_tools_validity=True))
+        self.is_gis_internal = bool(document.get_credentials(credential_type="OperatorGISInternal", use_for_tools_validity=True))
         if self.is_gis_internal:
             params.append(server)
             return params

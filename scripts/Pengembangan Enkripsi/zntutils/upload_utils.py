@@ -52,7 +52,6 @@ def main_upload(project_id, username, menu, tahapan, in_feature, tahun, kategori
                 for file in shapefile_components:
                     zipf.write(file, basename(file))
                     arcpy.AddMessage(f"Zipped file: {basename(file)}")
-            arcpy.AddMessage(f"Shapefile zipped at: {zipname}")
         except Exception as e:
             arcpy.AddError(f"Error creating zip file: {str(e)}")
             return
@@ -126,7 +125,6 @@ def main_upload_shapefile(project_id, username, menu, tahapan, in_feature, tahun
                 for file in shapefile_components:
                     zipf.write(file, basename(file))
                     arcpy.AddMessage(f"Zipped file: {basename(file)}")
-            arcpy.AddMessage(f"Shapefile zipped at: {zipname}")
         except Exception as e:
             arcpy.AddError(f"Error creating zip file: {str(e)}")
             return

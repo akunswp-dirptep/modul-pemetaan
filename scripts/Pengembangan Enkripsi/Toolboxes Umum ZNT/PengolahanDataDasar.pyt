@@ -196,7 +196,8 @@ class Toolbox:
         # List of tool classes associated with this toolbox
         self.tools = [Hitung_Luas_Zona_M2, 
                       Kodifikasi_Zona, 
-                      Upload_Peta_Zona_Awal_Nilai_Tanah]
+                      Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT,
+                      Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT]
 
 
 class Hitung_Luas_Zona_M2:
@@ -450,7 +451,7 @@ class Kodifikasi_Zona:
         added to the display."""
         return
 
-class Upload_Peta_Zona_Awal_Nilai_Tanah(object):
+class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Upload Peta Zona Awal Nilai Tanah"
@@ -572,6 +573,134 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah(object):
         validate_document_type(project_id, target='Pembuatan ZNT')
         self.preferred_server = get_preferred_server_connection()
         main_upload(project_id, username, "Survei Batas Zona Awal Nilai Tanah", "Survei Batas Zona Awal Nilai Tanah", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
+        if len(parameters) > 4 and server != self.preferred_server:
+            renew_preferred_server(server)
+        return        
+
+class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Upload Peta Zona Awal Nilai Tanah"
+        self.description = ""
+        self.canRunInBackground = False
+
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        self.is_gis_internal = is_internal()
+        self.preferred_server = get_preferred_server_connection()
+        self.current_year = int(datetime.now().year)
+        param0 = arcpy.Parameter(
+            displayName="Nomor Induk Kependudukan (NIK)",
+            name="username",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param1 = arcpy.Parameter(
+            displayName="Nomor Berkas",
+            name="project_id",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param2 = arcpy.Parameter(
+            displayName="Tahun",
+            name="tahun",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input")
+
+        param3 = arcpy.Parameter(
+            displayName="Zona Layer (Feature Class)",
+            name="feature_layer",
+            datatype="GPFeatureLayer",  
+            parameterType="Required",
+            direction="Input")
+        
+        param4 = arcpy.Parameter(
+            displayName="Server Sipenta",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        if self.current_year:
+            param2.value = self.current_year
+
+        if self.preferred_server:
+            param4.value = self.preferred_server
+
+        param4.filter.type = "ValueList"
+        param4.filter.list = ["Produksi", "Belajar"]
+        
+        params = [param0, param1, param2, param3]
+        # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
+        self.is_gis_internal = is_internal()
+        if self.is_gis_internal:
+            params.append(param4)
+            return params
+        else:
+            return params
+
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+        
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        input_nik = parameters[0]
+        if input_nik.value:
+            # Trim semua spasi (leading, trailing, dan di tengah)
+            nik_str = str(input_nik.value).replace(" ", "")
+            # sinkronkan nilai parameter yang ditampilkan
+            input_nik.value = nik_str
+            
+            # Cek apakah hanya berisi angka
+            if not nik_str.isdigit():
+                input_nik.setErrorMessage("NIK harus berisi angka saja")
+            # Cek apakah panjangnya tepat 16
+            elif len(nik_str) != 16:
+                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
+            else:
+                input_nik.clearMessage()
+
+        # Validasi format Nomor Berkas (project_id): harus seperti 01/2025/0020
+        input_project = parameters[1]
+        if input_project.value:
+            pj_str = str(input_project.value).strip()
+            input_project.value = pj_str
+
+            # Pola: 2 digit / 4 digit (tahun) / 4 digit
+            import re
+            pattern = r"^\d{2}/\d{4}/\d{4}$"
+            if not re.match(pattern, pj_str):
+                input_project.setErrorMessage("Nomor Berkas harus berbentuk NN/YYYY/NNNN, contoh: 01/2025/0020")
+            else:
+                input_project.clearMessage()
+        return   
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        username = str(parameters[0].valueAsText).replace(" ", "")
+        project_id = str(parameters[1].valueAsText).replace(" ", "")
+        tahun = parameters[2].valueAsText
+        feature_class = parameters[3].valueAsText
+        server = parameters[4].valueAsText if len(parameters) > 4 else None
+        use_production = True if server == "Produksi" or server == None else False
+        
+        self.preferred_server = get_preferred_server_connection()
+        validate_document_type(project_id, target='Pembaruan ZNT')
+        main_upload(project_id, username, "pembaruan_znt_peta_hasil_survei_batas_zona_shp", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
+        
+        
         if len(parameters) > 4 and server != self.preferred_server:
             renew_preferred_server(server)
         return        

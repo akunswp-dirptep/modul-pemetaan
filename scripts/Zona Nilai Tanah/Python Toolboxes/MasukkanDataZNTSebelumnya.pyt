@@ -211,9 +211,11 @@ class Masukkan_Data_ZNT_Sebelumnya:
         arcpy.management.CalculateField(zona_layer_temp_path, "NILBULAT_LAMA", f"get(!{nilai}!, '1000')", "PYTHON3", code_block2)  # Salin nilai bulat
         arcpy.management.DeleteField(zona_layer_temp_path, nilai)  # Hapus field nilai asli jika berbeda
         
+        # NOZN tidak terbaca,
         arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
         arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
-        arcpy.management.DeleteField(zona_layer_temp_path, nomorzone)  # Hapus field nomorzone asli jika berbeda
+        if nomorzone != "NOZN":
+            arcpy.management.DeleteField(zona_layer_temp_path, nomorzone)
 
         if jeniszona:
             if jeniszona != "JNSZN":

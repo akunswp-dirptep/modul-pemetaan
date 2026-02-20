@@ -1418,6 +1418,7 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan(object):
 
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload_shapefile(project_id, username, "pembaruan_znt_peta_rencana_area_kerja", "Persiapan", "Zona_Layer", tahun, "ZNT", shapefile_path, use_production)
+        
         return
 
 #========== Persiapan - Peta Lokasi Kegiatan ==========
@@ -1522,6 +1523,7 @@ class Upload_Peta_Area_Kerja_Pembaruan(object):
 
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload_shapefile(project_id, username, "pembaruan_znt_peta_area_kerja_yang_disepakati", "Persiapan", "Zona_Layer", tahun, "ZNT", shapefile_path, use_production)
+        
         return
 
 
@@ -1758,6 +1760,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan(object):
 
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload(project_id, username, "pembaruan_znt_peta_hasil_survei_batas_zona_shp", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
+        
         return        
 
 #========== Analisis dan Pengolahan Data - Peta Sebaran Sampel ==========

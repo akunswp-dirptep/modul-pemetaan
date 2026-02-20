@@ -494,7 +494,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                     if match:
                         # Nomor sampel yang BERHASIL diperbarui di server
                         nomor_sampel_berhasil = [n.strip() for n in match[0].split(",") if n.strip()]
-                        arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {', '.join(nomor_sampel_berhasil)}, Segera cek dan lakukan refresh data pada excel di tahap 5")
+                        arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {', '.join(nomor_sampel_berhasil)}, Segera cek dan lakukan refresh data di tahap 5")
 
                         # Semua nomor dari JSON data
                         semua_nomor_json = [str(item["no_sampel"]) for item in json_data["data"]]
@@ -671,7 +671,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 sys.exit(1)
 
             elif response.status_code == 200:
-                arcpy.AddWarning(f"Sampel berhasil diperbaharaui di Sipenta, Segera cek dan lakukan refresh data pada excel di tahap 5")
+                arcpy.AddWarning(f"Sampel berhasil diperbaharaui di Sipenta, Segera cek dan lakukan refresh data di tahap 5")
             else:
                 # Untuk status code lainnya
                 arcpy.AddWarning(f"Server mengembalikan status {response.status_code}: {response.text}")
@@ -815,7 +815,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                     success_sampel = json_response['data']
                     if success_sampel:
                         # Nomor sampel yang BERHASIL diperbarui di Sipenta
-                        arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {success_sampel}, Segera cek dan lakukan refresh data pada excel di tahap 5")
+                        arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {success_sampel}, Segera cek dan lakukan refresh data di tahap 5")
 
                         # Semua nomor dari JSON data
                         semua_nomor_json = [int(item["no_sampel"]) for item in json_data["data"]]

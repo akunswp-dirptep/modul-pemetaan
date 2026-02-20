@@ -575,7 +575,7 @@ class Sesuaikan_Titik_Koordinat(object):
                     if match:
                         # Nomor sampel yang BERHASIL diperbarui di server
                         nomor_sampel_berhasil = [n.strip() for n in match[0].split(",") if n.strip()]
-                        arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {', '.join(nomor_sampel_berhasil)}, Segera lakukan sync data excel di tahap 5")
+                        arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {', '.join(nomor_sampel_berhasil)}, Segera lakukan sync data di tahap 5")
 
                         # Semua nomor dari JSON data
                         semua_nomor_json = [str(item["no_sampel"]) for item in json_data["data"]]

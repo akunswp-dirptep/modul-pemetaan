@@ -1,5 +1,13 @@
 ﻿import os, arcpy, json, sys
-from penilaiantanahutils import zonalayer, samplepoint
+
+# Tambahkan parent directory ke sys.path
+script_dir = os.path.dirname(__file__)
+parent_dir = os.path.dirname(script_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from zntutils import zona_layer as zonalayer
+from zntutils import sample_point as samplepoint
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -46,7 +54,22 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
             "tools hitung indeks sampel untuk titik terpilih\n"
         )
 
-        params = [penjelasan]
+        titik_zona = arcpy.Parameter(
+            name="titik_zona",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output",
+        )
+
+        titik_sampel = arcpy.Parameter(
+            name="titik_sampel",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output",
+        )
+
+        params = [penjelasan, titik_zona, titik_sampel]
+        
         return params
 
     def isLicensed(self):
@@ -136,18 +159,19 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
         filter_clause = "{} <> 'Individual'".format(field_delimited)
         arcpy.AddMessage(filter_clause)
         titik_zona_path = arcpy.conversion.FeatureClassToFeatureClass(tzt, self.dataset_path, "Titik_Zona", filter_clause)[0]
-        aprx = arcpy.mp.ArcGISProject('CURRENT')
+        ui_folder = os.path.join(self.appdata, "ui")
+        symbology_folder = os.path.join(ui_folder, "symbology")
+        tz_simbology_path = os.path.join(symbology_folder, "Titik_Zona.lyrx")
+        ts_simbology_path = os.path.join(symbology_folder, "Titik_Sampel.lyrx")
 
-        current_map = aprx.activeMap
-        existing_layers = current_map.listLayers("Titik_Sampel")
-        for layer in existing_layers:
-            current_map.removeLayer(layer)
+        arcpy.management.MakeFeatureLayer(titik_zona_path, "Titik_Zona")
+        arcpy.management.ApplySymbologyFromLayer("Titik_Zona", tz_simbology_path)
 
-        current_map.addDataFromPath(ts)
-        current_map.addDataFromPath(titik_zona_path)
-        # Refresh view
-        aprx.save()
-        del aprx
+        arcpy.management.MakeFeatureLayer(ts, "Titik_Sampel")
+        arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", ts_simbology_path)
+
+        arcpy.SetParameter(1, "Titik_Zona")
+        arcpy.SetParameter(2, "Titik_Sampel")
 
         # Use UpdateCursor within a 'with' statement for proper resource management
         try:
@@ -166,8 +190,6 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
 
         arcpy.management.Delete(tzt)
         arcpy.management.Delete(hi)
-
-        
 
 class Perhitungan_Indeks_Titik_Sampel_Terpilih:
     def __init__(self):

@@ -3,6 +3,11 @@ import sys
 import uuid
 import arcpy, os, json
 
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import base64
+
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
@@ -11,8 +16,171 @@ if parent_dir not in sys.path:
 
 from zntutils.constant import NAMA_PROVINSI, KAB_KOTA
 from zntutils.document import validate_document_type, get_credentials
-from zntutils.upload_utils import main_upload_shapefile
+from zntutils.upload_utils import main_upload_shapefile, main_upload
 from zntutils.system_utils import get_preferred_server_connection, setup_preferred_server_connection
+from zntutils import zona_layer as zonalayer
+
+#Helper Functions
+def is_internal():
+    try:
+        return bool(get_credentials(credential_type="OperatorGISInternal", use_for_tools_validity=True))
+        # return True
+    except Exception:
+        return False
+
+def current_year():
+    try:
+        return int(datetime.now().year)
+    except Exception:
+        return None
+
+
+# Cryptography Functions
+def generate_key():
+    password = 'bpnri-jakarta'
+    salt = b'Sisinga@2-Jakarta'  
+
+    # Derive proper key dari password
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100000,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    return key
+
+def simpan_ke_bin(data_terenkripsi, nama_file):
+    """Menyimpan data bytes ke dalam file biner."""
+    try:
+        with open(nama_file, 'wb') as file:
+            file.write(data_terenkripsi)
+        print(f"Pesan berhasil disimpan ke {nama_file}")
+    except IOError as e:
+        print(f"Terjadi kesalahan saat menulis ke file: {e}")
+
+def baca_dari_bin(nama_file):
+    """Membaca data bytes dari file biner."""
+    data_terenkripsi = None
+    try:
+        with open(nama_file, 'rb') as file:
+            data_terenkripsi = file.read()
+        print(f"Pesan berhasil dibaca dari {nama_file}")
+        return data_terenkripsi
+    except IOError as e:
+        print(f"Terjadi kesalahan saat membaca file: {e}")
+        return None
+    
+def encrypt_message(message: str, key: bytes, path) -> bytes:
+    fernet = Fernet(key)
+    encrypted_message = fernet.encrypt(message.encode())
+    simpan_ke_bin(encrypted_message, path)
+    return encrypted_message
+
+def decrypt_message(key: bytes, path) -> str:
+    encrypted_message = baca_dari_bin(path)
+    fernet = Fernet(key)
+    decrypted_message = fernet.decrypt(encrypted_message).decode()
+    data = json.loads(decrypted_message)
+    return data
+
+def get_preferred_server_connection():
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+
+    try:
+        if os.path.exists(config_path):
+            data = decrypt_message(generate_key(), config_path) 
+            preferred_server = data.get('preferred_server', None)
+            return preferred_server
+        else:
+            return None
+        
+    except Exception as e:
+        arcpy.AddError(f"Gagal membaca user config: {str(e)}")
+        return None
+    
+def setup_preferred_server_connection(preferred_server: str):
+
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+
+    try:
+        # Cek apakah file ada
+        if os.path.exists(config_path):
+            # File ada, baca isinya
+            try:
+                data = decrypt_message(generate_key(), config_path)                    
+                # Validasi format JSON
+                if 'preferred_server' not in data or not isinstance(data['preferred_server'], str):
+                    # Format tidak sesuai, buat struktur baru
+                    data = {"preferred_server": preferred_server}
+                
+                if data['preferred_server'] != preferred_server:
+                    data['preferred_server'] = preferred_server
+                    
+            except json.JSONDecodeError:
+                # File rusak/tidak valid, buat struktur baru
+                arcpy.AddWarning("File config.json rusak, membuat struktur baru...")
+                data = {"preferred_server": preferred_server}
+        else:
+            # File belum ada, buat struktur baru
+            # Pastikan direktori Menu ada
+            menu_dir = os.path.dirname(config_path)
+            if not os.path.exists(menu_dir):
+                os.makedirs(menu_dir)
+            
+            data = {"preferred_server": preferred_server}
+        
+
+        # Simpan kembali ke file
+        encrypt_message(json.dumps(data), generate_key(), config_path)
+        
+        return True
+        
+    except Exception as e:
+        arcpy.AddError(f"Gagal menyimpan user config: {str(e)}")
+        return False
+
+def reload_all_toolboxes_in_folder(toolbox_folder):
+     
+    if not os.path.exists(toolbox_folder):
+        arcpy.AddError(f"Folder toolbox tidak ditemukan: {toolbox_folder}")
+        return
+        
+     # Cari semua file .pyt di folder
+    pyt_files = [f for f in os.listdir(toolbox_folder) if f.endswith('.pyt')]
+        
+    if not pyt_files:
+        arcpy.AddWarning(f"Tidak ada file .pyt ditemukan di {toolbox_folder}")
+        return
+        
+    # Load toolbox di proyek saat ini
+    try:
+        # Hapus dan reload menggunakan ImportToolbox (lebih reliable)
+        for pyt_file in pyt_files:
+            pyt_path = os.path.join(toolbox_folder, pyt_file)
+            try:
+                arcpy.ImportToolbox(pyt_path)
+            except Exception as e:
+                arcpy.AddWarning(f"Gagal memuat ulang {pyt_file}: {str(e)}")
+            
+    except Exception as e:
+        arcpy.AddWarning(f"Error saat reload toolbox: {str(e)}")
+
+def renew_preferred_server(server:str):
+    
+    setup_preferred_server_connection(server)
+    all_toolboxes_folder_need_reload = [
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT",
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT",
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT"
+            ]
+
+    try:
+        for folder in all_toolboxes_folder_need_reload:
+            reload_all_toolboxes_in_folder(folder)
+
+    except Exception as e:
+        arcpy.AddWarning(f"Gagal memuat ulang toolbox: {str(e)}")
 
 class Toolbox:
     def __init__(self):
@@ -22,84 +190,292 @@ class Toolbox:
         self.alias = "Toolbox Persiapan Data"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Buat_Workspace_Pembaruan_ZNT]
+        self.tools = [Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT,
+                      Upload_Peta_Area_Kerja_Pembaruan_ZNT,
+                      Masukkan_Data_ZNT_Sebelumnya,
+                      Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT]
+
+class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
+    def __init__(self):
+        self.label = "Upload Peta Rencana Area Kerja"
+        self.description = ""
+        self.canRunInBackground = False
 
 
-class Buat_Workspace_Pembaruan_ZNT:
+    def getParameterInfo(self):
+        self.is_gis_internal = is_internal()
+        self.preferred_server = get_preferred_server_connection()
+        self.current_year = current_year()
+
+        param0 = arcpy.Parameter(
+            displayName="Nomor Induk Kependudukan (NIK)",
+            name="username",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param1 = arcpy.Parameter(
+            displayName="Nomor Berkas",
+            name="project_id",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param2 = arcpy.Parameter(
+            displayName="Tahun",
+            name="tahun",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input")
+
+        param3 = arcpy.Parameter(
+            displayName="Shapefile Rencana Area Kerja (.shp)",
+            name="shapefile_path",
+            datatype="DEFile",  
+            parameterType="Required",
+            direction="Input")
+        
+        param4 = arcpy.Parameter(
+            displayName="Server Sipenta",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+               
+        if self.current_year:
+            param2.value = self.current_year
+
+        if self.preferred_server:
+            param4.value = self.preferred_server
+
+        param4.filter.type = "ValueList"
+        param4.filter.list = ["Produksi", "Belajar"]
+        
+        params = [param0, param1, param2, param3]
+        # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
+        self.is_gis_internal = is_internal()
+        if self.is_gis_internal:
+            params.append(param4)
+            return params
+        else:
+            return params
+        
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        input_nik = parameters[0]
+        if input_nik.value:
+            # Trim semua spasi (leading, trailing, dan di tengah)
+            nik_str = str(input_nik.value).replace(" ", "")
+            # sinkronkan nilai parameter yang ditampilkan
+            input_nik.value = nik_str
+            
+            # Cek apakah hanya berisi angka
+            if not nik_str.isdigit():
+                input_nik.setErrorMessage("NIK harus berisi angka saja")
+            # Cek apakah panjangnya tepat 16
+            elif len(nik_str) != 16:
+                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
+            else:
+                input_nik.clearMessage()
+
+        # Validasi format Nomor Berkas (project_id): harus seperti 01/2025/0020
+        input_project = parameters[1]
+        if input_project.value:
+            pj_str = str(input_project.value).strip()
+            input_project.value = pj_str
+
+            # Pola: 2 digit / 4 digit (tahun) / 4 digit
+            import re
+            pattern = r"^\d{2}/\d{4}/\d{4}$"
+            if not re.match(pattern, pj_str):
+                input_project.setErrorMessage("Nomor Berkas harus berbentuk NN/YYYY/NNNN, contoh: 01/2025/0020")
+            else:
+                input_project.clearMessage()
+        return   
+    
+    def execute(self, parameters, messages):
+        username = str(parameters[0].valueAsText).replace(" ", "")
+        project_id = str(parameters[1].valueAsText).replace(" ", "")
+        tahun = parameters[2].valueAsText
+        shapefile_path = parameters[3].valueAsText
+        server = parameters[4].valueAsText if len(parameters) > 4 else None
+        use_production = True if server == "Produksi" or server == None else False
+        self.preferred_server = get_preferred_server_connection()
+
+        validate_document_type(project_id, target='Pembaruan ZNT')
+        main_upload_shapefile(project_id, username, "pembaruan_znt_peta_rencana_area_kerja", "Persiapan", "Zona_Layer", tahun, "ZNT", shapefile_path, use_production)
+        
+        if len(parameters) > 4 and server != self.preferred_server:
+            renew_preferred_server(server)
+
+        return
+
+class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
+    def __init__(self):
+        self.label = "Upload Peta Area Kerja"
+        self.description = ""
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        self.preferred_server = get_preferred_server_connection()
+        self.current_year = current_year()
+        param0 = arcpy.Parameter(
+            displayName="Nomor Induk Kependudukan (NIK)",
+            name="username",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param1 = arcpy.Parameter(
+            displayName="Nomor Berkas",
+            name="project_id",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param2 = arcpy.Parameter(
+            displayName="Tahun",
+            name="tahun",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input")
+        
+        param3 = arcpy.Parameter(
+            displayName="Shapefile Area Kerja (.shp)",
+            name="shapefile_path",
+            datatype="DEFile",  
+            parameterType="Required",
+            direction="Input")
+        
+        param4 = arcpy.Parameter(
+            displayName="Server Sipenta",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        
+        if self.current_year:
+            param2.value = self.current_year
+        
+        if self.preferred_server:
+            param4.value = self.preferred_server
+
+        param4.filter.type = "ValueList"
+        param4.filter.list = ["Produksi", "Belajar"]
+        
+        params = [param0, param1, param2, param3]
+        # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
+        self.is_gis_internal = is_internal()
+        if self.is_gis_internal:
+            params.append(param4)
+            return params
+        else:
+            return params
+        
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        input_nik = parameters[0]
+        if input_nik.value:
+            # Trim semua spasi (leading, trailing, dan di tengah)
+            nik_str = str(input_nik.value).replace(" ", "")
+            # sinkronkan nilai parameter yang ditampilkan
+            input_nik.value = nik_str
+            
+            # Cek apakah hanya berisi angka
+            if not nik_str.isdigit():
+                input_nik.setErrorMessage("NIK harus berisi angka saja")
+            # Cek apakah panjangnya tepat 16
+            elif len(nik_str) != 16:
+                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
+            else:
+                input_nik.clearMessage()
+
+        # Validasi format Nomor Berkas (project_id): harus seperti 01/2025/0020
+        input_project = parameters[1]
+        if input_project.value:
+            pj_str = str(input_project.value).strip()
+            input_project.value = pj_str
+
+            # Pola: 2 digit / 4 digit (tahun) / 4 digit
+            import re
+            pattern = r"^\d{2}/\d{4}/\d{4}$"
+            if not re.match(pattern, pj_str):
+                input_project.setErrorMessage("Nomor Berkas harus berbentuk NN/YYYY/NNNN, contoh: 01/2025/0020")
+            else:
+                input_project.clearMessage()
+        return   
+   
+    def execute(self, parameters, messages):
+        username = str(parameters[0].valueAsText).replace(" ", "")
+        project_id = str(parameters[1].valueAsText).replace(" ", "")
+        tahun = parameters[2].valueAsText
+        shapefile_path = parameters[3].valueAsText
+        server = parameters[4].valueAsText if len(parameters) > 4 else None
+        use_production = True if server == "Produksi" or server == None else False
+        
+        validate_document_type(project_id, target='Pembaruan ZNT')
+        main_upload_shapefile(project_id, username, "pembaruan_znt_peta_area_kerja_yang_disepakati", "Persiapan", "Zona_Layer", tahun, "ZNT", shapefile_path, use_production)
+        
+        self.preferred_server = get_preferred_server_connection()
+        if len(parameters) > 4 and server != self.preferred_server:
+            renew_preferred_server(server)
+        return        
+
+class Masukkan_Data_ZNT_Sebelumnya(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Buat Workspace Pembaruan ZNT"
-        self.description = "Tool untuk membuat workspace menyimpan konfigurasi untuk pembaruan data ZNT."
+        self.label = "Masukkan Data ZNT Sebelumnya"
+        self.description = ""
 
     def getParameterInfo(self):
         """Define the tool parameters."""
-
-        current_year = datetime.now().year
-        
-        coordinate_system = arcpy.Parameter(
-            displayName="Referensi Sistem Koordinat",
-            name="coordinate_system",
-            datatype="GPCoordinateSystem",
-            parameterType="Required",
-            direction="Input")
-        
-        workspace_folder = arcpy.Parameter(
-            displayName="Workspace",
-            name="workspace_folder",
-            datatype="DEWorkspace",
-            parameterType="Required",
-            direction="Input")
-        
-        provinsi = arcpy.Parameter(
-            displayName="Provinsi",
-            name="provinsi",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        provinsi.filter.type = "ValueList"
-        provinsi.filter.list = NAMA_PROVINSI
-
-        kab_kota = arcpy.Parameter(
-            displayName="Kabupaten/Kota",
-            name="kab_kota",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-
-        tahun_penilaian = arcpy.Parameter(
-            displayName="Tahun Penilaian",
-            name="tahun_penilaian",
-            datatype="GPLong",
+                # 1. Input layer ZNT Lama
+        znt_awal = arcpy.Parameter(
+            displayName="Pilih Data ZNT",
+            name="old_znt_layer",
+            datatype="GPFeatureLayer",
             parameterType="Required",
             direction="Input"
         )
 
-        tahun_penilaian.value = current_year
-
-        feature_layer = arcpy.Parameter(
-            name="feature_layer",
-            datatype="GPFeatureLayer",
-            parameterType="Derived",
-            direction="Output"
+        # === 2. Parameter mapping field (dengan filter Field) ===
+        nomorzone = arcpy.Parameter(
+            displayName="Pilih Field Nomor Zona",
+            name="nomorzone_field",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
         )
-        
-        return [coordinate_system, workspace_folder, provinsi, kab_kota, tahun_penilaian, feature_layer]
 
+        nomorzone.parameterDependencies = [znt_awal.name]
+
+        nilai = arcpy.Parameter(
+            displayName="Pilih Field Nilai",
+            name="nilai_field",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        nilai.parameterDependencies = [znt_awal.name]
+
+        jeniszona = arcpy.Parameter(
+            displayName="Pilih Field Jenis Zona",
+            name="jeniszona_field",
+            datatype="Field",
+            parameterType="Optional",
+            direction="Input"
+        )
+        jeniszona.parameterDependencies = [znt_awal.name]
+
+
+        return [znt_awal, nomorzone, nilai, jeniszona]
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
         return True
 
     def updateParameters(self, parameters):
-        prov = parameters[2].valueAsText  # parameter Provinsi
-        kab = parameters[3]               # parameter Kab/Kota
-
-        if prov:
-            kab.filter.type = "ValueList"
-            kab.filter.list = KAB_KOTA.get(prov, [])
-        else:
-            kab.filter.list = []
-
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
 
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
@@ -108,85 +484,475 @@ class Buat_Workspace_Pembaruan_ZNT:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        coord = parameters[0].valueAsText
-        ws_path = parameters[1].valueAsText 
-        WADMPR = parameters[2].valueAsText
-        WADMKK = parameters[3].valueAsText
-        THNNILAI = parameters[4].valueAsText
+        znt_lama = parameters[0].valueAsText
+        nomorzone = parameters[1].valueAsText
+        nilai = parameters[2].valueAsText
+        jeniszona = parameters[3].valueAsText if parameters[3].valueAsText else None
 
-        gdbname = "ZoneNilaiTanah.gdb"
+        dataset_path, tahun, provinsi, kota, coor, gdb_path = zonalayer.get_config_values()
 
-        local_conf_path = os.path.join(ws_path, "config.json")
+        # --- Validasi: pastikan field nomorzone dan nilai tidak NULL dan bernilai numerik
+        fields = [nomorzone, nilai, jeniszona] if jeniszona else [nomorzone, nilai]
 
-        gdb_path = os.path.join(ws_path, gdbname)
-        dataset_name = 'znt_ds'
-        dataset_path = os.path.join(gdb_path, dataset_name)
+        if not znt_lama:
+            messages.addErrorMessage("Input ZNT belum ditentukan.")
+            return
 
-        id = str(uuid.uuid4())
+        try:
+            with arcpy.da.SearchCursor(znt_lama, fields) as cursor:
+                rownum = 0
+                for row in cursor:
+                    rownum += 1
+                    for i, val in enumerate(row):
+                        field_name = fields[i]
+                        # Null atau empty string dianggap tidak valid
+                        if val is None:
+                            messages.addErrorMessage(f"Field '{field_name}' mengandung nilai NULL pada record {rownum}. Semua nilai harus terisi dan numeric atau dapat dikonversi ke angka.")
+                            return
+                        if isinstance(val, str):
+                            s = val.strip()
+                            if s == "":
+                                messages.addErrorMessage(f"Field '{field_name}' mengandung string kosong pada record {rownum}.")
+                                return
+                            try:
+                                float(s)
+                            except Exception:
+                                messages.addErrorMessage(f"Field '{field_name}' value '{s}' pada record {rownum} bukan angka dan tidak dapat dikonversi ke angka.")
+                                return
+                        elif isinstance(val, (int, float)):
+                            # sudah numeric, lanjut
+                            continue
+                        else:
+                            # coba konversi ke float sebagai upaya terakhir
+                            try:
+                                float(val)
+                            except Exception:
+                                messages.addErrorMessage(f"Field '{field_name}' value '{val}' pada record {rownum} bukan angka dan tidak dapat dikonversi ke angka.")
+                                return
+        except arcpy.ExecuteError:
+            messages.addErrorMessage(f"Gagal membaca layer: {arcpy.GetMessages(2)}")
+            return
 
-        # Koordinat harus TM-3
-        if coord is None or 'DGN_1995_Indonesia_TM-3_Zone' not in coord.strip():
-            arcpy.AddError( "Proyeksi Sistem Koordinat harus DGN_1995_Indonesia_TM-3 ")
-            sys.exit(1)
+        messages.addMessage("Validasi field nomor zona dan nilai: OK.")
+        # --- Proses memasukkan data ZNT sebelumnya ke layer ZNT saat ini
+        zona_layer_path = os.path.join(dataset_path, "Zona_Layer")
+        zona_layer_temp_path = os.path.join(dataset_path, "Zona_Layer_Temp")
+        # Hapus topology dan layer zona jika sudah ada
+        topo = os.path.join(dataset_path, "Zona_Layer_Topology")
+        if arcpy.Exists(topo):
+            arcpy.management.Delete(topo)
 
-        # Membuat data konfigurasi dalam format dictionary
-        config_data = {
-            "id": id,
-            "ws_path": ws_path,
-            "dataset_path": dataset_path,
-            "WADMPR": WADMPR,
-            "WADMKK": WADMKK,
-            "THNNILAI": THNNILAI,
-            "coord": coord,
-            "gdb_path": gdb_path
-        }
+        if arcpy.Exists(zona_layer_path):
+            arcpy.management.Delete(zona_layer_path)
 
-        with open(local_conf_path, 'w') as f:
-            json.dump(config_data, f, indent=4)
+        if arcpy.Exists(zona_layer_temp_path):
+            arcpy.management.Delete(zona_layer_temp_path)
 
-        if arcpy.Exists(gdb_path):
-            arcpy.management.Delete(gdb_path)
+        field_mappings = arcpy.FieldMappings()
+        field_mappings.addTable(znt_lama)
 
-        arcpy.management.CreateFileGDB(ws_path, gdbname)
-        arcpy.management.CreateFeatureDataset(gdb_path, dataset_name, coord)
-        ds_path = os.path.join(gdb_path, dataset_name)
-        layer_path = os.path.join(ds_path, "Zona_Layer")
+        # Hapus field OBJECTID dari field mappings
+        for field_map in field_mappings.fieldMappings:
+            if field_map.outputField.name.upper() == "OBJECTID":
+                field_mappings.removeFieldMap(field_mappings.findFieldMapIndex(field_map.outputField.name))
 
-        arcpy.management.CreateFeatureclass(
-            out_path=ds_path,
-            out_name="Zona_Layer",
-            geometry_type="POLYGON",
-            spatial_reference=coord
-
+        # ======================
+        # KONVERSI FITUR
+        # ======================
+        arcpy.conversion.FeatureClassToFeatureClass(
+            znt_lama,
+            dataset_path,
+            "Zona_Layer_Temp",
+            field_mapping=field_mappings
         )
+
+        # ======================
+        # FIELD CALCULATIONS
+        # ======================
+
+        """
+        Simpan data lama dahulu
+        """
+
+        old_value_fields = [{'name': "NILAIZN_LAMA", 'data_type': "LONG"},
+                        {'name': "NILBULAT_LAMA", 'data_type': "TEXT"}]
+        input_features_fields = [f.name for f in arcpy.ListFields(znt_lama)]
+
+        for field in old_value_fields:
+            if field['name'] in input_features_fields:
+                arcpy.management.CalculateField(zona_layer_temp_path, field['name'], "None", "PYTHON3") 
+            else:
+                arcpy.management.AddField(zona_layer_temp_path, field['name'], field['data_type'])
+
+        # Fungsi untuk pembulatan nilai zona
+        code_block = """def get(a):
+            if a:
+                return round(a) 
+            else:
+                return a  # Pertahankan nilai null"""
+
+        # Fungsi untuk format nilai mata uang dengan pembulatan
+        code_block2 = """def get(a, b):
+            if a:
+                # Bulatkan nilai berdasarkan parameter, format ke Rupiah
+                valu = round((int(a)/int(b)), 0)*int(b)
+                return 'Rp. ' + (f'{int(float(valu)):,}').replace(',', '.')  # Format dengan titik sebagai pemisah ribuan
+            else:
+                return a  # Pertahankan nilai null"""
         
-        double_field = [
-                        "NILAIZN",
-                        "SMPBAKU",
-                        "SMPBKREL" 
-                    ]
-        long_field = ["NILMIN",
-                    "NILMAX",
-                    "NOZONE"
-                    ]
-        text_field = ["WADMPR",
-                    "WADMKK",
-                    ]
+        kode_jenis_zona = """def get_jenis_zona(a):
+            if a == 1:
+                return 'Non-Pertanian'
+            elif a == 2:
+                return 'Pertanian'"""
 
+        # Perhitungan field untuk berbagai kolom:
+        arcpy.management.CalculateField(zona_layer_temp_path, "NILAIZN_LAMA", f"get(!{nilai}!)", "PYTHON3", code_block)  # Salin nilai asli
+        arcpy.management.CalculateField(zona_layer_temp_path, "NILBULAT_LAMA", f"get(!{nilai}!, '1000')", "PYTHON3", code_block2)  # Salin nilai bulat
+        arcpy.management.DeleteField(zona_layer_temp_path, nilai)  # Hapus field nilai asli jika berbeda
+        
+        # NOZN tidak terbaca,
+        arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
+        arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
+        if nomorzone != "NOZN":
+            arcpy.management.DeleteField(zona_layer_temp_path, nomorzone)
 
-        for field in double_field:
-            arcpy.management.AddField(layer_path, field, "DOUBLE", field_is_nullable="NULLABLE")
+        if jeniszona:
+            if jeniszona != "JNSZN":
+                arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
+                arcpy.management.CalculateField(zona_layer_temp_path, 'JNSZN', f"!{jeniszona}!", "PYTHON3")
+                arcpy.management.CalculateField(zona_layer_temp_path, 'PENGGUNAAN', f"get_jenis_zona(!{jeniszona}!)", "PYTHON3", kode_jenis_zona)
+                arcpy.management.DeleteField(zona_layer_temp_path, jeniszona)
+        else:
+                arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
+                arcpy.management.CalculateField(zona_layer_temp_path, "JNSZN", "1", "PYTHON3")  # Set default ke 1
+                arcpy.management.AddField(zona_layer_temp_path, "PENGGUNAAN", "TEXT")
+                arcpy.management.CalculateField(zona_layer_temp_path, "PENGGUNAAN", "'Non-Pertanian'", "PYTHON3")  # Set default
 
-        for field in long_field:
-            arcpy.management.AddField(layer_path, field, "LONG", field_is_nullable="NULLABLE")
+        self.check_and_prepare_nomor_zona(zona_layer_temp_path)
 
-        for field in text_field:
-            arcpy.management.AddField(layer_path, field, "TEXT", field_is_nullable="NULLABLE")
+        # --- Hapus field yang tidak diinginkan ---
+        all_fields = [f.name for f in arcpy.ListFields(zona_layer_temp_path)]
+        
+        # Dapatkan nama field geometri dan ObjectID
+        desc = arcpy.Describe(zona_layer_temp_path)
+        shape_field_name = desc.shapeFieldName
+        oid_field_name = desc.OIDFieldName
 
-        arcpy.SetParameter(5, layer_path)
+        # Field yang ingin dipertahankan
+        desired_fields = ["NOZN", "NILAIZN", "JNSZN", "PENGGUNAAN", "NILAIZN_LAMA", "NILBULAT", "NILBULAT_LAMA", "HISTZONE", shape_field_name, oid_field_name]
+        
+        # Tambahkan field yang diperlukan sistem (seperti Shape_Length, Shape_Area) ke daftar yang dipertahankan
+        for field in desc.fields:
+            if not field.editable:
+                if field.name not in desired_fields:
+                    desired_fields.append(field.name)
+
+        fields_to_delete = [f for f in all_fields if f not in desired_fields]
+
+        if fields_to_delete:
+            arcpy.management.DeleteField(zona_layer_temp_path, fields_to_delete)
+
+        required_fields = [
+                            {'name': "SMPBKREL", 'data_type': "DOUBLE"},
+                            {'name': "SMPBAKU", 'data_type': "DOUBLE"},
+                            {'name': "NILAIZN", 'data_type': "LONG"},
+                            {'name': "JMLSMPL", 'data_type': "SHORT"},
+                            {'name': "NILBULAT", 'data_type': "TEXT"},
+                            {'name': "NILMIN", 'data_type': "LONG"},
+                            {'name': "NILMAKS", 'data_type': "LONG"},
+                            {'name': "cluster", 'data_type': "TEXT"},
+                            {'name': "WADMKK", 'data_type': "TEXT"},
+                            {'name':"WADMPR", 'data_type': "TEXT"},
+                            {'name': "THNNILAI", 'data_type': "SHORT"}]
+
+        for field in required_fields:
+            if field['name'] in input_features_fields:
+                arcpy.management.CalculateField(zona_layer_temp_path, field['name'], "None", "PYTHON3") 
+            else:
+                arcpy.management.AddField(zona_layer_temp_path, field['name'], field['data_type'])
+
+        # Set nilai default
+        arcpy.management.CalculateField(zona_layer_temp_path, "WADMKK", "'"+str(kota)+"'", "PYTHON3")  # Set kode kabupaten/kota
+        arcpy.management.CalculateField(zona_layer_temp_path, "WADMPR", "'"+str(provinsi)+"'", "PYTHON3")  # Set kode provinsi
+        arcpy.management.CalculateField(zona_layer_temp_path, "THNNILAI", tahun, "PYTHON3")  # Set tahun nilai
+        arcpy.management.CalculateField(zona_layer_temp_path, "cluster", "1", "PYTHON3")  # Set cluster default
+
+        zona_layer_fields = [f.name for f in arcpy.ListFields(zona_layer_temp_path)]
+        # Tambah field JNSZN (jenis zona) jika belum ada
+
+        if "HISTZONE" not in zona_layer_fields:
+            """
+            JIKA HISTZONE BELUM ADA:
+            Membuat field HISTZONE baru dengan urutan nomor dan tipe zona
+            """
+            
+
+            # Membuat field sementara untuk menyimpan tipe zona
+            arcpy.management.AddField(zona_layer_temp_path, "temp", "STRING")
+
+            # Mengisi field temp dengan 'N' atau 'P' berdasarkan JNSZN. N berarti NON-PERTANIAN, P berarti PERTANIAN
+            expression = "abc(!JNSZN!)"
+            codeblock = """def abc(JNSZN):
+                if JNSZN == 1:
+                    return 'N'  
+                elif JNSZN == 2:
+                    return 'P'  
+                else:
+                    return ''   
+                """
+            arcpy.management.CalculateField(zona_layer_temp_path, "temp", expression, "PYTHON3", codeblock)
+            
+            # Menggabungkan NOZN dan temp menjadi HISTZONE (contoh: "1N", "2P")
+            arcpy.management.CalculateField(zona_layer_temp_path, "HISTZONE", "str(!NOZN!) + !temp!", "PYTHON3")
+            
+            # Menghapus field sementara
+            arcpy.management.DeleteField(zona_layer_temp_path, "temp")
+
+        # Update penggunaan lahan berdasarkan jenis zona
+        with arcpy.da.UpdateCursor(zona_layer_temp_path, ["JNSZN", "PENGGUNAAN"]) as rows:
+            for row in rows:
+                if row[0] == 1:  # Jika jenis zona = 1
+                    row[1] = "Non-Pertanian"
+                elif row[0] == 2:  # Jika jenis zona = 2
+                    row[1] = "Pertanian"
+                rows.updateRow(row)  # Update record
+        del row, rows  # Bersihkan cursor
+
+        zona_layer_lyr = "zona_layer_lyr_tmp"
+        arcpy.management.MakeFeatureLayer(zona_layer_temp_path, zona_layer_lyr)
+        
+        existing_fields = [f.name for f in arcpy.ListFields(zona_layer_lyr)]
+        ordered_fields = [
+            "NOZN",
+            "cluster",
+            "WADMKK",
+            "WADMPR",
+            "JNSZN",
+            "PENGGUNAAN",
+            "HISTZONE",
+            "SMPBKREL",
+            "SMPBAKU",
+            "NILAIZN",
+            "JMLSMPL",
+            "NILMIN",
+            "NILMAKS",
+            "NILBULAT",
+            "THNNILAI",
+            "NILAIZN_LAMA",
+            "NILBULAT_LAMA",
+        ]
+
+        fms = arcpy.FieldMappings()
+
+        for fld in ordered_fields:
+            if fld not in existing_fields:
+                arcpy.AddWarning(f"Field '{fld}' tidak ditemukan, dilewati")
+                continue
+
+            fm = arcpy.FieldMap()
+            fm.addInputField(zona_layer_lyr, fld)
+            fms.addFieldMap(fm)
+
+        arcpy.conversion.FeatureClassToFeatureClass(
+            zona_layer_temp_path,
+            dataset_path,
+            'Zona_Layer',
+            field_mapping=fms
+        )
+
+        arcpy.management.Delete(zona_layer_temp_path)  # Hapus layer sementara      
+
+        # BUG ERROR (Arcgis 3.6): Baca Lebih rinci di : https://www.notion.so/ZNT-002-2e42170c49e3807c9119ef76beb74a46?source=copy_link
+
+        if arcpy.Exists(zona_layer_path):
+            p = arcpy.mp.ArcGISProject("CURRENT")
+            m = p.activeMap
+            
+            # Tambahkan layer yang baru diproses
+            m.addDataFromPath(zona_layer_path)
+        
+        # End Of Bug 
+
         return
 
     def postExecute(self, parameters):
         """This method takes place after outputs are processed and
         added to the display."""
+
         return
+    
+    def check_and_prepare_nomor_zona(self, layer):
+        """
+        Memastikan tidak ada nomor zona yang null atau terduplikat.
+        Jika ada duplikasi, zona dengan nilai tertinggi mempertahankan nomor zonanya,
+        yang lain di-null-kan kemudian diisi ulang dengan max(nozone) + 1.
+        """
+        nomorzone_field = 'NOZN'
+        nilai_field = 'NILAIZN_LAMA'
+
+        # Kumpulkan data zona: {nomorzone: [(FID, nilai), ...]}
+        zona_data = {}
+        max_nozone = 0
+        with arcpy.da.SearchCursor(layer, ['OID@', nomorzone_field, nilai_field]) as cursor:
+            for row in cursor:
+                fid, nozone, nilai = row
+                if nozone is not None:
+                    if nozone > max_nozone:
+                        max_nozone = nozone
+                    if nozone not in zona_data:
+                        zona_data[nozone] = []
+                    zona_data[nozone].append((fid, nilai if nilai is not None else 0))
+        
+        # Tentukan FID mana yang harus di-null-kan (duplikat dengan nilai lebih rendah)
+        fids_to_nullify = []
+        
+        for nozone, records in zona_data.items():
+            if len(records) > 1:  # Ada duplikasi
+                # Urutkan berdasarkan nilai (descending), ambil yang tertinggi
+                records_sorted = sorted(records, key=lambda x: x[1], reverse=True)
+                # Semua kecuali yang nilai tertinggi akan di-null-kan
+                for fid, nilai in records_sorted[1:]:
+                    fids_to_nullify.append(fid)
+        
+        # Null-kan nomor zona yang duplikat (kecuali yang nilai tertinggi)
+        if fids_to_nullify:
+            with arcpy.da.UpdateCursor(layer, ['OID@', nomorzone_field]) as cursor:
+                for row in cursor:
+                    if row[0] in fids_to_nullify:
+                        row[1] = -1
+                        cursor.updateRow(row)
+        
+        # Isi ulang nomor zona yang sudah ditandai dengan auto-increment
+        current_nozone = max_nozone
+        with arcpy.da.UpdateCursor(layer, [nomorzone_field]) as cursor:
+            for row in cursor:
+                if row[0] == -1:
+                    current_nozone += 1
+                    row[0] = current_nozone
+                    cursor.updateRow(row)
+ 
+class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Upload Delineasi Zona Awal Nilai Tanah"
+        self.description = ""
+        self.canRunInBackground = False
+
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        self.is_gis_internal = is_internal()
+        self.preferred_server = get_preferred_server_connection()
+        self.current_year = current_year()
+        param0 = arcpy.Parameter(
+            displayName="Nomor Induk Kependudukan (NIK)",
+            name="username",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param1 = arcpy.Parameter(
+            displayName="Nomor Berkas",
+            name="project_id",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param2 = arcpy.Parameter(
+            displayName="Tahun",
+            name="tahun",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input")
+
+        param3 = arcpy.Parameter(
+            displayName="Zona Layer (Feature Class)",
+            name="feature_layer",
+            datatype="GPFeatureLayer",  
+            parameterType="Required",
+            direction="Input")
+        
+        param4 = arcpy.Parameter(
+            displayName="Server Sipenta",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        
+        if self.current_year:
+            param2.value = self.current_year
+
+        if self.preferred_server:
+            param4.value = self.preferred_server
+        param4.filter.type = "ValueList"
+        param4.filter.list = ["Produksi", "Belajar"]
+        
+        params = [param0, param1, param2, param3]
+        # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
+        self.is_gis_internal = is_internal()
+        if self.is_gis_internal:
+            params.append(param4)
+            return params
+        else:
+            return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+        
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        input_nik = parameters[0]
+        if input_nik.value:
+            # Trim semua spasi (leading, trailing, dan di tengah)
+            nik_str = str(input_nik.value).replace(" ", "")
+            # sinkronkan nilai parameter yang ditampilkan
+            input_nik.value = nik_str
+            
+            # Cek apakah hanya berisi angka
+            if not nik_str.isdigit():
+                input_nik.setErrorMessage("NIK harus berisi angka saja")
+            # Cek apakah panjangnya tepat 16
+            elif len(nik_str) != 16:
+                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
+            else:
+                input_nik.clearMessage()
+
+        # Validasi format Nomor Berkas (project_id): harus seperti 01/2025/0020
+        input_project = parameters[1]
+        if input_project.value:
+            pj_str = str(input_project.value).strip()
+            input_project.value = pj_str
+
+            # Pola: 2 digit / 4 digit (tahun) / 4 digit
+            import re
+            pattern = r"^\d{2}/\d{4}/\d{4}$"
+            if not re.match(pattern, pj_str):
+                input_project.setErrorMessage("Nomor Berkas harus berbentuk NN/YYYY/NNNN, contoh: 01/2025/0020")
+            else:
+                input_project.clearMessage()
+        return   
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        username = str(parameters[0].valueAsText).replace(" ", "")
+        project_id = str(parameters[1].valueAsText).replace(" ", "")
+        tahun = parameters[2].valueAsText
+        feature_class = parameters[3].valueAsText
+        server = parameters[4].valueAsText if len(parameters) > 4 else None
+        use_production = True if server == "Produksi" or server == None else False
+        
+        validate_document_type(project_id, target='Pembaruan ZNT')
+        main_upload(project_id, username, "pembaruan_znt_delineasi_perubahan_batas_zona_baru", "Analisis & Delineasi Zona yang Mengalami Perubahan", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
+              
+        self.preferred_server = get_preferred_server_connection()
+        if len(parameters) > 4 and server != self.preferred_server:
+            renew_preferred_server(server)
+
+        return        

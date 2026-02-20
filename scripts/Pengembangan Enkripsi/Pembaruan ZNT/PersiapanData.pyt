@@ -193,7 +193,7 @@ class Toolbox:
         self.tools = [Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT,
                       Upload_Peta_Area_Kerja_Pembaruan_ZNT,
                       Masukkan_Data_ZNT_Sebelumnya,
-                      Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT]
+                      Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT]
 
 class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
     def __init__(self):
@@ -832,7 +832,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                     row[0] = current_nozone
                     cursor.updateRow(row)
  
-class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
+class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Upload Delineasi Zona Awal Nilai Tanah"

@@ -18,9 +18,9 @@ class Toolbox(object):
         self.alias = ""
 
         # List of tool classes associated with this toolbox
-        self.tools = [Sesuaikan_Koordinat_Titik]
+        self.tools = [Sesuaikan_Titik_Koordinat]
 
-class Sesuaikan_Koordinat_Titik(object):
+class Sesuaikan_Titik_Koordinat(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Sesuaikan Koordinat Titik"
@@ -49,19 +49,30 @@ class Sesuaikan_Koordinat_Titik(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
-
+        
+        output_ts = arcpy.Parameter(
+            name="Titik_Sampel",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output")
+        
+        output_tsi = arcpy.Parameter(
+            name="Titik_Sampel_Individual",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output")
+        
         server = arcpy.Parameter(
             displayName="Server Sipenta",
             name="link",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
-        
 
         server.filter.type = "ValueList"
         server.filter.list = ["Produksi", "Belajar"]
         
-        params = [nik, nomor_berkas, catatan]
+        params = [nik, nomor_berkas, catatan, output_ts, output_tsi]
         # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
         self.is_gis_internal = bool(document.get_credentials(credential_type="OperatorGISInternal", use_for_tools_validity=True))
         if self.is_gis_internal:
@@ -114,9 +125,9 @@ class Sesuaikan_Koordinat_Titik(object):
         self.username = str(parameters[0].valueAsText).replace(" ", "")
         self.project_id = str(parameters[1].valueAsText).replace(" ", "")
         self.catatan = parameters[2].valueAsText
-        server = parameters[3].valueAsText if len(parameters) > 3 else None
+        server = parameters[5].valueAsText if len(parameters) > 5 else None
         self.use_production = True if server == "Produksi" or server == None else False
-        
+
         list_oid = samplepoint.get_selected_oids('Titik_Sampel')
         if len(list_oid) > 0:
             arcpy.AddError('Matikan terlebih dahulu tools editnya')
@@ -134,7 +145,7 @@ class Sesuaikan_Koordinat_Titik(object):
 
         if len(self.hasil_perbandingan['data_yang_akan_dikirim']) == 0:
             arcpy.AddWarning("Data koordinat di layer Titik_Sampel sudah sinkron dengan data di Sipenta")
-            sys.exit(1)
+            return
 
         json_untuk_dikirim = {
             "nomor_berkas": self.project_id,
@@ -157,9 +168,15 @@ class Sesuaikan_Koordinat_Titik(object):
                 m.removeLayer(lyr)
 
         # Tambahkan ulang layer dari source
-        m.addDataFromPath(self.config_paths['path_titik_sampel'])
-        m.addDataFromPath(self.config_paths['path_titik_sampel_individual'])
+        arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel'], "Titik_Sampel")
+        arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel_individual'], "Titik_Sampel_Individual")
 
+        ts_symbology = os.path.join(self.config_paths['symbology_folder'], "Titik_Sampel.lyrx")
+        tsi_symbology = os.path.join(self.config_paths['symbology_folder'], "Titik_Sampel_Individual.lyrx")
+        arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", ts_symbology)
+        arcpy.management.ApplySymbologyFromLayer("Titik_Sampel_Individual", tsi_symbology)
+        arcpy.SetParameter(3, "Titik_Sampel")  # Output Titik_Sampel
+        arcpy.SetParameter(4, "Titik_Sampel_Individual")  # Output Titik_Sampel_Individual
 
     
     def get_config_values(self):
@@ -196,7 +213,9 @@ class Sesuaikan_Koordinat_Titik(object):
         # Definisikan nama layer
         titiksampel = "Titik_Sampel"
 
-
+        appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+        ui_folder = os.path.join(appdata, "ui")
+        symbology_folder = os.path.join(ui_folder, "symbology")
         # Bangun semua path yang diperlukan
         paths = {
             'ws_dir': ws_dir,
@@ -206,7 +225,8 @@ class Sesuaikan_Koordinat_Titik(object):
             'lokasi': lokasi,
             'coor': coor,
             'path_titik_sampel': os.path.join(dataset_path, titiksampel),
-            'path_titik_sampel_individual': os.path.join(dataset_path, "Titik_Sampel_Individual")
+            'path_titik_sampel_individual': os.path.join(dataset_path, "Titik_Sampel_Individual"),
+            'symbology_folder': symbology_folder
         }
 
         # Validasi path GDB
@@ -540,7 +560,7 @@ class Sesuaikan_Koordinat_Titik(object):
             # ---- Penanganan untuk response code ----
             if response.status_code == 400:
                 
-                arcpy.AddError("Data yang dikirim ditolak. Mengembalikan koordinat seperti semula.")
+                arcpy.AddWarning("Data yang dikirim ditolak. Mengembalikan koordinat seperti semula.")
                 self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta)
                 self.reload_layer()
                 sys.exit(1)
@@ -569,7 +589,7 @@ class Sesuaikan_Koordinat_Titik(object):
                             arcpy.AddWarning(f"Nomor sampel yang tidak diperbarui: {', '.join(nomor_tidak_diperbarui)}")
 
                             # Kembalikan koordinat mereka
-                            self.rewrite_changed_coordinates(data_tertolak, self.koordinat_sipenta, self.config_paths["path_titik_sampel"])
+                            self.rewrite_changed_coordinates(data_tertolak, self.koordinat_sipenta)
                             self.reload_layer()
                     else:
                         arcpy.AddMessage("Tidak ditemukan nomor sampel dalam pesan.")
@@ -581,19 +601,19 @@ class Sesuaikan_Koordinat_Titik(object):
             else:
                 # Untuk status code lainnya
                 arcpy.AddWarning(f"Server mengembalikan status {response.status_code}: {response.text}")
-                self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta, self.config_paths["path_titik_sampel"])
+                self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta)
                 self.reload_layer()
                 response.raise_for_status()
 
         except requests.exceptions.RequestException as e:
             arcpy.AddError(f"Terjadi kesalahan koneksi atau permintaan: {str(e)}")
-            self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta, self.config_paths["path_titik_sampel"])
+            self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta)
             self.reload_layer()
             raise arcpy.ExecuteError
 
         except json.JSONDecodeError as e:
             arcpy.AddError(f"Error dalam parsing response server: {str(e)}")
-            self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta, self.config_paths["path_titik_sampel"])
+            self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta)
             self.reload_layer()
             raise arcpy.ExecuteError
 

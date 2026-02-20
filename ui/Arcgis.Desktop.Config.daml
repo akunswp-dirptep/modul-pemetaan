@@ -480,7 +480,7 @@
 					largeImage="C:\PenilaianTanah\icons\sample.png"
 					smallImage="C:\PenilaianTanah\icons\sample.png">
 					<tooltip heading="Pengolahan Titik Sampel">Pengolahan Titik Sampel Kegiatan Pembuatan Zona Nilai Tanah.</tooltip>
-					<button refID='ButtonMasukkanTitikSampelDariExcel' />
+					<!-- <button refID='ButtonMasukkanTitikSampelDariExcel' /> -->
 					<button refID="menu_titik_sampel_znt" />
 					<button refID="menu_titik_individual" />
 					<button refID="ButtonPerubahanTitikKoordinat" />
@@ -554,7 +554,7 @@
 					largeImage="C:\PenilaianTanah\icons\sample.png"
 					smallImage="C:\PenilaianTanah\icons\sample.png">
 					<tooltip heading="Pengolahan Titik Sampel">Pengolahan Titik Sampel Kegiatan Pembaruan Zona Nilai Tanah.</tooltip>
-					<button refID='ButtonMasukkanTitikSampelDariExcel' />
+					<!-- <button refID='ButtonMasukkanTitikSampelDariExcel' /> -->
 					<button refID="menu_titik_sampel_znt" />
 					<button refID="ButtonPerubahanTitikKoordinat" />
 					<button refID="ButtonCekJenisZona"/>	
@@ -1662,7 +1662,7 @@
 
 				<button id="ButtonUploadDelineasiZonaAwalNilaiTanahPembaruan" caption="Upload Delineasi Zona yang Diperbarui" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="CC:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PersiapanData.pyt\Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT" name="Upload Delineasi Zona yang Diperbarui" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PersiapanData.pyt\Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT" name="Upload Delineasi Zona yang Diperbarui" xmlns=""/>
 					</args>
 					<tooltip heading="Upload ZNT">Menu untuk melakukan upload peta Delineasi Zona yang Diperbarui.</tooltip>
 				</button>
@@ -1695,7 +1695,7 @@
 					</args>
 					<tooltip heading="Hitung Indeks Sampel Terpilih">Menu untuk melakukan hitung indeks pada titik sampel terpilih.</tooltip>
 				</button>
-				
+
 			<!-- Menu Pengolahan Titik Zona  -->
 				<button id="ButtonLabelTitikZona" caption="Tampilkan Label Titik Zona" smallImage="C:\PenilaianTanah\icons\tag.png" largeImage="C:\PenilaianTanah\icons\tag.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>

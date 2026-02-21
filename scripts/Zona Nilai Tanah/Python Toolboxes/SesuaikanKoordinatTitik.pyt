@@ -562,7 +562,7 @@ class Sesuaikan_Koordinat_Titik(object):
                             arcpy.AddWarning(f"Nomor sampel yang tidak diperbarui: {', '.join(nomor_tidak_diperbarui)}")
 
                             # Kembalikan koordinat mereka
-                            self.rewrite_changed_coordinates(data_tertolak, self.koordinat_sipenta, self.config_paths["path_titik_sampel"])
+                            self.rewrite_changed_coordinates(data_tertolak, self.koordinat_sipenta)
                             self.reload_layer()
                     else:
                         arcpy.AddMessage("Tidak ditemukan nomor sampel dalam pesan.")
@@ -574,13 +574,13 @@ class Sesuaikan_Koordinat_Titik(object):
             else:
                 # Untuk status code lainnya
                 arcpy.AddWarning(f"Server mengembalikan status {response.status_code}: {response.text}")
-                self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta, self.config_paths["path_titik_sampel"])
+                self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta)
                 self.reload_layer()
                 response.raise_for_status()
 
         except requests.exceptions.RequestException as e:
             arcpy.AddError(f"Terjadi kesalahan koneksi atau permintaan: {str(e)}")
-            self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta, self.config_paths["path_titik_sampel"])
+            self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta)
             self.reload_layer()
             raise arcpy.ExecuteError
 

@@ -5,6 +5,7 @@ import os
 import sys
 import arcpy, math
 from datetime import datetime
+
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:

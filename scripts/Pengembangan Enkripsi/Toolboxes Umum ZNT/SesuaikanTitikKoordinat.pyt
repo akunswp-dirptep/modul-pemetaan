@@ -14,7 +14,7 @@ class Toolbox(object):
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the
         .pyt file)."""
-        self.label = "Sesuaikan Koordinat Titik"
+        self.label = "Sesuaikan Titik Koordinat"
         self.alias = ""
 
         # List of tool classes associated with this toolbox
@@ -23,14 +23,14 @@ class Toolbox(object):
 class Sesuaikan_Titik_Koordinat(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Sesuaikan Koordinat Titik"
+        self.label = "Sesuaikan Titik Koordinat"
         self.description = "tool untuk menyesuaikan data koordinat titik dengan SIPENTA"
         self.canRunInBackground = False
 
     def getParameterInfo(self):
         """Define parameter definitions"""
         nik = arcpy.Parameter(
-            displayName="NIK",
+            displayName="Nomor Induk Kependudukan (NIK)",
             name="username",
             datatype="GPString",
             parameterType="Required",
@@ -138,7 +138,7 @@ class Sesuaikan_Titik_Koordinat(object):
             arcpy.AddError('Matikan terlebih dahulu tools editnya')
             sys.exit(1)
 
-        self.get_config_values()
+        self.config_paths =self.get_config_values()
         self.get_sample_coordinate_from_sipenta()
         self.extract_coordinates_to_json()
         self.compare_coordinates()
@@ -168,6 +168,7 @@ class Sesuaikan_Titik_Koordinat(object):
                 m.removeLayer(lyr)
 
         # Tambahkan ulang layer dari source
+        arcpy.AddMessage("Memuat ulang layer dengan data terbaru...")
         arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel'], "Titik_Sampel")
         arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel_individual'], "Titik_Sampel_Individual")
 
@@ -234,7 +235,7 @@ class Sesuaikan_Titik_Koordinat(object):
             arcpy.AddError(f"Path GDB tidak valid: {dataset_path}")
             raise ValueError(f"Path GDB tidak valid: {dataset_path}")
 
-        self.config_paths = paths
+        return paths
 
     def call_sipenta_api(self):
         """

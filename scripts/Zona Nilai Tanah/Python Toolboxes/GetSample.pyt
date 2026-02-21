@@ -256,7 +256,7 @@ def json_to_feature_class(json_path, ds_path, file_name,  spatial_ref, lokasi, t
     # Susunan Data Fields : (api_key, field_alias, field_type)
     fields = [
         ("Nomor_Entry","Nomor Sampel", "INTEGER"),
-        ("No_Identifikasi", "Nomor Identifikasi", "INTEGER"),
+        ("No_Identifikasi", "Nomor Identifikasi", "STRING"),
         ("Surveyor", "Nama Surveyor", "STRING"),
         ("Tanggal_Pelaksanaan", "Tanggal Pelaksanaan", "STRING"),
         ("Kd_Jenis_Bangunan","Bangunan (B)/Ruko(R)/ Tanah Kosong (TK)", "STRING"),
@@ -414,8 +414,6 @@ def overwriteSamples(username, project_id, tahun, use_production):
     # Validasi response API
     if not validate_api_response(api_data):
         return
-
-
 
     # Mendapatkan project dan map
     aprx = arcpy.mp.ArcGISProject("CURRENT")

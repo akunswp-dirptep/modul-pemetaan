@@ -3,6 +3,11 @@ import sys
 import uuid
 import arcpy, os, json
 
+script_dir = os.path.dirname(__file__)
+parent_dir = os.path.dirname(script_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+    
 from zntutils.constant import NAMA_PROVINSI, KAB_KOTA
 
 def current_year():

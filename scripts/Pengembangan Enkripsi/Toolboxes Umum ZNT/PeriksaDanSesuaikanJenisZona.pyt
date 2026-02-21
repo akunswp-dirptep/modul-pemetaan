@@ -1,9 +1,10 @@
 import arcpy, os, sys
+
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
-
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
+    
 from zntutils.zona_layer import get_config_values
 
 arcpy.env.outputZFlag = "Disabled"  # Menonaktifkan output nilai Z (3D)

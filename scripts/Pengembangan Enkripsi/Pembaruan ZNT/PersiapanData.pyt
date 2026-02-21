@@ -1,6 +1,5 @@
 ﻿from datetime import datetime
 import sys
-import uuid
 import arcpy, os, json
 
 from cryptography.fernet import Fernet

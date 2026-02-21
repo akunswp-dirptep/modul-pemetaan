@@ -167,7 +167,6 @@ def save_gdb(ws_path: str, gdb_path: str, label: str):
 
             for old_gdb in to_delete:
                 try:
-                    arcpy.AddMessage(f"Menghapus backup lama: {os.path.basename(old_gdb)}")
                     arcpy.Delete_management(old_gdb)
                 except Exception as e:
                     arcpy.AddWarning(f"Gagal menghapus backup lama {os.path.basename(old_gdb)}: {str(e)}")

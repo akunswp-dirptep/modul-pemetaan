@@ -316,14 +316,23 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
 
         if ada_seleksi > 0:
             # Update field-field di Zona Layer untuk fitur yang dipilih
-            rows = arcpy.UpdateCursor(zl)
-            for row in rows:
-                row.setValue("JNSZN", JNSZN)  # Mengatur nilai JNSZN
-                row.setValue("JENISSAMPEL", JNSZN)  # Mengatur nilai JENISSAMPEL
-                row.setValue("PENGGUNAAN", jenis_zona)  # Mengatur nilai PENGGUNAAN
-                rows.updateRow(row)
-            del row
-            del rows
+            try:            
+                rows = arcpy.UpdateCursor(zl)
+                for row in rows:
+                    row.setValue("JNSZN", JNSZN)  # Mengatur nilai JNSZN
+                    row.setValue("JENISSAMPEL", JNSZN)  # Mengatur nilai JENISSAMPEL
+                    row.setValue("PENGGUNAAN", jenis_zona)  # Mengatur nilai PENGGUNAAN
+                    rows.updateRow(row)
+                del row
+                del rows
+            except Exception as e:
+                    if str(e) == 'Cannot acquire a lock.':
+                        arcpy.AddError(f'Tutup tabel atribut pada layer Zona_Layer sebelum menjalankan tool ini.')
+                        return
+                    else:
+                        arcpy.AddError(f"ERROR: Terjadi kesalahan saat mengupdate atribut jenis zona. {e}")
+                        return
+
 
             cursor = arcpy.da.UpdateCursor(zl, ["JNSZN", "JENISSAMPEL","BEDA_ZONA"])
             for row in cursor:

@@ -39,7 +39,7 @@ zona_layer = get_layer_by_name("Zona_Layer")
 
 count = int(arcpy.management.GetCount(titik_sampel)[0])
 if count == 0:
-    arcpy.AddWarning("❌Tidak terdapat titik pada Layer 'Titik_Sampel'. Proses dihentikan.")
+    arcpy.AddWarning("Tidak ditemukan titik sampel (outlier)")
     sys.exit()
 
 if not titik_sampel or not zona_layer:

@@ -262,7 +262,7 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
         )
 
         penjelasan.value = (
-            "? ? ? CATATAN PENTING ? ? ?\n" 
+            "!-!-! CATATAN PENTING !-!-!\n" 
             "Gunakan tool ini hingga tidak ditemukan peringatan lagi\n"
             "Tool ini berfungsi melakukan pemeriksaan kesesuaian\n"
             "antara Titik dan Zona Pembaruan\n\n"
@@ -278,7 +278,10 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
             "3. Memastikan setiap zona yang diklasifikasikan \n"
             "berdasarkan Titik Sampel (Pencilan/Outlier) memiliki jumlah sampel\n"
             "minimal tiga titik untuk menjamin reliabilitas\n"
-            "hasil analisis."
+            "hasil analisis.\n\n"
+            "4. Memastikan setiap klaster zona memiliki\n"
+            "setidaknya satu Titik Zona untuk menjaga\n"
+            "integritas klaster."
         )
 
         return [penjelasan]
@@ -359,7 +362,6 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
                 if z_row.getValue("Join_Count") > 0:
                     AdaZona.append(z_row.getValue("TARGET_FID"))
 
-            arcpy.AddMessage(f"Zona dengan Titik Zona: {AdaZona}")
             AdaZona = list(dict.fromkeys(AdaZona))
 
             ### ----- cek jenis zona titik outlier -----
@@ -439,7 +441,44 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
                     arcpy.AddMessage(f"Kolom 'cluster' telah diset NULL untuk zona outlier berikut: {hanya_outlier_zona_fids}")
                 else:
                     arcpy.AddMessage("Tidak ada zona outlier tunggal yang perlu diubah kolom 'cluster'-nya.")
+
+            # ----- Validasi: Setiap cluster harus memiliki setidaknya satu titik zona -----
             
+            clusters = {'1': {},
+                        '2': {}}
+
+
+            oid_jnszn_map = {}
+            for oid, jnszn in arcpy.da.SearchCursor(zl_path, ["OBJECTID", "JNSZN"]):
+                oid_jnszn_map[oid] = jnszn
+
+            with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "cluster", "JNSZN"]) as cursor:
+                for oid, cluster_val, jnszn in cursor:
+                    if cluster_val is not None:
+                        if cluster_val not in clusters[str(jnszn)]:
+                            clusters[str(jnszn)][cluster_val] = []
+                        clusters[str(jnszn)][cluster_val].append(oid)
+
+            invalid_clusters_info = []
+
+            
+        
+            for jnszn, cluster_dict in clusters.items():
+                for cluster_val, oids in cluster_dict.items():
+                    has_point = any(oid in AdaZona for oid in oids)
+                    if not has_point:
+                        # Ambil JNSZN dari OID pertama di klaster (asumsi JNSZN sama dalam satu klaster)
+                        first_oid = oids[0]
+                        jnszn = oid_jnszn_map.get(first_oid, "N/A")
+                        invalid_clusters_info.append(f"Jenis Zona {'Pertanian' if jnszn == 2 else 'Non-Pertanian'} - Cluster {cluster_val}\n")
+            
+            if invalid_clusters_info:
+                pesan_error = f"Klaster berikut tidak memiliki Titik Zona:\n{''.join(invalid_clusters_info)}"
+                arcpy.AddWarning(pesan_error)
+                return
+            else:
+                arcpy.AddMessage("Validasi klaster: Setiap klaster memiliki setidaknya satu Titik Zona.")
+
         except Exception as e:
             arcpy.management.Delete(zout_path)
             arcpy.management.Delete(sout_path)

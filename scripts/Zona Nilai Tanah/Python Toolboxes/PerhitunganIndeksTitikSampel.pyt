@@ -39,7 +39,7 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
             "dengan rumus tertentu dan faktor pembulatan yang telah \n"
             "ditentukan.\n\n"
 
-            "? ? ? CATATAN PENTING ? ? ?\n" 
+            "!-!-! CATATAN PENTING !-!-!\n" 
             "Jika sudah terdapat titik zona, menggunakan tools ini akan\n"
             "menghapus semua data pada layer titik zona tersebut, jika hanya\n"
             "ingin mengubah beberapa titik sampel menjadi titik zona gunakan\n"

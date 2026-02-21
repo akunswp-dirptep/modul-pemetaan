@@ -1895,13 +1895,13 @@
 			<!-- Menu Pengolahan ZNT -->
 				<button id="ButtonCekJenisZona" caption="Periksa Jenis Zona" smallImage="C:\PenilaianTanah\icons\cekzone.png" largeImage="C:\PenilaianTanah\icons\cekzone.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PeriksaJenisZona" name="Periksa Jenis Zona" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PeriksaDanSesuaikanJenisZona.pyt\Periksa_Jenis_Zona" name="Periksa Jenis Zona" xmlns=""/>
 					</args>
 					<tooltip heading="Periksa Jenis Zona">Menu untuk memeriksa jenis zona pada zona layer berdasarkan jenis zona titik sampel.</tooltip>
 				</button>
 				<button id="ButtonEditJenisZona" caption="Sesuaikan Atribut Jenis Zona (Lanjutan)" smallImage="C:\PenilaianTanah\icons\editattribute.png" largeImage="C:\PenilaianTanah\icons\editattribute.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\SesuaikanAtributJenisZonaLanjutan" name="Sesuaikan Atribut Jenis Zona (Lanjutan)" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PeriksaDanSesuaikanJenisZona.pyt\Sesuaikan_Jenis_Zona_Lanjutan" name="Sesuaikan Atribut Jenis Zona (Lanjutan)" xmlns=""/>
 					</args>
 					<tooltip heading="Sesuaikan Atribut Jenis Zona (Lanjutan)">Menu untuk melakukan editing informasi jenis zona pada zona layer dan titik sampel.</tooltip>
 				</button>

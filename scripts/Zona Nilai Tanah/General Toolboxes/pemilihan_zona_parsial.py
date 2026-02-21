@@ -52,7 +52,6 @@ if ada_seleksi <= 0:
 # Ambil daftar ObjectID dari fitur yang dipilih
 oid_field = arcpy.Describe(zl).OIDFieldName
 fid_list = arcpy.Describe(zl).FIDSet.split(';')
-arcpy.AddMessage(fid_list)
 
 # Buat klausa WHERE agar hanya fitur terpilih yang diupdate
 where_clause = f"{oid_field} IN ({','.join(fid_list)})"

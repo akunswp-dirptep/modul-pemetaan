@@ -1,5 +1,5 @@
 ﻿import arcpy
-import os, json, requests, sys, math, re
+import os, json, requests, sys, math, re, time
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
@@ -138,7 +138,7 @@ class Sesuaikan_Titik_Koordinat(object):
             arcpy.AddError('Matikan terlebih dahulu tools editnya')
             sys.exit(1)
 
-        self.config_paths =self.get_config_values()
+        self.config_paths = self.get_config_values()
         self.get_sample_coordinate_from_sipenta()
         self.extract_coordinates_to_json()
         self.compare_coordinates()
@@ -168,16 +168,18 @@ class Sesuaikan_Titik_Koordinat(object):
                 m.removeLayer(lyr)
 
         # Tambahkan ulang layer dari source
-        arcpy.AddMessage("Memuat ulang layer dengan data terbaru...")
         arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel'], "Titik_Sampel")
         arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel_individual'], "Titik_Sampel_Individual")
 
         ts_symbology = os.path.join(self.config_paths['symbology_folder'], "Titik_Sampel.lyrx")
         tsi_symbology = os.path.join(self.config_paths['symbology_folder'], "Titik_Sampel_Individual.lyrx")
+
         arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", ts_symbology)
         arcpy.management.ApplySymbologyFromLayer("Titik_Sampel_Individual", tsi_symbology)
         arcpy.SetParameter(3, "Titik_Sampel")  # Output Titik_Sampel
         arcpy.SetParameter(4, "Titik_Sampel_Individual")  # Output Titik_Sampel_Individual
+
+
 
     
     def get_config_values(self):
@@ -564,7 +566,8 @@ class Sesuaikan_Titik_Koordinat(object):
                 arcpy.AddWarning("Data yang dikirim ditolak. Mengembalikan koordinat seperti semula.")
                 self.rewrite_changed_coordinates(json_data['data'], self.koordinat_sipenta)
                 self.reload_layer()
-                sys.exit(1)
+                return None
+                
 
             elif response.status_code == 200:
                 self.reload_layer()
@@ -591,7 +594,7 @@ class Sesuaikan_Titik_Koordinat(object):
 
                             # Kembalikan koordinat mereka
                             self.rewrite_changed_coordinates(data_tertolak, self.koordinat_sipenta)
-                            self.reload_layer()
+                           
                     else:
                         arcpy.AddMessage("Tidak ditemukan nomor sampel dalam pesan.")
                 except json.JSONDecodeError:

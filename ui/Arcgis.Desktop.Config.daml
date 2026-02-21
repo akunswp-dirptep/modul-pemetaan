@@ -1778,21 +1778,21 @@
 
 				<button id="ButtonUploadPetaSebaranSampelPembaruan" caption="Upload Sebaran Titik Sampel" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes\Upload.pyt\Upload_Peta_Sebaran_Sampel_Pembaruan" name="Upload Pembaruan Peta Sebaran Titik Sampel" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\LayoutDanUpload.pyt\Upload_Peta_Sebaran_Sampel_Pembaruan" name="Upload Pembaruan Peta Sebaran Titik Sampel" xmlns=""/>
 					</args>
 					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Peta Sebaran Titik Sampel Pembaruan ZNT.</tooltip>
 				</button>
 
 				<button id="ButtonUploadPetaSebaranTitikZonaPembaruan" caption="Upload Sebaran Titik Zona" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes\Upload.pyt\Upload_Peta_Sebaran_Titik_Zona" name="Upload Pembaruan Peta Sebaran Titik Zona" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\LayoutDanUpload.pyt\Upload_Peta_Sebaran_Titik_Zona" name="Upload Pembaruan Peta Sebaran Titik Zona" xmlns=""/>
 					</args>
 					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Peta Sebaran Titik Zona Pembaruan ZNT.</tooltip>
 				</button>
 
 				<button id="ButtonUploadPetaZonaNilaiTanahPembaruan" caption="Upload Zona Nilai Tanah" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes\Upload.pyt\Upload_Peta_Zona_Nilai_Tanah_Pembaruan" name="Upload Pembaruan Peta Zona Nilai Tanah" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\LayoutDanUpload.pyt\Upload_Peta_Zona_Nilai_Tanah_Pembaruan" name="Upload Pembaruan Peta Zona Nilai Tanah" xmlns=""/>
 					</args>
 					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Peta Pembaruan Zona Nilai Tanah.</tooltip>
 				</button>

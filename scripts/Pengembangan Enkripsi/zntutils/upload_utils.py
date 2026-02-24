@@ -142,7 +142,6 @@ def main_upload_shapefile(project_id, username, menu, tahapan, in_feature, tahun
             with open(zipname, 'rb') as f:
                 files = {'file': (in_feature + '.zip', f)}
                 response = requests.post(url, data={'nomor_berkas': project_id, 'nik': username, 'param': menu, 'step': tahapan}, files=files)
-                arcpy.AddMessage(f"API Response: {response.status_code} - {response.text}")
                 
                 try:
                     data = response.json()

@@ -8,6 +8,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 
+arcpy.env.outputZFlag = "Disabled"
+arcpy.env.outputMFlag = "Disabled"
+
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
@@ -232,7 +235,7 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
             parameterType="Required",
             direction="Input")
         param3 = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+            displayName="Titik Sampel (Feature Class)",
             name="feature_layer",
             datatype="GPFeatureLayer",
             direction="Input")
@@ -357,7 +360,7 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
             parameterType="Required",
             direction="Input")
         param3 = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+            displayName="Titik Zona (Feature Class)",
             name="feature_layer",
             datatype="GPFeatureLayer",
             parameterType="Required",

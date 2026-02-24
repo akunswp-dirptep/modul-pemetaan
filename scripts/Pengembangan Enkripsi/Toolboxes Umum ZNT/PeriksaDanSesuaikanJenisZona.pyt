@@ -1,5 +1,8 @@
 import arcpy, os, sys
 
+arcpy.env.outputZFlag = "Disabled"
+arcpy.env.outputMFlag = "Disabled"
+
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:

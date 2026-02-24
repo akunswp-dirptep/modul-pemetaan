@@ -1505,14 +1505,14 @@
 
 				<button id="ButtonBuatLayerZonaAwal" caption="Buat Workspace" smallImage="C:\PenilaianTanah\icons\workspace.png" largeImage="C:\PenilaianTanah\icons\workspace.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\BuatWorkspace" name="Buat Workspace" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\Workspace.pyt\Buat_Workspace" name="Buat Workspace" xmlns=""/>
 					</args>
 					<tooltip heading="Buat Workspace">Menu untuk Membuat workspace untuk Pembuatan ZNT.</tooltip>
 				</button>
 	
 				<button id="ButtonImportWorkspace" caption="Import Workspace" smallImage="C:\PenilaianTanah\icons\importworkspace.png" largeImage="C:\PenilaianTanah\icons\limportworkspace.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\ImportWorkspace" name="Import Workspace" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\Workspace.pyt\Import_Workspace" name="Import Workspace" xmlns=""/>
 					</args>
 					<tooltip heading="Import Workspace">Menu untuk memasukkan Workspace.</tooltip>
 				</button>
@@ -1771,7 +1771,7 @@
 			<!-- Menu Layout dan Upload ZNT  -->
 				<button id="ButtonTampilkanPersebaranTitikSampelTitikZona" caption="Tampilkan Persebaran Titik Sampel dan Titik Zona" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\TampilkanSebaranTitikSampelDanTitikZona" name="Tampilkan Persebaran Titik Sampel dan Titik Zona" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Tampilkan_Sebaran_Titik_Sampel_Dan_Titik_Zona" name="Tampilkan Persebaran Titik Sampel dan Titik Zona" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Persebaran Titik Sampel">Menu untuk menampilkan Persebaran Titik Sampel dan Titik Zona.</tooltip>
 				</button>
@@ -1909,32 +1909,32 @@
 			<!-- Menu Layout dan Upload ZNT  -->
 				<button id="ButtonCekTopology" caption="Topologi" smallImage="C:\PenilaianTanah\icons\good1.png" largeImage="C:\PenilaianTanah\icons\good1.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" loadOnClick="true" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PemeriksaanTopologi" name="Periksa Topologi" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Cek_Topologi" name="Periksa Topologi" xmlns=""/>
 					</args>
 					<tooltip heading="Periksa Topologi">Menu untuk periksa topologi layer zona.</tooltip>
 				</button>
 				<button id="ButtonTampilkanZonaAwal" caption="Tampilkan Jenis Penggunaan Pada Zona" smallImage="C:\PenilaianTanah\icons\indonesia_zone.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\TampilkanJenisPenggunaanPadaZona" name="Tampilkan Jenis Penggunaan Pada Zona" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Tampilkan_Jenis_Penggunaan_Pada_Zona" name="Tampilkan Jenis Penggunaan Pada Zona" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Jenis Penggunaan Pada Zona ">Menu untuk menampilkan Jenis Penggunaan Pada Zona Nilai Tanah.</tooltip>
 				</button>
 
 				<button id="ButtonTampilkanPersebaranTitikSampel" caption="Tampilkan Persebaran Titik Sampel" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\TampilkanPersebaranTitikSampel" name="Tampilkan Persebaran Titik Sampel" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Tampilkan_Sebaran_Titik_Sampel" name="Tampilkan Persebaran Titik Sampel" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Persebaran Titik Sampel">Menu untuk menampilkan Persebaran Titik Sampel.</tooltip>
 				</button>
 				<button id="ButtonTampilkanSimpangBakuRelatif" caption="Tampilkan Simpang Baku Relatif" smallImage="C:\PenilaianTanah\icons\location1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes\TampilkanSimpanganBakuRelatif.pyt\Tampilkan_Simpangan_Baku_Relatif" name="Tampilkan Simpang Baku Relatif" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Tampilkan_Simpangan_Baku_Relatif" name="Tampilkan Simpang Baku Relatif" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Simpang Baku Relatif">Menu untuk menampilkan Simpang Baku Relatif.</tooltip>
 				</button>
 				<button id="ButtonTampilkanZNT" caption="Tampilkan Zona Nilai Tanah" smallImage="C:\PenilaianTanah\icons\basemap.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\TampilkanZonaNilaiTanah" name="Tampilkan Zona Nilai Tanah" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Tampilkan_Simbologi_Pembagian_Kelas" name="Tampilkan Zona Nilai Tanah" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Zona Nilai Tanah">Menu untuk menampilkan Zona Nilai Tanah.</tooltip>
 				</button>

@@ -6,6 +6,9 @@ import sys
 import arcpy, math
 from datetime import datetime
 
+arcpy.env.outputZFlag = "Disabled"
+arcpy.env.outputMFlag = "Disabled"
+
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
@@ -664,10 +667,6 @@ class Perhitungan_Nilai_Data_Individual(object):
         data_pembanding_kedua['rekonsiliasi_atau_pembobotan'] = data_pembanding_kedua['total_absolute_nol'] / jumlah_keseluruhan_nol_absolut
         data_pembanding_ketiga['rekonsiliasi_atau_pembobotan'] = data_pembanding_ketiga['total_absolute_nol'] / jumlah_keseluruhan_nol_absolut
 
-
-
-        arcpy.AddMessage(f"Data:\n  Pembanding 1: {data_pembanding_pertama}\n  Pembanding 2: {data_pembanding_kedua}\n  Pembanding 3: {data_pembanding_ketiga}")
-    
         data_pembanding_pertama['nilai_setelah_pembobotan'] = data_pembanding_pertama['indikasi_nilai'] * data_pembanding_pertama['rekonsiliasi_atau_pembobotan']
         data_pembanding_kedua['nilai_setelah_pembobotan'] = data_pembanding_kedua['indikasi_nilai'] * data_pembanding_kedua['rekonsiliasi_atau_pembobotan']
         data_pembanding_ketiga['nilai_setelah_pembobotan'] = data_pembanding_ketiga['indikasi_nilai'] * data_pembanding_ketiga['rekonsiliasi_atau_pembobotan']
@@ -679,9 +678,6 @@ class Perhitungan_Nilai_Data_Individual(object):
 
         arcpy.AddMessage(math.ceil(data_individual['nilai_pasar_per_m2'] * data_individual['fisik_tanah']['luas_tanah']))
         data_individual['nilai_pasar'] = nilai_pasar_per_m2
-
-
-
 
         fields_to_update = ["Nomor_Entry", 
                             "Harga_Penawaran_Transaksi", 

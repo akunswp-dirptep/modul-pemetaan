@@ -10,6 +10,8 @@ from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
 
+arcpy.env.outputZFlag = "Disabled"
+arcpy.env.outputMFlag = "Disabled"
 
 class Toolbox(object):
     def __init__(self):
@@ -32,7 +34,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
     def getParameterInfo(self):
         """Define parameter definitions"""
         nik = arcpy.Parameter(
-            displayName="NIK",
+            displayName="Nomor Induk Kependudukan (NIK)",
             name="username",
             datatype="GPString",
             parameterType="Required",
@@ -55,6 +57,13 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        penjelasan = arcpy.Parameter(
+            displayName="Penjelasan",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
         server = arcpy.Parameter(
             displayName="Server Sipenta",
             name="link",
@@ -67,7 +76,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         server.filter.type = "ValueList"
         server.filter.list = ["Produksi", "Belajar"]
         
-        params = [nik, nomor_berkas, catatan, data_yang_disinkronisasi]
+        params = [nik, nomor_berkas, catatan, data_yang_disinkronisasi, penjelasan]
         # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
         self.is_gis_internal = bool(document.get_credentials(credential_type="OperatorGISInternal", use_for_tools_validity=True))
         if self.is_gis_internal:
@@ -85,6 +94,37 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
+        data_yang_disinkronisasi = parameters[3].valueAsText  # parameter Data yang disinkronisasi
+        penjelasan = parameters[4] # parameter Penjelasan
+        exp_dict ={
+            "Data Pembanding Individual": 
+            ("Fitur ini menyiapkan daftar data pembanding yang\n"
+            "siap diunggah dengan mengambil hanya titik yang\n"
+            "memiliki informasi pembanding. Sistem membaca\n"
+            "data dari layer titik sampel individual serta\n"
+            "layer titik sampel lainnya, lalu menyertakan\n"
+            "hanya record yang kolom pembandingnya terisi."),
+            "Penggunaan Titik Sampel Untuk Perhitungan": 
+            ("Data titik sampel yang dipilih untuk digunakan dalam\n"
+            "fitur ini bekerja dengan kondisi data sebagai berikut:\n"
+            "1. Titik yang ada di layer Titik_Sampel tercatat digunakan,\n"
+            "2. Titik pada layer Titik_Sampel_Individual tercatat tidak digunakan,\n"
+            "3. Titik yang hanya ada di sipenta, tidak dipemataan juga\n"
+            "   tercatat tidak digunakan\n"
+            "4. Dalam pembaruan ZNT, titik pada layer Titik_Zona tercatat digunakan."),
+            "Jenis Zona Titik Sampel": 
+            ("Data jenis zona titik sampel akan dikirim ke server SIPENTA\n"
+            "dan digunakan untuk memperbaharui data jenis zona titik\n"
+            "sampel di server SIPENTA.")
+        }
+
+        if data_yang_disinkronisasi:
+            penjelasan.value = exp_dict.get(data_yang_disinkronisasi, 
+                                            ("Silakan pilih jenis data yang ingin disinkronisasi\n"
+                                            "untuk melihat penjelasan terkait."))
+        else:
+            penjelasan.value = ("Silakan pilih jenis data yang ingin disinkronisasi\n"
+                                "untuk melihat penjelasan terkait.")
         return
 
     def updateMessages(self, parameters):
@@ -127,7 +167,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         self.project_id = str(parameters[1].valueAsText).replace(" ", "")
         self.catatan = parameters[2].valueAsText
         self.data_type = parameters[3].valueAsText
-        server = parameters[4].valueAsText if len(parameters) > 4 else None
+        server = parameters[5].valueAsText if len(parameters) > 5 else None
         self.use_production = True if server == "Produksi" or server == None else False
 
         self.config_paths = self.get_config_values()

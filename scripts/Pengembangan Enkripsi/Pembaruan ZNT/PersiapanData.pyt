@@ -2,6 +2,9 @@
 import sys
 import arcpy, os, json
 
+arcpy.env.outputZFlag = "Disabled"
+arcpy.env.outputMFlag = "Disabled"
+
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -536,6 +539,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         # --- Proses memasukkan data ZNT sebelumnya ke layer ZNT saat ini
         zona_layer_path = os.path.join(dataset_path, "Zona_Layer")
         zona_layer_temp_path = os.path.join(dataset_path, "Zona_Layer_Temp")
+
         # Hapus topology dan layer zona jika sudah ada
         topo = os.path.join(dataset_path, "Zona_Layer_Topology")
         if arcpy.Exists(topo):
@@ -665,11 +669,24 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                             {'name':"WADMPR", 'data_type': "TEXT"},
                             {'name': "THNNILAI", 'data_type': "SHORT"}]
 
-        for field in required_fields:
-            if field['name'] in input_features_fields:
-                arcpy.management.CalculateField(zona_layer_temp_path, field['name'], "None", "PYTHON3") 
+        existing_fields_details = {f.name: f.type for f in arcpy.ListFields(zona_layer_temp_path)}
+
+        for field_info in required_fields:
+            field_name = field_info['name']
+            field_type = field_info['data_type']
+            
+            # Periksa apakah field sudah ada
+            if field_name in existing_fields_details:
+                # Jika tipe data tidak sesuai, hapus field tersebut
+                if existing_fields_details[field_name].upper() != field_type.upper():
+                    arcpy.management.DeleteField(zona_layer_temp_path, field_name)
+                    arcpy.management.AddField(zona_layer_temp_path, field_name, field_type)
+                else:
+                    # Jika tipe data sudah benar, kosongkan nilainya
+                    arcpy.management.CalculateField(zona_layer_temp_path, field_name, "None", "PYTHON3")
             else:
-                arcpy.management.AddField(zona_layer_temp_path, field['name'], field['data_type'])
+                # Jika field belum ada, tambahkan
+                arcpy.management.AddField(zona_layer_temp_path, field_name, field_type)
 
         # Set nilai default
         arcpy.management.CalculateField(zona_layer_temp_path, "WADMKK", "'"+str(config_and_paths['kota'])+"'", "PYTHON3")  # Set kode kabupaten/kota

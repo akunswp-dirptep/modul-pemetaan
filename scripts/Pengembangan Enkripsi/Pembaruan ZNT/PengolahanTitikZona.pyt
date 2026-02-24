@@ -7,6 +7,9 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
+arcpy.env.outputZFlag = "Disabled"
+arcpy.env.outputMFlag = "Disabled"
+
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 

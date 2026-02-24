@@ -65,20 +65,23 @@ def main_upload(project_id, username, menu, tahapan, in_feature, tahun, kategori
             headers = {"Content-Type": "multipart/form-data"}
             with open(zipname, 'rb') as f:
                 files = {'file': (in_feature + '.zip', f)}
-                response = requests.post(url, data={'nomor_berkas': project_id, 'nik': username, 'param': menu, 'step': tahapan}, files=files)
+                response = requests.post(url, data={'nomor_berkas': project_id, 'nik': username, 'param': menu, 'step': tahapan}, files=files, timeout=300)
+                
+                try:
+                    data = response.json()
+                except requests.exceptions.JSONDecodeError:
+                    if '"error":false' in response.text:
+                        arcpy.AddMessage("Upload berhasil")
+                    return
 
                 # Check if response indicates success or failure
-                if '"error":false' in response.text:
+                if data.get("error") == False:
                     # Extract and display the success message
-                    start = response.text.find('"message":"') + len('"message":"')
-                    end = response.text.find('"', start)
-                    message = response.text[start:end]
-                    arcpy.AddMessage(f"Upload successful: {message}")
+                    message = data.get("message", "Upload successful, but no message provided.")
+                    arcpy.AddMessage(f"Upload berhasil: {message}")
                 else:
                     # Extract the error message
-                    start = response.text.find('"message":"') + len('"message":"')
-                    end = response.text.find('"', start)
-                    message = response.text[start:end]
+                    message = data.get("message", "Upload failed, but no message provided.")
                     
                     # Handle special case for "le" message
                     if message.lower() == "le":
@@ -139,23 +142,27 @@ def main_upload_shapefile(project_id, username, menu, tahapan, in_feature, tahun
             with open(zipname, 'rb') as f:
                 files = {'file': (in_feature + '.zip', f)}
                 response = requests.post(url, data={'nomor_berkas': project_id, 'nik': username, 'param': menu, 'step': tahapan}, files=files)
+                arcpy.AddMessage(f"API Response: {response.status_code} - {response.text}")
+                
+                try:
+                    data = response.json()
+                except requests.exceptions.JSONDecodeError:
+                    if '"error":false' in response.text:
+                        arcpy.AddMessage("Upload berhasil")
+                    return
 
-                # Periksa apakah response menunjukkan sukses atau gagal
-                if '"error":false' in response.text:
-                    # Ekstrak dan tampilkan pesan sukses
-                    start = response.text.find('"message":"') + len('"message":"')
-                    end = response.text.find('"', start)
-                    message = response.text[start:end]
+                # Check if response indicates success or failure
+                if data.get("error") == False:
+                    # Extract and display the success message
+                    message = data.get("message", "Upload successful, but no message provided.")
                     arcpy.AddMessage(f"Upload berhasil: {message}")
                 else:
-                    # Ekstrak pesan error
-                    start = response.text.find('"message":"') + len('"message":"')
-                    end = response.text.find('"', start)
-                    message = response.text[start:end]
+                    # Extract the error message
+                    message = data.get("message", "Upload failed, but no message provided.")
                     
-                    # Handle kasus khusus untuk pesan "le"
+                    # Handle special case for "le" message
                     if message.lower() == "le":
-                        arcpy.AddWarning("Data sedang dalam proses pengiriman ke server. Harap tunggu beberapa saat dan periksa kembali statusnya nanti.")
+                        arcpy.AddWarning("Data sedang dalam proses dikirim ke server. Silakan tunggu beberapa saat dan cek kembali.")
                     else:
                         arcpy.AddError(f"Upload gagal: {message}")
                         

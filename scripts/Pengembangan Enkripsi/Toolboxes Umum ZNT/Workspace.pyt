@@ -1,7 +1,10 @@
 from datetime import datetime
 import sys
 import uuid
-import arcpy, os, json
+import arcpy, os, json, zipfile
+
+arcpy.env.outputZFlag = "Disabled"
+arcpy.env.outputMFlag = "Disabled"
 
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
@@ -24,7 +27,8 @@ class Toolbox:
         self.alias = "toolbox_workspace"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Buat_Workspace]
+        self.tools = [Buat_Workspace,
+                      Import_Workspace]
 
 
 class Buat_Workspace:
@@ -207,8 +211,146 @@ class Import_Workspace:
         self.description = "Tool untuk mengimpor workspace data ZNT."
     
     def getParameterInfo(self):
-        return
+        zip_file = arcpy.Parameter(
+            displayName="File zip berisi workspace (.zip)",
+            name="zip_file",
+            datatype="DEFile",
+            parameterType="Required",
+            direction="Input"
+        )
+        workspace_folder = arcpy.Parameter(
+            displayName="Folder penempatan workspace",
+            name="output_path",
+            datatype="DEFolder",
+            parameterType="Required",
+            direction="Input")
+        output_zl_path = arcpy.Parameter(
+            name="output_zl_path",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        return [zip_file, workspace_folder, output_zl_path]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
         return True
+    
+    def updateParameters(self, parameters):
+        return
+    
+    def updateMessages(self, parameters):
+        return
+    
+    def execute(self, parameters, messages):
+        zipfile_path = parameters[0].valueAsText
+        output_path = parameters[1].valueAsText
+        if zipfile_path:
+            arcpy.AddMessage(f"Memproses file: {zipfile_path}")
+            success, zona_layer_path = self.check_and_extract_config(zipfile_path, output_path)
+            if success:
+                arcpy.AddMessage("Proses selesai dengan sukses")
+                arcpy.SetParameter(2, zona_layer_path)
+            else:
+                arcpy.AddMessage("Proses tidak berhasil")
+        else:
+            arcpy.AddError("Tidak ada file zip yang dipilih")
+        return
+    
+    def update_config_file(self, config_path, output_path):
+        """
+        Memperbarui file config.json dengan path yang baru
+        """
+        try:
+            # Baca file config.json
+            with open(config_path, 'r') as config_file:
+                config_data = json.load(config_file)
+            
+            # Perbarui path sesuai dengan output_path
+            config_data["ws_path"] = output_path
+            config_data["dataset_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb", "znt_ds")
+            config_data["gdb_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb")
+            
+            # Tulis kembali ke file
+            with open(config_path, 'w') as config_file:
+                json.dump(config_data, config_file, indent=4)
+            
+            return True
+            
+        except Exception as e:
+            arcpy.AddError(f"Error saat memperbarui config.json: {e}")
+            return False
+
+    def check_and_extract_config(self, zip_path, output_path):
+        """
+        Mengecek apakah file zip mengandung config.json atau config.dat
+        dan melakukan ekstraksi jika ditemukan
+        """
+        try:
+            # Cek apakah file zip ada
+            if not os.path.exists(zip_path):
+                arcpy.AddError(f"File zip tidak ditemukan: {zip_path}")
+                return False, None
+            
+            # Buka file zip untuk membaca isinya
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                # Dapatkan daftar semua file dalam zip
+                file_list = zip_ref.namelist()
+                
+                # Cek apakah ada config.json atau config.dat
+                has_config_json = any('config.json' in f.lower() for f in file_list)
+            
+                
+                if has_config_json:
+                    arcpy.AddMessage("File config ditemukan dalam zip. Melakukan ekstraksi...")
+                    
+                    # Tentukan direktori tujuan ekstraksi
+                    extract_dir = output_path
+                    
+                    # Buat direktori jika belum ada
+                    if not os.path.exists(extract_dir):
+                        os.makedirs(extract_dir)
+                    
+                    # Ekstrak semua file
+                    zip_ref.extractall(extract_dir)
+                    
+                    arcpy.AddMessage(f"File berhasil diekstrak ke: {extract_dir}")
+                    
+                    # Cari path file config yang sebenarnya
+                    config_path = None
+                    for root, dirs, files in os.walk(extract_dir):
+                        for file in files:
+                            if file.lower() == 'config.json':
+                                config_path = os.path.join(root, file)
+                                break
+                        if config_path:
+                            break
+                    
+                    if config_path:
+                        arcpy.AddMessage(f"File config ditemukan di: {config_path}")
+                        
+                        # Baca isi config file jika diperlukan
+                        try:
+                            update_success = self.update_config_file(config_path, output_path)                                
+                            if update_success:
+                                # Baca lagi untuk menampilkan hasil perubahan
+                                with open(config_path, 'r') as config_file:
+                                    updated_config = json.load(config_file)
+                                    zona_layer_path = os.path.join(updated_config['dataset_path'], 'Zona_Layer')
+
+
+                        except Exception as e:
+                            arcpy.AddWarning(f"Tidak dapat membaca file config: {e}")
+                    
+                    return True, zona_layer_path
+                else:
+                    arcpy.AddMessage("Tidak ditemukan config.json dalam file zip")
+                    return False, None
+                    
+        except zipfile.BadZipFile:
+            arcpy.AddError("File yang dipilih bukan file zip yang valid")
+            return False
+        except Exception as e:
+            arcpy.AddError(f"Error saat memproses file zip: {e}")
+            return False
+

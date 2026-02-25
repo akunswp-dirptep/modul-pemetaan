@@ -64,7 +64,7 @@ def main_upload(project_id, username, menu, tahapan, in_feature, tahun, kategori
             headers = {"Content-Type": "multipart/form-data"}
 
             with open(zipname, 'rb') as f:
-                arcpy.AddMessage(f"Uploading file: {zipname} to URL: {url}")
+
                 files = {'file': (in_feature + '.zip', f)}
                 response = requests.post(url, data={'nomor_berkas': project_id, 'nik': username, 'param': menu, 'step': tahapan}, files=files, timeout=300)
 
@@ -81,7 +81,7 @@ def main_upload(project_id, username, menu, tahapan, in_feature, tahun, kategori
                 if data.get("error") == False:
                     # Extract and display the success message
                     message = data.get("message", "Upload successful, but no message provided.")
-                    arcpy.AddMessage(f"Upload berhasil: {message}")
+                    arcpy.AddMessage(f"{message}")
                 else:
                     # Extract the error message
                     message = data.get("message", "Upload failed, but no message provided.")
@@ -141,7 +141,7 @@ def main_upload_shapefile(project_id, username, menu, tahapan, in_feature, tahun
             prod_url = "https://sipenta.atrbpn.go.id/tatausaha/apis/upload"
             url = prod_url if use_production else test_url
             headers = {"Content-Type": "multipart/form-data"}
-            arcpy.AddMessage(f"nomor berkas: {project_id}, nik: {username}, param: {menu}, step: {tahapan}")
+
             with open(zipname, 'rb') as f:
                 files = {'file': (in_feature + '.zip', f)}
                 response = requests.post(url, data={'nomor_berkas': project_id, 'nik': username, 'param': menu, 'step': tahapan}, files=files)
@@ -158,7 +158,7 @@ def main_upload_shapefile(project_id, username, menu, tahapan, in_feature, tahun
                 if data.get("error") == False:
                     # Extract and display the success message
                     message = data.get("message", "Upload successful, but no message provided.")
-                    arcpy.AddMessage(f"Upload berhasil: {message}")
+                    arcpy.AddMessage(f"{message}")
                 else:
                     # Extract the error message
                     message = data.get("message", "Upload failed, but no message provided.")

@@ -8,6 +8,7 @@ if parent_dir not in sys.path:
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
+from zntutils.system_utils import get_user_data, renew_user_data
 
 
 class Toolbox(object):
@@ -29,20 +30,27 @@ class Sesuaikan_Titik_Koordinat(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
+        preferred_server = get_user_data('preferred_server')
+        nik_saved = get_user_data('nik')
+        berkas = get_user_data('berkas')
+
         nik = arcpy.Parameter(
             displayName="Nomor Induk Kependudukan (NIK)",
             name="username",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
-        
+        if nik_saved:
+            nik.value = nik_saved
         nomor_berkas = arcpy.Parameter(
             displayName="Nomor Berkas",
             name="project_id",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
-        
+        if berkas:
+            nomor_berkas.value = berkas
+
         catatan = arcpy.Parameter(
             displayName="Catatan",
             name="catatan",
@@ -68,6 +76,9 @@ class Sesuaikan_Titik_Koordinat(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        
+        if preferred_server:
+            server.value = preferred_server
 
         server.filter.type = "ValueList"
         server.filter.list = ["Produksi", "Belajar"]
@@ -128,17 +139,26 @@ class Sesuaikan_Titik_Koordinat(object):
         server = parameters[5].valueAsText if len(parameters) > 5 else None
         self.use_production = True if server == "Produksi" or server == None else False
 
-        list_oid = samplepoint.get_selected_oids('Titik_Sampel')
-        if len(list_oid) > 0:
-            arcpy.AddError('Matikan terlebih dahulu tools editnya')
-            sys.exit(1)
-        
-        list_oid = samplepoint.get_selected_oids('Titik_Sampel_Individual')
-        if len(list_oid) > 0:
-            arcpy.AddError('Matikan terlebih dahulu tools editnya')
-            sys.exit(1)
+        aprx = arcpy.mp.ArcGISProject('CURRENT')
+        layer_name = []
+        for m in aprx.listMaps():
+            for lyr in m.listLayers():
+                layer_name.append(lyr.name)
+
+
 
         self.config_paths = self.get_config_values()
+        if arcpy.Exists(self.config_paths['path_titik_sampel']) and "Titik_Sampel" in layer_name:
+            list_oid = samplepoint.get_selected_oids('Titik_Sampel')
+            if len(list_oid) > 0:
+                arcpy.AddError('Matikan terlebih dahulu tools editnya')
+                sys.exit(1)
+        
+        if arcpy.Exists(self.config_paths['path_titik_sampel_individual']) and "Titik_Sampel_Individual" in layer_name:
+            list_oid = samplepoint.get_selected_oids('Titik_Sampel_Individual')
+            if len(list_oid) > 0:
+                arcpy.AddError('Matikan terlebih dahulu tools editnya')
+                sys.exit(1)
         self.get_sample_coordinate_from_sipenta()
         self.extract_coordinates_to_json()
         self.compare_coordinates()
@@ -154,6 +174,15 @@ class Sesuaikan_Titik_Koordinat(object):
         }
 
         self.upload_data_to_server(json_untuk_dikirim, self.use_production)
+        preferred_server = get_user_data('preferred_server')
+        nik = get_user_data('nik')
+        berkas = get_user_data('berkas')
+        if nik != self.username:
+            renew_user_data('nik', self.username)
+        if berkas != self.project_id:
+            renew_user_data('berkas', self.project_id)
+        if len(parameters) > 4 and server != preferred_server:
+            renew_user_data('preferred_server', server)
         self.reload_layer()
         
         return

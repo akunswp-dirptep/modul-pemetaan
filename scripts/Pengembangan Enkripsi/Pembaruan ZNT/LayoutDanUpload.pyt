@@ -19,7 +19,8 @@ if parent_dir not in sys.path:
 
 from zntutils.constant import NAMA_PROVINSI, KAB_KOTA
 from zntutils.document import validate_document_type, get_credentials
-from zntutils.upload_utils import main_upload_shapefile, main_upload
+from zntutils.upload_utils import main_upload
+from zntutils.system_utils import get_user_data, renew_user_data
 from zntutils import zona_layer as zonalayer
 #Helper Functions
 def is_internal():
@@ -40,153 +41,6 @@ def delete_topology_file():
     topology_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer_Topology')
     if arcpy.Exists(topology_path):
         arcpy.management.Delete(topology_path)
-
-# Cryptography Functions
-def generate_key():
-    password = 'bpnri-jakarta'
-    salt = b'Sisinga@2-Jakarta'  
-
-    # Derive proper key dari password
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=100000,
-    )
-    key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
-    return key
-
-def simpan_ke_bin(data_terenkripsi, nama_file):
-    """Menyimpan data bytes ke dalam file biner."""
-    try:
-        with open(nama_file, 'wb') as file:
-            file.write(data_terenkripsi)
-        print(f"Pesan berhasil disimpan ke {nama_file}")
-    except IOError as e:
-        print(f"Terjadi kesalahan saat menulis ke file: {e}")
-
-def baca_dari_bin(nama_file):
-    """Membaca data bytes dari file biner."""
-    data_terenkripsi = None
-    try:
-        with open(nama_file, 'rb') as file:
-            data_terenkripsi = file.read()
-        print(f"Pesan berhasil dibaca dari {nama_file}")
-        return data_terenkripsi
-    except IOError as e:
-        print(f"Terjadi kesalahan saat membaca file: {e}")
-        return None
-    
-def encrypt_message(message: str, key: bytes, path) -> bytes:
-    fernet = Fernet(key)
-    encrypted_message = fernet.encrypt(message.encode())
-    simpan_ke_bin(encrypted_message, path)
-    return encrypted_message
-
-def decrypt_message(key: bytes, path) -> str:
-    encrypted_message = baca_dari_bin(path)
-    fernet = Fernet(key)
-    decrypted_message = fernet.decrypt(encrypted_message).decode()
-    data = json.loads(decrypted_message)
-    return data
-
-def get_preferred_server_connection():
-    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
-
-    try:
-        if os.path.exists(config_path):
-            data = decrypt_message(generate_key(), config_path) 
-            preferred_server = data.get('preferred_server', None)
-            return preferred_server
-        else:
-            return None
-        
-    except Exception as e:
-        arcpy.AddError(f"Gagal membaca user config: {str(e)}")
-        return None
-    
-def setup_preferred_server_connection(preferred_server: str):
-
-    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
-
-    try:
-        # Cek apakah file ada
-        if os.path.exists(config_path):
-            # File ada, baca isinya
-            try:
-                data = decrypt_message(generate_key(), config_path)                    
-                # Validasi format JSON
-                if 'preferred_server' not in data or not isinstance(data['preferred_server'], str):
-                    # Format tidak sesuai, buat struktur baru
-                    data = {"preferred_server": preferred_server}
-                
-                if data['preferred_server'] != preferred_server:
-                    data['preferred_server'] = preferred_server
-                    
-            except json.JSONDecodeError:
-                # File rusak/tidak valid, buat struktur baru
-                arcpy.AddWarning("File config.json rusak, membuat struktur baru...")
-                data = {"preferred_server": preferred_server}
-        else:
-            # File belum ada, buat struktur baru
-            # Pastikan direktori Menu ada
-            menu_dir = os.path.dirname(config_path)
-            if not os.path.exists(menu_dir):
-                os.makedirs(menu_dir)
-            
-            data = {"preferred_server": preferred_server}
-        
-
-        # Simpan kembali ke file
-        encrypt_message(json.dumps(data), generate_key(), config_path)
-        
-        return True
-        
-    except Exception as e:
-        arcpy.AddError(f"Gagal menyimpan user config: {str(e)}")
-        return False
-
-def reload_all_toolboxes_in_folder(toolbox_folder):
-     
-    if not os.path.exists(toolbox_folder):
-        arcpy.AddError(f"Folder toolbox tidak ditemukan: {toolbox_folder}")
-        return
-        
-     # Cari semua file .pyt di folder
-    pyt_files = [f for f in os.listdir(toolbox_folder) if f.endswith('.pyt')]
-        
-    if not pyt_files:
-        arcpy.AddWarning(f"Tidak ada file .pyt ditemukan di {toolbox_folder}")
-        return
-        
-    # Load toolbox di proyek saat ini
-    try:
-        # Hapus dan reload menggunakan ImportToolbox (lebih reliable)
-        for pyt_file in pyt_files:
-            pyt_path = os.path.join(toolbox_folder, pyt_file)
-            try:
-                arcpy.ImportToolbox(pyt_path)
-            except Exception as e:
-                arcpy.AddWarning(f"Gagal memuat ulang {pyt_file}: {str(e)}")
-            
-    except Exception as e:
-        arcpy.AddWarning(f"Error saat reload toolbox: {str(e)}")
-
-def renew_preferred_server(server:str):
-    
-    setup_preferred_server_connection(server)
-    all_toolboxes_folder_need_reload = [
-                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT",
-                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT",
-                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT"
-            ]
-
-    try:
-        for folder in all_toolboxes_folder_need_reload:
-            reload_all_toolboxes_in_folder(folder)
-
-    except Exception as e:
-        arcpy.AddWarning(f"Gagal memuat ulang toolbox: {str(e)}")
 
 class Toolbox:
     def __init__(self):
@@ -213,7 +67,10 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
     def getParameterInfo(self):
         """Define parameter definitions"""
         self.is_gis_internal = is_internal()
-        self.preferred_server = get_preferred_server_connection()
+        preferred_server = get_user_data("preferred_server")
+        nik = get_user_data("nik")
+        berkas = get_user_data("berkas")
+
         self.current_year = current_year()
         param0 = arcpy.Parameter(
             displayName="Nomor Induk Kependudukan (NIK)",
@@ -221,12 +78,20 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        
+        if nik:
+            param0.value = nik
+
         param1 = arcpy.Parameter(
             displayName="Nomor Berkas",
             name="project_id",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        
+        if berkas:
+            param1.value = berkas
+
         param2 = arcpy.Parameter(
             displayName="Tahun",
             name="tahun",
@@ -249,8 +114,8 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
         if self.current_year:
             param2.value = self.current_year
 
-        if self.preferred_server:
-            param4.value = self.preferred_server
+        if preferred_server:
+            param4.value = preferred_server
 
         param4.filter.type = "ValueList"
         param4.filter.list = ["Produksi", "Belajar"]
@@ -316,14 +181,20 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
         feature_class = parameters[3].valueAsText
         server = parameters[4].valueAsText if len(parameters) > 4 else None
         use_production = True if server == "Produksi" or server == None else False
-        self.preferred_server = get_preferred_server_connection()
+        preferred_server = get_user_data("preferred_server")
         delete_topology_file()
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload(project_id, username, "pembaruan_znt_data_shp_titik_sampel", "Analisis dan Pengolahan Data", "Titik_Sampel", tahun, "ZNT", feature_class, use_production)
 
-        if len(parameters) > 4 and server != self.preferred_server:
-            renew_preferred_server(server)
-
+        preferred_server = get_user_data('preferred_server')
+        nik = get_user_data('nik')
+        berkas = get_user_data('berkas')
+        if nik != username:
+            renew_user_data('nik', username)
+        if berkas != project_id:
+            renew_user_data('berkas', project_id)
+        if len(parameters) > 4 and server != preferred_server:
+            renew_user_data('preferred_server', server)
         return
 
 
@@ -338,20 +209,27 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
     def getParameterInfo(self):
         """Define parameter definitions"""
         self.is_gis_internal = is_internal()
-        self.preferred_server = get_preferred_server_connection()
+        preferred_server = get_user_data("preferred_server") if self.is_gis_internal else None
+        nik = get_user_data('nik')
+        berkas = get_user_data('berkas')
         self.current_year = current_year()
+
         param0 = arcpy.Parameter(
             displayName="Nomor Induk Kependudukan (NIK)",
             name="username",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        if nik:
+            param0.value = nik
         param1 = arcpy.Parameter(
             displayName="Nomor Berkas",
             name="project_id",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        if berkas:
+            param1.value = berkas
         param2 = arcpy.Parameter(
             displayName="Tahun",
             name="tahun",
@@ -375,8 +253,8 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
         if self.current_year:
             param2.value = self.current_year
 
-        if self.preferred_server:
-            param4.value = self.preferred_server
+        if preferred_server:
+            param4.value = preferred_server
 
         param4.filter.type = "ValueList"
         param4.filter.list = ["Produksi", "Belajar"]
@@ -442,12 +320,20 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
         feature_class = parameters[3].valueAsText
         server = parameters[4].valueAsText if len(parameters) > 4 else None
         use_production = True if server == "Produksi" or server == None else False
-        self.preferred_server = get_preferred_server_connection()
+
         delete_topology_file()
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload(project_id, username, "pembaruan_znt_data_shp_titik_zona", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
-        if len(parameters) > 4 and server != self.preferred_server:
-            renew_preferred_server(server)        
+        
+        preferred_server = get_user_data('preferred_server')
+        nik = get_user_data('nik')
+        berkas = get_user_data('berkas')
+        if nik != username:
+            renew_user_data('nik', username)
+        if berkas != project_id:
+            renew_user_data('berkas', project_id)
+        if len(parameters) > 4 and server != preferred_server:
+            renew_user_data('preferred_server', server)     
         return
 
 #========== Analisis dan Pengolahan Data - Peta Zona Nilai Tanah ==========
@@ -462,7 +348,9 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
     def getParameterInfo(self):
         """Define parameter definitions"""
         self.is_gis_internal = is_internal()
-        self.preferred_server = get_preferred_server_connection()
+        preferred_server = get_user_data("preferred_server") if self.is_gis_internal else None
+        nik = get_user_data('nik')
+        berkas = get_user_data('berkas')
         self.current_year = current_year()
         param0 = arcpy.Parameter(
             displayName="Nomor Induk Kependudukan (NIK)",
@@ -470,12 +358,20 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        
+        if nik:
+            param0.value = nik
+
         param1 = arcpy.Parameter(
             displayName="Nomor Berkas",
             name="project_id",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        
+        if berkas:
+            param1.value = berkas
+
         param2 = arcpy.Parameter(
             displayName="Tahun",
             name="tahun",
@@ -499,8 +395,8 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         if self.current_year:
             param2.value = self.current_year
 
-        if self.preferred_server:
-            param4.value = self.preferred_server
+        if preferred_server:
+            param4.value = preferred_server
 
         param4.filter.type = "ValueList"
         param4.filter.list = ["Produksi", "Belajar"]
@@ -566,10 +462,19 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         feature_class = parameters[3].valueAsText
         server = parameters[4].valueAsText if len(parameters) > 4 else None
         use_production = True if server == "Produksi" or server == None else False
-        self.preferred_server = get_preferred_server_connection()
+
         delete_topology_file()
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload(project_id, username, "pembaruan_znt_data_shp_zona_nilai_tanah", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
-        if len(parameters) > 4 and server != self.preferred_server:
-            renew_preferred_server(server)        
+        
+        preferred_server = get_user_data('preferred_server')
+        nik = get_user_data('nik')
+        berkas = get_user_data('berkas')
+
+        if nik != username:
+            renew_user_data('nik', username)
+        if berkas != project_id:
+            renew_user_data('berkas', project_id)
+        if len(parameters) > 4 and server != preferred_server:
+            renew_user_data('preferred_server', server) 
         return

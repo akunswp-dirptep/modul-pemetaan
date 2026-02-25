@@ -155,5 +155,4 @@ def get_user_data(key:str):
             return None
         
     except Exception as e:
-        arcpy.AddError(f"Gagal membaca user config: {str(e)}")
         return None

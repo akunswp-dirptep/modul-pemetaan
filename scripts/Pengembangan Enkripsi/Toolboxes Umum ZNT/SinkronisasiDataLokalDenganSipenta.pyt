@@ -9,6 +9,7 @@ if parent_dir not in sys.path:
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
+from zntutils.system_utils import get_user_data, renew_user_data
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -33,18 +34,27 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
+        preferred_server = get_user_data('preferred_server')
+        nik_saved = get_user_data('nik')
+        berkas = get_user_data('berkas')
         nik = arcpy.Parameter(
             displayName="Nomor Induk Kependudukan (NIK)",
             name="username",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        
+        if nik_saved:
+            nik.value = nik_saved
+
         nomor_berkas = arcpy.Parameter(
             displayName="Nomor Berkas",
             name="project_id",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        if berkas:
+            nomor_berkas.value = berkas
         catatan = arcpy.Parameter(
             displayName="Catatan",
             name="catatan",
@@ -70,7 +80,8 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
-        
+        if preferred_server:
+            server.value = preferred_server
         data_yang_disinkronisasi.filter.type = "ValueList"
         data_yang_disinkronisasi.filter.list = ["Data Pembanding Individual", "Penggunaan Titik Sampel Untuk Perhitungan", "Jenis Zona Titik Sampel"]
         server.filter.type = "ValueList"
@@ -241,6 +252,15 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 return
 
             self.upload_data_zoning_to_server(json_yang_dikirim)
+        preferred_server = get_user_data('preferred_server')
+        nik = get_user_data('nik')
+        berkas = get_user_data('berkas')
+        if nik != self.username:
+            renew_user_data('nik', self.username)
+        if berkas != self.project_id:
+            renew_user_data('berkas', self.project_id)
+        if len(parameters) > 4 and server != preferred_server:
+            renew_user_data('preferred_server', server)
         return
     
     # Kode Helper

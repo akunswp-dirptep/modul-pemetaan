@@ -140,12 +140,7 @@ if "JMLNILAI" not in [f.name for f in arcpy.ListFields(zona_layer)]:
     arcpy.management.AddField(zona_layer, "JMLNILAI", "DOUBLE")
 arcpy.management.CalculateField(zona_layer, "JMLNILAI", "!RANGE_Nilai!", "PYTHON3")
 
-"""
-Tahap 7: Pembersihan Field Statistik Asli
-- Menghapus field statistik sementara yang telah di-join
-- Field-field ini sudah tidak diperlukan setelah nilai akhir dihitung
-- Membuat struktur data lebih bersih dan mudah dipahami
-"""
+
 arcpy.management.DeleteField(zona_layer,
     ["SUM_Nilai", "MEAN_Nilai", "MIN_Nilai", "MAX_Nilai", "STD_Nilai", "COUNT_Nilai", "RANGE_Nilai"]
 )
@@ -188,5 +183,43 @@ arcpy.management.CalculateField(
     "PYTHON3",
     code_block
 )
+
+"""
+Tahap 10: Pengecekan Kualitas Zona
+- Memberikan peringatan jika ada zona yang tidak memenuhi kriteria kualitas data.
+- Kriteria:
+  * NILAIZN (nilai rata-rata zona) adalah 0.
+  * JMLSMPL (jumlah sampel) kurang dari 3.
+- Zona yang tidak memenuhi kriteria ini mungkin memerlukan investigasi lebih lanjut.
+"""
+arcpy.AddMessage("Memeriksa kualitas zona...")
+nilaizn_null_or_zero_zones = []
+less_than_3_samples_zones = []
+with arcpy.da.SearchCursor(zona_layer, ["NOZN", "NILAIZN", "JMLSMPL"]) as cursor:
+    for row in cursor:
+        zone_id = row[0]
+        nilaizn = row[1]
+        jmlsmpl = row[2]
+        
+        if nilaizn is None or nilaizn == 0:
+            nilaizn_null_or_zero_zones.append(zone_id)
+        if jmlsmpl is None or jmlsmpl < 3:
+            less_than_3_samples_zones.append((zone_id, jmlsmpl if jmlsmpl is not None else 0))
+
+if nilaizn_null_or_zero_zones:
+    arcpy.AddWarning(f"Terdapat zona dengan NILAIZN 0 atau NULL: {', '.join(map(str, nilaizn_null_or_zero_zones))}")
+if less_than_3_samples_zones:
+    lines = "\n".join(
+        f"{zone_id} (Terdapat {int(jmlsmpl)} Titik Sampel)"
+        for zone_id, jmlsmpl in less_than_3_samples_zones
+    )
+
+    arcpy.AddWarning(
+        f"Terdapat zona dengan jumlah sampel kurang dari 3:\n{lines}"
+    )
+if not nilaizn_null_or_zero_zones and not less_than_3_samples_zones:
+    arcpy.AddMessage("Semua zona memenuhi kriteria kualitas data minimum.")
+
+
 arcpy.management.Delete(dissolve_output)
 arcpy.management.Delete(identity_output)

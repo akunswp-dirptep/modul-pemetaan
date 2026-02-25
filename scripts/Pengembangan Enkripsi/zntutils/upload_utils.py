@@ -51,27 +51,30 @@ def main_upload(project_id, username, menu, tahapan, in_feature, tahun, kategori
             with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for file in shapefile_components:
                     zipf.write(file, basename(file))
-                    arcpy.AddMessage(f"Zipped file: {basename(file)}")
         except Exception as e:
             arcpy.AddError(f"Error creating zip file: {str(e)}")
             return
 
         # Attempt to upload the zip file
         try:
-            arcpy.AddMessage('========== Uploading Zip File ==========')
+            arcpy.AddMessage('========== Mengupload File ==========')
             test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/upload"
             prod_url = "https://sipenta.atrbpn.go.id/tatausaha/apis/upload"
             url = prod_url if use_production else test_url
             headers = {"Content-Type": "multipart/form-data"}
+
             with open(zipname, 'rb') as f:
+                arcpy.AddMessage(f"Uploading file: {zipname} to URL: {url}")
                 files = {'file': (in_feature + '.zip', f)}
                 response = requests.post(url, data={'nomor_berkas': project_id, 'nik': username, 'param': menu, 'step': tahapan}, files=files, timeout=300)
-                
+
                 try:
                     data = response.json()
                 except requests.exceptions.JSONDecodeError:
                     if '"error":false' in response.text:
                         arcpy.AddMessage("Upload berhasil")
+                    if '"error":true' in response.text:
+                        arcpy.AddError("Upload gagal, server mengembalikan error.")
                     return
 
                 # Check if response indicates success or failure
@@ -127,24 +130,25 @@ def main_upload_shapefile(project_id, username, menu, tahapan, in_feature, tahun
             with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for file in shapefile_components:
                     zipf.write(file, basename(file))
-                    arcpy.AddMessage(f"Zipped file: {basename(file)}")
         except Exception as e:
             arcpy.AddError(f"Error creating zip file: {str(e)}")
             return
 
         # Attempt to upload the zip file
         try:
-            arcpy.AddMessage('========== Uploading Zip File ==========')
+            arcpy.AddMessage('========== Meng-upload File ==========')
             test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/upload"
             prod_url = "https://sipenta.atrbpn.go.id/tatausaha/apis/upload"
             url = prod_url if use_production else test_url
             headers = {"Content-Type": "multipart/form-data"}
+            arcpy.AddMessage(f"nomor berkas: {project_id}, nik: {username}, param: {menu}, step: {tahapan}")
             with open(zipname, 'rb') as f:
                 files = {'file': (in_feature + '.zip', f)}
                 response = requests.post(url, data={'nomor_berkas': project_id, 'nik': username, 'param': menu, 'step': tahapan}, files=files)
-                
+               
                 try:
                     data = response.json()
+
                 except requests.exceptions.JSONDecodeError:
                     if '"error":false' in response.text:
                         arcpy.AddMessage("Upload berhasil")

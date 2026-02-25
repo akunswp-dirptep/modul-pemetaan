@@ -568,6 +568,7 @@ class Upload_Peta_Area_Kerja_Pembuatan_ZNT_AOI(object):
         
         validate_document_type(project_id, target='Pembuatan ZNT')
         main_upload_shapefile(project_id, username, "Peta Area Kerja", "Pembuatan Zona Awal", "Zona_Layer", tahun, "ZNT", shapefile_path, use_production)
+
         self.preferred_server = get_user_data('preferred_server')
         self.nik = get_user_data('nik')
         self.berkas = get_user_data('berkas')
@@ -869,6 +870,7 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
         
         validate_document_type(project_id, target='Pembuatan ZNT')
         main_upload(project_id, username, "Delineasi Zona Awal Nilai Tanah", "Pembuatan Zona Awal", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
+
         self.preferred_server = get_user_data('preferred_server')
         self.nik = get_user_data('nik')
         self.berkas = get_user_data('berkas')

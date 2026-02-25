@@ -19,7 +19,6 @@ if parent_dir not in sys.path:
 from zntutils.constant import NAMA_PROVINSI, KAB_KOTA
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import main_upload_shapefile, main_upload
-from zntutils.system_utils import get_preferred_server_connection, setup_preferred_server_connection
 from zntutils import zona_layer as zonalayer
 
 #Helper Functions

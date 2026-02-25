@@ -1532,9 +1532,9 @@
 				</button>
 			<!-- Menu Pengolahan Data Dasar -->
 
-				<button id="ButtonUploadPetaZonaAwalNilaiTanah" caption="Upload Peta Zona Awal Nilai Tanah" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadPetaZonaAwalNilaiTanah" caption="Upload Peta Survei Batas Zona Awal Nilai Tanah" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes\Upload.pyt\Upload_Peta_Zona_Awal_Nilai_Tanah" name="Upload Peta Zona Awal Nilai Tanah" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanDataDasar.pyt\Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT" name="Upload Peta Zona Awal Nilai Tanah" xmlns=""/>
 					</args>
 					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Peta Zona Awal Nilai Tanah ZNT.</tooltip>
 				</button>

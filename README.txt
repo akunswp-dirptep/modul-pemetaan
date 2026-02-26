@@ -1,8 +1,16 @@
-Version: 5.5 - Gunungsitoli rc-5
-Published: 28/01/2025
+Version: 5.7 - Intan Jaya
+Published: 26/02/2025
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 
-Penyesuaian Aplikasi Ke Versi 3.4
-Penyelesaian Hingga Fitur Hitung ZNT
-Versi ini HANYA UNTUK KEPERLUAN OPERATOR GIS INTERNAL
-JANGAN DIBAGIKAN 
+Penambahahan Fitur:
+ - Fitur Cache untuk menyimpan data NIK dan Nomor Berkas
+ - Fitur Peringatan Ketika jumlah Titik Sampel kurang dari 3 Titik pada Pembuatan ZNT
+ - Penyesuaian Fitur Instalasi, Tidak perlu menguninstal versi lama untuk menginstal versi baru
+ - Penyesuaian Semua Fitur Upload dengan panggilan API yang baru.
+
+Perbaikan Bug
+ - Perbaikan Bug Sesuaikan Titik Koordinat, dimana sesuaikan titik koordinat tidak dapat dijalankan jika tidak tersedia layer Titik Sampel atau Titik Sampel Individual
+
+Perbaikan Struktur Aplikasi 
+ - Penghapusan Thumbnail Berulang Pada Folder SIPENTA
+ - Penghapusan Junk Data Pada SIPENTA/scratch.gdb

@@ -25,6 +25,7 @@ with arcpy.da.SearchCursor(zout_path, ["Join_Count", "TARGET_FID"]) as cursor:
     for join_count, target_fid in cursor:
         if join_count > 0:
             AdaZona.add(target_fid)
+    del cursor
 
 # ----- Validasi: Setiap cluster harus memiliki setidaknya satu titik zona -----
             
@@ -32,8 +33,10 @@ clusters = {'1': {},
             '2': {}}
 
 oid_jnszn_map = {}
-for oid, jnszn in arcpy.da.SearchCursor(zl_path, ["OBJECTID", "JNSZN"]):
-    oid_jnszn_map[oid] = jnszn
+with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "JNSZN"]) as cursor:
+    for oid, jnszn in cursor:
+        oid_jnszn_map[oid] = jnszn
+    del cursor
 
 with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "cluster", "JNSZN"]) as cursor:
     for oid, cluster_val, jnszn in cursor:

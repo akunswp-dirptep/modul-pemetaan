@@ -1,16 +1,12 @@
-Version: 5.7 - Intan Jaya
-Published: 26/02/2025
+Version: 5.7.1 - Intan Jaya
+Published: 1/03/2025
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 
-Penambahahan Fitur:
- - Fitur Cache untuk menyimpan data NIK dan Nomor Berkas
- - Fitur Peringatan Ketika jumlah Titik Sampel kurang dari 3 Titik pada Pembuatan ZNT
- - Penyesuaian Fitur Instalasi, Tidak perlu menguninstal versi lama untuk menginstal versi baru
- - Penyesuaian Semua Fitur Upload dengan panggilan API yang baru.
+Penyesuaian Fitur:
+ - Penambahan Folder Connection Setelah Import Workspace
+ - Penambahan Pencarian Rekomendasi Pembanding Pada Layer Titik_Sampel Jika Ada Titik Zona
+ - Penambahan Kelas Lainnya untuk Bentuk Tanah dan Letak Tanah
 
 Perbaikan Bug
- - Perbaikan Bug Sesuaikan Titik Koordinat, dimana sesuaikan titik koordinat tidak dapat dijalankan jika tidak tersedia layer Titik Sampel atau Titik Sampel Individual
-
-Perbaikan Struktur Aplikasi 
- - Penghapusan Thumbnail Berulang Pada Folder SIPENTA
- - Penghapusan Junk Data Pada SIPENTA/scratch.gdb
+ - Perbaikan Bug Sinkronisasi Data Lokal dengan sipenta, dimana sinkronisasi tidak dapat dijalankan jika tidak tersedia layer Titik Sampel Individual
+ - Perbaikan Bug, akses file yang tertolak ketika ingin melakukan Hitung Indeks Nilai Tanah

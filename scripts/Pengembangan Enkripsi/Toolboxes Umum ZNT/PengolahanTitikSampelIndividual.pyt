@@ -98,7 +98,7 @@ class Rekomendasi_Titik_Pembanding(object):
             feature_dipilih = samplepoint.get_selected_oids("Titik_Sampel_Individual")
             if feature_dipilih == []:
                 arcpy.AddError("Tidak ada titik sampel yang dipilih pada layer 'Titik_Sampel_Individual'. Silakan pilih titik sampel terlebih dahulu.")
-            sys.exit(1)
+                sys.exit(1)
 
         elif len(feature_dipilih) > 1:
             arcpy.AddError("Hanya satu titik sampel yang boleh dipilih pada layer 'Titik_Sampel_Individual'. Silakan pilih satu titik sampel saja.")
@@ -138,14 +138,20 @@ class Rekomendasi_Titik_Pembanding(object):
                     "NEW_SELECTION",
                     where_clause
                 )
-                arcpy.AddMessage(f"\n? {len(top_10)} titik pembanding teratas telah dipilih di layer 'Titik_Zona'")
+
+                arcpy.management.SelectLayerByAttribute(
+                    "Titik_Sampel",
+                    "NEW_SELECTION",
+                    where_clause
+                )
+                arcpy.AddMessage(f"\n Titik pembanding telah dipilih di layer")
             else:
                 arcpy.management.SelectLayerByAttribute(
                     "Titik_Sampel",
                     "NEW_SELECTION",
                     where_clause
                 )
-                arcpy.AddMessage(f"\n? {len(top_10)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
+                arcpy.AddMessage(f"\n {len(top_10)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
         
     
     
@@ -165,6 +171,7 @@ class Rekomendasi_Titik_Pembanding(object):
         self.coordinate_system = configs['coord']
         self.ws_dir = ws_dir
         self.titik_zona_path = os.path.join(self.dataset_path, "Titik_Zona")
+        self.titik_sampel_path = os.path.join(self.dataset_path, "Titik_Sampel")
         if arcpy.Exists(self.titik_zona_path):
             arcpy.AddMessage("Menggunakan dataset 'Titik_Sampel' dan 'Titik_Zona' sebagai sumber mencari pembanding.")
 
@@ -585,16 +592,13 @@ class Perhitungan_Nilai_Data_Individual(object):
 
         config_dan_paths = zonalayer.get_config_values()
         dataset_path = config_dan_paths["dataset_path"]
-        gdb_path = config_dan_paths['gdb_path']
 
         titik_zona_path = os.path.join(dataset_path, 'Titik_Zona')
         titik_sampel_path = os.path.join(dataset_path, 'Titik_Sampel')
         titik_sampel_individual_path = os.path.join(dataset_path, 'Titik_Sampel_Individual')
         
-        titik_pembanding_path = titik_sampel_path
-        if arcpy.Exists(titik_zona_path):
-            titik_pembanding_path = titik_zona_path
-            arcpy.AddMessage("Menggunakan dataset 'Titik_Zona' sebagai sumber pembanding.")
+        titik_pembanding_path = [titik_zona_path, titik_sampel_path] if arcpy.Exists(titik_zona_path) else [titik_sampel_path]
+
 
         if not arcpy.Exists(titik_sampel_path):
             arcpy.AddError('Layer Titik Sampel tidak ditemukan')
@@ -639,10 +643,11 @@ class Perhitungan_Nilai_Data_Individual(object):
                 nomor_entry_individual.add(str(row[0]))
 
         # 2️⃣ Ambil semua Nomor_Entry dari layer pembanding
-        nomor_entry_sampel = set()
-        with arcpy.da.SearchCursor(titik_pembanding_path, ["Nomor_Entry"]) as cursor:
-            for row in cursor:
-                nomor_entry_sampel.add(str(row[0]))
+        nomor_entry_sampel = {}
+        for layer_path in titik_pembanding_path:
+            with arcpy.da.SearchCursor(layer_path, ["Nomor_Entry"]) as cursor:
+                for row in cursor:
+                    nomor_entry_sampel[str(row[0])] = layer_path  # Simpan juga layer asal untuk referensi jika diperlukan
 
         # 3️⃣ Cek apakah nomor_entry_titik_sampel_individual ada di layer Titik_Sampel_Individual
         if ns_individual not in nomor_entry_individual:
@@ -651,17 +656,17 @@ class Perhitungan_Nilai_Data_Individual(object):
 
         # 4️⃣ Cek apakah pembanding-pembanding ada di layer pembanding
         for idx, pembanding in enumerate([ns_pembanding_1, ns_pembanding_2, ns_pembanding_3], start=1):
-            if pembanding not in nomor_entry_sampel:
-                arcpy.AddError(f"Pembanding {idx} ('{pembanding}') tidak ditemukan di layer Titik_Sampel.")
+            if pembanding not in nomor_entry_sampel.keys():
+                arcpy.AddError(f"Pembanding {idx} ('{pembanding}') tidak ditemukan di layer Pembanding.")
                 sys.exit(1)
 
         arcpy.AddMessage("✅ Semua input valid. Titik individual dan pembanding ditemukan di layer masing-masing.")
 
         data_individual = self.dapatkan_data_sampel(ns_individual, titik_sampel_individual_path)
 
-        data_pembanding_pertama = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_1, titik_pembanding_path)
-        data_pembanding_kedua = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_2, titik_pembanding_path)
-        data_pembanding_ketiga = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_3, titik_pembanding_path)
+        data_pembanding_pertama = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_1, nomor_entry_sampel[ns_pembanding_1])
+        data_pembanding_kedua = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_2, nomor_entry_sampel[ns_pembanding_2])
+        data_pembanding_ketiga = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_3, nomor_entry_sampel[ns_pembanding_3])
 
         jumlah_keseluruhan_nol_absolut = data_pembanding_pertama['total_absolute_nol'] + data_pembanding_kedua['total_absolute_nol'] + data_pembanding_ketiga['total_absolute_nol']
 
@@ -828,6 +833,7 @@ class Perhitungan_Nilai_Data_Individual(object):
     def penyesuaian_bentuk_tanah(self, bentuk_tanah_individu, bentuk_tanah_pembanding, persentase=0.015):
         
         bobot_bentuk_tanah = [
+            {'deskripsi': 'Lainnya', 'bobot': 0},
             {'deskripsi': 'Tidak Beraturan', 'bobot': 1},
             {'deskripsi': 'Persegi Panjang/Trapesium', 'bobot': 2},
             {'deskripsi': 'Persegi/Normal', 'bobot': 3}
@@ -876,7 +882,7 @@ class Perhitungan_Nilai_Data_Individual(object):
     def penyesuaian_letak_tanah(self, letak_tanah_individu, letak_tanah_pembanding, persentase=0.01):
 
         bobot_letak_tanah = [
-            {'deskripsi': 'Lain-Lain', 'bobot': 1},
+            {'deskripsi': 'Lainnya', 'bobot': 1},
             {'deskripsi': 'Tusuk Sate', 'bobot': 2},
             {'deskripsi': 'Normal', 'bobot': 3},
             {'deskripsi': 'Hadap Taman', 'bobot': 4},

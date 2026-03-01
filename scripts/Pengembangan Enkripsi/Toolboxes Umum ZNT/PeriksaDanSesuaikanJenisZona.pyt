@@ -291,6 +291,7 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
         config_dan_paths = get_config_values()
         sampel = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")  # Path layer titik sampel
         out_temp = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel_temp")
+        
         zl= "Zona_Layer"
         JNSZN = 1  # Default value untuk Non-Pertanian
         if jenis_zona == "Non-Pertanian":
@@ -372,6 +373,7 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
                 
             arcpy.management.MakeFeatureLayer(config_dan_paths['zl_path'], "Zona_Layer")
             arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+            arcpy.management.Delete(out_temp)
             arcpy.SetParameter(1, "Zona_Layer")
         return
 

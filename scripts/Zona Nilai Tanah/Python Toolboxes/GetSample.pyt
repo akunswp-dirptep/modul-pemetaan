@@ -699,8 +699,9 @@ def updateSelectedFeature(username, project_id, tahun, use_production):
         'titik_sampel': []
     }
 
-    selected_id = samplepoint.get_selected_oids(titik_sampel_individual)
-    selected_ids['titik_sampel_individual'] = selected_id
+    if arcpy.Exists(titik_sampel_individual):
+        selected_id = samplepoint.get_selected_oids(titik_sampel_individual)
+        selected_ids['titik_sampel_individual'] = selected_id
 
     selected_id = samplepoint.get_selected_oids(titik_sampel)
     selected_ids['titik_sampel'] = selected_id

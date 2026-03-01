@@ -93,10 +93,11 @@ class Rekomendasi_Titik_Pembanding(object):
         """The source code of the tool."""
 
         self.setup_path_and_config()
-
-        feature_dipilih = samplepoint.get_selected_oids("Titik_Sampel_Individual")
-        if feature_dipilih == []:
-            arcpy.AddError("Tidak ada titik sampel yang dipilih pada layer 'Titik_Sampel_Individual'. Silakan pilih titik sampel terlebih dahulu.")
+        
+        if arcpy.Exists(self.titik_sampel_individu_path):
+            feature_dipilih = samplepoint.get_selected_oids("Titik_Sampel_Individual")
+            if feature_dipilih == []:
+                arcpy.AddError("Tidak ada titik sampel yang dipilih pada layer 'Titik_Sampel_Individual'. Silakan pilih titik sampel terlebih dahulu.")
             sys.exit(1)
 
         elif len(feature_dipilih) > 1:
@@ -164,12 +165,10 @@ class Rekomendasi_Titik_Pembanding(object):
         self.coordinate_system = configs['coord']
         self.ws_dir = ws_dir
         self.titik_zona_path = os.path.join(self.dataset_path, "Titik_Zona")
-        if not arcpy.Exists(self.titik_zona_path):
-            arcpy.AddMessage("Menggunakan dataset 'Titik_Sampel' sebagai sumber mencari pembanding.")
-            self.titik_sampel_path = os.path.join(self.dataset_path, "Titik_Sampel")
-        else:
-            arcpy.AddMessage("Menggunakan dataset 'Titik_Zona' sebagai sumber mencari pembanding.")
-            self.titik_sampel_path = self.titik_zona_path
+        if arcpy.Exists(self.titik_zona_path):
+            arcpy.AddMessage("Menggunakan dataset 'Titik_Sampel' dan 'Titik_Zona' sebagai sumber mencari pembanding.")
+
+
         self.titik_sampel_individu_path = os.path.join(self.dataset_path, "Titik_Sampel_Individual")
 
     def dapatkan_data_sampel(self, nomor_entry, layer_sumber):
@@ -315,7 +314,7 @@ class Rekomendasi_Titik_Pembanding(object):
             }
 
         bobot_letak_tanah = {
-            'lain-lain': 1,
+            'lainnya': 1,
             'tusuk sate': 2,
             'normal': 3,
             'hadap taman': 4,
@@ -361,7 +360,8 @@ class Rekomendasi_Titik_Pembanding(object):
             }
 
         bobot_bentuk_tanah = {
-            'tidak teratur': 1,
+            'lainnya': 0,
+            'tidak beraturan': 1,
             'persegi panjang/trapesium': 2,
             'persegi/normal': 3
         }
@@ -411,11 +411,13 @@ class Rekomendasi_Titik_Pembanding(object):
         }
         
         # Loop semua titik sampel untuk hitung similarity
-        with arcpy.da.SearchCursor(self.titik_sampel_path, field_list) as cursor:
-            for row in cursor:
-                if row[-1] != "Individual":  # Hanya bandingkan dengan titik sampel yang bukan jenis "Individual"
-                    data_pembanding = {
-                        'id': row[0],
+        pembanding_layer = [self.titik_zona_path, self.titik_sampel_path] if arcpy.Exists(self.titik_zona_path) else [self.titik_sampel_path]
+        for layer in pembanding_layer:
+            with arcpy.da.SearchCursor(layer, field_list) as cursor:
+                for row in cursor:
+                    if row[-1] != "Individual":  # Hanya bandingkan dengan titik sampel yang bukan jenis "Individual"
+                        data_pembanding = {
+                            'id': row[0],
                         'kategorikal': {
                             'kd_jenis_bangunan': row[1],
                             'Alamat': row[2],

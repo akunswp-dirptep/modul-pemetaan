@@ -189,11 +189,13 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             arcpy.AddError("Silahkan batalkan pilihan (clear selection) pada layer Titik_Sampel sebelum melakukan sinkronisasi data ke SIPENTA.")
             sys.exit(1)
 
+
         titik_sampel_individual  = os.path.join(self.config_paths['dataset_path'], "Titik_Sampel_Individual")
-        selected_ids = samplepoint.get_selected_oids(titik_sampel_individual)
-        if len(selected_ids) > 0:  
-            arcpy.AddError("Silahkan batalkan pilihan (clear selection) pada layer Titik_Sampel_Individual sebelum melakukan sinkronisasi data ke SIPENTA.")
-            sys.exit(1)  
+        if arcpy.Exists(titik_sampel_individual):
+            selected_ids = samplepoint.get_selected_oids(titik_sampel_individual)
+            if len(selected_ids) > 0:  
+                arcpy.AddError("Silahkan batalkan pilihan (clear selection) pada layer Titik_Sampel_Individual sebelum melakukan sinkronisasi data ke SIPENTA.")
+                sys.exit(1)  
         
         titik_zona = os.path.join(self.config_paths['dataset_path'], "Titik_Zona")
         if arcpy.Exists(titik_zona):
@@ -228,7 +230,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             }
             
             if len(data) == 0:
-                arcpy.AddWarning("Tidak ada data jenis zona yang valid untuk dikirim ke server SIPENTA.")
+                arcpy.AddWarning("Tidak ada data titik sampel untuk dikirim ke server SIPENTA.")
                 return
             self.upload_data_valid_to_server(json_yang_dikirim)
         
@@ -248,7 +250,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             }
 
             if len(data) == 0:
-                arcpy.AddWarning("Tidak ada data jenis zona yang valid untuk dikirim ke server SIPENTA.")
+                arcpy.AddWarning("Tidak ada data jenis zona yang berbeda untuk dikirim ke server SIPENTA.")
                 return
 
             self.upload_data_zoning_to_server(json_yang_dikirim)
@@ -610,9 +612,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 sys.exit(1)
             
             if not arcpy.Exists(titik_sampel_individual_fc):
-                arcpy.AddError(f"Feature class tidak ditemukan: {titik_sampel_individual_fc}")
-                self.delete_temporary_files(self.config_paths)
-                sys.exit(1)
+                arcpy.AddMessage(f"Feature class tidak ditemukan: {titik_sampel_individual_fc}")
             
             valid_sementara = {}
             if arcpy.Exists(titik_sampel_sementara_fc):
@@ -655,20 +655,21 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                     
             
             # Proses titik_sampel_individual_fc (tidak_digunakan: True)
-            with arcpy.da.SearchCursor(titik_sampel_individual_fc, fields) as cursor:
-                for row in cursor:
-                    nomor_entry = int(row[0])
-                    processed_entries.add(nomor_entry)
-                    if nomor_entry in valid_sementara:
-                        use_or_not = valid_sementara[nomor_entry]
-                        del valid_sementara[nomor_entry]
-                        if use_or_not == '0':
-                            item = {
-                                "no_sampel": nomor_entry,
-                                "tidak_digunakan": True,
-                                "catatan": self.catatan or ""
-                            }
-                            data_list.append(item)
+            if arcpy.Exists(titik_sampel_individual_fc):
+                with arcpy.da.SearchCursor(titik_sampel_individual_fc, fields) as cursor:
+                    for row in cursor:
+                        nomor_entry = int(row[0])
+                        processed_entries.add(nomor_entry)
+                        if nomor_entry in valid_sementara:
+                            use_or_not = valid_sementara[nomor_entry]
+                            del valid_sementara[nomor_entry]
+                            if use_or_not == '0':
+                                item = {
+                                    "no_sampel": nomor_entry,
+                                    "tidak_digunakan": True,
+                                    "catatan": self.catatan or ""
+                                }
+                                data_list.append(item)
  
             if titik_zona_path and arcpy.Exists(titik_zona_path):
                 with arcpy.da.SearchCursor(titik_zona_path, fields) as cursor:
@@ -833,7 +834,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         if len(data_list) == 0:
             arcpy.AddWarning("Tidak ada perubahan zoning yang ditemukan antara data saat ini dan data di sipenta.")
             self.delete_temporary_files(self.config_paths)
-            sys.exit(1)
+            return data_list
 
         return data_list
 

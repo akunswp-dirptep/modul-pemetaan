@@ -820,11 +820,13 @@ class Sampel_Sentuh_Tanahku(object):
                 'titik_sampel': []
             }
 
-        selected_id = samplepoint.get_selected_oids(titik_sampel_individual)
-        selected_ids['titik_sampel_individual'] = selected_id
+        if arcpy.Exists(titik_sampel_individual):
+            selected_id = samplepoint.get_selected_oids(titik_sampel_individual)
+            selected_ids['titik_sampel_individual'] = selected_id
 
-        selected_id = samplepoint.get_selected_oids(titik_sampel)
-        selected_ids['titik_sampel'] = selected_id
+        if arcpy.Exists(titik_sampel):
+            selected_id = samplepoint.get_selected_oids(titik_sampel)
+            selected_ids['titik_sampel'] = selected_id
             
         if len(selected_ids['titik_sampel_individual']) == 0 and len(selected_ids['titik_sampel']) == 0:
                 arcpy.AddWarning("Tidak ada feature yang dipilih dalam layer.")

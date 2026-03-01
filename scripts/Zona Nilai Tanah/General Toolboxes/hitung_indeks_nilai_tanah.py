@@ -14,8 +14,11 @@ zonalayer.checkIfThereSelectedField()
 # ----- Validasi: Setiap cluster harus memiliki setidaknya satu titik zona -----
 dataset_path, tahun, provinsi, kota, coor, gdb_path = zonalayer.get_config_values()
 zl_path = os.path.join(dataset_path, 'Zona_Layer')
+tz_path = os.path.join(dataset_path, 'Titik_Zona')
 
 zout_path = os.path.join(dataset_path, "Jenis_Zona")
+
+arcpy.analysis.SpatialJoin(zl_path, tz_path, zout_path, 'Join one to many')
 
 AdaZona = set()
 with arcpy.da.SearchCursor(zout_path, ["Join_Count", "TARGET_FID"]) as cursor:

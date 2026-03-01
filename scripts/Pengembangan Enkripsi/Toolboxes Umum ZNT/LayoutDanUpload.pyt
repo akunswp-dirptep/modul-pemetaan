@@ -425,20 +425,16 @@ class Tampilkan_Sebaran_Titik_Sampel_Dan_Titik_Zona(object):
         zl_path = os.path.join(dataset_path, "Zona_Layer")
         ts_path = os.path.join(dataset_path, "Titik_Sampel")
         tz_path = os.path.join(dataset_path, "Titik_Zona")
-        zl_temp_path = os.path.join(dataset_path, "Zona_Layer_Temp")
         sim_path_zl = os.path.join(symbology_folder, "Simbologi_Peruntukan_Zona_Layer.lyrx")
         sim_path_ts = os.path.join(symbology_folder, "Simbologi_Persebaran_Titik_Sampel.lyrx")
         sim_path_tz = os.path.join(symbology_folder, "Simbologi_Persebaran_Titik_Zona.lyrx")
-
-        if not arcpy.Exists(zl_temp_path):
-            arcpy.management.Copy(zl_path, zl_temp_path)
 
         arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
         arcpy.management.MakeFeatureLayer(ts_path, "Titik_Sampel")
         arcpy.management.MakeFeatureLayer(tz_path, "Titik_Zona")
         arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path_zl)
         arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", sim_path_ts)
-        arcpy.management.ApplySymbologyFromLayer("Titik_Zona", sim_path_tz)
+        arcpy.management.ApplySymbologyFromLaySer("Titik_Zona", sim_path_tz)
         arcpy.SetParameter(0, "Zona_Layer")
         arcpy.SetParameter(1, "Titik_Sampel")
         arcpy.SetParameter(2, "Titik_Zona")

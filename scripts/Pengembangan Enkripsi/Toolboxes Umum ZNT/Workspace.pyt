@@ -250,25 +250,23 @@ class Import_Workspace:
             success, zona_layer_path = self.check_and_extract_config(zipfile_path, output_path)
             if success:
                 arcpy.AddMessage("Proses selesai dengan sukses")
+                aprx = arcpy.mp.ArcGISProject("CURRENT")
+                folder_connections = aprx.folderConnections
 
-                #  Kode dibawah mengakibatkan BUG dimana folder connection yang lain menjadi corrupt
-                # aprx = arcpy.mp.ArcGISProject("CURRENT")
-                # folder_connections = aprx.folderConnections
+                # Path folder yang ingin ditambahkan
+                new_folder = output_path
 
-                # # Path folder yang ingin ditambahkan
-                # new_folder = output_path
-
-                # # Cek apakah folder sudah ada
-                # if not any(fc['connectionString'] == new_folder for fc in folder_connections):
+                # Cek apakah folder sudah ada
+                if not any(fc['connectionString'] == new_folder for fc in folder_connections):
                     
-                #     # Tambahkan folder baru ke list
-                #     folder_connections.append({
-                #         'connectionString': new_folder,
-                #         'isHomeFolder': False
-                #     })
+                    # Tambahkan folder baru ke list
+                    folder_connections.append({
+                        'connectionString': new_folder,
+                        'isHomeFolder': False
+                    })
 
-                #     # Update folder connections
-                #     aprx.updateFolderConnections(folder_connections, validate=True)
+                    # Update folder connections
+                    aprx.updateFolderConnections(folder_connections, validate=True)
                 arcpy.SetParameter(2, zona_layer_path)
             else:
                 arcpy.AddMessage("Proses tidak berhasil")

@@ -31,7 +31,6 @@ dataset_path = configs['dataset_path']  # Path dataset utama
 zl_path = os.path.join(dataset_path, "Zona_Layer")
 ts_path = os.path.join(dataset_path, "Titik_Sampel")
 tz_path = os.path.join(dataset_path, "Titik_Zona")
-zl_temp_path = os.path.join(dataset_path, "Zona_Layer_Temp")
 ts_temp_path = os.path.join(dataset_path, "Titik_Sampel_Temp")
 tz_temp_path = os.path.join(dataset_path, "Titik_Zona_Temp")
 zl_backup_path = os.path.join(dataset_path, "Zona_Layer_Backup")
@@ -40,9 +39,6 @@ tz_backup_path = os.path.join(dataset_path, "Titik_Zona_Backup")
 sim_path_zl = os.path.join(symbology_folder, "Simbologi_Peruntukan_Zona_Layer.lyrx")
 sim_path_ts = os.path.join(symbology_folder, "Simbologi_Persebaran_Titik_Sampel.lyrx")
 sim_path_tz = os.path.join(symbology_folder, "Simbologi_Persebaran_Titik_Zona.lyrx")
-
-if not arcpy.Exists(zl_temp_path):
-    arcpy.management.Copy(zl_path, zl_temp_path)
 
 arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
 arcpy.management.MakeFeatureLayer(ts_path, "Titik_Sampel")

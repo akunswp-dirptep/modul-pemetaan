@@ -59,6 +59,7 @@ for jnszn, cluster_dict in clusters.items():
 if invalid_clusters_info:
     pesan_error = f"Klaster berikut tidak memiliki Titik Zona:\n{''.join(invalid_clusters_info)}"
     arcpy.AddWarning(pesan_error)
+    arcpy.management.Delete(zout_path)
     sys.exit(1)
 else:
     arcpy.AddMessage("Validasi klaster: Setiap klaster memiliki setidaknya satu Titik Zona.")

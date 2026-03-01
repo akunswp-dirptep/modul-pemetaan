@@ -223,14 +223,16 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 data = self.build_valid_data(titik_sampel, titik_sampel_individual, titik_sampel_sementara, titik_sampel_individual_sementara, titik_zona)
             else:
                 data = self.build_valid_data(titik_sampel, titik_sampel_individual, titik_sampel_sementara, titik_sampel_individual_sementara)
+            
             json_yang_dikirim = {
                 "nomor_berkas": self.project_id,
                 "nik": self.username,
                 "data": data
             }
-            
+        
+
             if len(data) == 0:
-                arcpy.AddWarning("Tidak ada data titik sampel untuk dikirim ke server SIPENTA.")
+                arcpy.AddWarning("Tidak ada data titik sampel yang berbeda untuk dikirim ke server SIPENTA.")
                 return
             self.upload_data_valid_to_server(json_yang_dikirim)
         
@@ -465,7 +467,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         try:
             if not arcpy.Exists(titik_sampel_individual_fc):
-                arcpy.AddError(f"Feature class tidak ditemukan: {titik_sampel_individual_fc}")
+                arcpy.AddError(f"Tidak terdapat Layer Titik_Sampel_Individual di project ini. Pastikan layer tersebut ada dan coba lagi.")
                 sys.exit(1)
 
             with arcpy.da.SearchCursor(titik_sampel_individual_fc, fields) as cursor:
@@ -612,11 +614,10 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 sys.exit(1)
             
             if not arcpy.Exists(titik_sampel_individual_fc):
-                arcpy.AddMessage(f"Feature class tidak ditemukan: {titik_sampel_individual_fc}")
+                arcpy.AddMessage(f"Tidak terdapat Layer Titik_Sampel_Individual di project ini. ")
             
             valid_sementara = {}
             if arcpy.Exists(titik_sampel_sementara_fc):
-                
                 with arcpy.da.SearchCursor(titik_sampel_sementara_fc, check_fields) as cursor:
                     arcpy.AddMessage(f"Membaca data dari: {titik_sampel_sementara_fc}")
                     for row in cursor:

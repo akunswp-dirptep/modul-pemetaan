@@ -434,7 +434,7 @@ class Tampilkan_Sebaran_Titik_Sampel_Dan_Titik_Zona(object):
         arcpy.management.MakeFeatureLayer(tz_path, "Titik_Zona")
         arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path_zl)
         arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", sim_path_ts)
-        arcpy.management.ApplySymbologyFromLaySer("Titik_Zona", sim_path_tz)
+        arcpy.management.ApplySymbologyFromLayer("Titik_Zona", sim_path_tz)
         arcpy.SetParameter(0, "Zona_Layer")
         arcpy.SetParameter(1, "Titik_Sampel")
         arcpy.SetParameter(2, "Titik_Zona")

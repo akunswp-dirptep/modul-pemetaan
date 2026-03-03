@@ -402,6 +402,7 @@ class Rekomendasi_Titik_Pembanding(object):
             'panjang_kebelakang': []
         }
         
+
         with arcpy.da.SearchCursor(self.titik_sampel_path, field_list) as cursor:
             for row in cursor:
                 all_numeric_data['luas_bangunan'].append(row[13])
@@ -409,6 +410,14 @@ class Rekomendasi_Titik_Pembanding(object):
                 all_numeric_data['lebar_depan'].append(row[15])
                 all_numeric_data['panjang_kebelakang'].append(row[16])
         
+        if self.titik_zona_path and arcpy.Exists(self.titik_zona_path):
+            with arcpy.da.SearchCursor(self.titik_zona_path, field_list) as cursor:
+                for row in cursor:
+                    all_numeric_data['luas_bangunan'].append(row[13])
+                    all_numeric_data['luas_tanah'].append(row[14])
+                    all_numeric_data['lebar_depan'].append(row[15])
+                all_numeric_data['panjang_kebelakang'].append(row[16])
+       
         # Hitung min-max untuk setiap atribut numerikal
         ranges = {
             'luas_bangunan': (min(all_numeric_data['luas_bangunan']), max(all_numeric_data['luas_bangunan'])),

@@ -59,7 +59,7 @@ class Toolbox:
 class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Pembaruan Peta Sebaran Sampel"
+        self.label = "Upload Data Titik Sampel"
         self.description = ""
         self.canRunInBackground = False
 
@@ -201,7 +201,7 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
 class Upload_Peta_Sebaran_Titik_Zona(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Pembaruan Peta Sebaran Titik Zona"
+        self.label = "Upload Data Titik Zona"
         self.description = ""
         self.canRunInBackground = False
         self.is_gis_internal = is_internal()
@@ -336,11 +336,11 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
             renew_user_data('preferred_server', server)     
         return
 
-#========== Analisis dan Pengolahan Data - Peta Zona Nilai Tanah ==========
+#========== Analisis dan Pengolahan Data - Data Zona Nilai Tanah ==========
 class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Pembaruan Peta Zona Nilai Tanah"
+        self.label = "Upload Data Zona Nilai Tanah"
         self.description = ""
         self.canRunInBackground = False
         self.is_gis_internal = is_internal()

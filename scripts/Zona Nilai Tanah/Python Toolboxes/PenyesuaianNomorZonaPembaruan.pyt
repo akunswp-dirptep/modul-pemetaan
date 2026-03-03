@@ -32,6 +32,12 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
             direction="Input"
         )
 
+        zona_layer_output = arcpy.Parameter(
+            name="zona_layer_output",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
         penjelasan.value = (
             "Tool ini digunakan untuk memvalidasi\n "
             "field Nomor Zona (NOZN) pada layer zona.\n"
@@ -51,7 +57,7 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
             "dan pemetaan."
         )
 
-        return [penjelasan]
+        return [penjelasan, zona_layer_output]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
@@ -73,13 +79,20 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
         zl_path = os.path.join(dataset_path, 'Zona_Layer')
         self.check_and_prepare_nomor_zona(zl_path)
         self.recodify_histzone(zl_path)
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        mapx = aprx.activeMap
-        existing_layers = mapx.listLayers('Zona_Layer')
-        for layer in existing_layers:
-            mapx.removeLayer(layer)
+        dataset_path, tahun, provinsi, kota, coor, gdb_path =zonalayer.get_config_values()
 
-        mapx.addDataFromPath(zl_path)
+        appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+        ui_folder = os.path.join(appdata, "ui")
+        symbology_folder = os.path.join(ui_folder, "symbology")
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+        sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Pada_Zona.lyrx")
+
+
+        arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
+        arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+        arcpy.SetParameter(1, "Zona_Layer")
         return
 
     def postExecute(self, parameters):
@@ -483,7 +496,7 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
             arcpy.management.Delete(zout_path)
             arcpy.management.Delete(sout_path)
             arcpy.AddWarning(f'{e}')
-         
+        
         return
 
     def postExecute(self, parameters):

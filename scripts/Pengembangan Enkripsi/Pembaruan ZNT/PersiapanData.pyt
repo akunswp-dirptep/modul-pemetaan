@@ -179,7 +179,7 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
 
 class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
     def __init__(self):
-        self.label = "Upload Peta Area Kerja"
+        self.label = "Upload Peta Area Kerja Disepakati"
         self.description = ""
         self.canRunInBackground = False
 
@@ -729,7 +729,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
 class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Delineasi Zona Awal Nilai Tanah"
+        self.label = "Upload Delineasi Perubahan Batas Zona Baru"
         self.description = ""
         self.canRunInBackground = False
 

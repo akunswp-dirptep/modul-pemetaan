@@ -443,7 +443,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Peta Survei Batas Zona Awal Nilai Tanah"
+        self.label = "Upload Peta Hasil Survei Batas ZNT Diperbarui"
         self.description = ""
         self.canRunInBackground = False
 

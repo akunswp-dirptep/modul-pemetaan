@@ -159,6 +159,7 @@ class Sesuaikan_Titik_Koordinat(object):
             if len(list_oid) > 0:
                 arcpy.AddError('Matikan terlebih dahulu tools editnya')
                 sys.exit(1)
+                
         self.get_sample_coordinate_from_sipenta()
         self.extract_coordinates_to_json()
         self.compare_coordinates()
@@ -198,15 +199,20 @@ class Sesuaikan_Titik_Koordinat(object):
 
         # Tambahkan ulang layer dari source
         arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel'], "Titik_Sampel")
-        arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel_individual'], "Titik_Sampel_Individual")
+
+        if arcpy.Exists(self.config_paths['path_titik_sampel_individual']):
+            arcpy.management.MakeFeatureLayer(self.config_paths['path_titik_sampel_individual'], "Titik_Sampel_Individual")
 
         ts_symbology = os.path.join(self.config_paths['symbology_folder'], "Titik_Sampel.lyrx")
         tsi_symbology = os.path.join(self.config_paths['symbology_folder'], "Titik_Sampel_Individual.lyrx")
 
         arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", ts_symbology)
-        arcpy.management.ApplySymbologyFromLayer("Titik_Sampel_Individual", tsi_symbology)
+        if arcpy.Exists(self.config_paths['path_titik_sampel_individual']):
+            arcpy.management.ApplySymbologyFromLayer("Titik_Sampel_Individual", tsi_symbology)
         arcpy.SetParameter(3, "Titik_Sampel")  # Output Titik_Sampel
-        arcpy.SetParameter(4, "Titik_Sampel_Individual")  # Output Titik_Sampel_Individual
+
+        if arcpy.Exists(self.config_paths['path_titik_sampel_individual']):
+            arcpy.SetParameter(4, "Titik_Sampel_Individual")  # Output Titik_Sampel_Individual
 
 
 
@@ -401,7 +407,9 @@ class Sesuaikan_Titik_Koordinat(object):
                 sys.exit(1)
         
         get_data_from_feature_class(self.config_paths['path_titik_sampel'])
-        get_data_from_feature_class(self.config_paths['path_titik_sampel_individual'])
+
+        if arcpy.Exists(self.config_paths['path_titik_sampel_individual']):
+            get_data_from_feature_class(self.config_paths['path_titik_sampel_individual'])
 
         self.koordinat_data_lokal =  coordinates_data
 
@@ -565,7 +573,8 @@ class Sesuaikan_Titik_Koordinat(object):
                 raise arcpy.ExecuteError
         
         reset_data_to_original(self.config_paths['path_titik_sampel'])
-        reset_data_to_original(self.config_paths['path_titik_sampel_individual'])
+        if arcpy.Exists(self.config_paths['path_titik_sampel_individual']):
+            reset_data_to_original(self.config_paths['path_titik_sampel_individual'])
 
     def upload_data_to_server(self, json_data, use_production=True):
         """

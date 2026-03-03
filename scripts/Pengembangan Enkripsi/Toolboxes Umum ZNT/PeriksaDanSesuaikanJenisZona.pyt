@@ -79,6 +79,7 @@ class Periksa_Jenis_Zona(object):
 
         if arcpy.Exists(zl_topology_path):
             arcpy.management.Delete(zl_topology_path) 
+            
         # Membuat salinan temporary zona layer jika belum ada
         if not arcpy.Exists(zl_temp_path):
             arcpy.management.Copy(zl_path, zl_temp_path)

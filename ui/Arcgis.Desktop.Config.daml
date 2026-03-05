@@ -1873,13 +1873,8 @@
 					</args>
 					<tooltip heading="Rekomendasi Titik Pembanding">Menu untuk memberikan Rekomendasi Titik Pembanding berdasarkan data di Titik Sampel</tooltip>
 				</button>
-				<button id="ButtonLabel" caption="Tampilkan Label Titik Sampel" smallImage="C:\PenilaianTanah\icons\tag.png" largeImage="C:\PenilaianTanah\icons\tag.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\TampilkanLabelTitikSampel" name="Tampilkan Label Titik Sampel" xmlns=""/>
-					</args>
-					<tooltip heading="Tampilkan Label">Menu untuk menampilkan label nilai dari Titik Sampel.</tooltip>
-				</button>
-				<button id="ButtonPerubahanTitikKoordinat" caption="Sesuaikan Titik Koordinat" smallImage="C:\PenilaianTanah\icons\pindahtitik.png" largeImage="C:\PenilaianTanah\icons\pindahtitik.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+
+				<button id="ButtonPerubahanTitikKoordinat" caption="Sesuaikan Titik Koordinat"smallImage="C:\PenilaianTanah\icons\pindahtitik.png" largeImage="C:\PenilaianTanah\icons\pindahtitik.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"  helpContextID="" >
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\SesuaikanTitikKoordinat.pyt\Sesuaikan_Titik_Koordinat" name="Sesuaikan Titik Koordinat" xmlns=""/>
 					</args>
@@ -1946,7 +1941,8 @@
 					</args>
 					<tooltip heading="Ekspor Geodatabase">Menu untuk membuat zip dari folder Geodatabase agar bisa dibagikan ke pengguna lain.</tooltip>
 				</button>
-				<button id="ButtonEksporZona" caption="Ekspor Zona" smallImage="C:\PenilaianTanah\icons\layers_download.png" largeImage="C:\PenilaianTanah\icons\layers_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+
+				<button id="ButtonEksporZona" caption="Ekspor Zona " smallImage="C:\PenilaianTanah\icons\layers_download.png" largeImage="C:\PenilaianTanah\icons\layers_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\EksporZona" name="Ekspor Zona" xmlns=""/>
 					</args>

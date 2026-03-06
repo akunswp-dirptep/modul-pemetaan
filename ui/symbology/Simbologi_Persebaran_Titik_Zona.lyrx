@@ -17,7 +17,7 @@
       "description" : "Titik_Zona",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
-        "elevationSurfaceLayerURI" : "CIMPATH=Map/619d2b51d4104dcd8e1613953f45a134.json"
+        "elevationSurfaceLayerURI" : "CIMPATH=Map/1f74d5c5539143559c0f31c125c5f51e.json"
       },
       "expanded" : true,
       "layerType" : "Operational",
@@ -35,7 +35,7 @@
       "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "Surveyor",
+        "displayField" : "No_Identifikasi",
         "editable" : true,
         "fieldDescriptions" : [
           {
@@ -91,13 +91,6 @@
             "type" : "CIMFieldDescription",
             "alias" : "Nomor Identifikasi",
             "fieldName" : "No_Identifikasi",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
-            },
             "visible" : true,
             "searchMode" : "Exact"
           },
@@ -1066,12 +1059,26 @@
             },
             "visible" : true,
             "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "INDEKS NILAI TANAH",
+            "fieldName" : "indeks_nilai_tanah",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
           }
         ],
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "znt_ds",
-          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Folder Uji Coba\\Uji Coba Perbaikan Bug0402\\ZoneNilaiTanah.gdb",
+          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Error Proses\\Gagal Membaca JNSZN pada Hitung Indeks Tanah\\ZoneNilaiTanah.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "Titik_Zona",
           "datasetType" : "esriDTFeatureClass"
@@ -1089,7 +1096,7 @@
         {
           "type" : "CIMLabelClass",
           "expressionTitle" : "Custom",
-          "expression" : "def FindLabel([indeks_sampel], [Nomor_Entry], [nilai]):\n    angka = float(str([nilai]).replace(',', '.'))\n    rupiah = f\"{int(round(angka)):,}\".replace(\",\", \".\")\n\n    return (\n        \"<FNT size='7'>\"\n        \"Indeks: \" + str([indeks_sampel]) + \"\\n\"\n        \"Nomor Entry: \" + str([Nomor_Entry]) + \"\\n\"\n        \"Rp \" + rupiah +\n        \"</FNT>\"\n    )\n    ",
+          "expression" : "def FindLabel([indeks_sampel], [Nomor_Entry], [nilai]):\r\n    angka = float(str([nilai]).replace(',', '.'))\r\n    rupiah = f\"{int(round(angka)):,}\".replace(\",\", \".\")\r\n\r\n    return (\r\n        \"<FNT size='7'>\"\r\n        \"Indeks: \" + str([indeks_sampel]) + \"\\n\"\r\n        \"Nomor Sampel: \" + str([Nomor_Entry]) + \"\\n\"\r\n        \"Rp \" + rupiah +\r\n        \"</FNT>\"\r\n    )\r\n    ",
           "expressionEngine" : "Python",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
@@ -1690,7 +1697,7 @@
     {
       "type" : "CIMElevationSurfaceLayer",
       "name" : "Ground",
-      "uRI" : "CIMPATH=Map/619d2b51d4104dcd8e1613953f45a134.json",
+      "uRI" : "CIMPATH=Map/1f74d5c5539143559c0f31c125c5f51e.json",
       "useSourceMetadata" : true,
       "description" : "Ground",
       "expanded" : true,

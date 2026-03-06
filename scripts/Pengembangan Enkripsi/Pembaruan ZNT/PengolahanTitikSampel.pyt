@@ -12,10 +12,6 @@ if parent_dir not in sys.path:
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 
-arcpy.env.outputZFlag = "Disabled"
-arcpy.env.outputMFlag = "Disabled"
-
-
 class Toolbox:
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the

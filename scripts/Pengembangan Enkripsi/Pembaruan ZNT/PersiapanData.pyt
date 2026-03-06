@@ -5,11 +5,6 @@ import arcpy, os, json
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
 
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
-
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
@@ -446,6 +441,9 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             "Zona_Layer_Temp",
             field_mapping=field_mappings
         )
+
+        arcpy.management.Remove(zona_layer_temp_path)
+        arcpy.management.RemoveZ(zona_layer_temp_path)
 
         # ======================
         # FIELD CALCULATIONS

@@ -322,6 +322,20 @@
             },
             "visible" : true,
             "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "JMLNILAI",
+            "fieldName" : "JMLNILAI",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
           }
         ],
         "timeFields" : {
@@ -340,7 +354,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "znt_ds",
-          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Folder Uji Coba\\Uji Coba Pembaruan Pre Latihan\\ZoneNilaiTanah.gdb",
+          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Error Proses\\Gagal Membaca JNSZN pada Hitung Indeks Tanah\\ZoneNilaiTanah.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "Zona_Layer",
           "datasetType" : "esriDTFeatureClass"
@@ -363,7 +377,7 @@
       "labelClasses" : [
         {
           "type" : "CIMLabelClass",
-          "expression" : "\"<FNT size = '8'>\" + str([NOZN]) + \"\\n\" + ((str([NILBULAT]) if [NILBULAT] else '').replace(',', '.')).replace(' ', '') +  \"</FNT>\"",
+          "expression" : "\"<FNT size = '8'>\" + str([NOZN]) + \"\\n\" + \"</FNT>\"",
           "expressionEngine" : "Python",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {

@@ -1958,13 +1958,13 @@
 			<!-- Menu Backup dan Ekspor Hasil -->
 				<button id="ButtonUnduhGeodatabase" caption="Ekspor Geodatabase" smallImage="C:\PenilaianTanah\icons\database_download.png" largeImage="C:\PenilaianTanah\icons\database_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\UnduhGeodatabase" name="Ekspor Geodatabase" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\BackupDanEkspor.pyt\Ekspor_Geodatabase" name="Ekspor Geodatabase" xmlns=""/>
 					</args>
 					<tooltip heading="Ekspor Geodatabase">Menu untuk membuat zip dari folder Geodatabase agar bisa dibagikan ke pengguna lain.</tooltip>
 				</button>
 				<button id="ButtonEksporZona" caption="Ekspor Zona" smallImage="C:\PenilaianTanah\icons\layers_download.png" largeImage="C:\PenilaianTanah\icons\layers_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\EksporZona" name="Ekspor Zona" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\BackupDanEkspor.pyt\Ekspor_Zona" name="Ekspor Zona" xmlns=""/>
 					</args>
 					<tooltip heading="Ekspor Zona">Menu untuk export layer zona dalam bentuk shapefile.</tooltip>
 				</button>

@@ -1,6 +1,6 @@
 ﻿from datetime import datetime
 import sys
-import arcpy, os, json
+import arcpy, os
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -441,9 +441,6 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             "Zona_Layer_Temp",
             field_mapping=field_mappings
         )
-
-        arcpy.management.Remove(zona_layer_temp_path)
-        arcpy.management.RemoveZ(zona_layer_temp_path)
 
         # ======================
         # FIELD CALCULATIONS

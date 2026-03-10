@@ -1535,7 +1535,7 @@
 
 				<button id="ButtonMasukkanDataDasar" caption="Input Data Dasar" smallImage="C:\PenilaianTanah\icons\location.png" largeImage="C:\PenilaianTanah\icons\location.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\MasukkanDataDasar" name="Input Data Dasar" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT\PersiapanData.pyt\Masukkan_Data_Dasar_Pembuatan_ZNT" name="Input Data Dasar" xmlns=""/>
 					</args>
 					<tooltip heading="Input Data Dasar">Menu untuk memasukkan data zona dasar.</tooltip>
 				</button>

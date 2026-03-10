@@ -319,6 +319,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             parameterType="Required",
             direction="Input"
         )
+        
 
         nomorzone.parameterDependencies = [znt_awal.name]
 
@@ -335,7 +336,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             displayName="Pilih Field Jenis Zona",
             name="jeniszona_field",
             datatype="Field",
-            parameterType="Optional",
+            parameterType="Required",
             direction="Input"
         )
         jeniszona.parameterDependencies = [znt_awal.name]
@@ -347,9 +348,41 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         return True
 
     def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
+        """
+        Kondisi yang harus terpebuhi agar parameter field muncul:
+        1. Terdapat nilai default 'NOZONE' atau 'NOZN' untuk Parameter Nomor Zona jika tersedia di dalam nama field dari ZNT lama.
+        2. Terdapat nilai default 'NILAIZN' atau 'MEAN' untuk Parameter Nilai jika tersedia di dalam nama field dari ZNT lama.
+        3. Terdapat nilai default 'JNSZN' atau 'JENIS_ZONA' untuk Parameter Jenis Zona jika tersedia di dalam nama field dari ZNT lama.
+        """
+        znt_lama = parameters[0].valueAsText
+        if not znt_lama:
+            return
+
+        try:
+            field_names = [field.name for field in arcpy.ListFields(znt_lama)]
+        except Exception:
+            return
+
+        field_names_upper = {field_name.upper(): field_name for field_name in field_names}
+
+        if not parameters[1].altered:
+            if "NOZONE" in field_names_upper:
+                parameters[1].value = field_names_upper["NOZONE"]
+            elif "NOZN" in field_names_upper:
+                parameters[1].value = field_names_upper["NOZN"]
+
+        if not parameters[2].altered:
+            if "NILAIZN" in field_names_upper:
+                parameters[2].value = field_names_upper["NILAIZN"]
+            elif "MEAN" in field_names_upper:
+                parameters[2].value = field_names_upper["MEAN"]
+
+        if not parameters[3].altered:
+            if "JNSZN" in field_names_upper:
+                parameters[3].value = field_names_upper["JNSZN"]
+            elif "JENIS_ZONA" in field_names_upper:
+                parameters[3].value = field_names_upper["JENIS_ZONA"]
+
         return
 
     def updateMessages(self, parameters):
@@ -362,15 +395,16 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         znt_lama = parameters[0].valueAsText
         nomorzone = parameters[1].valueAsText
         nilai = parameters[2].valueAsText
-        jeniszona = parameters[3].valueAsText if parameters[3].valueAsText else None
+        jeniszona = parameters[3].valueAsText 
 
         config_and_paths = zonalayer.get_config_values()
         dataset_path = config_and_paths['dataset_path']
+
         # --- Validasi: pastikan field nomorzone dan nilai tidak NULL dan bernilai numerik
-        fields = [nomorzone, nilai, jeniszona] if jeniszona else [nomorzone, nilai]
+        fields = [nomorzone, nilai, jeniszona]
 
         if not znt_lama:
-            messages.addErrorMessage("Input ZNT belum ditentukan.")
+            arcpy.AddError("File ZNT lama tidak ditemukan.")
             return
 
         try:
@@ -380,19 +414,23 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                     rownum += 1
                     for i, val in enumerate(row):
                         field_name = fields[i]
+                        if field_name == jeniszona:
+                            if val == 0 or val == '0':
+                                arcpy.AddError(f"Field '{field_name}' mengandung nilai 0 pada record {rownum}.")
+                                return
                         # Null atau empty string dianggap tidak valid
                         if val is None:
-                            messages.addErrorMessage(f"Field '{field_name}' mengandung nilai NULL pada record {rownum}. Semua nilai harus terisi dan numeric atau dapat dikonversi ke angka.")
+                            arcpy.AddError(f"Field '{field_name}' mengandung nilai NULL pada record {rownum}. Semua nilai harus terisi dan numeric atau dapat dikonversi ke angka.")
                             return
                         if isinstance(val, str):
                             s = val.strip()
                             if s == "":
-                                messages.addErrorMessage(f"Field '{field_name}' mengandung string kosong pada record {rownum}.")
+                                arcpy.AddError(f"Field '{field_name}' mengandung string kosong pada record {rownum}.")
                                 return
                             try:
                                 float(s)
                             except Exception:
-                                messages.addErrorMessage(f"Field '{field_name}' value '{s}' pada record {rownum} bukan angka dan tidak dapat dikonversi ke angka.")
+                                arcpy.AddError(f"Field '{field_name}' value '{s}' pada record {rownum} bukan angka dan tidak dapat dikonversi ke angka.")
                                 return
                         elif isinstance(val, (int, float)):
                             # sudah numeric, lanjut
@@ -402,13 +440,14 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                             try:
                                 float(val)
                             except Exception:
-                                messages.addErrorMessage(f"Field '{field_name}' value '{val}' pada record {rownum} bukan angka dan tidak dapat dikonversi ke angka.")
+                                arcpy.AddError(f"Field '{field_name}' value '{val}' pada record {rownum} bukan angka dan tidak dapat dikonversi ke angka.")
                                 return
         except arcpy.ExecuteError:
-            messages.addErrorMessage(f"Gagal membaca layer: {arcpy.GetMessages(2)}")
+            arcpy.AddError(f"Gagal membaca layer: {arcpy.GetMessages(2)}")
             return
 
-        messages.addMessage("Validasi field nomor zona dan nilai: OK.")
+        arcpy.AddMessage("Validasi field nomor zona dan nilai: OK.")
+
         # --- Proses memasukkan data ZNT sebelumnya ke layer ZNT saat ini
         zona_layer_path = os.path.join(dataset_path, "Zona_Layer")
         zona_layer_temp_path = os.path.join(dataset_path, "Zona_Layer_Temp")

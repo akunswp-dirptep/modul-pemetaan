@@ -2,7 +2,7 @@ import arcpy
 import requests, os
 from datetime import datetime
 
-CURRENT_VERSION = "5.6."
+CURRENT_VERSION = "5.8 - Jayawijaya"
 UPDATE_URL = "https://drive.google.com/uc?export=download&id=15jGbZjP8bk0OFgg9voP4m_QCWBuWSkiK"
 
 

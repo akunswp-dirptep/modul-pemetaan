@@ -2,7 +2,7 @@ import arcpy
 import requests, os
 from datetime import datetime
 
-CURRENT_VERSION = "5.6.1"
+CURRENT_VERSION = "5.6."
 UPDATE_URL = "https://drive.google.com/uc?export=download&id=15jGbZjP8bk0OFgg9voP4m_QCWBuWSkiK"
 
 
@@ -96,9 +96,13 @@ class Catatan_Aplikasi:
         update_check = check_update()
 
         if update_check:
-            r =requests.get(update_check[1], stream=True)
+            response =requests.get(update_check[1], timeout=60)
+            data = response.json()
+            link = data['data'][0]['url']
 
             downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
+
+            r = requests.get(link, stream=True)
 
             filename = os.path.join(downloads_folder, 'PenilaianTanah versi {}.exe'.format(update_check[2]))
             with open(filename, 'wb') as f:

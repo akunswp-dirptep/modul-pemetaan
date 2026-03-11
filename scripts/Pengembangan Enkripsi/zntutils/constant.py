@@ -263,6 +263,7 @@ KAB_KOTA = {
         "Demak",
         "Grobogan",
         "Jepara",
+        "Karanganyar",
         "Kebumen",
         "Kendal",
         "Klaten",
@@ -279,6 +280,7 @@ KAB_KOTA = {
         "Sukoharjo",
         "Tegal",
         "Temanggung",
+        "Wonogiri",
         "Wonosobo",
         "Kota Magelang",
         "Kota Pekalongan",
@@ -287,6 +289,7 @@ KAB_KOTA = {
         "Kota Surakarta",
         "Kota Tegal"
     ],
+
     "Daerah Istimewa Yogyakarta": [
         "Bantul",
         "Gunungkidul",

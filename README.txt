@@ -7,7 +7,9 @@ Penyesuaian Fitur:
  - Penyesuaian Ekspor Geodatabase berdasarkan file zip bukan folder
  - Penyesuaian Fitur Buat Workspace dimana sekarang folder connection langsung ditambahkan di panel katalog
  - Menambahkan Nilai Default NOZONE, NOZN, MEAN, NILAIZN, JENIS_ZONA, JNSZN, jika terdapat pada layer  ZNT sebelumnya di Tools Masukkan Data ZNT Sebelumnya.
-
+ - Menambahkan Kab Wonogiri dan Kab Karanganyar Untuk Nama Kabupaten
+ 
 Perbaikan Bug
  - Perbaikan Bug pesan backend tidak ditemukan saat melakukan upload data
- - 
+ - Perbaikan Bug Perbarui Sampel Terpilih yang Gagal karena Tidak ada layer Titik Sampel Individual
+ 

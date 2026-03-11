@@ -1,4 +1,4 @@
-Version: 5.8 - Jombang
+Version: 5.8 - Jayawijaya
 Published: 99/03/2025
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 

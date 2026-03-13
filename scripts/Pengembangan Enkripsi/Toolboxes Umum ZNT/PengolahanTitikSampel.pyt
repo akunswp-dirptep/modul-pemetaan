@@ -823,6 +823,8 @@ class Sampel_Sentuh_Tanahku(object):
         if arcpy.Exists(titik_sampel_individual):
             selected_id = samplepoint.get_selected_oids(titik_sampel_individual)
             selected_ids['titik_sampel_individual'] = selected_id
+        else:
+            selected_ids['titik_sampel_individual'] = []
 
         if arcpy.Exists(titik_sampel):
             selected_id = samplepoint.get_selected_oids(titik_sampel)
@@ -836,23 +838,18 @@ class Sampel_Sentuh_Tanahku(object):
 
 
         try:
-
-
             nomor_entry_values = {
                     'titik_sampel_individual': [],
                     'titik_sampel': []
                 }
-            
-            individual_sample_where_clause = f"{arcpy.Describe(titik_sampel_individual).OIDFieldName} IN ({','.join(map(str, selected_ids['titik_sampel_individual']))})"
-
-            general_sample_where_clause = f"{arcpy.Describe(titik_sampel).OIDFieldName} IN ({','.join(map(str, selected_ids['titik_sampel']))})"
- 
-            if len(selected_ids['titik_sampel_individual']) > 0:
+            if arcpy.Exists(titik_sampel_individual) and len(selected_ids['titik_sampel_individual']) > 0:
+                individual_sample_where_clause = f"{arcpy.Describe(titik_sampel_individual).OIDFieldName} IN ({','.join(map(str, selected_ids['titik_sampel_individual']))})"
                 with arcpy.da.SearchCursor(titik_sampel_individual, ["OID@", "Nomor_Entry"], individual_sample_where_clause) as cursor:
                     for row in cursor:
                         nomor_entry = row[1]
                         nomor_entry_values['titik_sampel_individual'].append(nomor_entry)
 
+            general_sample_where_clause = f"{arcpy.Describe(titik_sampel).OIDFieldName} IN ({','.join(map(str, selected_ids['titik_sampel']))})"
             if len(selected_ids['titik_sampel']) > 0:
                 with arcpy.da.SearchCursor(titik_sampel, ["OID@", "Nomor_Entry"], general_sample_where_clause) as cursor:
                     for row in cursor:

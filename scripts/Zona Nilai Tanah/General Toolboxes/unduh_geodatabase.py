@@ -14,8 +14,6 @@ arcpy.env.outputMFlag = "Disabled"  # Menonaktifkan output nilai M (measure)
 # PATH CONFIGURATION
 # ======================
 
-# Konfigurasi Path Aplikasi
-appdata = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 # Konfigurasi Path Project
 zl_path = zonalayer.isZonaLayerComply()  # Memeriksa dan mendapatkan path Zona Layer

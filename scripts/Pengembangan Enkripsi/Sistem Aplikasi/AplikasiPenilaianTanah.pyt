@@ -1,5 +1,4 @@
 import arcpy
-<<<<<<< HEAD
 import requests, os, time
 from datetime import datetime
 
@@ -8,14 +7,6 @@ VERSION_NAME = 'Jayawijaya'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
 UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"
-=======
-import requests, os
-from datetime import datetime
-
-CURRENT_VERSION = "5.8 - Jayawijaya"
-UPDATE_URL = "https://drive.google.com/uc?export=download&id=15jGbZjP8bk0OFgg9voP4m_QCWBuWSkiK"
-
->>>>>>> bf42cfcb37e3c4a143432cde76903749d85784dd
 
 def current_year():
     try:
@@ -23,7 +14,6 @@ def current_year():
     except Exception:
         return None
 
-<<<<<<< HEAD
 def fetch(url, retries=3):
     for i in range(retries):
         try:
@@ -42,11 +32,6 @@ def fetch(url, retries=3):
 def check_update():
     try:
         response = fetch(url=UPDATE_URL)
-=======
-def check_update():
-    try:
-        response = requests.get(UPDATE_URL)
->>>>>>> bf42cfcb37e3c4a143432cde76903749d85784dd
         data = response.json()
 
         latest_version = data["version"]
@@ -55,11 +40,7 @@ def check_update():
             pesan = 'Versi terbaru tersedia: {}.\nJalankan tool untuk mendownload versi terbaru.'.format(latest_version)    
             return [pesan, data["url"], latest_version]
         else:
-<<<<<<< HEAD
             return []
-=======
-            return None
->>>>>>> bf42cfcb37e3c4a143432cde76903749d85784dd
 
     except Exception as e:
         return None
@@ -78,21 +59,13 @@ class Toolbox:
 class Catatan_Aplikasi:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-<<<<<<< HEAD
         self.label = "Cek Pembaruan Aplikasi"
-=======
-        self.label = "Tentang Aplikasi"
->>>>>>> bf42cfcb37e3c4a143432cde76903749d85784dd
         self.description = ""
 
     def getParameterInfo(self):
         """Define the tool parameters."""
 
-<<<<<<< HEAD
         self.update_check = check_update()
-=======
-        update_check = check_update()
->>>>>>> bf42cfcb37e3c4a143432cde76903749d85784dd
         
         penjelasan = arcpy.Parameter(
             displayName='Tentang Aplikasi',
@@ -102,7 +75,6 @@ class Catatan_Aplikasi:
             direction='Input'
         )
 
-<<<<<<< HEAD
         if self.update_check:
             if len(self.update_check) > 0:
                 penjelasan.value = (
@@ -134,22 +106,6 @@ class Catatan_Aplikasi:
                 "Kementrian ATR/BPN\n"
                 "Tahun: {}\n"
 
-=======
-
-        if update_check:
-            penjelasan.value = (
-                "Penilaian Tanah versi 5.8 - Jayawijaya \n\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
-                "Kementrian ATR/BPN\n"
-                "Tahun: {}\n\n"
-            ).format(current_year()) + "{}".format(update_check[0])
-        else:
-            penjelasan.value = (
-                "Penilaian Tanah versi 5.8 - Jayawijaya \n\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
-                "Kementrian ATR/BPN\n"
-                "Tahun: {}\n"
->>>>>>> bf42cfcb37e3c4a143432cde76903749d85784dd
             ).format(current_year())
 
         return [penjelasan]
@@ -171,25 +127,7 @@ class Catatan_Aplikasi:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-<<<<<<< HEAD
 
-=======
-        update_check = check_update()
-
-        if update_check:
-            response =requests.get(update_check[1], timeout=60)
-            data = response.json()
-            link = data['data'][0]['url']
-
-            downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-
-            r = requests.get(link, stream=True)
-
-            filename = os.path.join(downloads_folder, 'PenilaianTanah versi {}.exe'.format(update_check[2]))
-            with open(filename, 'wb') as f:
-                for chunk in r.iter_content(1024):
-                    f.write(chunk)
->>>>>>> bf42cfcb37e3c4a143432cde76903749d85784dd
         return
 
     def postExecute(self, parameters):

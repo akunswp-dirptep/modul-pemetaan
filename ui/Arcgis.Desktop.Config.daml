@@ -18,6 +18,10 @@
 					<group refID="group_pembaruan_znt"/>
 					<!-- <group refID="backup_gdb_znt"/> -->
 				</tab>
+				<tab id='SistemAplikasi' caption='Penilaian Tanah'>
+					<group refID='sistem_aplikasi'/>
+
+				</tab>
 				<!-- <tab id="OGISInternalTools" caption="OGIS Internal">
 					<group refID="group_login_pengguna"/>
 					<group refID="group_pengolahan_znt"/>
@@ -90,6 +94,10 @@
 				<group id="group_pengolahan_znt" caption="Zona Nilai Tanah">
 					<!-- <menu refID="menu_preview_awal_znt" size="large"/> -->
 					<menu refID="menu_penggabungan_znt" size="large"/>
+				</group>
+			<!-- Sistem Aplikasi -->
+				<group id="sistem_aplikasi" caption="Penilaian Tanah">
+					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 				</group>
 			</groups>
 			
@@ -1979,6 +1987,13 @@
 				</button>
 
 		
+		<!-- Button Sistem Aplikasi -->
+				<button id="ButtonCekPembaruanAplikasi" caption="Cek Pembaruan Aplikasi" smallImage="C:\PenilaianTanah\icons\penilaian_tanah.ico" largeImage="C:\PenilaianTanah\icons\penilaian_tanah.ico" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\AplikasiPenilaianTanah.pyt\Catatan_Aplikasi" name="Cek Pembaruan Aplikasi" xmlns=""/>
+					</args>
+					<tooltip heading="Cek Pembaruan Aplikasi"></tooltip>
+				</button>
 		<!--  -->
 
 				<!-- BUTTON UPLOAD PEMBUATAN NBT SIPENTA - START -->

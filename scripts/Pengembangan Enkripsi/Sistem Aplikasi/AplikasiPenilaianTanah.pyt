@@ -1,10 +1,12 @@
 import arcpy
-import requests, os
+import requests, os, time
 from datetime import datetime
 
-CURRENT_VERSION = "5.8 - Jayawijaya"
-UPDATE_URL = "https://drive.google.com/uc?export=download&id=15jGbZjP8bk0OFgg9voP4m_QCWBuWSkiK"
-
+VERSION_NUMBER = '5.7'
+VERSION_NAME = 'Jayawijaya'
+CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
+SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
+UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"
 
 def current_year():
     try:
@@ -12,9 +14,24 @@ def current_year():
     except Exception:
         return None
 
+def fetch(url, retries=3):
+    for i in range(retries):
+        try:
+            r = requests.get(
+                url,
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=10
+            )
+            r.raise_for_status()
+            return r
+        except requests.exceptions.RequestException:
+            if i == retries - 1:
+                raise
+            time.sleep(2)
+
 def check_update():
     try:
-        response = requests.get(UPDATE_URL)
+        response = fetch(url=UPDATE_URL)
         data = response.json()
 
         latest_version = data["version"]
@@ -23,7 +40,7 @@ def check_update():
             pesan = 'Versi terbaru tersedia: {}.\nJalankan tool untuk mendownload versi terbaru.'.format(latest_version)    
             return [pesan, data["url"], latest_version]
         else:
-            return None
+            return []
 
     except Exception as e:
         return None
@@ -42,13 +59,13 @@ class Toolbox:
 class Catatan_Aplikasi:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Tentang Aplikasi"
+        self.label = "Cek Pembaruan Aplikasi"
         self.description = ""
 
     def getParameterInfo(self):
         """Define the tool parameters."""
 
-        update_check = check_update()
+        self.update_check = check_update()
         
         penjelasan = arcpy.Parameter(
             displayName='Tentang Aplikasi',
@@ -58,20 +75,37 @@ class Catatan_Aplikasi:
             direction='Input'
         )
 
+        if self.update_check:
+            if len(self.update_check) > 0:
+                penjelasan.value = (
+                    f"Penilaian Tanah versi {CURRENT_VERSION} \n"
+                    f"Terdapat versi baru: {self.update_check[2]}\n"
+                    "Unduh melalui link berikut:\n"
+                    f"{self.update_check[1]}\n\n"
+                    "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+                    "Kementrian ATR/BPN\n"
+                    "Tahun: {}\n"
+                ).format(current_year())
 
-        if update_check:
-            penjelasan.value = (
-                "Penilaian Tanah versi 5.8 - Jayawijaya \n\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
-                "Kementrian ATR/BPN\n"
-                "Tahun: {}\n\n"
-            ).format(current_year()) + "{}".format(update_check[0])
+            elif len(self.update_check) == 0:
+                penjelasan.value = (
+                    f"Penilaian Tanah versi {CURRENT_VERSION} \n"
+                    "Belum ada pembaruan aplikasi \n\n"
+
+                    "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+                    "Kementrian ATR/BPN\n"
+                    "Tahun: {}\n"
+
+                ).format(current_year())
         else:
             penjelasan.value = (
-                "Penilaian Tanah versi 5.8 - Jayawijaya \n\n"
+                f"Penilaian Tanah versi {CURRENT_VERSION} \n"
+                "Terdapat kendala mengecek pembaruan aplikasi \n\n"
+
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
                 "Kementrian ATR/BPN\n"
                 "Tahun: {}\n"
+
             ).format(current_year())
 
         return [penjelasan]
@@ -93,21 +127,7 @@ class Catatan_Aplikasi:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        update_check = check_update()
 
-        if update_check:
-            response =requests.get(update_check[1], timeout=60)
-            data = response.json()
-            link = data['data'][0]['url']
-
-            downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads")
-
-            r = requests.get(link, stream=True)
-
-            filename = os.path.join(downloads_folder, 'PenilaianTanah versi {}.exe'.format(update_check[2]))
-            with open(filename, 'wb') as f:
-                for chunk in r.iter_content(1024):
-                    f.write(chunk)
         return
 
     def postExecute(self, parameters):

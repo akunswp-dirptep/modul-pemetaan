@@ -1,7 +1,10 @@
 Version: 5.8 - Jayawijaya
-Published: 99/03/2025
+Published: xx/03/2025
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 
+Penambahan Fitur:
+ - Fitur Cek Pembaruan Aplikasi yang berisikan link pembaruan jika ada versi terbaru
+ 
 Penyesuaian Fitur:
  - Penyesuaian Simbologi 
  - Penyesuaian Ekspor Geodatabase berdasarkan file zip bukan folder

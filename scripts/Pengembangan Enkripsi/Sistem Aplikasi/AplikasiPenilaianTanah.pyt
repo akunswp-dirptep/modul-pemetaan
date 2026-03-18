@@ -1,12 +1,13 @@
 import arcpy
-import requests, os, time
+import requests, os, time, sys
 from datetime import datetime
 
-VERSION_NUMBER = '5.8'
-VERSION_NAME = 'Jayawijaya'
-CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
-SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
-UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"
+script_dir = os.path.dirname(__file__)
+parent_dir = os.path.dirname(script_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from zntutils.constant import CURRENT_VERSION, UPDATE_URL
 
 def current_year():
     try:
@@ -75,32 +76,9 @@ class Catatan_Aplikasi:
             direction='Input'
         )
 
-        if self.update_check is not None:
-            if len(self.update_check) > 0:
-                penjelasan.value = (
-                    f"Penilaian Tanah versi {CURRENT_VERSION} \n"
-                    f"Terdapat versi baru: {self.update_check[2]}\n"
-                    "Unduh melalui link berikut:\n"
-                    f"{self.update_check[1]}\n\n"
-                    "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
-                    "Kementrian ATR/BPN\n"
-                    "Tahun: {}\n"
-                ).format(current_year())
-
-            elif len(self.update_check) == 0:
-                penjelasan.value = (
-                    f"Penilaian Tanah versi {CURRENT_VERSION} \n"
-                    "Belum ada pembaruan aplikasi \n\n"
-
-                    "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
-                    "Kementrian ATR/BPN\n"
-                    "Tahun: {}\n"
-
-                ).format(current_year())
-        else:
-            penjelasan.value = (
+        penjelasan.value = (
                 f"Penilaian Tanah versi {CURRENT_VERSION} \n"
-                "Terdapat kendala mengecek pembaruan aplikasi \n\n"
+                "Jalankan tools untuk mengecek pembaruan aplikasi \n\n"
 
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
                 "Kementrian ATR/BPN\n"
@@ -128,6 +106,31 @@ class Catatan_Aplikasi:
     def execute(self, parameters, messages):
         """The source code of the tool."""
 
+        hasil = check_update()
+
+        if hasil is not None:
+            if len(hasil) > 0:
+                arcpy.AddMessage(
+                    f"Penilaian Tanah di perangkat ini\n"
+                    f"memiliki versi {CURRENT_VERSION} \n"
+                    f"Terdapat versi baru: {hasil[2]}\n"
+                    "Unduh melalui link berikut:\n"
+                    f"{hasil[1]}\n\n"
+
+                )
+
+            elif len(hasil) == 0:
+                arcpy.AddMessage(
+                    f"Penilaian Tanah di perangkat ini\n"
+                    f"memiliki versi {CURRENT_VERSION} \n"
+                    "Belum ada pembaruan aplikasi \n\n"
+                )
+        else:
+            arcpy.AddMessage(
+                    f"Penilaian Tanah di perangkat ini\n"
+                    f"memiliki versi {CURRENT_VERSION} \n"
+                    "Terdapat kendala mengecek pembaruan aplikasi \n\n"
+            )
         return
 
     def postExecute(self, parameters):

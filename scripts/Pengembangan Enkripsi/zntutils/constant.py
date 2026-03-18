@@ -651,3 +651,9 @@ KAB_KOTA = {
         "Kota Sorong"
     ],
 }
+
+VERSION_NUMBER = '5.8'
+VERSION_NAME = 'Jayawijaya'
+CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
+SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
+UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"

@@ -4,6 +4,7 @@ Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BP
 
 Penambahan Fitur:
  - Fitur Cek Pembaruan Aplikasi yang berisikan link pembaruan jika ada versi terbaru
+ - Fitur Simbologi untuk mengecek jenis zona awal
  
 Penyesuaian Fitur:
  - Penyesuaian Simbologi 

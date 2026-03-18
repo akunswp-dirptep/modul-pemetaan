@@ -591,8 +591,17 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         )
         arcpy.management.Delete(zl_temp_path)  # Hapus layer sementara      
 
+        dataset_path = config_dan_paths['dataset_path']  # Path dataset utama
+        symbology_folder = config_dan_paths['symbology_folder']
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
 
-        arcpy.SetParameter(1, config_dan_paths['zl_path'])
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+        sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Dengan_Transparansi.lyrx")
+
+        # Membuat feature layer untuk data Zona_Layer
+        arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
+        
+        arcpy.SetParameter(1, "Zona_Layer") 
         
         return
  

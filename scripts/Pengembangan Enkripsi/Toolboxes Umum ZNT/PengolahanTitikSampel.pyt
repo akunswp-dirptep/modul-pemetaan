@@ -488,6 +488,21 @@ class Sampel_Sentuh_Tanahku(object):
             parameterType="Required",
             direction="Input")
         
+        get_zant_layer = arcpy.Parameter(
+            displayName="Lakukan Pengunduhan Zona Awal Nilai Tanah",
+            name = "get_zant_layer",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input"
+
+        )
+
+        output_zant = arcpy.Parameter(
+            name="Zona_Layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
 
         if preferred_server:
             input_link.value = preferred_server
@@ -505,9 +520,9 @@ class Sampel_Sentuh_Tanahku(object):
         self.operatorGIS = bool(document.get_credentials("OperatorGISInternal", use_for_tools_validity=True))
         
         if self.operatorGIS:
-            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi, input_link]
+            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi, get_zant_layer, output_zant, input_link]
         else:
-            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi]
+            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi, get_zant_layer, output_zant]
 
     def isLicensed(self):
         """Validasi lisensi ArcGIS"""
@@ -528,10 +543,11 @@ class Sampel_Sentuh_Tanahku(object):
         project_id = parameters[1].valueAsText
         tahun = parameters[2].valueAsText
         metode = parameters[3].valueAsText
+        add_zant = parameters[6].value
         
 
         if self.operatorGIS:
-            link = parameters[6].valueAsText 
+            link = parameters[8].valueAsText 
             use_production = True if link == "Produksi" else False 
             arcpy.AddMessage(f"Menggunakan Link {'Produksi' if use_production else 'Belajar'} untuk API SIPENTA")
         else:
@@ -544,6 +560,7 @@ class Sampel_Sentuh_Tanahku(object):
         elif metode == 'Perbarui Sampel Terpilih':
             self.updateSelectedFeature(username, project_id, tahun, use_production)
         
+        # if add_zant:
         preferred_server = get_user_data('preferred_server')
         nik = get_user_data('nik')
         berkas = get_user_data('berkas')
@@ -551,7 +568,7 @@ class Sampel_Sentuh_Tanahku(object):
             renew_user_data('nik', username)
         if berkas != project_id:
             renew_user_data('berkas', project_id)
-        if len(parameters) > 4 and link != preferred_server:
+        if len(parameters) > 8 and link != preferred_server:
             renew_user_data('preferred_server', link)
 
         return
@@ -976,6 +993,8 @@ class Sampel_Sentuh_Tanahku(object):
         
         refresh_layer_in_map()
         arcpy.AddMessage("Proses pembaruan feature yang dipilih selesai.")
+
+    # def unduh_zant(self, username, project_id, use_production):
 
 class Tampilkan_Simbologi_Titik_Sampel(object):
     """Tool untuk menampilkan simbologi pada layer Titik Sampel"""

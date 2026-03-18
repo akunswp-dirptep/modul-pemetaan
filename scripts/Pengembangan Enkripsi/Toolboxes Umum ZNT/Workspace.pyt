@@ -31,7 +31,7 @@ class Toolbox:
                       Import_Workspace]
 
 
-class Buat_Workspace:
+class Buat_Workspace(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Buat Workspace"
@@ -221,7 +221,7 @@ class Buat_Workspace:
         added to the display."""
         return
 
-class Import_Workspace:
+class Import_Workspace(object):
 
     def __init__(self):
 
@@ -388,4 +388,3 @@ class Import_Workspace:
         except Exception as e:
             arcpy.AddError(f"Error saat memproses file zip: {e}")
             return False
-

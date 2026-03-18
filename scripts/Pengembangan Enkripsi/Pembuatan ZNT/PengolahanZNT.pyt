@@ -10,8 +10,10 @@ if parent_dir not in sys.path:
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
 
+arcpy.env.overwriteOutput = True
+arcpy.env.addOutputsToMap = True
+
 from zntutils import zona_layer as zonalayer
-\
 
 
 class Toolbox:
@@ -22,7 +24,8 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Penyesuaian_Nomor_Zona_Pembuatan]
+        self.tools = [Penyesuaian_Nomor_Zona_Pembuatan,
+                      Hitung_Nilai_ZNT_Pembuatan]
 
 
 class Penyesuaian_Nomor_Zona_Pembuatan:
@@ -163,3 +166,166 @@ class Penyesuaian_Nomor_Zona_Pembuatan:
                     row[0] = current_nozone
                     cursor.updateRow(row)
 
+class Hitung_Nilai_ZNT_Pembuatan:
+    def __init__(self):
+
+        self.label = "Hitung Nilai ZNT"
+        self.description = "Tools untuk menghitung nilai ZNT Pembuatan"
+    
+    def getParameterInfo(self):
+        pembulatan = arcpy.Parameter(
+            displayName = "Pembulatan",
+            name = "pembulatan",
+            datatype = "GPLong",
+            parameterType = "Required",
+            direction = "Input"
+        )
+
+        ts_output = arcpy.Parameter(
+            name = 'ts_output_layer',
+            datatype = "GPFeatureLayer",
+            parameterType = "Derived",
+            direction = "Output"
+        )
+
+        zl_output = arcpy.Parameter(
+            name = 'zl_output_layer',
+            datatype = "GPFeatureLayer",
+            parameterType = "Derived",
+            direction = "Output"
+        )
+
+        pembulatan.value = 1_000
+
+        return [pembulatan, ts_output, zl_output]
+
+    def isLicensed(self):
+        return True
+    
+    def updateParameters(self, parameters):
+        return
+    
+    def execute(self, parameters, messages):
+        user_input = parameters[0].valueAsText
+        pembulatan = int(user_input)
+
+        config_dan_paths = zonalayer.get_config_values()
+        zl_path = config_dan_paths['zl_path']
+        ws_dir = config_dan_paths['ws_dir']
+
+        dataset_path = config_dan_paths['dataset_path']  # Path ke geodatabase
+        tahun = config_dan_paths['tahun']  # Tahun penilaian
+        lokasi = config_dan_paths['provinsi']   # Kode lokasi
+        coor = config_dan_paths['coor']      # Sistem koordinat
+        gdb_path = config_dan_paths['gdb_path']  # Path lengkap GDB
+        identity_output = os.path.join(dataset_path, "IdentitySampel")
+        titik_sampel = os.path.join(dataset_path, "Titik_Sampel")
+
+        if not arcpy.Exists(titik_sampel):
+            arcpy.AddError("Layer Titik Sampel tidak ditemukan")
+        arcpy.analysis.Identity(titik_sampel, zl_path, identity_output)
+        dissolve_output = os.path.join(dataset_path, "DissolveSampel")
+        field_statistik = [
+            ["nilai", "SUM"],
+            ["nilai", "MEAN"],
+            ["nilai", "MIN"],
+            ["nilai", "MAX"],
+            ["nilai", "STD"],
+            ["nilai", "COUNT"],
+            ["nilai", "RANGE"]
+        ]
+
+        arcpy.management.Dissolve(identity_output, dissolve_output, "FID_Zona_Layer", field_statistik)
+
+        arcpy.management.JoinField(zl_path, "OBJECTID", dissolve_output, "FID_Zona_Layer",["SUM_nilai", "MEAN_nilai", "MIN_nilai", "MAX_nilai", "STD_nilai", "COUNT_nilai", "RANGE_nilai"])
+
+        fields_to_round = {
+            "MIN_nilai": "NILMIN",
+            "MAX_nilai": "NILMAKS",
+            "COUNT_nilai": "JMLSMPL",
+            "MEAN_nilai": "NILAIZN",
+            "STD_nilai": "SMPBAKU"
+        }
+
+        for input_field, output_field in fields_to_round.items():
+            if output_field not in [f.name for f in arcpy.ListFields(zl_path)]:
+                arcpy.management.AddField(zl_path, output_field, "DOUBLE")
+            arcpy.management.CalculateField(
+                zl_path,
+                output_field,
+                f"None if !{input_field}! is None else round(!{input_field}!)",
+                "PYTHON3"
+            )
+        
+        if "SMPBKREL" not in [f.name for f in arcpy.ListFields(zl_path)]:
+            arcpy.management.AddField(zl_path, "SMPBKREL", "DOUBLE")
+        arcpy.management.CalculateField(
+            zl_path, "SMPBKREL",
+            "(!SMPBAKU! / !NILAIZN!) * 100 if !NILAIZN! else None", "PYTHON3"
+        )
+        if "JMLNILAI" not in [f.name for f in arcpy.ListFields(zl_path)]:
+            arcpy.management.AddField(zl_path, "JMLNILAI", "DOUBLE")
+        arcpy.management.CalculateField(zl_path, "JMLNILAI", "!SUM_nilai!", "PYTHON3")
+        arcpy.management.DeleteField(zl_path,
+            ["SUM_nilai", "MEAN_nilai", "MIN_nilai", "MAX_nilai", "STD_nilai", "COUNT_nilai", "RANGE_nilai"]
+        )
+
+        if "NILBULAT" not in [f.name for f in arcpy.ListFields(zl_path)]:
+            arcpy.management.AddField(zl_path, "NILBULAT", "TEXT", field_length=50)
+
+        # Blok kode Python untuk fungsi pembulatan dan formatting
+        code_block = f"""def doSomething(mean_val, pembulatan):
+            if mean_val:
+                # Membulatkan ke kelipatan terdekat dari nilai pembulatan
+                rounded = round(mean_val / pembulatan) * pembulatan
+                # Memformat nilai dengan separator ribuan
+                return "Rp{{:,}}".format(int(rounded)).replace(",", ".")
+            else:
+                return ""
+        """
+
+        # Menghitung field NILBULAT dengan fungsi kustom
+        arcpy.management.CalculateField(
+            zl_path,
+            "NILBULAT",
+            f"doSomething(!NILAIZN!, {pembulatan})",
+            "PYTHON3",
+            code_block
+        )
+
+        arcpy.AddMessage("Memeriksa kualitas zona...")
+        nilaizn_null_or_zero_zones = []
+        less_than_3_samples_zones = []
+        with arcpy.da.SearchCursor(zl_path, ["NOZN", "NILAIZN", "JMLSMPL"]) as cursor:
+            for row in cursor:
+                zone_id = row[0]
+                nilaizn = row[1]
+                jmlsmpl = row[2]
+                
+                if nilaizn is None or nilaizn == 0:
+                    nilaizn_null_or_zero_zones.append(zone_id)
+                if jmlsmpl is None or jmlsmpl < 3:
+                    less_than_3_samples_zones.append((zone_id, jmlsmpl if jmlsmpl is not None else 0))
+
+        if nilaizn_null_or_zero_zones:
+            arcpy.AddWarning(f"Terdapat zona dengan NILAIZN 0 atau NULL: {', '.join(map(str, nilaizn_null_or_zero_zones))}")
+        if less_than_3_samples_zones:
+            lines = "\n".join(
+                f"{zone_id} (Terdapat {int(jmlsmpl)} Titik Sampel)"
+                for zone_id, jmlsmpl in less_than_3_samples_zones
+            )
+
+            arcpy.AddWarning(
+                f"Terdapat zona dengan jumlah sampel kurang dari 3:\n{lines}"
+            )
+        if not nilaizn_null_or_zero_zones and not less_than_3_samples_zones:
+            arcpy.AddMessage("Semua zona memenuhi kriteria kualitas data.")
+
+
+        arcpy.management.Delete(dissolve_output)
+        arcpy.management.Delete(identity_output)
+
+
+
+
+    

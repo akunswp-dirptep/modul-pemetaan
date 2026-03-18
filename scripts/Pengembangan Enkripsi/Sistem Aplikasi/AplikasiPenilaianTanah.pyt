@@ -2,7 +2,7 @@ import arcpy
 import requests, os, time
 from datetime import datetime
 
-VERSION_NUMBER = '5.7'
+VERSION_NUMBER = '5.8'
 VERSION_NAME = 'Jayawijaya'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
@@ -14,7 +14,7 @@ def current_year():
     except Exception:
         return None
 
-def fetch(url, retries=3):
+def fetch(url, retries=5):
     for i in range(retries):
         try:
             r = requests.get(
@@ -75,7 +75,7 @@ class Catatan_Aplikasi:
             direction='Input'
         )
 
-        if self.update_check:
+        if self.update_check is not None:
             if len(self.update_check) > 0:
                 penjelasan.value = (
                     f"Penilaian Tanah versi {CURRENT_VERSION} \n"

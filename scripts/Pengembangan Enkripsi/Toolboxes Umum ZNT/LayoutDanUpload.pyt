@@ -25,7 +25,8 @@ class Toolbox:
                       Tampilkan_Simpangan_Baku_Relatif,
                       Tampilkan_Sebaran_Titik_Sampel,
                       Tampilkan_Sebaran_Titik_Sampel_Dan_Titik_Zona,
-                      Tampilkan_Jenis_Penggunaan_Pada_Zona]
+                      Tampilkan_Jenis_Penggunaan_Pada_Zona,
+                      Tampilkan_Jenis_Penggunaan_Dengan_Transparansi_Pada_Zona]
 
 class Cek_Topologi(object):
     def __init__(self):
@@ -425,6 +426,9 @@ class Tampilkan_Sebaran_Titik_Sampel_Dan_Titik_Zona(object):
         zl_path = os.path.join(dataset_path, "Zona_Layer")
         ts_path = os.path.join(dataset_path, "Titik_Sampel")
         tz_path = os.path.join(dataset_path, "Titik_Zona")
+        if not arcpy.Exists(ts_path) or not arcpy.Exists(tz_path):
+            arcpy.AddError('layer titik sampel atau titik zona tidak ditemukan')
+            sys.exit(1)
         sim_path_zl = os.path.join(symbology_folder, "Simbologi_Peruntukan_Zona_Layer.lyrx")
         sim_path_ts = os.path.join(symbology_folder, "Simbologi_Persebaran_Titik_Sampel.lyrx")
         sim_path_tz = os.path.join(symbology_folder, "Simbologi_Persebaran_Titik_Zona.lyrx")
@@ -503,6 +507,78 @@ class Tampilkan_Jenis_Penggunaan_Pada_Zona(object):
 
         zl_path = os.path.join(dataset_path, "Zona_Layer")
         sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Pada_Zona.lyrx")
+
+
+        arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
+        arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+        arcpy.SetParameter(0, "Zona_Layer")
+
+
+        return
+
+class Tampilkan_Jenis_Penggunaan_Dengan_Transparansi_Pada_Zona(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Simbologi Mengecek Jenis Zona"
+        self.description = ""
+        self.canRunInBackground = False
+
+        
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+       
+        znt_layer = arcpy.Parameter(
+            name="znt_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        penjelasan = arcpy.Parameter(
+            displayName="Penjelasan",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        penjelasan.value = (
+            "Tool ini menampilkan jenis penggunaan\n"
+            "dengan transparansi pada zona layer.\n"
+            "\n"
+
+        )
+
+        return [znt_layer, penjelasan]
+
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+
+        config_dan_paths =zonalayer.get_config_values()
+
+
+        # Mengambil nilai konfigurasi
+        dataset_path = config_dan_paths['dataset_path']  # Path dataset utama
+        symbology_folder = config_dan_paths['symbology_folder']
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+        sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Dengan_Transparansi.lyrx")
 
 
         arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")

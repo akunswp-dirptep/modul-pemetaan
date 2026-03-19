@@ -1,8 +1,10 @@
 ﻿import arcpy, os, sys, requests, json, datetime
+from urllib.parse import urlparse, unquote
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
+import zipfile
+import time
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -127,6 +129,80 @@ def call_sipenta_api(username, project_id, use_production=True):
     except json.JSONDecodeError as e:
         arcpy.AddError(f"Error dalam parsing response API: {str(e)}")
         raise arcpy.ExecuteError
+
+def download_zip_from_link(link, output_dir, file_name=None, timeout=120, max_retries=5, backoff_seconds=3):
+    """
+    Mengunduh file ZIP dari URL yang diberikan oleh variabel link.
+
+    Parameters:
+    link (str): URL file ZIP
+    output_dir (str): Folder tujuan penyimpanan file
+    file_name (str): Nama file output (opsional)
+    timeout (int): Timeout request dalam detik
+    max_retries (int): Jumlah percobaan ulang jika koneksi terputus
+    backoff_seconds (int): Waktu tunggu awal antar retry (exponential backoff)
+
+    Returns:
+    str: Path file ZIP hasil unduhan
+    """
+    if not link:
+        raise ValueError("Nilai link kosong")
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    if not file_name:
+        parsed = urlparse(link)
+        inferred_name = os.path.basename(unquote(parsed.path))
+        file_name = inferred_name if inferred_name else "hasil_unduhan.zip"
+
+    if not file_name.lower().endswith(".zip"):
+        file_name = f"{file_name}.zip"
+
+    zip_path = os.path.join(output_dir, file_name)
+    temp_zip_path = f"{zip_path}.part"
+    arcpy.AddMessage(f"Mengunduh ZIP dari: {link}")
+
+    headers = {
+        "User-Agent": "SIPENTA-Downloader/1.0",
+        "Accept": "application/zip,application/octet-stream,*/*"
+    }
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            if os.path.exists(temp_zip_path):
+                os.remove(temp_zip_path)
+
+            with requests.get(link, stream=True, timeout=(20, timeout), headers=headers) as response:
+                response.raise_for_status()
+                with open(temp_zip_path, "wb") as file_obj:
+                    for chunk in response.iter_content(chunk_size=65536):
+                        if chunk:
+                            file_obj.write(chunk)
+
+            if os.path.exists(zip_path):
+                os.remove(zip_path)
+            os.replace(temp_zip_path, zip_path)
+
+            arcpy.AddMessage(f"File ZIP berhasil disimpan di: {zip_path}")
+            return zip_path
+
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.ChunkedEncodingError) as e:
+            if attempt == max_retries:
+                raise
+
+            wait_time = backoff_seconds * (2 ** (attempt - 1))
+            arcpy.AddWarning(
+                f"Koneksi terputus saat mengunduh (percobaan {attempt}/{max_retries}): {e}. "
+                f"Mencoba ulang dalam {wait_time} detik..."
+            )
+            time.sleep(wait_time)
+
+        except requests.exceptions.RequestException:
+            raise
+
+    raise requests.exceptions.RequestException("Gagal mengunduh file ZIP setelah beberapa percobaan")
 
 def refresh_layer_in_map():
     """
@@ -488,21 +564,6 @@ class Sampel_Sentuh_Tanahku(object):
             parameterType="Required",
             direction="Input")
         
-        get_zant_layer = arcpy.Parameter(
-            displayName="Lakukan Pengunduhan Zona Awal Nilai Tanah",
-            name = "get_zant_layer",
-            datatype="GPBoolean",
-            parameterType="Optional",
-            direction="Input"
-
-        )
-
-        output_zant = arcpy.Parameter(
-            name="Zona_Layer",
-            datatype="GPFeatureLayer",
-            parameterType="Derived",
-            direction="Output"
-        )
 
         if preferred_server:
             input_link.value = preferred_server
@@ -520,9 +581,9 @@ class Sampel_Sentuh_Tanahku(object):
         self.operatorGIS = bool(document.get_credentials("OperatorGISInternal", use_for_tools_validity=True))
         
         if self.operatorGIS:
-            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi, get_zant_layer, output_zant, input_link]
+            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi, input_link]
         else:
-            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi, get_zant_layer, output_zant]
+            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi]
 
     def isLicensed(self):
         """Validasi lisensi ArcGIS"""
@@ -543,11 +604,9 @@ class Sampel_Sentuh_Tanahku(object):
         project_id = parameters[1].valueAsText
         tahun = parameters[2].valueAsText
         metode = parameters[3].valueAsText
-        add_zant = parameters[6].value
         
-
         if self.operatorGIS:
-            link = parameters[8].valueAsText 
+            link = parameters[6].valueAsText 
             use_production = True if link == "Produksi" else False 
             arcpy.AddMessage(f"Menggunakan Link {'Produksi' if use_production else 'Belajar'} untuk API SIPENTA")
         else:
@@ -559,8 +618,7 @@ class Sampel_Sentuh_Tanahku(object):
             self.addSamples(username, project_id, tahun, use_production)
         elif metode == 'Perbarui Sampel Terpilih':
             self.updateSelectedFeature(username, project_id, tahun, use_production)
-        
-        # if add_zant:
+
         preferred_server = get_user_data('preferred_server')
         nik = get_user_data('nik')
         berkas = get_user_data('berkas')
@@ -568,7 +626,7 @@ class Sampel_Sentuh_Tanahku(object):
             renew_user_data('nik', username)
         if berkas != project_id:
             renew_user_data('berkas', project_id)
-        if len(parameters) > 8 and link != preferred_server:
+        if len(parameters) > 6 and link != preferred_server:
             renew_user_data('preferred_server', link)
 
         return
@@ -993,8 +1051,6 @@ class Sampel_Sentuh_Tanahku(object):
         
         refresh_layer_in_map()
         arcpy.AddMessage("Proses pembaruan feature yang dipilih selesai.")
-
-    # def unduh_zant(self, username, project_id, use_production):
 
 class Tampilkan_Simbologi_Titik_Sampel(object):
     """Tool untuk menampilkan simbologi pada layer Titik Sampel"""

@@ -652,7 +652,7 @@ KAB_KOTA = {
     ],
 }
 
-VERSION_NUMBER = '5.8'
+VERSION_NUMBER = '5.8 d1'
 VERSION_NAME = 'Jayawijaya'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'

@@ -1,5 +1,5 @@
 import arcpy
-import requests, os, time, sys
+import requests, os, time, sys, json
 from datetime import datetime
 
 script_dir = os.path.dirname(__file__)
@@ -108,16 +108,30 @@ class Catatan_Aplikasi:
 
         hasil = check_update()
 
+
         if hasil is not None:
             if len(hasil) > 0:
                 arcpy.AddMessage(
                     f"Penilaian Tanah di perangkat ini\n"
                     f"memiliki versi {CURRENT_VERSION} \n"
                     f"Terdapat versi baru: {hasil[2]}\n"
-                    "Unduh melalui link berikut:\n"
-                    f"{hasil[1]}\n\n"
 
                 )
+
+                link_variable = f"{hasil[1]}"
+                message_structure = {
+                    "element": "content",
+                    "data": [
+                        "Unduh melalui link berikut: ",
+                        {
+                            "element": "hyperlink",
+                            "data": "Pembaruan Aplikasi",
+                            "link": link_variable
+                        }
+                    ]
+                }
+
+                arcpy.AddMessage(f"json:{json.dumps(message_structure)}")
 
             elif len(hasil) == 0:
                 arcpy.AddMessage(

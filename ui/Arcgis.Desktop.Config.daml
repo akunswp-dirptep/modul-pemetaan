@@ -734,11 +734,11 @@
 					<tooltip heading="Export Persil Cluster"/>
 				</button>
 				
-				<button id="esri_geoprocessing__ProsesAwalPembaruan" caption="Siapkan Workspace" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton">
+				<button id="esri_geoprocessing__ProsesAwalPembaruan" caption="Buat Workspace" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton">
 					<args>
-						<params toolPath="C:\PenilaianTanah\Pentabit2\sys\znt.tbx\ProsesAwalPembaruan" name="ProsesAwal" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\Pentabit2\sys\znt.tbx\ProsesAwalPembaruan" name="Buat Workspace" xmlns=""/>
 					</args>
-					<tooltip heading="Siapkan Workspace"/>
+					<tooltip heading="Buat Workspace"/>
 				</button>
 				<button id="esri_geoprocessing__DeklarasiVariabel" caption="Deklarasi Variabel" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton">
 					<args>
@@ -2052,23 +2052,23 @@
 
 				<!-- BUTTON UPLOAD PEMBARUAN NBT SIPENTA - START -->
 
-				<button id="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" caption="Upload Peta Rencana Area Kerja - Pembaruan NBT" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" caption="Upload  Peta Rencana Lokasi Kegiatan (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\SIPENTA\script\Upload.pyt\Upload_Peta_Rencana_Lokasi_Kegiatan_Pembaruan_NBT" name="Upload  Peta Rencana Area Kerja Pembaruan NBT" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Rencana_Lokasi_Kegiatan_AOI" name="Upload  Peta Rencana Lokasi Kegiatan (AOI)" xmlns=""/>
 					</args>
 					<tooltip heading="Upload ZNT">Menu untuk melakukan upload Peta Rencana Lokasi Pembaruan NBT.</tooltip>
 				</button>
 
-				<button id="ButtonUploadPetaLokasiKegiatanPembaruanNBT" caption="Upload Peta Lokasi Kegiatan - Pembaruan NBT" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadPetaLokasiKegiatanPembaruanNBT" caption="Upload Peta Lokasi Kegiatan Disepakati (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\SIPENTA\script\Upload.pyt\Upload_Peta_Lokasi_Kegiatan_Pembaruan_NBT" name="Upload Peta Lokasi Kegiatan Pembaruan NBT" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI" name="Upload Peta Lokasi Kegiatan Disepakati (AOI)" xmlns=""/>
 					</args>
 					<tooltip heading="Upload ZNT">Menu untuk melakukan upload Peta Lokasi Kegiatan Pembaruan NBT.</tooltip>
 				</button>
 
-				<button id="ButtonUploadPetaAreaKerjaPembaruanNBT" caption="Upload Peta Area Kerja yang Disepakati - Pembaruan NBT" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadPetaAreaKerjaPembaruanNBT" caption="Upload Peta Area Kerja (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\SIPENTA\script\Upload.pyt\Upload_Peta_Area_Kerja_Pembaruan_NBT" name="Upload Peta Area Kerja yang Disepakati Pembaruan NBT" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Peta_Area_Kerja_AOI" name="Upload Peta Area Kerja (AOI)" xmlns=""/>
 					</args>
 					<tooltip heading="Upload ZNT">Menu untuk melakukan upload peta area kerja yang disepakati Pembaruan NBT.</tooltip>
 				</button>

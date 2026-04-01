@@ -162,10 +162,11 @@ if 'ls_tnh' not in field_names:
     arcpy.AddField_management(persil_path, 'ls_tnh', "DOUBLE")
 
 if arcpy.Exists("tempo"):
-    arcpy.arcpy.Delete_management("tempo")
+    arcpy.Delete_management("tempo")
 arcpy.MakeFeatureLayer_management(persil_path, "tempo")
 
 arcpy.AddGeometryAttributes_management("tempo", "AREA", "", "SQUARE_METERS")
+
 arcpy.CalculateField_management(persil_path, 'ls_tnh', "!POLY_AREA!", "PYTHON")
 arcpy.DeleteField_management(persil_path, 'POLY_AREA')
 
@@ -183,12 +184,12 @@ if 'letak' not in field_names:
     arcpy.AddField_management(persil_path, 'letak', "TEXT")
 if 's_letak' not in field_names:
     arcpy.AddField_management(persil_path, 's_letak', "DOUBLE")
-if 'elvasi' not in field_names:
-    arcpy.AddField_management(persil_path, 'elvasi', "TEXT")
-if 's_elvasi' not in field_names:
-    arcpy.AddField_management(persil_path, 's_elvasi', "DOUBLE")
-arcpy.CalculateField_management(persil_path, 'elvasi', "'Sama'", "PYTHON")
-arcpy.CalculateField_management(persil_path, 's_elvasi', "2", "PYTHON")
+if 'elevasi' not in field_names:
+    arcpy.AddField_management(persil_path, 'elevasi', "TEXT")
+if 's_elevasi' not in field_names:
+    arcpy.AddField_management(persil_path, 's_elevasi', "DOUBLE")
+arcpy.CalculateField_management(persil_path, 'elevasi', "'Sama'", "PYTHON")
+arcpy.CalculateField_management(persil_path, 's_elevasi', "2", "PYTHON")
 if 'min_lb_jln' not in field_names:
     arcpy.AddField_management(persil_path, 'min_lb_jln', "DOUBLE")
 

@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import sys
 import arcpy, os
 
@@ -41,7 +42,8 @@ class Toolbox:
         # List of tool classes associated with this toolbox
         self.tools = [Upload_Peta_Rencana_Lokasi_Kegiatan_AOI,
                       Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI,
-                      Upload_Peta_Peta_Area_Kerja_AOI]
+                      Upload_Peta_Peta_Area_Kerja_AOI,
+                      Buat_Workspace_Pembaruan_NBT]
 
 class Upload_Peta_Rencana_Lokasi_Kegiatan_AOI(object):
     def __init__(self):
@@ -442,14 +444,14 @@ class Buat_Workspace_Pembaruan_NBT(object):
         self.current_year = current_year()
 
         folder_path = arcpy.Parameter(
-            displayName='Pilih Folder untuk Menyimpan Workspace Pembaruan NBT',
+            displayName='Folder Penyimpanan',
             name = 'folder_path',
             datatype='DEFolder',
             parameterType='Required',
             direction='Input'
         )
         file_persil = arcpy.Parameter(
-            displayName="Shapefile Peta Area Kerja (.shp)",
+            displayName="Shapefile Area Kerja (.shp)",
             name="shapefile_path",
             datatype="DEFile",  
             parameterType="Required",
@@ -464,9 +466,15 @@ class Buat_Workspace_Pembaruan_NBT(object):
     
     def execute(self, parameters, messages):
         folder_path = parameters[0].valueAsText
-        persil_path = parameters[1].valueAsText
+        input_persil_path = parameters[1].valueAsText
 
-        project_config = os.path.join(folder_path, "project_config.json")
+        appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+
+        conf_path = os.path.join(folder_path, "project_config.json")
+        jalan_conf_path = os.path.join(folder_path, "jalan.dat")
+        persil_conf_path = os.path.join(folder_path, "persil.dat")
+        fasilitas_conf_path = os.path.join(folder_path, "fasilitas.dat")
+        resiko_conf_path = os.path.join(folder_path, "resiko.dat")
         gdbname = "NilaiBidangTanah.gdb"
         dataset = "nbt_ds"
         dataset_fasilitas = "fasilitas"
@@ -505,8 +513,8 @@ class Buat_Workspace_Pembaruan_NBT(object):
         sisijalan_path = os.path.join(dataset_path, sisijalan)
         jaringanjalan_path = os.path.join(dataset_path, jaringanjalan)
         midpoint_jaringanjalan_path = os.path.join(dataset_path, midpoint_jaringanjalan)
-        # simbologi_lebarjalan_path = os.path.join(appdata, simbologi_lebarjalan + ".lyr")
-        # simbologi_kelasjalan_path = os.path.join(appdata, simbologi_kelasjalan + ".lyr")
+        simbologi_lebarjalan_path = os.path.join(appdata, simbologi_lebarjalan + ".lyr")
+        simbologi_kelasjalan_path = os.path.join(appdata, simbologi_kelasjalan + ".lyr")
         topologi_sisijalan_path = os.path.join(dataset_path, topologi_sisijalan)
         topologi_jaringanjalan_path = os.path.join(dataset_path, topologi_jaringanjalan)
         nd_path = os.path.join(gdb_path, gdbtemplate, nd)
@@ -518,5 +526,207 @@ class Buat_Workspace_Pembaruan_NBT(object):
         persil_centroid_path = os.path.join(dataset_path, persil_centroid)
         persil_split_midpoint_path = os.path.join(dataset_path, persil_split_midpoint)
         
+        writelist = ["dataset," + dataset_path, "persil," + persil + ";" + persil_path, "persilline," + persil_line + ";" + persil_line_path, "persilsplit," + persil_split + ";" + persil_split_path, "persilcentroid," + persil_centroid + ";" + persil_centroid_path, "persilmidpoint," + persil_split_midpoint + ";" + persil_split_midpoint_path, persil_zonasi, persil_bentuk, persil_letak]
 
+        json_config = {
+            'project_config' : {
+                'ws_path' : folder_path,
+                'conf_path' : conf_path,
+                'gdb_path' : gdb_path,
+                'dataset_path' : dataset_path,
+                'jalan_path' : jalan_conf_path,
+                'persil_path' : persil_conf_path,
+                'fasilitas_path' : fasilitas_conf_path,
+                'resiko_path' : resiko_conf_path,
+            },
+            'jaringan_jalan_config' : {
+                'sisijalan' : {
+                    'name' : sisijalan, 
+                    'path' : sisijalan_path
+                },
+                'jaringanjalan' : {
+                    'name' : jaringanjalan,
+                    'path' : jaringanjalan_path
+                },
+                'midpoint_jaringanjalan' : {
+                    'name' : midpoint_jaringanjalan,
+                    'path' : midpoint_jaringanjalan_path
+                },
+                'simbologi_lebarjalan' : {
+                    'name' : simbologi_lebarjalan,
+                    'path' : simbologi_lebarjalan_path
+                },
+                'simbologi_kelasjalan' : {
+                    'name' : simbologi_kelasjalan,
+                    'path' : simbologi_kelasjalan_path
+                },
+                'skoring_kelas_jalan' : {
+                    'Lokal Setapak' : 1,
+                    'Lokal Sekunder' : 2,
+                    'Lokal Primer' : 3,
+                    'Kolektor Sekunder' : 4,
+                    'Kolektor Primer' : 5,
+                    'Arteri Sekunder' : 6,
+                    'Arteri Primer' : 7
+                },
+                'topologi_sisijalan' : {
+                    'name' : topologi_sisijalan,
+                    'path' : topologi_sisijalan_path
+                },
+                'topologi_jaringanjalan' : {
+                    'name' : topologi_jaringanjalan,
+                    'path' : topologi_jaringanjalan_path
+                },
+                'nd' : {
+                    'name' : nd,
+                    'path' : nd_path
+                },
+                'jaringanjalannd' : {
+                    'name' : jaringanjalannd,
+                    'path' : jaringanjalannd_path
+                }
+            },
+            'persil_config' : {
+                'persil' : {
+                    'name' : persil,
+                    'path' : persil_path
+                },  
+                'persil_line' : {
+                    'name' : persil_line,
+                    'path' : persil_line_path
+                },
+                'persil_split' : {
+                    'name' : persil_split,
+                    'path' : persil_split_path
+                },
+                'persil_centroid' : {
+                    'name' : persil_centroid,
+                    'path' : persil_centroid_path
+                },
+                'persil_split_midpoint' : {
+                    'name' : persil_split_midpoint,
+                    'path' : persil_split_midpoint_path
+                },
+                'zonasi' : {
+                    'name' : 'zonasi',
+                    'kategori' : {
+                        'Pertanian' : 1,
+                        'Industri' : 2,
+                        'Perkampungan' : 3,
+                        'Perumahan Sederhana' : 4,
+                        'Perumahan Menengah' : 5,
+                        'Perumahan Mewah' : 6,
+                        'Komersil' : 7
+                    }
+                },
+                'bentuk' : {
+                    'name' : 'bentuk',
+                    'kategori' : {
+                        'Segi Banyak Tidak Beraturan' : 1,
+                        'Segitiga' : 2,
+                        'Segi Empat Tidak Beraturan' : 3,
+                        'Segi Empat Beraturan' : 4
+                    }
+                },
+                'letak' : {
+                    'name' : 'letak',
+                    'kategori' : {
+                        'Lain-lain' : 1,
+                        'Normal' : 2,
+                        'Tusuk sate' : 3,
+                        'Hook' : 4
+                    }
+                }
+            },
+            'fasilitas_config' : {
+                'dataset_path' : dataset_fasilitas_path},
+            
+            'resiko_config' : {
+                'dataset_path' : dataset_resiko_path
+            }
+            
+        }
+        
+        conf_file = open(conf_path, "w")
+        conf_file.write(json.dumps(json_config, indent=4))
+        conf_file.close()
+
+        if arcpy.Exists(gdb_path):
+            arcpy.management.Delete(gdb_path)
+        
+        arcpy.management.CreateFileGDB(folder_path, gdbname)
+        arcpy.management.CreateFeatureDataset(gdb_path, dataset, input_persil_path)
+        arcpy.management.CreateFeatureDataset(gdb_path, dataset_fasilitas, input_persil_path)
+        arcpy.management.CreateFeatureDataset(gdb_path, dataset_resiko, input_persil_path)
+
+        arcpy.conversion.FeatureClassToFeatureClass(input_persil_path, dataset_path, persil)
+
+        field_names = [field.name for field in arcpy.ListFields(persil_path)]
+        if 'NEAR_DIST' in field_names:
+            arcpy.management.DeleteField(persil_path, 'NEAR_DIST')
+        if 'NEAR_FID' in field_names:
+            arcpy.management.DeleteField(persil_path, 'NEAR_FID')
+        if 'NEAR_X' in field_names:
+            arcpy.management.DeleteField(persil_path, 'NEAR_X')
+        if 'NEAR_Y' in field_names:
+            arcpy.management.DeleteField(persil_path, 'NEAR_Y')
+
+        if 'IdBidang' not in field_names:
+            arcpy.management.AddField(persil_path, 'IdBidang', "LONG")
+        arcpy.management.CalculateField(persil_path, 'IdBidang', "!OBJECTID!", "PYTHON")
+
+        if 'ls_tnh' not in field_names:
+            arcpy.management.AddField(persil_path, 'ls_tnh', "DOUBLE")
+        arcpy.management.CalculateField(persil_path, 'ls_tnh', "!SHAPE.area!", "PYTHON")
+
+        if 'lb_dpn' not in field_names:
+            arcpy.management.AddField(persil_path, 'lb_dpn', "DOUBLE")
+        if 'bentuk' not in field_names:
+            arcpy.management.AddField(persil_path, 'bentuk', "TEXT")
+        if 's_bentuk' not in field_names:
+            arcpy.management.AddField(persil_path, 's_bentuk', "DOUBLE")
+        if 'zonasi' not in field_names:
+            arcpy.management.AddField(persil_path, 'zonasi', "TEXT")
+        if 's_zonasi' not in field_names:
+            arcpy.management.AddField(persil_path, 's_zonasi', "DOUBLE")
+        if 'letak' not in field_names:
+            arcpy.management.AddField(persil_path, 'letak', "TEXT")
+        if 's_letak' not in field_names:
+            arcpy.management.AddField(persil_path, 's_letak', "DOUBLE")
+        if 'elevasi' not in field_names:
+            arcpy.management.AddField(persil_path, 'elevasi', "TEXT")
+        if 's_elevasi' not in field_names:
+            arcpy.management.AddField(persil_path, 's_elevasi', "DOUBLE")
+        arcpy.management.CalculateField(persil_path, 'elevasi', "'Sama'", "PYTHON")
+        arcpy.management.CalculateField(persil_path, 's_elevasi', "2", "PYTHON")
+
+        if 'min_lb_jln' not in field_names:
+            arcpy.management.AddField(persil_path, 'min_lb_jln', "DOUBLE")
+
+        arcpy.management.PolygonToLine(persil_path, persil_line_path, "IGNORE_NEIGHBORS")
+        arcpy.management.SplitLine(persil_line_path, persil_split_path)
+
+        field_names = [field.name for field in arcpy.ListFields(persil_split_path)]
+        if 'LebarSisi' not in field_names:
+            arcpy.management.AddField(persil_split_path, 'LebarSisi', "DOUBLE")
+
+
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        folder_connections = aprx.folderConnections
+
+        # Path folder yang ingin ditambahkan
+        new_folder = folder_path
+
+        # Cek apakah folder sudah ada
+        if not any(fc['connectionString'] == new_folder for fc in folder_connections):            
+            # Tambahkan folder baru ke list
+            folder_connections.append({
+                        'connectionString': new_folder,
+                        'isHomeFolder': False
+                    })
+
+                    # Update folder connections
+            aprx.updateFolderConnections(folder_connections, validate=True)
+        else:
+            arcpy.AddMessage("Workspace sudah terhubung di ArcGIS Pro")
         return

@@ -159,3 +159,33 @@ def get_user_data(key:str):
         
     except Exception as e:
         return None
+
+def get_all_config():
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+    try:
+        if os.path.exists(config_path):
+            data = decrypt_message(generate_key(), config_path) 
+            return data
+        else:
+            return None
+        
+    except Exception as e:
+        return None
+
+def get_all_berkas_id():
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+    try:
+        if os.path.exists(config_path):
+            data = decrypt_message(generate_key(), config_path) 
+            user_data = data.get('sipenta_user_data', [])
+            if len(user_data['berkas']) > 0:
+                data_berkas = []
+                for berkas in user_data['berkas']:
+                    data_berkas.append((berkas.get('no_berkas'), berkas.get('nama_perusahaan') if berkas.get('nama_perusahaan') else "Swakelola"))
+                return data_berkas
+
+        else:
+            return None
+        
+    except Exception as e:
+        return None

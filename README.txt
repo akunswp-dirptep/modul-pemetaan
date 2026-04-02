@@ -1,19 +1,6 @@
-Version: 5.8 - Jayawijaya
-Published: xx/03/2025
+Version: 5.8.2 - Jayawijaya
+Published: 02/04/2025
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 
-Penambahan Fitur:
- - Fitur Cek Pembaruan Aplikasi yang berisikan link pembaruan jika ada versi terbaru
- - Fitur Simbologi untuk mengecek jenis zona awal
- 
 Penyesuaian Fitur:
- - Penyesuaian Simbologi 
- - Penyesuaian Ekspor Geodatabase berdasarkan file zip bukan folder
- - Penyesuaian Fitur Buat Workspace dimana sekarang folder connection langsung ditambahkan di panel katalog
- - Menambahkan Nilai Default NOZONE, NOZN, MEAN, NILAIZN, JENIS_ZONA, JNSZN, jika terdapat pada layer  ZNT sebelumnya di Tools Masukkan Data ZNT Sebelumnya.
- - Menambahkan Kab Wonogiri dan Kab Karanganyar Untuk Nama Kabupaten
- 
-Perbaikan Bug
- - Perbaikan Bug pesan backend tidak ditemukan saat melakukan upload data
- - Perbaikan Bug Perbarui Sampel Terpilih yang Gagal karena Tidak ada layer Titik Sampel Individual
- 
+ - Penambahan ID perilisan sebagai data pembanding untuk mengecek kesesuai versi

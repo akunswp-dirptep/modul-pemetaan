@@ -652,8 +652,9 @@ KAB_KOTA = {
     ],
 }
 
-VERSION_NUMBER = '5.8.1'
+VERSION_NUMBER = '5.8.2'
 VERSION_NAME = 'Jayawijaya'
+VERSION_ID = 'halus-cerdas-padang-69cdce82-i43'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
 UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"

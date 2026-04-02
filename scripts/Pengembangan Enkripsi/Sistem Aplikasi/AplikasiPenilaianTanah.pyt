@@ -7,7 +7,7 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.constant import CURRENT_VERSION, UPDATE_URL
+from zntutils.constant import CURRENT_VERSION, UPDATE_URL, VERSION_ID
 
 def current_year():
     try:
@@ -35,9 +35,9 @@ def check_update():
         response = fetch(url=UPDATE_URL)
         data = response.json()
 
-        latest_version = data["version"]
+        latest_version = data["version_id"]
 
-        if latest_version != CURRENT_VERSION:
+        if latest_version != VERSION_ID:
             pesan = 'Versi terbaru tersedia: {}.\nJalankan tool untuk mendownload versi terbaru.'.format(latest_version)    
             return [pesan, data["url"], latest_version]
         else:

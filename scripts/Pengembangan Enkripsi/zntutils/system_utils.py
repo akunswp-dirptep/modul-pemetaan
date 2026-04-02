@@ -6,6 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
+from .constant import USER_DATA_KEY, NIK_KEY, NOMOR_KONTRAK_KEY, PREFERRED_SERVER_KEY
 def current_year():
     try:
         return int(datetime.now().year)
@@ -105,6 +106,25 @@ def renew_user_data(key:str, value:str):
     except Exception as e:
         arcpy.AddWarning(f"Gagal memuat ulang toolbox: {str(e)}")
 
+def renew_multiple_user_data(data_dict: dict):
+    
+    for key, value in data_dict.items():
+        setup_user_data(key, value)
+
+    all_toolboxes_folder_need_reload = [
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT",
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT",
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi",
+                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT"
+            ]
+
+    try:
+        for folder in all_toolboxes_folder_need_reload:
+            reload_all_toolboxes_in_folder(folder)
+
+    except Exception as e:
+        arcpy.AddWarning(f"Gagal memuat ulang toolbox: {str(e)}")
+
 def setup_user_data(key:str, value:str):
 
     config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
@@ -177,7 +197,7 @@ def get_all_berkas_id():
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            user_data = data.get('sipenta_user_data', [])
+            user_data = data.get(USER_DATA_KEY, [])
             if len(user_data['berkas']) > 0:
                 data_berkas = []
                 for berkas in user_data['berkas']:
@@ -189,3 +209,20 @@ def get_all_berkas_id():
         
     except Exception as e:
         return None
+
+def clear_user_data():
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+    try:
+        if os.path.exists(config_path):
+            data = decrypt_message(generate_key(), config_path) 
+            data[USER_DATA_KEY] = None
+            data[NIK_KEY] = None
+            data[NOMOR_KONTRAK_KEY] = None
+            data[PREFERRED_SERVER_KEY] = None
+            encrypt_message(json.dumps(data), generate_key(), config_path)
+            return True
+        else:
+            return False
+        
+    except Exception as e:
+        return False

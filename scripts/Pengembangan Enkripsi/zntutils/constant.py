@@ -658,3 +658,7 @@ VERSION_ID = 'halus-cerdas-padang-69cdce82-i43'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
 UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"
+USER_DATA_KEY = "sipenta_user_data"
+NIK_KEY = "nomor_induk_kependudukan"
+NOMOR_KONTRAK_KEY = "nomor_kontrak"
+PREFERRED_SERVER_KEY = "preferred_server"

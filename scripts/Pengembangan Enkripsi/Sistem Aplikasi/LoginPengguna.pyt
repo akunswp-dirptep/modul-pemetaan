@@ -10,7 +10,8 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.system_utils import renew_user_data, get_user_data, get_all_config, get_all_berkas_id
+from zntutils.system_utils import renew_user_data, get_all_config, get_user_data, clear_user_data, get_all_berkas_id, renew_multiple_user_data
+from zntutils.constant import USER_DATA_KEY, NIK_KEY, NOMOR_KONTRAK_KEY, PREFERRED_SERVER_KEY   
 
 class Toolbox:
     def __init__(self):
@@ -20,13 +21,13 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Login_Pengguna]
+        self.tools = [Login_Pengguna, Logout_Pengguna]
 
 
 class Login_Pengguna:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Login Pemeta"
+        self.label = "Login Pemeta Nilai Tanah"
         self.description = ""
 
     def getParameterInfo(self):
@@ -111,11 +112,7 @@ class Login_Pengguna:
         use_production = True if server == "Produksi" or server == None else False
 
         self.call_sipenta_api(nik, nomor_kontrak, tahun, use_production)
-        #  Dapatkan data dan Validasi NIK
-        #  Kirim ke Sipenta cek berkas
-        #  Simpan dalam format terenkripsi
 
-        #  refresh toolboxes lainnya
 
         return
 
@@ -156,7 +153,6 @@ class Login_Pengguna:
                 "tahun": tahun
             }
 
-            arcpy.AddMessage("Mengambil data Titik Sampel...")
             response = requests.post(url, data=payload, timeout=60)  
             arcpy.AddMessage(f"Status Code: {response.status_code}")
 
@@ -164,16 +160,18 @@ class Login_Pengguna:
             if response.status_code == 200:
                 data = response.json()
                 if data.get("success"):
-                    db_data = get_all_config()
-                    arcpy.AddMessage(f"Data pengguna yang tersimpan saat ini: {db_data}")
-                    berkas_data = get_all_berkas_id()
-                    arcpy.AddMessage(f"Data berkas yang tersimpan saat ini: {berkas_data}")
 
-                    renew_user_data("sipenta_user_data", data)
+                    renew_data = {
+                        USER_DATA_KEY: data,
+                        NIK_KEY: nik,
+                        NOMOR_KONTRAK_KEY: nomor_kontrak,
+                        PREFERRED_SERVER_KEY: "Produksi" if use_production else "Belajar"
+                    }
+                    renew_multiple_user_data(renew_data)
 
                 else:
                     arcpy.AddError(f"Login gagal: {data.get('message', 'Tidak ada pesan error yang diberikan')}")
-
+            
             
             return 
             
@@ -184,3 +182,84 @@ class Login_Pengguna:
             arcpy.AddError(f"Error dalam parsing response API: {str(e)}")
             raise arcpy.ExecuteError
 
+class Logout_Pengguna:
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Logout Pemeta Nilai Tanah"
+        self.description = ""
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        user_data = get_user_data(USER_DATA_KEY)
+
+
+        penjelasan = arcpy.Parameter(
+            displayName="Penjelasan",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        if user_data:
+            berkas_list = get_all_berkas_id()
+            berkas_messages = "\n".join([f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list])
+            server = get_user_data(PREFERRED_SERVER_KEY)
+            nik = get_user_data(NIK_KEY)
+            kontrak = get_user_data(NOMOR_KONTRAK_KEY)
+
+            penjelasan.value = (
+                f"Anda saat ini masuk sebagai Pemeta Nilai Tanah\n\n"
+                f"NIK: {nik}\n"
+                f"Nomor Kontrak: {kontrak}\n"
+                f"Server Sipenta: {server}\n\n"
+                "Anda memiliki akses ke berkas-berkas berikut:\n"
+                f"{berkas_messages}\n\n"
+                "Gunakan tools ini untuk logout"
+                "\n----------------------------------------------\n"
+                "Dikembangkan oleh:\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+            )
+        else:       
+            penjelasan.value = (
+                "Anda belum login.\n"
+                "Tools ini hanya untuk logout"
+                "\n----------------------------------------------\n"
+                "Dikembangkan oleh:\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+            )
+
+        return [penjelasan]
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+
+        if get_user_data(USER_DATA_KEY):
+            clear_user_data()
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+
+
+        return
+    

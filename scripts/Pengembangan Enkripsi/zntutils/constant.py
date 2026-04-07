@@ -510,6 +510,7 @@ KAB_KOTA = {
         "Sidenreng Rappang",
         "Sinjai",
         "Soppeng",
+        "Takalar",
         "Tana Toraja",
         "Toraja Utara",
         "Wajo",

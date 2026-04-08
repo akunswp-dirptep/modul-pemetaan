@@ -93,6 +93,8 @@ class Rekomendasi_Titik_Pembanding(object):
         """The source code of the tool."""
 
         self.setup_path_and_config()
+
+        
         
         if arcpy.Exists(self.titik_sampel_individu_path):
             feature_dipilih = samplepoint.get_selected_oids("Titik_Sampel_Individual")
@@ -104,7 +106,6 @@ class Rekomendasi_Titik_Pembanding(object):
             arcpy.AddError("Hanya satu titik sampel yang boleh dipilih pada layer 'Titik_Sampel_Individual'. Silakan pilih satu titik sampel saja.")
             sys.exit(1)
         
-        # Ambil Nomor_Entry dari feature yang dipilih
         nomor_entry = None
         with arcpy.da.SearchCursor(self.titik_sampel_individu_path, ["Nomor_Entry"], f"OBJECTID = {feature_dipilih[0]}") as cursor:
             for row in cursor:
@@ -112,7 +113,7 @@ class Rekomendasi_Titik_Pembanding(object):
                 break
         
         if nomor_entry:
-            arcpy.AddMessage(f"Nomor Entry yang dipilih: {nomor_entry}")
+            arcpy.AddMessage(f"Nomor Sampel yang dipilih: {nomor_entry}")
             
             # Dapatkan data sampel
             data_individual = self.dapatkan_data_sampel(nomor_entry, self.titik_sampel_individu_path)
@@ -174,7 +175,7 @@ class Rekomendasi_Titik_Pembanding(object):
         self.titik_sampel_path = os.path.join(self.dataset_path, "Titik_Sampel")
         if arcpy.Exists(self.titik_zona_path):
             arcpy.AddMessage("Menggunakan dataset 'Titik_Sampel' dan 'Titik_Zona' sebagai sumber mencari pembanding.")
-
+        
 
         self.titik_sampel_individu_path = os.path.join(self.dataset_path, "Titik_Sampel_Individual")
 
@@ -402,13 +403,23 @@ class Rekomendasi_Titik_Pembanding(object):
             'panjang_kebelakang': []
         }
         
+        data_sampel = arcpy.management.GetCount(self.titik_sampel_path)
+        sampel_count = int(data_sampel[0])
+        data_titik_zona = arcpy.management.GetCount(self.titik_zona_path) if arcpy.Exists(self.titik_zona_path) else None
+        titik_zona_count = int(data_titik_zona[0]) if data_titik_zona else None
 
-        with arcpy.da.SearchCursor(self.titik_sampel_path, field_list) as cursor:
-            for row in cursor:
-                all_numeric_data['luas_bangunan'].append(row[13])
-                all_numeric_data['luas_tanah'].append(row[14])
-                all_numeric_data['lebar_depan'].append(row[15])
-                all_numeric_data['panjang_kebelakang'].append(row[16])
+        if sampel_count == 0 and (titik_zona_count is None or titik_zona_count == 0):
+            arcpy.AddError("Tidak ada data titik sampel yang tersedia untuk dibandingkan. Pastikan layer 'Titik_Sampel' atau 'Titik_Zona' memiliki data.")  
+            sys.exit(1)
+        
+
+        if sampel_count > 0:
+            with arcpy.da.SearchCursor(self.titik_sampel_path, field_list) as cursor:
+                for row in cursor:
+                    all_numeric_data['luas_bangunan'].append(row[13])
+                    all_numeric_data['luas_tanah'].append(row[14])
+                    all_numeric_data['lebar_depan'].append(row[15])
+                    all_numeric_data['panjang_kebelakang'].append(row[16])
         
         if self.titik_zona_path and arcpy.Exists(self.titik_zona_path):
             with arcpy.da.SearchCursor(self.titik_zona_path, field_list) as cursor:

@@ -120,11 +120,18 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
         bulat1 = "100"  # Faktor pembulatan untuk jenis zona 1
         bulat2 = "100"  # Faktor pembulatan untuk jenis zona 2
 
+
         # Mendefinisikan path untuk feature classes yang akan digunakan
         zl = os.path.join(self.dataset_path, "Zona_Layer")      
         ts = os.path.join(self.dataset_path, "Titik_Sampel")    
         hi = os.path.join(self.dataset_path, "Hitung_Indeks")    
         tzt = os.path.join(self.dataset_path, "Titik_Zona_Temp") 
+
+        with arcpy.da.SearchCursor(zl, ['NILAIZN_LAMA']) as cursor:
+            for row in cursor:
+                if row[0] is None or row[0] == 0:
+                    arcpy.AddError("Terdapat nilai zona lama (NILAIZN_LAMA) yang kosong atau bernilai 0 pada Zona_Layer. Pastikan semua fitur pada Zona_Layer memiliki nilai NILAIZN_LAMA yang valid sebelum menjalankan tool ini.")
+                    sys.exit(1)
 
         if arcpy.Exists(hi):
             arcpy.management.Delete(os.path.join(self.gdb_path, "Hitung_Indeks"))

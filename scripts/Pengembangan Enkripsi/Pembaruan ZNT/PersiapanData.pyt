@@ -414,14 +414,15 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                     rownum += 1
                     for i, val in enumerate(row):
                         field_name = fields[i]
-                        if field_name == jeniszona:
-                            if val == 0 or val == '0':
-                                arcpy.AddError(f"Field '{field_name}' mengandung nilai 0 pada record {rownum}.")
-                                return
                         # Null atau empty string dianggap tidak valid
                         if val is None:
                             arcpy.AddError(f"Field '{field_name}' mengandung nilai NULL pada record {rownum}. Semua nilai harus terisi dan numeric atau dapat dikonversi ke angka.")
                             return
+                        if field_name == jeniszona:
+                            if val == 0 or val == '0':
+                                arcpy.AddError(f"Field '{field_name}' mengandung nilai 0 pada record {rownum}.")
+                                return
+
                         if isinstance(val, str):
                             s = val.strip()
                             if s == "":

@@ -1,5 +1,5 @@
 import arcpy
-import os
+import os,sys
 
 # ======================
 # ENVIRONMENT SETTINGS
@@ -42,10 +42,34 @@ def get_layer(name):
 zona_layer = get_layer("Zona_Layer")
 titik_zona = get_layer("Titik_Zona")
 
+if zona_layer is None:
+    arcpy.AddError("Layer 'Zona_Layer' tidak ditemukan pada peta aktif.")
+    raise ValueError("Layer 'Zona_Layer' tidak ditemukan pada peta aktif.")
+
+
+def ensure_fields_exist(layer, required_fields):
+    existing_fields = {field.name.upper() for field in arcpy.ListFields(layer)}
+    missing_fields = [field_name for field_name in required_fields if field_name.upper() not in existing_fields]
+
+    if missing_fields:
+
+        for field_name in missing_fields:
+
+            if  field_name == 'indeks_nilai_tanah':
+                arcpy.AddError("Data Indeks Nilai Tanah tidak ditemukan. Pastikan sudah menjalankan tool Hitung Indeks Nilai Tanah terlebih dahulu.")
+                
+            else:
+                arcpy.AddError(
+                f"Field berikut tidak ditemukan pada Zona_Layer: {field_name}"
+            )
+        sys.exit(1)
+
 # ================================================================
 # Proses per baris
 # ================================================================
-fields = ['cluster', 'NILAIZN', 'NILAIZN_LAMA', 'indeks_nilai_tanah',]
+fields = ['cluster', 'NILAIZN', 'NILAIZN_LAMA', 'indeks_nilai_tanah']
+ensure_fields_exist(zona_layer, fields)
+
 with arcpy.da.UpdateCursor(zona_layer, fields) as cursor:
     for row in cursor:
         # === Proses hanya jika cluster tidak null ===

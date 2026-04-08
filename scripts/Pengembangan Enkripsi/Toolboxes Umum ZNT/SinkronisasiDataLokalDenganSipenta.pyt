@@ -431,6 +431,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         with open(self.config_paths['path_sementara_json'], 'w+') as f:
             json.dump(self.api_data["data"], f, ensure_ascii=False)
             
+
         if int(self.api_data["jmlh_data"]) > 0:
             # Konversi JSON ke Feature Class
             arcpy.conversion.JSONToFeatures(self.config_paths['path_sementara_json'], self.config_paths['path_titik_sampel_sementara'], 'POINT')
@@ -786,9 +787,8 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                         zoning_value = row[1]
                         zoning_sementara[nomor_entry] = zoning_value
             else:
-                self.delete_temporary_files(self.config_paths)
-                arcpy.AddWarning(f"Feature class sementara tidak ditemukan: {titik_sampel_sementara_fc}.")
-                sys.exit(1)
+                arcpy.AddWarning(f"Feature class sementara tidak ditemukan: {titik_sampel_individual_sementara_fc}.")
+        
             
             # Baca data dari titik_sampel_fc dan bandingkan
             with arcpy.da.SearchCursor(titik_sampel_fc, fields) as cursor:

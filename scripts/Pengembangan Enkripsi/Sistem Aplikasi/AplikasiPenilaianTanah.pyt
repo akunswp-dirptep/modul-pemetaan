@@ -35,10 +35,11 @@ def check_update():
         response = fetch(url=UPDATE_URL)
         data = response.json()
 
-        latest_version = data["version_id"]
+        latest_version_id = data["version_id"]
+        latest_version = data["version"]
 
-        if latest_version != VERSION_ID:
-            pesan = 'Versi terbaru tersedia: {}.\nJalankan tool untuk mendownload versi terbaru.'.format(latest_version)    
+        if latest_version_id != VERSION_ID:
+            pesan = 'Versi terbaru tersedia: {}.\nJalankan tool untuk mendownload versi terbaru.'.format(latest_version_id)    
             return [pesan, data["url"], latest_version]
         else:
             return []

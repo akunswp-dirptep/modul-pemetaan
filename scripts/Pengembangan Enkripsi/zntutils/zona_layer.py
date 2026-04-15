@@ -281,9 +281,9 @@ def get_config_values():
             configs = json.load(f)
 
     # Validasi path GDB
-    if not arcpy.Exists(configs['dataset_path']):
-        arcpy.AddError(f"Path GDB tidak valid: {configs['dataset_path']}")
-        raise ValueError(f"Path GDB tidak valid: {configs['dataset_path']}")
+    if ws_dir != configs.get('ws_path'):
+        arcpy.AddError("ERROR: Path workspace di config.json tidak sesuai dengan struktur folder yang ditemukan. Pastikan config.json sudah benar.")
+        sys.exit(1)
     appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     ui_folder = os.path.join(appdata, "ui")
     symbology_folder = os.path.join(ui_folder, "symbology")

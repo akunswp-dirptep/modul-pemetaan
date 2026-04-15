@@ -1,4 +1,4 @@
-import arcpy, requests, json, sys, os, re
+import arcpy, requests, json, sys, os, datetime
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled" 
 script_dir = os.path.dirname(__file__)
@@ -55,6 +55,14 @@ class Cek_Topologi(object):
         )
         penjelasan.value = (
             "Tool ini mengecek topologi pada zona layer.\n"
+            "Aturan Topologi yang digunakan adalah:\n"
+            "1. Zona tidak boleh memiliki celah (gap) antar zona.\n"
+            "2. Zona tidak boleh tumpang tindih (overlap) antar zona.\n"
+            "3. Zona dengan kesalahan topologi akan ditampilkan pada peta.\n"
+            "\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+            "Kementrian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
 
         )
 
@@ -137,6 +145,9 @@ class Tampilkan_Simbologi_Pembagian_Kelas(object):
             "Tool ini menampilkan pembagian kelas\n"
             "pada zona layer.\n"
             "\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+            "Kementrian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
         ) 
         return [pilih_metode, znt_layer, penjelasan]
 
@@ -224,6 +235,10 @@ class Tampilkan_Simpangan_Baku_Relatif(object):
             "3. Zona dengan Nilai Simpangan Baku Relatif\n"
             "   bernilai null tidak akan ditampilkan.\n"
             "\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+            "Kementrian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
+
         )
 
 
@@ -305,6 +320,10 @@ class Tampilkan_Sebaran_Titik_Sampel(object):
             "Tool ini menampilkan sebaran titik sampel\n"
             "pada zona layer.\n"
             "\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+            "Kementrian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
+
 
         )
 
@@ -393,6 +412,9 @@ class Tampilkan_Sebaran_Titik_Sampel_Dan_Titik_Zona(object):
             "Tool ini menampilkan sebaran titik sampel\n"
             "pada zona layer.\n"
             "\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+            "Kementrian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
 
         )
 
@@ -473,6 +495,9 @@ class Tampilkan_Jenis_Penggunaan_Pada_Zona(object):
             "Tool ini menampilkan jenis penggunaan\n"
             "pada zona layer.\n"
             "\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+            "Kementrian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
 
         )
 
@@ -545,6 +570,9 @@ class Tampilkan_Jenis_Penggunaan_Dengan_Transparansi_Pada_Zona(object):
             "Tool ini menampilkan jenis penggunaan\n"
             "dengan transparansi pada zona layer.\n"
             "\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+            "Kementrian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
 
         )
 

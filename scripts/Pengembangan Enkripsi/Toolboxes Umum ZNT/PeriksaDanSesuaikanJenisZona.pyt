@@ -206,15 +206,15 @@ class Sesuaikan_Jenis_Zona(object):
         else:
             ada_seleksi = len(arcpy.Describe(zl).FIDSet)  
             if ada_seleksi > 0:
-                arcpy.AddMessage(f'{kode_zona} - {jenis_zona}')
+
                 try:
                     with arcpy.da.UpdateCursor(zl, ["JNSZN", "PENGGUNAAN"]) as cursor:
                         for row in cursor:
-                            arcpy.AddMessage(f'JNSZN: {row[0]}, PENGGUNAAN: {row[1]}')
-                            arcpy.AddMessage(f'JNSZN: {kode_zona}, PENGGUNAAN: {jenis_zona}')
                             row[0] = kode_zona  
                             row[1] = jenis_zona  
-                            cursor.updateRow(row)  
+                            cursor.updateRow(row)
+                        del row
+                        del cursor  
                 
                 except Exception as e:
                     if str(e) == 'Cannot acquire a lock.':

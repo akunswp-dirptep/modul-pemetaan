@@ -282,8 +282,9 @@ def get_config_values():
 
     # Validasi path GDB
     if ws_dir != configs.get('ws_path'):
-        arcpy.AddError("ERROR: Path workspace di config.json tidak sesuai dengan struktur folder yang ditemukan. Pastikan config.json sudah benar.")
+        arcpy.AddError(f"Path Geodatabase tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki path kembali dengan cara berikut:\n1. Ekspor Geodatabase menggunakaan Tools Ekspor Geodatabase pada menu Backup dan Ekspor Hasil\n2. Import kembali Geodatabase yang sudah diekspor menggunakan Tools Import Workspace pada menu Persiapan Data")
         sys.exit(1)
+        
     appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     ui_folder = os.path.join(appdata, "ui")
     symbology_folder = os.path.join(ui_folder, "symbology")

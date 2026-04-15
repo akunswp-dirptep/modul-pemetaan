@@ -230,14 +230,14 @@ class Import_Workspace(object):
     
     def getParameterInfo(self):
         zip_file = arcpy.Parameter(
-            displayName="File zip berisi workspace (.zip)",
+            displayName="File ZIP Workspace (.zip)",
             name="zip_file",
             datatype="DEFile",
             parameterType="Required",
             direction="Input"
         )
         workspace_folder = arcpy.Parameter(
-            displayName="Folder penempatan workspace",
+            displayName="Folder Tujuan Ekstraksi",
             name="output_path",
             datatype="DEFolder",
             parameterType="Required",

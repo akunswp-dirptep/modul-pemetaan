@@ -648,9 +648,9 @@
 			<!-- Digunakan Keduanya (Pembaruan dan Pembuatan ZNT) -->
 				<!-- Menu-Menu Helper -->
 
-				<menu id="menu_titik_sampel_znt" caption="Titik Sampel Sentuh Tanahku">
-					<button refID="ButtonMenarikTitikSampelDariSentuhTanahku" />
-					<button refID="ButtonTampilkanSimbologiTitikSentuhTanahku" />
+				<menu id="menu_titik_sampel_znt" caption="Tampilkan Titik Sampel">
+					<button refID="ButtonMenarikTitikSampelDariSipenta" />
+					<button refID="ButtonTampilkanSimbologiTitikSampel" />
 				</menu>
 
 				<menu id="menu_titik_individual" caption="Pengolahan Titik Sampel Individual">
@@ -1861,17 +1861,17 @@
 					</args>
 					<tooltip heading="Masukkan Titik Sampel Dari Excel">Menu untuk menambahkan titik sampel dari file Excel.</tooltip>
 				</button>
-				<button id="ButtonMenarikTitikSampelDariSentuhTanahku" caption="Tampilkan Titik Sampel Sentuh Tanahku" smallImage="C:\PenilaianTanah\icons\scatter.png" largeImage="C:\PenilaianTanah\icons\scatter.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonMenarikTitikSampelDariSipenta" caption="Ambil Titik Sampel Dari Sipenta" smallImage="C:\PenilaianTanah\icons\scatter.png" largeImage="C:\PenilaianTanah\icons\scatter.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampel.pyt\Sampel_Sentuh_Tanahku" name="Sampel Sentuh Tanahku" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampel.pyt\Ambil_Titik_Sampel_Dari_Sipenta" name="Ambil Titik Sampel Dari Sipenta" xmlns=""/>
 					</args>
-					<tooltip heading="Tampilkan Titik Sampel Sentuh Tanahku">Menu untuk menampilkan titik sampel dari aplikasi Sentuh Tanahku.</tooltip>
+					<tooltip heading="Ambil Titik Sampel Dari Sipenta">Menu untuk mengambil titik sampel dari aplikasi Sipenta.</tooltip>
 				</button>
-				<button id="ButtonTampilkanSimbologiTitikSentuhTanahku" caption="Tampilkan Simbologi Titik Sentuh Tanahku" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonTampilkanSimbologiTitikSampel" caption="Tampilkan Simbologi Titik Sampel" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampel.pyt\Tampilkan_Simbologi_Titik_Sampel" name="Tampilkan Simbologi Titik Sentuh Tanahku" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampel.pyt\Tampilkan_Simbologi_Titik_Sampel" name="Tampilkan Simbologi Titik Sampel" xmlns=""/>
 					</args>
-					<tooltip heading="Tampilkan Simbologi Titik Sentuh Tanahku">Menu untuk mengaplikasikan simbologi pada titik sampel Sentuh Tanahku.</tooltip>
+					<tooltip heading="Tampilkan Simbologi Titik Sampel">Menu untuk mengaplikasikan simbologi pada titik sampel.</tooltip>
 				</button>
 
 				<button id="ButtonSetujuiSampelIndividual" caption="Setujui Sampel Individual" smallImage="C:\PenilaianTanah\icons\selection.png" largeImage="C:\PenilaianTanah\icons\selection.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

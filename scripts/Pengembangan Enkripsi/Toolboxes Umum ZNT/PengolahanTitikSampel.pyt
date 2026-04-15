@@ -493,13 +493,13 @@ class Toolbox(object):
     def __init__(self):
         self.label = "Toolbox"
         self.alias = ""
-        self.tools = [Sampel_Sentuh_Tanahku, Tampilkan_Simbologi_Titik_Sampel]
+        self.tools = [Ambil_Titik_Sampel_Dari_Sipenta, Tampilkan_Simbologi_Titik_Sampel]
 
-class Sampel_Sentuh_Tanahku(object):
+class Ambil_Titik_Sampel_Dari_Sipenta(object):
     """Tool utama untuk mengambil dan memproses data sampel tanah"""
     def __init__(self):
-        self.label = "Ambil Data Titik Sampel dari SIPENTA"
-        self.description = "Tool untuk mengambil data titik sampel dari API SIPENTA"
+        self.label = "Ambil Titik Sampel Dari Sipenta"
+        self.description = "Tool untuk mengambil data titik sampel dari Sipenta"
 
         self.canRunInBackground = False
 

@@ -67,16 +67,18 @@ class Hitung_Luas_Zona_M2:
         )
 
         penjelasan.value = (
-        "Menambahkan field Luas_M2 apabila belum tersedia, serta\n" 
-        "menghitung luas setiap fitur dalam satuan meter persegi (m²) dan\n"
-        "menyimpannya ke field tersebut. Jika field Luas_M2 sudah ada,\n"
-        "nilainya akan diperbarui dengan hasil perhitungan terbaru"
+            "Tool ini menambahkan field Luas_M2 jika belum\n"
+            "tersedia. kemudian Menghitung luas fitur (m²)\n"
+            "dan menyimpannya ke field tersebut.Jika field \n"
+            "Luas_M2 sudah ada, nilainya akan diperbarui.\n"
+            "\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year)
         )
 
         return [penjelasan]
 
-        params = None
-        return params
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
@@ -158,7 +160,10 @@ class Kodifikasi_Zona:
             "Tools membuat atau memperbarui field HISTZONE\n"
             "dengan menggabungkan nomor zona (NOZN)\n"
             "dan jenis zona (JNSZN) sambil mempertahankan\n"
-            "riwayat perubahan zona.\n"
+            "riwayat perubahan zona.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year)
         )
 
         return [penjelasan]
@@ -180,23 +185,12 @@ class Kodifikasi_Zona:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        # ======================
-        # PATH CONFIGURATION
-        # ======================
 
         config_dan_paths = get_config_values()
         zl_path = config_dan_paths['zl_path']
 
-        
-        # ======================
-        # UNSELECT FIELD 
-        # ======================
-
         check_if_there_selected_field()
 
-        # ======================
-        # MAIN PROCESSING
-        # ======================
         # Mendapatkan daftar field yang ada dalam layer
         field_names = [field.name for field in arcpy.ListFields(zl_path)]
 
@@ -282,16 +276,16 @@ class Kodifikasi_Zona:
                             row[2] = row[0] + row[1]  # Gabungkan lama + baru
                     
                     rows.updateRow(row)
-            del rows, row
+                del rows, row
             
             # Memindahkan hasil akhir ke field HISTZONE
-            arcpy.CalculateField_management(zl_path, "HISTZONE", "!temp3!", "PYTHON3")
+            arcpy.management.CalculateField(zl_path, "HISTZONE", "!temp3!", "PYTHON3")
             
             # Membersihkan semua field sementara
-            arcpy.DeleteField_management(zl_path, "temp2")
-            arcpy.DeleteField_management(zl_path, "temp")
-            arcpy.DeleteField_management(zl_path, "temp1")
-            arcpy.DeleteField_management(zl_path, "temp3")
+            arcpy.management.DeleteField(zl_path, "temp2")
+            arcpy.management.DeleteField(zl_path, "temp")
+            arcpy.management.DeleteField(zl_path, "temp1")
+            arcpy.management.DeleteField(zl_path, "temp3")
 
         return
 

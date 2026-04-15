@@ -345,8 +345,12 @@ def filter_new_samples(api_data, last_nomor_entry, data_type="data"):
         "features": filtered_samples
     }
 
-def json_to_feature_class(json_path, ds_path, file_name,  spatial_ref, lokasi, tahun):
-    # Susunan Data Fields : (api_key, field_alias, field_type)
+def json_to_feature_class(json_path, ds_path, file_name, spatial_ref, lokasi, tahun):
+    import os
+    import json
+    import arcpy
+
+    # Field definition
     fields = [
         ("Nomor_Entry","Nomor Sampel", "INTEGER"),
         ("No_Identifikasi", "Nomor Identifikasi", "STRING"),
@@ -420,70 +424,110 @@ def json_to_feature_class(json_path, ds_path, file_name,  spatial_ref, lokasi, t
         ("Lokasi", "Lokasi", "STRING"),
         ("Tahun", "Tahun", "STRING"),
     ]
-        
-    feature_class_path = os.path.join(ds_path, file_name)
-    arcpy.management.CreateFeatureclass(
-            out_path=ds_path,
-            out_name=file_name,
-            geometry_type="POINT",
-            spatial_reference=spatial_ref
-        )
-    
-    for field in fields:
-        arcpy.management.AddField(feature_class_path, field[0], field[2], field_alias=field[1])
 
-    with open(json_path, "r") as f:
-        data = json.load(f)
-    features = data.get("features", [])
+    feature_class_path = os.path.join(ds_path, file_name)
+
+    # -----------------------------
+    # 1. Create feature class
+    # -----------------------------
+    arcpy.management.CreateFeatureclass(
+        out_path=ds_path,
+        out_name=file_name,
+        geometry_type="POINT",
+        spatial_reference=spatial_ref
+    )
+
+    # -----------------------------
+    # 2. Add fields (BATCH - FAST)
+    # -----------------------------
+    field_defs = [
+        [
+            f[0],          # field name
+            f[2],          # field type
+            None,          # precision
+            None,          # scale
+            None,          # length
+            f[1]           # alias
+        ]
+        for f in fields
+    ]
+
+    arcpy.management.AddFields(feature_class_path, field_defs)
 
     field_names = [f[0] for f in fields]
     insert_fields = field_names + ["SHAPE@"]
-    
-    # Normalize spatial reference input to arcpy.SpatialReference
+
+    # -----------------------------
+    # 3. Load JSON once
+    # -----------------------------
+    with open(json_path, "r") as f:
+        data = json.load(f)
+
+    features = data.get("features", [])
+
+    # -----------------------------
+    # 4. Spatial reference setup (cache)
+    # -----------------------------
     try:
         target_sr = spatial_ref if isinstance(spatial_ref, arcpy.SpatialReference) else arcpy.SpatialReference(spatial_ref)
     except Exception:
-    # Fallback to WGS84 if unable to parse provided spatial ref
         target_sr = arcpy.SpatialReference(4326)
 
+    wgs84 = arcpy.SpatialReference(4326)
+
+    # -----------------------------
+    # 5. Precompute mappings
+    # -----------------------------
+    special_map = {
+        "N_Sementara": lambda p: p.get("N.Sementara", ""),
+        "Lokasi": lambda p: lokasi,
+        "Tahun": lambda p: tahun
+    }
+
+    # -----------------------------
+    # 6. Insert (optimized loop)
+    # -----------------------------
+    batch = []
+    BATCH_SIZE = 1000
+
     with arcpy.da.InsertCursor(feature_class_path, insert_fields) as cursor:
-            for feature in features:
-                properties = feature.get("properties", {})
-                geometry = feature.get("geometry", {})
-                coords = geometry.get("coordinates", [None, None])
 
-                pt_geom = None
+        for feature in features:
+            properties = feature.get("properties", {})
+            geometry = feature.get("geometry", {})
+            coords = geometry.get("coordinates")
+
+            pt_geom = None
+            if coords and coords[0] is not None and coords[1] is not None:
                 try:
-                    if coords and coords[0] is not None and coords[1] is not None:
-                        # GeoJSON uses [lon, lat] in WGS84
-                        wgs84 = arcpy.SpatialReference(4326)
-                        pt = arcpy.Point(coords[0], coords[1])
-                        pt_geom = arcpy.PointGeometry(pt, wgs84)
+                    pt = arcpy.Point(coords[0], coords[1])
+                    pt_geom = arcpy.PointGeometry(pt, wgs84)
 
-                        # Project to target spatial reference if different
-                        if target_sr.factoryCode != 4326 and target_sr.name != wgs84.name:
-                            pt_geom = pt_geom.projectAs(target_sr)
+                    if target_sr.factoryCode != 4326:
+                        pt_geom = pt_geom.projectAs(target_sr)
+
                 except Exception as e:
-                    arcpy.AddWarning(f"Gagal membuat geometry untuk feature Nomor_Entry={properties.get('Nomor_Entry')}: {e}")
-                    pt_geom = None
+                    arcpy.AddWarning(f"Gagal geometry: {e}")
 
-                # Build row values with special handling for N_Sementara, Lokasi, and Tahun
-                row = []
-                for fname in field_names:
-                    if fname == 'N_Sementara':
-                        # JSON key is 'N.Sementara' — fallback to existing key if present
-                        value = properties.get('N.Sementara', '')
-                    elif fname == 'Lokasi':
-                        value = lokasi
-                    elif fname == 'Tahun':
-                        value = tahun
-                    else:
-                        value = properties.get(fname, None)
-                    row.append(value)
+            row = []
+            for fname in field_names:
+                if fname in special_map:
+                    value = special_map[fname](properties)
+                else:
+                    value = properties.get(fname)
+                row.append(value)
 
-                row.append(pt_geom)
-                cursor.insertRow(row)
+            row.append(pt_geom)
+            batch.append(row)
 
+            if len(batch) >= BATCH_SIZE:
+                for r in batch:
+                    cursor.insertRow(r)
+                batch.clear()
+
+        # sisa batch
+        for r in batch:
+            cursor.insertRow(r)
 # ======================
 # MAIN PROCESSING
 # ======================

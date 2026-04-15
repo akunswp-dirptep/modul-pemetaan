@@ -68,7 +68,10 @@ class Rekomendasi_Titik_Pembanding(object):
             "  persentase dibagian View Details\n"
             "\n"
             "Catatan: Hanya boleh memilih satu titik pada\n"
-            "layer 'Titik_Sampel_Individual'."
+            "layer 'Titik_Sampel_Individual'. \n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year)
         )
         # penjelasan.enabled = False  # Tidak bisa diedit
         
@@ -94,8 +97,6 @@ class Rekomendasi_Titik_Pembanding(object):
 
         self.setup_path_and_config()
 
-        
-        
         if arcpy.Exists(self.titik_sampel_individu_path):
             feature_dipilih = samplepoint.get_selected_oids("Titik_Sampel_Individual")
             if feature_dipilih == []:
@@ -183,7 +184,6 @@ class Rekomendasi_Titik_Pembanding(object):
 
         data_format = {
             'id': 0,
-
             'kategorikal': {
                 'kd_jenis_bangunan' : '',
                 'Alamat': '',
@@ -382,69 +382,82 @@ class Rekomendasi_Titik_Pembanding(object):
         return data
 
     def hitung_skor(self, data_individual):
-        """
-        Menghitung skor Gower similarity dari data_individual terhadap semua titik sampel.
-        Returns: list of tuples (Nomor_Entry, skor_gower)
-        """
         hasil_skor = []
-        
-        # Ambil semua data dari Titik_Sampel
+
+
         field_list = [
-            'Nomor_Entry','Kd_Jenis_Bangunan', 'Alamat','Kelurahan','Kecamatan', 'Zoning',
-            'Status_Kepemilikan', 'Drainase','Aksebilitas','Kelas_Jalan', 'Letak_Tanah', 'Elevasi_Dari_Jalan', 'Bentuk_Tanah',
-            'Luas_Bangunan', 'Luas_Tanah_m2','Lebar_Depan', 'Panjang_Kebelakang', 'Jenis_Data'
+            'Nomor_Entry','Kd_Jenis_Bangunan', 'Alamat','Kelurahan','Kecamatan','Zoning',
+            'Status_Kepemilikan', 'Drainase','Aksebilitas','Kelas_Jalan',
+            'Letak_Tanah', 'Elevasi_Dari_Jalan', 'Bentuk_Tanah',
+            'Luas_Bangunan', 'Luas_Tanah_m2','Lebar_Depan',
+            'Panjang_Kebelakang', 'Jenis_Data', 'SHAPE@'
         ]
-        
-        # Kumpulkan semua data numerikal untuk mendapatkan range min-max
-        all_numeric_data = {
+
+
+        all_numeric = {
             'luas_bangunan': [],
             'luas_tanah': [],
             'lebar_depan': [],
             'panjang_kebelakang': []
         }
-        
-        data_sampel = arcpy.management.GetCount(self.titik_sampel_path)
-        sampel_count = int(data_sampel[0])
-        data_titik_zona = arcpy.management.GetCount(self.titik_zona_path) if arcpy.Exists(self.titik_zona_path) else None
-        titik_zona_count = int(data_titik_zona[0]) if data_titik_zona else None
 
-        if sampel_count == 0 and (titik_zona_count is None or titik_zona_count == 0):
-            arcpy.AddError("Tidak ada data titik sampel yang tersedia untuk dibandingkan. Pastikan layer 'Titik_Sampel' atau 'Titik_Zona' memiliki data.")  
-            sys.exit(1)
-        
+        def collect_numeric(layer):
+            with arcpy.da.SearchCursor(layer, field_list) as cur:
+                for r in cur:
+                    all_numeric['luas_bangunan'].append(r[13])
+                    all_numeric['luas_tanah'].append(r[14])
+                    all_numeric['lebar_depan'].append(r[15])
+                    all_numeric['panjang_kebelakang'].append(r[16])
 
-        if sampel_count > 0:
-            with arcpy.da.SearchCursor(self.titik_sampel_path, field_list) as cursor:
-                for row in cursor:
-                    all_numeric_data['luas_bangunan'].append(row[13])
-                    all_numeric_data['luas_tanah'].append(row[14])
-                    all_numeric_data['lebar_depan'].append(row[15])
-                    all_numeric_data['panjang_kebelakang'].append(row[16])
-        
-        if self.titik_zona_path and arcpy.Exists(self.titik_zona_path):
-            with arcpy.da.SearchCursor(self.titik_zona_path, field_list) as cursor:
-                for row in cursor:
-                    all_numeric_data['luas_bangunan'].append(row[13])
-                    all_numeric_data['luas_tanah'].append(row[14])
-                    all_numeric_data['lebar_depan'].append(row[15])
-                all_numeric_data['panjang_kebelakang'].append(row[16])
-       
-        # Hitung min-max untuk setiap atribut numerikal
+        if arcpy.Exists(self.titik_sampel_path):
+            collect_numeric(self.titik_sampel_path)
+
+        if arcpy.Exists(self.titik_zona_path):
+            collect_numeric(self.titik_zona_path)
+
         ranges = {
-            'luas_bangunan': (min(all_numeric_data['luas_bangunan']), max(all_numeric_data['luas_bangunan'])),
-            'luas_tanah': (min(all_numeric_data['luas_tanah']), max(all_numeric_data['luas_tanah'])),
-            'lebar_depan': (min(all_numeric_data['lebar_depan']), max(all_numeric_data['lebar_depan'])),
-            'panjang_kebelakang': (min(all_numeric_data['panjang_kebelakang']), max(all_numeric_data['panjang_kebelakang']))
+            k: (min(v), max(v)) if len(v) > 0 else (0, 1)
+            for k, v in all_numeric.items()
         }
-        
-        # Loop semua titik sampel untuk hitung similarity
-        pembanding_layer = [self.titik_zona_path, self.titik_sampel_path] if arcpy.Exists(self.titik_zona_path) else [self.titik_sampel_path]
-        for layer in pembanding_layer:
+
+
+        D_MAX = 5000  # meter (adjust sesuai area)
+        W_ATTR = 0.8
+        W_GEO = 0.2
+
+        def skor_jarak(self, d):
+            if d is None:
+                return 0
+            return math.exp(-d / D_MAX)
+
+        def hitung_jarak(self, g1, g2):
+            if not g1 or not g2:
+                return None
+            return g1.distanceTo(g2)
+
+
+        geom_individual = data_individual.get('geometry', None)
+
+        layers = [self.titik_sampel_path]
+        if arcpy.Exists(self.titik_zona_path):
+            layers.append(self.titik_zona_path)
+
+        with arcpy.da.SearchCursor(layers[0], field_list) as cursor:
+            pass  # dummy to avoid ArcPy limitation issue
+
+        for layer in layers:
             with arcpy.da.SearchCursor(layer, field_list) as cursor:
+
                 for row in cursor:
-                    if row[-1] != "Individual":  # Hanya bandingkan dengan titik sampel yang bukan jenis "Individual"
-                        data_pembanding = {
-                            'id': row[0],
+
+                    # skip individual point
+                    if row[-2] == "Individual":
+                        continue
+
+                    geom_pembanding = row[-1]
+
+                    data_pembanding = {
+                        'id': row[0],
                         'kategorikal': {
                             'kd_jenis_bangunan': row[1],
                             'Alamat': row[2],
@@ -468,45 +481,43 @@ class Rekomendasi_Titik_Pembanding(object):
                             'panjang_kebelakang': row[16]
                         }
                     }
-                    
-                    # Hitung skor Gower
-                    total_similarity = 0
+
+                    total = 0
                     count = 0
-                    
-                    # 1. Kategorikal (nominal)
-                    for key in data_individual['kategorikal']:
-                        total_similarity += self.gower_categorical(
-                            data_individual['kategorikal'][key],
-                            data_pembanding['kategorikal'][key],
-                            key
+
+                    for k in data_individual['kategorikal']:
+                        total += self.gower_categorical(
+                            data_individual['kategorikal'][k],
+                            data_pembanding['kategorikal'][k],
+                            k
                         )
                         count += 1
-                    
-                    # 2. Ordinal
-                    for key in data_individual['ordinal']:
-                        total_similarity += self.gower_ordinal(
-                            data_individual['ordinal'][key]['nilai_sampel'],
-                            data_pembanding['ordinal'][key]['nilai_sampel'],
-                            data_individual['ordinal'][key]['nilai_maksimum']
+
+                    for k in data_individual['ordinal']:
+                        total += self.gower_ordinal(
+                            data_individual['ordinal'][k]['nilai_sampel'],
+                            data_pembanding['ordinal'][k]['nilai_sampel'],
+                            data_individual['ordinal'][k]['nilai_maksimum']
                         )
                         count += 1
-                    
-                    # 3. Numerikal
-                    for key in data_individual['numerikal']:
-                        total_similarity += self.gower_numeric(
-                            data_individual['numerikal'][key],
-                            data_pembanding['numerikal'][key],
-                            ranges[key][0],
-                            ranges[key][1]
+
+                    for k in data_individual['numerikal']:
+                        total += self.gower_numeric(
+                            data_individual['numerikal'][k],
+                            data_pembanding['numerikal'][k],
+                            ranges[k][0],
+                            ranges[k][1]
                         )
                         count += 1
-                    
-                    # Hitung rata-rata similarity
-                    skor_akhir = total_similarity / count if count > 0 else 0
-                    hasil_skor.append((data_pembanding['id'], skor_akhir))
-            
-        return hasil_skor
-    
+
+                    skor_attr = total / count if count > 0 else 0
+
+                    d = hitung_jarak(self, geom_individual, geom_pembanding)
+                    skor_geo = skor_jarak(self, d)
+                    skor_final = (W_ATTR * skor_attr) + (W_GEO * skor_geo)
+                    hasil_skor.append((data_pembanding['id'], skor_final))
+
+        return hasil_skor  
     def gower_ordinal(self, x_rank, y_rank, m):
         """
         Gower similarity for ordinal attributes.

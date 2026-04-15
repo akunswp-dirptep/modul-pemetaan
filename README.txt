@@ -13,3 +13,5 @@ Penyesuaian Fitur:
  - Penyesuaian Penulisan Pada Pesan Tools Cek Pembaruan Aplikasi
  - Menambahkan Identitas Pada Penejelasan Tools
  - Penyesuaian Nama Tools Titik Sampel
+ - Pemisahan Pengolahan Titik Sampel Menjadi Batch agar lebih cepat.
+ - Menambahkan Faktor Jarak Dalam Rekomendasi Titik Sampel Pembanding

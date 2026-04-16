@@ -174,6 +174,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.delete_bad_file()
         self.username = str(parameters[0].valueAsText).replace(" ", "")
         self.project_id = str(parameters[1].valueAsText).replace(" ", "")
         self.catatan = parameters[2].valueAsText

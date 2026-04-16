@@ -33,7 +33,7 @@ clusters = {'1': {},
             '2': {}}
 
 oid_jnszn_map = {}
-arcpy.AddMessage(zl_path)
+
 with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "JNSZN"]) as cursor:
     for oid, jnszn in cursor:
         oid_jnszn_map[oid] = jnszn

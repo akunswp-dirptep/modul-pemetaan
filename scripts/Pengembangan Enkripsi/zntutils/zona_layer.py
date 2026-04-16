@@ -305,5 +305,37 @@ def get_config_values():
 
     return config_dan_paths
 
-   
+def delete_bad_file():
+    zl_path = is_zona_layer_comply(show_path_message=False)  # Validasi compliance layer zona
+    gdb_path = os.path.dirname(os.path.dirname(zl_path))  # Navigasi ke root gdb
+    arcpy.env.workspace = gdb_path
+    keep_dataset = 'znt_ds'
+
+    for fc in arcpy.ListFeatureClasses():
+        fc_path = os.path.join(gdb_path, fc)
+        if arcpy.Exists(fc_path):
+            arcpy.management.Delete(fc_path)
+
+    # 2. Hapus table di root
+    for table in arcpy.ListTables():
+        table_path = os.path.join(gdb_path, table)
+        if arcpy.Exists(table_path):
+            arcpy.management.Delete(table_path)
+
+    # 3. Hapus raster (kalau ada)
+    for raster in arcpy.ListRasters():
+        raster_path = os.path.join(gdb_path, raster)
+        if arcpy.Exists(raster_path):
+            arcpy.management.Delete(raster_path)
+
+    # 4. Hapus feature dataset selain yang ingin dipertahankan
+    for dataset in arcpy.ListDatasets(feature_type='feature'):
+        if dataset.lower() != keep_dataset.lower():
+            dataset_path = os.path.join(gdb_path, dataset)
+            if arcpy.Exists(dataset_path):
+                arcpy.management.Delete(dataset_path)
+
+    arcpy.management.ClearWorkspaceCache()
+    return 
+
 

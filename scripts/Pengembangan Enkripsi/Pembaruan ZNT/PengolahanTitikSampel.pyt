@@ -92,6 +92,7 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.delete_bad_file()
         self.get_config_values()
         self.main_processing()
         return
@@ -261,6 +262,7 @@ class Perhitungan_Indeks_Titik_Sampel_Terpilih:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.delete_bad_file()
         self.get_config_values()
         self.main_processing()
         return

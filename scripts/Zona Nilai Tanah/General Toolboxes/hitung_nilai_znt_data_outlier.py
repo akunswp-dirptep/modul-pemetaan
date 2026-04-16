@@ -8,8 +8,6 @@ pembulatan = int(arcpy.GetParameterAsText(0))  # Only parameter required
 # PATH CONFIGURATION
 # ======================
 
-# Konfigurasi Path Aplikasi
-appdata = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 # Konfigurasi Path Project
 zl_path = zonalayer.isZonaLayerComply()

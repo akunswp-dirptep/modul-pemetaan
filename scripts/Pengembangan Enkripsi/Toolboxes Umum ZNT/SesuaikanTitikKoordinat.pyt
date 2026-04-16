@@ -133,6 +133,7 @@ class Sesuaikan_Titik_Koordinat(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.delete_bad_file()
         self.username = str(parameters[0].valueAsText).replace(" ", "")
         self.project_id = str(parameters[1].valueAsText).replace(" ", "")
         self.catatan = parameters[2].valueAsText
@@ -364,9 +365,6 @@ class Sesuaikan_Titik_Koordinat(object):
                     arcpy.AddError(f"Feature class tidak ditemukan: {feature_class_path}")
                     sys.exit(1)
 
-
-                arcpy.AddMessage(f"Membaca feature class: {feature_class_path}")
-
                 # Ambil spatial reference asli dari feature class
                 source_sr = arcpy.Describe(feature_class_path).spatialReference
                 target_sr = arcpy.SpatialReference(4326)  # WGS 84
@@ -564,9 +562,9 @@ class Sesuaikan_Titik_Koordinat(object):
                                     row[3] = projected_xy[1]  # Y
                                     cursor.updateRow(row)
 
-                                    arcpy.AddWarning(f"Koordinat Nomor_Entry {nomor_entry} dikembalikan koordinatnya, seperti semula")
+                                    arcpy.AddWarning(f"Koordinat Nomor Sampel {nomor_entry} dikembalikan koordinatnya, seperti semula")
                                 except Exception as conv_err:
-                                    arcpy.AddWarning(f"Gagal memproyeksikan Nomor_Entry {nomor_entry}: {conv_err}")
+                                    arcpy.AddWarning(f"Gagal memproyeksikan Nomor Sampel {nomor_entry}: {conv_err}")
 
             except Exception as e:
                 arcpy.AddError(f"Error dalam menulis ulang koordinat: {str(e)}")

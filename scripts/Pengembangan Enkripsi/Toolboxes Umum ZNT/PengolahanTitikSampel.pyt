@@ -8,6 +8,7 @@ import time
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
+arcpy.env.overwriteOutput = True
 
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
@@ -18,13 +19,6 @@ from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
 from zntutils.system_utils import get_user_data, renew_user_data
-
-# ======================
-# ENVIRONMENT SETTINGS
-# ======================
-arcpy.env.outputZFlag = "Disabled"  # Menonaktifkan output Z values (elevasi)
-arcpy.env.outputMFlag = "Disabled"  # Menonaktifkan output M values (measure)
-
 
 # ======================
 # HELPER FUNCTION SETUP
@@ -297,7 +291,7 @@ def update_project_config(last_sample_id, workspace_dir=None):
     
     # Jika workspace_dir tidak provided, cari dari layer zona
     if not workspace_dir:
-        zl_path = zonalayer.is_zona_layer_comply()
+        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
         workspace_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
     
     config_path = os.path.join(workspace_dir, "config.json")
@@ -346,9 +340,6 @@ def filter_new_samples(api_data, last_nomor_entry, data_type="data"):
     }
 
 def json_to_feature_class(json_path, ds_path, file_name, spatial_ref, lokasi, tahun):
-    import os
-    import json
-    import arcpy
 
     # Field definition
     fields = [
@@ -440,22 +431,26 @@ def json_to_feature_class(json_path, ds_path, file_name, spatial_ref, lokasi, ta
     # -----------------------------
     # 2. Add fields (BATCH - FAST)
     # -----------------------------
-    field_defs = [
-        [
-            f[0],          # field name
-            f[2],          # field type
-            None,          # precision
-            None,          # scale
-            None,          # length
-            f[1]           # alias
-        ]
-        for f in fields
-    ]
-
-    arcpy.management.AddFields(feature_class_path, field_defs)
+    for name, alias, ftype in fields:
+        if ftype == "STRING":
+            arcpy.management.AddField(
+                feature_class_path,
+                name,
+                ftype,
+                field_length=255,
+                field_alias=alias
+            )
+        else:
+            arcpy.management.AddField(
+                feature_class_path,
+                name,
+                ftype,
+                field_alias=alias
+            )
 
     field_names = [f[0] for f in fields]
     insert_fields = field_names + ["SHAPE@"]
+
 
     # -----------------------------
     # 3. Load JSON once
@@ -528,6 +523,7 @@ def json_to_feature_class(json_path, ds_path, file_name, spatial_ref, lokasi, ta
         # sisa batch
         for r in batch:
             cursor.insertRow(r)
+
 # ======================
 # MAIN PROCESSING
 # ======================
@@ -648,6 +644,8 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         project_id = parameters[1].valueAsText
         tahun = parameters[2].valueAsText
         metode = parameters[3].valueAsText
+
+        zonalayer.delete_bad_file()
         
         if self.operatorGIS:
             link = parameters[6].valueAsText 
@@ -1115,7 +1113,10 @@ class Tampilkan_Simbologi_Titik_Sampel(object):
         
         penjelasan.value = (
             "Tool ini digunakan untuk menampilkan simbologi pada\n"
-            "layer Titik Sampel dan Titik Sampel Individual. "
+            "layer Titik Sampel dan Titik Sampel Individual.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
         )
         
         output_ts = arcpy.Parameter(

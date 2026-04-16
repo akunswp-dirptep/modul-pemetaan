@@ -1777,19 +1777,19 @@
 			<!-- Menu Pengolahan ZNT -->
 				<button id="ButtonHitungIndeksNilaiTanah" caption="Hitung Indeks Nilai Tanah" smallImage="C:\PenilaianTanah\icons\average.png" largeImage="C:\PenilaianTanah\icons\average.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\HitungIndeksNilaiTanah" name="Hitung Indeks Nilai Tanah Tiap Penggunaan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\Pengolahan ZNT.pyt\Hitung_Indeks_Nilai_Tanah" name="Hitung Indeks Nilai Tanah Tiap Penggunaan" xmlns=""/>
 					</args>
 					<tooltip heading="Hitung Indeks Nilai Tanah Tiap Penggunaan">Hitung Indeks Nilai Tanah Tiap Penggunaan</tooltip>
 				</button>
 				<button id="ButtonHitungZonaDariDataOutlier" caption="Hitung Nilai ZNT Sampel (Pencilan/Outlier)" smallImage="C:\PenilaianTanah\icons\rgb.png" largeImage="C:\PenilaianTanah\icons\rgb.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\HitungNilaiZNTDataOutlier" name="Hitung Nilai ZNT Sampel (Pencilan/Outlier)" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\Pengolahan ZNT.pyt\Hitung_Nilai_ZNT_Pencilan_Atau_Outlier" name="Hitung Nilai ZNT (Pencilan/Outlier)" xmlns=""/>
 					</args>
-					<tooltip heading="Hitung Nilai ZNT Sampel (Pencilan/Outlier)">Menu untuk menghitung zona berdasarkan data outlier titik sampel.</tooltip>
+					<tooltip heading="Hitung Nilai ZNT (Pencilan/Outlier)">Menu untuk menghitung zona berdasarkan data outlier.</tooltip>
 				</button>
 				<button id="ButtonHitungZNTUpdate" caption="Hitung Nilai ZNT Pembaruan" smallImage="C:\PenilaianTanah\icons\calculator2.png" largeImage="C:\PenilaianTanah\icons\calculator2.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\HitungNilaiZNTPembaruan" name="Hitung Nilai ZNT Pembaruan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\Pengolahan ZNT.pyt\Hitung_Nilai_ZNT_Pembaruan" name="Hitung Nilai ZNT Pembaruan" xmlns=""/>
 					</args>
 					<tooltip heading="Hitung Nilai ZNT Pembaruan">Menu untuk melakukan hitung zona nilai tanah update.</tooltip>
 				</button>

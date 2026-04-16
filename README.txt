@@ -15,3 +15,5 @@ Penyesuaian Fitur:
  - Penyesuaian Nama Tools Titik Sampel
  - Pemisahan Pengolahan Titik Sampel Menjadi Batch agar lebih cepat.
  - Menambahkan Faktor Jarak Dalam Rekomendasi Titik Sampel Pembanding
+ - Menambahkan Fungsi Untuk Menghapus file sementara di geodatabase
+ - Menambahkan Aturan apabila ada nilai tanah yang negatif tidak lolos cek kesesuaian titik dan zona di pembaruan ZNT

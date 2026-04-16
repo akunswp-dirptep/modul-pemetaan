@@ -9,7 +9,7 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
     
-from zntutils.zona_layer import get_config_values
+from zntutils.zona_layer import get_config_values, delete_bad_file
 
 arcpy.env.outputZFlag = "Disabled"  # Menonaktifkan output nilai Z (3D)
 arcpy.env.outputMFlag = "Disabled"  # Menonaktifkan output nilai M (measure)
@@ -76,6 +76,7 @@ class Periksa_Jenis_Zona(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        delete_bad_file()
         self.config_dan_paths = get_config_values()
         ts_path = os.path.join(self.config_dan_paths['dataset_path'], "Titik_Sampel")  # Path layer titik sampel
         zl_path = os.path.join(self.config_dan_paths['dataset_path'], "Zona_Layer")  # Path zona layer
@@ -197,6 +198,7 @@ class Sesuaikan_Jenis_Zona(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        delete_bad_file()
         jenis_zona = parameters[0].valueAsText
 
         config_dan_paths = get_config_values()
@@ -293,6 +295,7 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        delete_bad_file()
         jenis_zona = parameters[0].valueAsText
 
         config_dan_paths = get_config_values()

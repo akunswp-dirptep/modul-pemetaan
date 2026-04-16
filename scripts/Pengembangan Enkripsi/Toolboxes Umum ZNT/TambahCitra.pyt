@@ -10,7 +10,7 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
     
-from zntutils.zona_layer import get_config_values
+from zntutils.zona_layer import get_config_values, delete_bad_file
 
 class Toolbox:
     def __init__(self):
@@ -76,6 +76,7 @@ class Tambah_Citra_Basemap(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        delete_bad_file()
         file_citra = parameters[0].valueAsText
         # Tidak bisa baca file (.ecw), Bug di Arcgis Pro 3.4, baca: https://support.esri.com/en-us/bug/when-dragging-an-enhanced-compression-wavelet-ecw-file-bug-000173123
 

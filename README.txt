@@ -1,19 +1,33 @@
 Version: 5.8.5 - Jayawijaya
-Published: xx/04/2025
+Published: 16 April 2025
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 
-Penyesuaian Fitur:
- - Penambahan pesan belum menghitung indeks nilai tanah ketika melakukan perhitungan nilai pembaruan ZNT
- - Mengganti tulisan Nomor Entry menjadi Nomor Sampel di penjelasan saran pembanding titik individual
- - Penambahan Penjelasan Apabila tidak ada titik sampel baik itu di layer titik sampel atau titik zona untuk dibandingkan.
- - Memastikan NILAIZN_LAMA tidak 0 atau null
- - Memastikan JNSZN Tidak bernilai null
- - Penambahan Pesan apabila filenya dipindah 
- - Menyesuaikan Penamaan Parameter Pada Tools Import Workspace
- - Penyesuaian Penulisan Pada Pesan Tools Cek Pembaruan Aplikasi
- - Menambahkan Identitas Pada Penejelasan Tools
- - Penyesuaian Nama Tools Titik Sampel
- - Pemisahan Pengolahan Titik Sampel Menjadi Batch agar lebih cepat.
- - Menambahkan Faktor Jarak Dalam Rekomendasi Titik Sampel Pembanding
- - Menambahkan Fungsi Untuk Menghapus file sementara di geodatabase
- - Menambahkan Aturan apabila ada nilai tanah yang negatif tidak lolos cek kesesuaian titik dan zona di pembaruan ZNT
+=============================
+PERUBAHAN & PENYESUAIAN FITUR
+=============================
+
+[VALIDASI & PENGECEKAN DATA]
+
+* Menambahkan validasi agar NILAIZN_LAMA tidak bernilai 0 atau NULL
+* Menambahkan validasi agar JNSZN tidak bernilai NULL
+* Menambahkan aturan bahwa nilai tanah negatif tidak lolos pengecekan kesesuaian titik dan zona pada pembaruan ZNT
+* Menambahkan pesan jika indeks nilai tanah belum dihitung saat proses pembaruan ZNT
+* Menambahkan penjelasan jika tidak terdapat titik sampel, baik pada layer titik sampel maupun titik zona pembanding
+
+[PENINGKATAN FITUR & LOGIKA]
+
+* Menambahkan faktor jarak dalam rekomendasi titik sampel pembanding
+* Memisahkan proses pengolahan titik sampel menjadi batch untuk meningkatkan performa
+* Menambahkan fungsi untuk menghapus file sementara di geodatabase
+
+[PERBAIKAN TEKS & PENAMAAN]
+
+* Mengganti istilah "Nomor Entry" menjadi "Nomor Sampel" pada penjelasan saran pembanding titik individual
+* Menyesuaikan penamaan parameter pada tools Import Workspace
+* Penyesuaian penulisan pesan pada tools Cek Pembaruan Aplikasi
+* Penyesuaian nama tools Titik Sampel
+* Menambahkan identitas pada penjelasan tools
+
+[PENANGANAN KONDISI KHUSUS]
+
+* Menambahkan pesan peringatan apabila file dipindahkan

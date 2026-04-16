@@ -180,10 +180,11 @@ class Buat_Workspace(object):
                     ]
         long_field = ["NILMIN",
                     "NILMAX",
-                    "NOZONE"
+                    "NOZN"
                     ]
         text_field = ["WADMPR",
                     "WADMKK",
+                    
                     ]
 
 

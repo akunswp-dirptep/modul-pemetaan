@@ -616,7 +616,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         required_fields = [
                             {'name': "SMPBKREL", 'data_type': "DOUBLE"},
                             {'name': "SMPBAKU", 'data_type': "DOUBLE"},
-                            {'name': "NILAIZN", 'data_type': "LONG"},
+                            {'name': "NILAIZN", 'data_type': "DOUBLE"},
                             {'name': "JMLSMPL", 'data_type': "SHORT"},
                             {'name': "NILBULAT", 'data_type': "TEXT"},
                             {'name': "NILMIN", 'data_type': "LONG"},

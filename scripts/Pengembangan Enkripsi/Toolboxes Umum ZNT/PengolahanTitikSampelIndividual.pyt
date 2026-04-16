@@ -714,7 +714,6 @@ class Perhitungan_Nilai_Data_Individual(object):
 
         nilai_pasar_per_m2 = round(math.ceil(data_individual['nilai_pasar_per_m2'] * data_individual['fisik_tanah']['luas_tanah']) / 1_000) * 1_000
 
-        arcpy.AddMessage(math.ceil(data_individual['nilai_pasar_per_m2'] * data_individual['fisik_tanah']['luas_tanah']))
         data_individual['nilai_pasar'] = nilai_pasar_per_m2
 
         fields_to_update = ["Nomor_Entry", 

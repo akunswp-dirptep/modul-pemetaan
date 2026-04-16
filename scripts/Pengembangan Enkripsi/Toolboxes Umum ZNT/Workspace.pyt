@@ -168,8 +168,9 @@ class Buat_Workspace(object):
             out_path=ds_path,
             out_name="Zona_Layer",
             geometry_type="POLYGON",
-            spatial_reference=coord
-
+            spatial_reference=coord,
+            has_m="DISABLED",
+            has_z="DISABLED"
         )
         
         double_field = [

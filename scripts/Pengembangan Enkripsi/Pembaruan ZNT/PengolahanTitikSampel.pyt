@@ -1,4 +1,5 @@
 ﻿import os, arcpy, json, sys
+from datetime import datetime
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -40,17 +41,20 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
         )
 
         penjelasan.value = (
-            "Tools ini melakukan overlay Identity antara layer\n"
-            "Titik Sampel dan Zona untuk menghasilkan data baru, \n"
-            "lalu menghitung indeks_sampel berdasarkan jenis zona \n"
-            "dengan rumus tertentu dan faktor pembulatan yang telah \n"
-            "ditentukan.\n\n"
+            "Tool ini melakukan overlay (Identity) antara layer\n"
+            "Titik Sampel dan Zona untuk menghasilkan data baru.\n"
+            "Selanjutnya dihitung nilai indeks_sampel berdasarkan\n"
+            "jenis zona dengan rumus dan pembulatan tertentu.\n\n"
 
-            "!-!-! CATATAN PENTING !-!-!\n" 
-            "Jika sudah terdapat titik zona, menggunakan tools ini akan\n"
-            "menghapus semua data pada layer titik zona tersebut, jika hanya\n"
-            "ingin mengubah beberapa titik sampel menjadi titik zona gunakan\n"
-            "tools hitung indeks sampel untuk titik terpilih\n"
+            "CATATAN PENTING:\n"
+            "Jika layer Titik Zona sudah berisi data, tool ini akan\n"
+            "menghapus seluruh data tersebut dan membuat ulang.\n"
+            "Jika hanya ingin mengubah beberapa titik saja, gunakan\n"
+            "tool 'Hitung Indeks Sampel (Titik Terpilih)'.\n\n"
+
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year)
         )
 
         titik_zona = arcpy.Parameter(
@@ -102,7 +106,7 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
         self.appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 
         # Konfigurasi Path Project
-        zl_path = zonalayer.is_zona_layer_comply()
+        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
         ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
         config_path = os.path.join(ws_dir, "config.json")
         configs = None
@@ -163,7 +167,6 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
         
         field_delimited = arcpy.AddFieldDelimiters(self.dataset_path, "Jenis_Data")
         filter_clause = "{} <> 'Individual'".format(field_delimited)
-        arcpy.AddMessage(filter_clause)
         titik_zona_path = arcpy.conversion.FeatureClassToFeatureClass(tzt, self.dataset_path, "Titik_Zona", filter_clause)[0]
         ui_folder = os.path.join(self.appdata, "ui")
         symbology_folder = os.path.join(ui_folder, "symbology")
@@ -186,13 +189,11 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
                     # Check if the row meets the criteria for deletion
                     if row[0] != 'Individual':
                         cursor.deleteRow()
-                del cursor
+            del cursor
 
 
         except Exception as e:
             arcpy.AddError(f"Terdapat error: {e}")
-
-        arcpy.AddMessage(f"Fitur dihapus dari {ts} berdasarkan kriteria.")
 
         arcpy.management.Delete(tzt)
         arcpy.management.Delete(hi)
@@ -216,10 +217,14 @@ class Perhitungan_Indeks_Titik_Sampel_Terpilih:
 
 
         penjelasan.value = (
-            "Tools ini melakukan overlay Identity antara layer\n"
-            "Titik Sampel dan Zona untuk menghasilkan data baru pada, \n"
-            "titik sampel yang dipilih\n\n"
+            "Tool ini melakukan overlay (Identity) antara\n"
+            "layer Titik Sampel dan Zona.\n"
+            "Proses hanya dilakukan pada titik sampel yang dipilih\n"
+            "dan menghasilkan data baru.\n\n"
 
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year)
         )
 
         titik_zona = arcpy.Parameter(
@@ -270,7 +275,7 @@ class Perhitungan_Indeks_Titik_Sampel_Terpilih:
         self.appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 
         # Konfigurasi Path Project
-        zl_path = zonalayer.is_zona_layer_comply()
+        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
         ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
         config_path = os.path.join(ws_dir, "config.json")
         configs = None

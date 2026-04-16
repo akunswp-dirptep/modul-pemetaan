@@ -345,13 +345,10 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         url = prod_url if self.use_production else test_url
         try:
             # Mengambil data dari API
-            arcpy.AddMessage("Memanggil API SIPENTA...")
             response = requests.get(url, timeout=1200)  
             response.raise_for_status()  # Akan raise exception untuk HTTP error
             
-            data = response.json()
-            arcpy.AddMessage(f"Status API: {data.get('status', 'N/A')}")
-            
+            data = response.json()            
             self.api_data = data
             
         except requests.exceptions.RequestException as e:
@@ -468,7 +465,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         try:
             if not arcpy.Exists(titik_sampel_individual_fc):
-                arcpy.AddError(f"Tidak terdapat Layer Titik_Sampel_Individual di project ini. Pastikan layer tersebut ada dan coba lagi.")
+                arcpy.AddError(f"Tidak terdapat Layer Titik_Sampel_Individual di project ini.")
                 sys.exit(1)
 
             with arcpy.da.SearchCursor(titik_sampel_individual_fc, fields) as cursor:
@@ -620,7 +617,6 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             valid_sementara = {}
             if arcpy.Exists(titik_sampel_sementara_fc):
                 with arcpy.da.SearchCursor(titik_sampel_sementara_fc, check_fields) as cursor:
-                    arcpy.AddMessage(f"Membaca data dari: {titik_sampel_sementara_fc}")
                     for row in cursor:
                         nomor_entry = int(row[0])
                         digunakan_atau_tidak = row[1]
@@ -632,7 +628,6 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
             if arcpy.Exists(titik_sampel_individual_sementara_fc):
                 with arcpy.da.SearchCursor(titik_sampel_individual_sementara_fc, check_fields) as cursor:
-                    arcpy.AddMessage(f"Membaca data dari: {titik_sampel_individual_sementara_fc}")
                     for row in cursor:
                         nomor_entry = int(row[0])
                         digunakan_atau_tidak = row[1]

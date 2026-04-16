@@ -1,4 +1,5 @@
 import arcpy, os, sys
+from datetime import datetime
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -42,7 +43,12 @@ class Periksa_Jenis_Zona(object):
         
         penjelasan.value =(
             "Tool ini digunakan untuk memeriksa kesesuaian jenis zona\n"
-            "antara Zona Layer dan Titik Sampel. ")
+            "antara Zona Layer dan Titik Sampel.\n"
+            "\n"
+
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year))
         
         output_zl = arcpy.Parameter(
             name="output_zl",

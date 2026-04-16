@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import arcpy, os,sys
+from datetime import datetime
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
@@ -55,7 +54,7 @@ class Penyesuaian_Nomor_Zona_Pembuatan:
             "field Nomor Zona (NOZN) pada layer zona.\n"
             "Tool memastikan NOZN tidak bernilai null\n"
             "dan tidak terduplikasi.\n"
-            "--------------------------------------------------\n"
+            "-----------------------------------------------\n"
             "Jika ditemukan NOZN yang sama pada lebih\n"
             "dari satu zona, maka akan dilakukan seleksi.\n"
             "Zona dengan luas terbesar (Luas_M2)\n"
@@ -66,8 +65,12 @@ class Penyesuaian_Nomor_Zona_Pembuatan:
             "Proses ini menjamin setiap zona memiliki\n "
             "Nomor Zona yang unik dan konsisten.\n"
             "Hasil siap digunakan untuk analisis\n"
-            "dan pemetaan."
-        )
+            "dan pemetaan.\n"
+            "\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year))
+        
 
         return [penjelasan, zona_layer_output]
 
@@ -94,6 +97,101 @@ class Penyesuaian_Nomor_Zona_Pembuatan:
         self.check_and_prepare_nomor_zona(zl_path)
         zl_path = os.path.join(dataset_path, "Zona_Layer")
         sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Pada_Zona.lyrx")
+                # Mendapatkan daftar field yang ada dalam layer
+        field_names = [field.name for field in arcpy.ListFields(zl_path)]
+
+        # Memeriksa apakah field HISTZONE sudah ada
+        if "HISTZONE" not in field_names:
+            """
+            JIKA HISTZONE BELUM ADA:
+            Membuat field HISTZONE baru dengan urutan nomor dan tipe zona
+            """
+
+            # Membuat field sementara untuk menyimpan tipe zona
+            arcpy.AddField_management(zl_path, "temp", "STRING")
+
+            # Mengisi field temp dengan 'N' atau 'P' berdasarkan JNSZN. N berarti NON-PERTANIAN, P berarti PERTANIAN
+            expression = "abc(!JNSZN!)"
+            codeblock = """def abc(JNSZN):
+                if JNSZN == 1:
+                    return 'N'  
+                elif JNSZN == 2:
+                    return 'P'  
+                else:
+                    return ''   
+                """
+            arcpy.management.CalculateField(zl_path, "temp", expression, "PYTHON3", codeblock)
+            
+            # Menggabungkan NOZN dan temp menjadi HISTZONE (contoh: "1N", "2P")
+            arcpy.management.CalculateField(zl_path, "HISTZONE", "str(!NOZN!) + !temp!", "PYTHON3")
+            
+            # Menghapus field sementara
+            arcpy.management.DeleteField(zl_path, "temp")
+
+        else:
+            """
+            JIKA HISTZONE SUDAH ADA:
+            Memperbarui nilai HISTZONE dengan mempertahankan nilai historis
+            """
+            
+            # Menyimpan nilai HISTZONE yang ada ke field sementara
+            arcpy.management.AddField(zl_path, "temp1", "STRING")
+            arcpy.management.CalculateField(zl_path, "temp1", "!HISTZONE!", "PYTHON3")
+
+
+            # Membuat field sementara untuk nilai zona baru
+            arcpy.management.AddField(zl_path, "temp2", "STRING")
+            
+            # Mengisi field temp2 dengan 'N' atau 'P' berdasarkan JNSZN
+            expression = "abc(!JNSZN!)"
+            codeblock = """def abc(JNSZN):
+                if JNSZN == 1:
+                    return 'N' 
+                elif JNSZN == 2:
+                    return 'P' 
+                else:
+                    return ''  
+                """
+            arcpy.management.CalculateField(zl_path, "temp2", expression, "PYTHON3", codeblock)
+            
+            # Membuat field sementara untuk gabungan NOZN + temp2
+            arcpy.management.AddField(zl_path, "temp", "STRING")
+            arcpy.management.CalculateField(zl_path, "temp", "str(!NOZN!) + !temp2!", "PYTHON3")
+            
+            # Membuat field sementara untuk hasil akhir
+            arcpy.management.AddField(zl_path, "temp3", "STRING")
+            """
+            MEMPROSES LOGIKA HISTZONE:
+            - Membandingkan nilai lama (temp1) dengan nilai baru (temp)
+            - Menerapkan logika khusus untuk mempertahankan atau menggabungkan nilai
+            """
+            with arcpy.da.UpdateCursor(zl_path, ["temp1", "temp", "temp3"]) as rows:
+                for row in rows:
+                    # Jika nilai lama pendek (<3 karakter)
+                    if len(row[0]) < 3:
+                        if row[0] == row[1]:  # Jika nilai lama sama dengan baru
+                            row[2] = row[1]   # Gunakan nilai baru
+                        elif row[0] != row[1]:  # Jika berbeda
+                            row[2] = row[0] + row[1]  # Gabungkan lama + baru
+                    
+                    # Jika nilai lama panjang (=3 karakter)
+                    else:
+                        if row[0][-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
+                            row[2] = row[0]  # Pertahankan nilai lama
+                        elif row[0][-2:] != row[1][-2:]:  # Jika 2 karakter akhir berbeda
+                            row[2] = row[0] + row[1]  # Gabungkan lama + baru
+                    
+                    rows.updateRow(row)
+                del rows, row
+            
+            # Memindahkan hasil akhir ke field HISTZONE
+            arcpy.management.CalculateField(zl_path, "HISTZONE", "!temp3!", "PYTHON3")
+            
+            # Membersihkan semua field sementara
+            arcpy.management.DeleteField(zl_path, "temp2")
+            arcpy.management.DeleteField(zl_path, "temp")
+            arcpy.management.DeleteField(zl_path, "temp1")
+            arcpy.management.DeleteField(zl_path, "temp3")
         arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
         arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
         arcpy.SetParameter(1, "Zona_Layer")
@@ -165,6 +263,9 @@ class Penyesuaian_Nomor_Zona_Pembuatan:
                     current_nozone += 1
                     row[0] = current_nozone
                     cursor.updateRow(row)
+        del cursor, row
+        
+        
 
 class Hitung_Nilai_ZNT_Pembuatan:
     def __init__(self):

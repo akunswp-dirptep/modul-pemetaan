@@ -108,7 +108,6 @@ class Login_OGIS_Internal(object):
             succes_login = setup_credentials("OperatorGISInternal", self.nik, self.nomor_sk, self.token, self.berkas, self.kantor_id)
             # Reload all Python toolboxes after successful login
             all_toolboxes_folder_need_reload = [
-                r"C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes",
                 r"C:\PenilaianTanah\scripts\Tools OGIS Internal\Python Toolboxes"
             ]
 
@@ -277,7 +276,6 @@ class Logout_OGIS_Internal(object):
             success_logout = remove_credentials("OperatorGISInternal")
             # Reload all Python toolboxes after successful login
             all_toolboxes_folder_need_reload = [
-                r"C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes",
                 r"C:\PenilaianTanah\scripts\Tools OGIS Internal\Python Toolboxes"
             ]
             try:

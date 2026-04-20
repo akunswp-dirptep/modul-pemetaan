@@ -1835,7 +1835,7 @@
 			<!-- Menu Pengolahan Titik Sampel  -->
 				<button id="ButtonMasukkanTitikSampelDariExcel" caption="Masukkan Titik Sampel Dari Excel" smallImage="C:\PenilaianTanah\icons\xls.png" largeImage="C:\PenilaianTanah\icons\xls.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes\ImporTitikSampelDariExcel.pyt\Impor_Titik_Sampel_Dari_Excel" name="Masukkan Titik Sampel Dari Excel" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\ImporTitikSampelDariExcel.pyt\Impor_Titik_Sampel_Dari_Excel" name="Masukkan Titik Sampel Dari Excel" xmlns=""/>
 					</args>
 					<tooltip heading="Masukkan Titik Sampel Dari Excel">Menu untuk menambahkan titik sampel dari file Excel.</tooltip>
 				</button>

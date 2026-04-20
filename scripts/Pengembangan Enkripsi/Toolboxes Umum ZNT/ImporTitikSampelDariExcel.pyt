@@ -30,6 +30,7 @@ class Impor_Titik_Sampel_Dari_Excel(object):
         self.label = "Impor Titik Sampel Dari Excel"
         self.description = "Tool untuk mengimpor titik sampel dari file Excel ke dalam feature class."
         self.canRunInBackground = False
+        self.dataset_path, self.tahun, self.provinsi, self.kota, self.coor, self.gdb_path = get_config_values()
         # Daftar field target yang harus di-mapping ke kolom Excel
 
 
@@ -67,12 +68,8 @@ class Impor_Titik_Sampel_Dari_Excel(object):
     def execute(self, parameters, messages):
         """The source code of the tool."""
         # Ambil path file Excel yang dipilih pengguna
-        config_dan_paths = get_config_values()
-        self.dataset_path = config_dan_paths['dataset_path']
-        temp_folder = config_dan_paths['temp_folder']
-        self.gdb_path = os.path.dirname(self.dataset_path)
-        
-         # Membuat file geodatabase sementara untuk menyimpan tabel impor
+        appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        temp_folder = os.path.join(appdata, 'temp')
         temp_gdb = arcpy.management.CreateFileGDB(temp_folder, 'Sampel_Dari_Excel.gdb')[0]
         arcpy.management.CreateFeatureDataset(temp_gdb, 'temp_dataset', arcpy.SpatialReference(4326))  # WGS 84
         ds_path = os.path.join(temp_gdb, 'temp_dataset')

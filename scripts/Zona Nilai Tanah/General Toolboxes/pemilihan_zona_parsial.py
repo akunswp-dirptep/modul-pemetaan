@@ -67,6 +67,7 @@ with arcpy.da.UpdateCursor(titik_zona, ["cluster", 'Nomor_Entry', 'OBJECTID'], w
 if count == 0:
     arcpy.AddWarning('Tidak ada nilai cluster yang diperbarui. Pastikan terdapat titik zona yang terkait dengan zona terpilih.')
     sys.exit(1)
+    
 # Update hanya fitur yang dipilih
 with arcpy.da.UpdateCursor(zl, ['cluster'], where_clause) as cursor:
     for row in cursor:

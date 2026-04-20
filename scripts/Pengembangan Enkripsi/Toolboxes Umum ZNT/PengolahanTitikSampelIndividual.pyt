@@ -73,7 +73,7 @@ class Rekomendasi_Titik_Pembanding(object):
             "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.now().year)
         )
-        # penjelasan.enabled = False  # Tidak bisa diedit
+        
         
         return [penjelasan]
 
@@ -118,18 +118,49 @@ class Rekomendasi_Titik_Pembanding(object):
             
             # Dapatkan data sampel
             data_individual = self.dapatkan_data_sampel(nomor_entry, self.titik_sampel_individu_path)
+            zoning_individual = self.normalisasi_zoning(data_individual['kategorikal']['Zoning'])
+
+            if zoning_individual is None:
+                arcpy.AddError("Nilai field Zoning pada titik sampel individual tidak valid. Nilai yang didukung hanya 1 (Non-Pertanian) atau 2 (Pertanian).")
+                sys.exit(1)
+
+            arcpy.AddMessage(
+                f"Zoning sampel individual: {self.get_label_zoning(zoning_individual)} ({zoning_individual})"
+            )
             skor = self.hitung_skor(data_individual)
-            skor_sorted = sorted(skor, key=lambda x: x[1], reverse=True)
-            
-            # Ambil 10 teratas
-            top_10 = skor_sorted[:10]
-            
-            arcpy.AddMessage("10 Titik Pembanding Teratas:")
-            for entry, score in top_10:
-                arcpy.AddMessage(f"  Kemiripan {entry}: {(score*100):.4f}%")
-            
-            # Select 10 titik teratas di layer Titik_Sampel
-            nomor_entry_list = [str(entry) for entry, score in top_10]
+            hasil_per_zoning = {
+                "1": [],
+                "2": []
+            }
+
+            for entry, score, zoning in skor:
+                if zoning in hasil_per_zoning:
+                    hasil_per_zoning[zoning].append((entry, score))
+
+            top_per_zoning = {
+                zoning: sorted(hasil, key=lambda x: x[1], reverse=True)[:5]
+                for zoning, hasil in hasil_per_zoning.items()
+            }
+
+            if not any(top_per_zoning.values()):
+                arcpy.AddWarning("Tidak ditemukan titik pembanding untuk Zoning 1 maupun Zoning 2.")
+                return
+
+            nomor_entry_list = []
+            for zoning in ("1", "2"):
+                hasil_zoning = top_per_zoning[zoning]
+                if hasil_zoning:
+                    arcpy.AddMessage(
+                        f"Top 5 Titik Pembanding untuk Zoning {self.get_label_zoning(zoning)} ({zoning}):"
+                    )
+                    for entry, score in hasil_zoning:
+                        arcpy.AddMessage(f"  Kemiripan {entry}: {(score*100):.4f}%")
+                        nomor_entry_list.append(str(entry))
+                else:
+                    arcpy.AddMessage(
+                        f"Tidak ada titik pembanding untuk Zoning {self.get_label_zoning(zoning)} ({zoning})."
+                    )
+
             where_clause = f"Nomor_Entry IN ({','.join(nomor_entry_list)})"
             
             # Buat layer selection
@@ -153,7 +184,7 @@ class Rekomendasi_Titik_Pembanding(object):
                     "NEW_SELECTION",
                     where_clause
                 )
-                arcpy.AddMessage(f"\n {len(top_10)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
+                arcpy.AddMessage(f"\n {len(nomor_entry_list)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
         
     
     
@@ -179,6 +210,19 @@ class Rekomendasi_Titik_Pembanding(object):
         
 
         self.titik_sampel_individu_path = os.path.join(self.dataset_path, "Titik_Sampel_Individual")
+
+    def normalisasi_zoning(self, zoning):
+        if zoning is None:
+            return None
+
+        zoning = str(zoning).strip()
+        return zoning if zoning in ("1", "2") else None
+
+    def get_label_zoning(self, zoning):
+        return {
+            "1": "Non-Pertanian",
+            "2": "Pertanian"
+        }.get(self.normalisasi_zoning(zoning), "Tidak Dikenal")
 
     def dapatkan_data_sampel(self, nomor_entry, layer_sumber):
 
@@ -404,6 +448,9 @@ class Rekomendasi_Titik_Pembanding(object):
         def collect_numeric(layer):
             with arcpy.da.SearchCursor(layer, field_list) as cur:
                 for r in cur:
+                    if self.normalisasi_zoning(r[5]) is None:
+                        continue
+
                     all_numeric['luas_bangunan'].append(r[13])
                     all_numeric['luas_tanah'].append(r[14])
                     all_numeric['lebar_depan'].append(r[15])
@@ -452,6 +499,10 @@ class Rekomendasi_Titik_Pembanding(object):
 
                     # skip individual point
                     if row[-2] == "Individual":
+                        continue
+
+                    zoning_pembanding = self.normalisasi_zoning(row[5])
+                    if zoning_pembanding is None:
                         continue
 
                     geom_pembanding = row[-1]
@@ -515,7 +566,7 @@ class Rekomendasi_Titik_Pembanding(object):
                     d = hitung_jarak(self, geom_individual, geom_pembanding)
                     skor_geo = skor_jarak(self, d)
                     skor_final = (W_ATTR * skor_attr) + (W_GEO * skor_geo)
-                    hasil_skor.append((data_pembanding['id'], skor_final))
+                    hasil_skor.append((data_pembanding['id'], skor_final, zoning_pembanding))
 
         return hasil_skor  
     def gower_ordinal(self, x_rank, y_rank, m):
@@ -537,11 +588,7 @@ class Rekomendasi_Titik_Pembanding(object):
         """
         Gower similarity for categorical (nominal) attributes.
         Returns 1 if same category, 0 if different.
-        """
-        if key == 'Zoning':
-            # Untuk atribut Zoning, kita bisa memberikan bobot lebih rendah jika zonanya beda
-            return 1.0 if x == y else -1.0
-        
+        """       
         return 1.0 if x == y else 0.0
     
     def gower_numeric(self, x, y, xmin, xmax):

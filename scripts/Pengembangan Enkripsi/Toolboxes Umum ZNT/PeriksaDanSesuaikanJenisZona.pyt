@@ -300,8 +300,7 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
 
         config_dan_paths = get_config_values()
         sampel = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")  # Path layer titik sampel
-        out_temp = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel_temp")
-        
+        out_temp = r"in_memory\Titik_Sampel_temp"
         zl= "Zona_Layer"
         JNSZN = 1  # Default value untuk Non-Pertanian
         if jenis_zona == "Non-Pertanian":
@@ -370,12 +369,11 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
             arcpy.management.JoinField(sampel, "OBJECTID", out_temp, "TARGET_FID", ["JNSZN"])
             
             # Update field Zoning di Titik_Sampel berdasarkan nilai JNSZN yang baru
-            rows = arcpy.da.UpdateCursor(sampel, ["JNSZN", "Zoning"])
-            for row in rows:
-                if row[1] != row[0] and row[0] != None:
-                    row[1] = row[0]  # Update Zoning dengan nilai JNSZN
-                rows.updateRow(row)
-            del row, rows
+            with arcpy.da.UpdateCursor(sampel, ["JNSZN", "Zoning"]) as cursor:
+                for row in cursor:
+                    if row[1] != row[0] and row[0] is not None:
+                        row[1] = row[0]  # Update Zoning dengan nilai JNSZN
+                    cursor.updateRow(row)
             
             # Membersihkan field JNSZN yang telah di-join
             arcpy.management.DeleteField(sampel, "JNSZN")

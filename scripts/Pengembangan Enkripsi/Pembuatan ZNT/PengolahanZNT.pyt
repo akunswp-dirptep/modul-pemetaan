@@ -51,22 +51,10 @@ class Penyesuaian_Nomor_Zona_Pembuatan:
         )
         penjelasan.value = (
             "Tool ini digunakan untuk memvalidasi\n "
-            "field Nomor Zona (NOZN) pada layer zona.\n"
+            "Field Nomor Zona (NOZN) pada layer zona.\n"
             "Tool memastikan NOZN tidak bernilai null\n"
-            "dan tidak terduplikasi.\n"
-            "-----------------------------------------------\n"
-            "Jika ditemukan NOZN yang sama pada lebih\n"
-            "dari satu zona, maka akan dilakukan seleksi.\n"
-            "Zona dengan luas terbesar (Luas_M2)\n"
-            "akan mempertahankan Nomor Zonanya.\n"
-            "Zona lainnya akan dihapus Nomor Zonanya.\n"
-            "Nomor Zona akan diisi ulang secara otomatis.\n"
-            "Penomoran menggunakan nilai maksimum NOZN + 1.\n"
-            "Proses ini menjamin setiap zona memiliki\n "
-            "Nomor Zona yang unik dan konsisten.\n"
-            "Hasil siap digunakan untuk analisis\n"
-            "dan pemetaan.\n"
-            "\n"
+            "dan tidak terduplikasi.\n\n"
+
             "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.now().year))

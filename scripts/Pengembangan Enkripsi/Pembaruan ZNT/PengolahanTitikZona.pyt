@@ -149,7 +149,7 @@ class Pemilihan_Titik_Sampel_Outlier_Manual:
         selected_ids = samplepoint.get_selected_oids(titik_zona)
         if len(selected_ids) <= 0:
             arcpy.AddError("Tidak ada titik yang dipilih di layer Titik_Zona.")
-            raise arcpy.ExecuteError
+            sys.exit(1)
 
         # Step 1: Transfer selected features
         where_clause = f"OBJECTID IN ({','.join(map(str, selected_ids))})"
@@ -399,10 +399,10 @@ class Pengembalian_Titik_Sampel_Outlier_Ke_Titik_Zona:
 
         if  zona_selected:
             arcpy.AddError("Hanya pilih titik di layer Titik Sampel")
-            raise arcpy.ExecuteError
+            sys.exit(1)
         elif not outlier_selected and not zona_selected:
             arcpy.AddError("Tidak ada titik yang dipilih. Silakan pilih titik sampel (pencilan/outlier) di layer Titik Sampel.")
-            raise arcpy.ExecuteError
+            sys.exit(1)
 
         if outlier_selected:
             if self.check_individual_data(ts, outlier_selected):
@@ -601,21 +601,12 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
         )
         penjelasan.value = (
             "Tool ini digunakan untuk memvalidasi\n "
-            "field Nomor Zona (NOZN) pada layer zona.\n"
+            "Field Nomor Zona (NOZN) pada layer zona.\n"
             "Tool memastikan NOZN tidak bernilai null\n"
-            "dan tidak terduplikasi.\n"
-            "--------------------------------------------------\n"
-            "Jika ditemukan NOZN yang sama pada lebih\n"
-            "dari satu zona, maka akan dilakukan seleksi.\n"
-            "Zona dengan luas terbesar (Luas_M2)\n"
-            "akan mempertahankan Nomor Zonanya.\n"
-            "Zona lainnya akan dihapus Nomor Zonanya.\n"
-            "Nomor Zona akan diisi ulang secara otomatis.\n"
-            "Penomoran menggunakan nilai maksimum NOZN + 1.\n"
-            "Proses ini menjamin setiap zona memiliki\n "
-            "Nomor Zona yang unik dan konsisten.\n"
-            "Hasil siap digunakan untuk analisis\n"
-            "dan pemetaan."
+            "dan tidak terduplikasi.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
         )
 
         return [penjelasan, zona_layer_output]

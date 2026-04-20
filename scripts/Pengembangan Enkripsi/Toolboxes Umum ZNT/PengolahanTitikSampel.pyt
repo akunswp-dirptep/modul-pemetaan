@@ -82,7 +82,7 @@ def get_config_values():
     # Validasi path GDB
     if not arcpy.Exists(dataset_path):
         arcpy.AddError(f"Path GDB tidak valid: {dataset_path}")
-        raise ValueError(f"Path GDB tidak valid: {dataset_path}")
+        sys.exit(1)
 
     return paths
 

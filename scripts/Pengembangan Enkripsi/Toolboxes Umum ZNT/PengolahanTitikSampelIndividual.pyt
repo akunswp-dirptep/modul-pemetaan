@@ -66,6 +66,8 @@ class Rekomendasi_Titik_Pembanding(object):
             "  terpilih pada layer 'Titik_Sampel' atau 'Titik_Zona'.\n"
             "- Skor kemiripan tiap titik ditampilkan dalam\n"
             "  persentase dibagian View Details\n"
+            "- Skor kemiripan dihitung berdasarkan data atribut,\n"
+            "  jarak, dan luas tanah\n"
             "\n"
             "Catatan: Hanya boleh memilih satu titik pada\n"
             "layer 'Titik_Sampel_Individual'. \n\n"
@@ -96,6 +98,14 @@ class Rekomendasi_Titik_Pembanding(object):
         """The source code of the tool."""
 
         self.setup_path_and_config()
+        zl_path  = os.path.join(self.dataset_path, "Zona_Layer")
+
+        check_if_there_zona_beda = self.cek_zona_beda(self.titik_sampel_path, zl_path)
+
+
+        if len(check_if_there_zona_beda) > 0:
+            arcpy.AddError(f"Masih terdapat zona yang berbeda dengan titik sampelnya: {', '.join(check_if_there_zona_beda)}\nJalankan Tools Periksa Jenis Zona untuk mengecek lebih lanjut\nKemudian Perbaiki dengan Tools, Sesuaikan Atribut Jenis Zona (Lanjutan).")
+            sys.exit(1)
 
         if arcpy.Exists(self.titik_sampel_individu_path):
             feature_dipilih = samplepoint.get_selected_oids("Titik_Sampel_Individual")
@@ -187,7 +197,19 @@ class Rekomendasi_Titik_Pembanding(object):
                 arcpy.AddMessage(f"\n {len(nomor_entry_list)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
         
     
-    
+    def cek_zona_beda(self, ts_path, zl_path):
+        identity_fc = r"in_memory\identity"
+        arcpy.analysis.Identity(ts_path, zl_path, identity_fc)
+
+        zona_beda = []
+
+        # Ambil semua field dalam satu cursor
+        with arcpy.da.SearchCursor(identity_fc, ["NOZN", "JNSZN", "Zoning"]) as cursor:
+            for nozona, jenis, zoning in cursor:
+                if jenis != zoning:
+                    zona_beda.append(f"NOZN {nozona} (Zoning Titik Sampel: {zoning}, Jenis Zona: {jenis})")
+
+        return zona_beda
     def setup_path_and_config(self):
         # Konfigurasi Path Project
         zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
@@ -469,13 +491,14 @@ class Rekomendasi_Titik_Pembanding(object):
 
 
         D_MAX = 5000  # meter (adjust sesuai area)
-        W_ATTR = 0.8
-        W_GEO = 0.2
+        W_ATTR = 0.6
+        W_JARAK = 0.2
+        W_LUAS = 0.2
 
-        def skor_jarak(self, d):
+        def skor_jarak_dan_luas(self, d):
             if d is None:
                 return 0
-            return math.exp(-d / D_MAX)
+            return 1/abs(d) if d > 0 else 1.0
 
         def hitung_jarak(self, g1, g2):
             if not g1 or not g2:
@@ -484,6 +507,7 @@ class Rekomendasi_Titik_Pembanding(object):
 
 
         geom_individual = data_individual.get('geometry', None)
+        luas_individual = data_individual['numerikal']['luas_tanah']
 
         layers = [self.titik_sampel_path]
         if arcpy.Exists(self.titik_zona_path):
@@ -497,7 +521,7 @@ class Rekomendasi_Titik_Pembanding(object):
 
                 for row in cursor:
 
-                    # skip individual point
+                    # Data Individual tidak boleh jadi pembanding
                     if row[-2] == "Individual":
                         continue
 
@@ -553,6 +577,8 @@ class Rekomendasi_Titik_Pembanding(object):
                         count += 1
 
                     for k in data_individual['numerikal']:
+                        if k == 'luas_tanah':
+                            continue  # Luas tanah akan dihitung terpisah sebagai skor luas
                         total += self.gower_numeric(
                             data_individual['numerikal'][k],
                             data_pembanding['numerikal'][k],
@@ -564,11 +590,13 @@ class Rekomendasi_Titik_Pembanding(object):
                     skor_attr = total / count if count > 0 else 0
 
                     d = hitung_jarak(self, geom_individual, geom_pembanding)
-                    skor_geo = skor_jarak(self, d)
-                    skor_final = (W_ATTR * skor_attr) + (W_GEO * skor_geo)
+                    skor_nilai_jarak = skor_jarak_dan_luas(self, d)
+                    skor_luas_tanah = skor_jarak_dan_luas(self, data_pembanding['numerikal']['luas_tanah'] - luas_individual)
+                    skor_final = (W_ATTR * skor_attr) + (W_JARAK * skor_nilai_jarak) + (W_LUAS * skor_luas_tanah)
                     hasil_skor.append((data_pembanding['id'], skor_final, zoning_pembanding))
 
-        return hasil_skor  
+        return hasil_skor
+      
     def gower_ordinal(self, x_rank, y_rank, m):
         """
         Gower similarity for ordinal attributes.
@@ -670,10 +698,12 @@ class Perhitungan_Nilai_Data_Individual(object):
 
         config_dan_paths = zonalayer.get_config_values()
         dataset_path = config_dan_paths["dataset_path"]
+        
 
         titik_zona_path = os.path.join(dataset_path, 'Titik_Zona')
         titik_sampel_path = os.path.join(dataset_path, 'Titik_Sampel')
         titik_sampel_individual_path = os.path.join(dataset_path, 'Titik_Sampel_Individual')
+
         
         titik_pembanding_path = [titik_zona_path, titik_sampel_path] if arcpy.Exists(titik_zona_path) else [titik_sampel_path]
 
@@ -803,6 +833,8 @@ class Perhitungan_Nilai_Data_Individual(object):
         arcpy.SetParameter(4, "Titik_Sampel_Individual")
 
         return
+
+
 
     def penyesuaian_harga_tanah_m2(self, harga_penawaran_atau_transaksi, nilai_bangunan, luas_tanah, tipe_transaksi):
 
@@ -1348,8 +1380,8 @@ class Setujui_Sampel_Individual(object):
         # Get selection
         selected_ids = samplepoint.get_selected_oids(titik_sampel_individual)
         if not selected_ids:
-            arcpy.AddError("No features selected in Titik_Sampel_Individual.")
-            raise arcpy.ExecuteError
+            arcpy.AddError("Tidak ada fitur yang dipilih di Titik_Sampel_Individual.")
+            sys.exit(1)
 
         missing_fields = samplepoint.get_missing_fields(titik_sampel_individual, titik_sampel)
         for field in missing_fields:
@@ -1441,14 +1473,14 @@ class Pengembalian_Sampel_Individual(object):
 
         selected_ids = samplepoint.get_selected_oids(Titik_Sampel)
         if not selected_ids:
-            arcpy.AddError("No features selected in Titik_Sampel.")
-            raise arcpy.ExecuteError
+            arcpy.AddError("Tidak ada fitur yang dipilih di Titik_Sampel.")
+            sys.exit(1)
 
         with arcpy.da.SearchCursor(Titik_Sampel, ["OBJECTID", "Jenis_Data"]) as cursor:
             for oid, jenis in cursor:
                 if oid in selected_ids and str(jenis).strip().lower() != "individual":
                     arcpy.AddError(f"Titik Sampel dengan OBJECTID {oid} bukan jenis 'Individual'. Hanya titik sampel 'Individual' yang dapat diubah.")
-                    raise arcpy.ExecuteError
+                    sys.exit(1)
                 
         missing_fields = samplepoint.get_missing_fields(Titik_Sampel, Titik_Sampel_Individual)
         for field in missing_fields:

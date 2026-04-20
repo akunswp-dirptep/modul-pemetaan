@@ -215,8 +215,6 @@ class Perhitungan_Indeks_Titik_Sampel_Terpilih:
             direction="Input"
         )
 
-
-
         penjelasan.value = (
             "Tool ini melakukan overlay (Identity) antara\n"
             "layer Titik Sampel dan Zona.\n"

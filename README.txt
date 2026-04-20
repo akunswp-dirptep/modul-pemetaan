@@ -16,7 +16,7 @@ PERUBAHAN & PENYESUAIAN FITUR
 
 [PENINGKATAN FITUR & LOGIKA]
 
-* Menambahkan faktor jarak dalam rekomendasi titik sampel pembanding
+* Menambahkan faktor jarak dan luas dalam rekomendasi titik sampel pembanding
 * Memisahkan proses pengolahan titik sampel menjadi batch untuk meningkatkan performa
 * Menambahkan fungsi untuk menghapus file sementara di geodatabase
 

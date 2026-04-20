@@ -128,9 +128,9 @@ class Hitung_Indeks_Nilai_Tanah:
 
         if invalid_clusters_info:
             arcpy.AddWarning(
-                "Klaster tanpa Titik Zona:\n" + "\n".join(invalid_clusters_info)
+                "Terdapat Klaster tanpa Titik Zona:\n" + "\n".join(invalid_clusters_info)
             )
-            raise arcpy.ExecuteError   # ❌ jangan delete di sini
+            sys.exit(1)
 
         arcpy.AddMessage("✅ Validasi klaster OK")
 
@@ -321,7 +321,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
 
         if not titik_sampel or not zona_layer:
             arcpy.AddError("❌ Layer 'Titik_Sampel' dan 'Zona_Layer' harus ada.")
-            raise arcpy.ExecuteError
+            sys.exit(1)
 
         count = int(arcpy.management.GetCount(titik_sampel)[0])
         if count == 0:
@@ -373,7 +373,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             arcpy.AddError(
                 "Proses dihentikan. Zona berikut < 3 titik: " + ", ".join(zona_invalid)
             )
-            raise arcpy.ExecuteError
+            sys.exit(1)
 
         arcpy.AddMessage("✅ Validasi OK")
 
@@ -547,7 +547,7 @@ class Hitung_Nilai_ZNT_Pembaruan:
 
         if not zona_layer:
             arcpy.AddError("❌ Layer yang diperlukan tidak ditemukan di peta. Pastikan layer 'Zona_Layer' ada.")
-            raise arcpy.ExecuteError
+            sys.exit(1)
 
         def ensure_fields_exist(layer, required_fields):
             existing_fields = {field.name.upper() for field in arcpy.ListFields(layer)}

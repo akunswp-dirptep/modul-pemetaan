@@ -24,6 +24,9 @@ class Toolbox:
         self.tools = [Simbologi_Titik_Zona, 
                       Pemilihan_Titik_Sampel_Outlier_Manual,
                       Pemilihan_Titik_Sampel_Outlier_Kuartil,
+                      Pengembalian_Titik_Sampel_Outlier_Ke_Titik_Zona,
+                      Pemilihan_Zona_Parsial,
+                      Perbaharui_Indeks_Sampel_Pada_Titik_Zona,
                       Penyesuaian_Nomor_Zona_Pembaruan,
                       Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan]
 
@@ -52,7 +55,10 @@ class Simbologi_Titik_Zona:
 
         penjelasan.value = (
             "Tool ini digunakan untuk menampilkan layer\n"
-            "Titik Zona dengan simbologi yang sudah ditentukan."
+            "Titik Zona dengan simbologi yang sudah ditentukan.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
         )
         return [tz_output, penjelasan]
 
@@ -109,8 +115,11 @@ class Pemilihan_Titik_Sampel_Outlier_Manual:
         )
 
         penjelasan.value = (
-            "Tool ini digunakan untuk memindahkan titik  sampel (outlier) yang\n"
-            "Sudah dipilih pada layer Titik Zona ke layer Titik Sampel."
+            "Tool ini digunakan untuk memindahkan titik zona yang\n"
+            "Sudah dipilih pada layer Titik Zona ke layer Titik Sampel.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
         )
         return [penjelasan]
 
@@ -139,7 +148,7 @@ class Pemilihan_Titik_Sampel_Outlier_Manual:
         # Get selection
         selected_ids = samplepoint.get_selected_oids(titik_zona)
         if len(selected_ids) <= 0:
-            arcpy.AddError("No features selected in Titik_Zona.")
+            arcpy.AddError("Tidak ada titik yang dipilih di layer Titik_Zona.")
             raise arcpy.ExecuteError
 
         # Step 1: Transfer selected features
@@ -183,8 +192,12 @@ class Pemilihan_Titik_Sampel_Outlier_Kuartil:
         )
 
         penjelasan.value = (
-            "Tool ini digunakan untuk memindahkan titik  sampel (outlier) yang\n"
-            "Sudah dipilih pada layer Titik Zona ke layer Titik Sampel menggunakan metode Kuartil."
+            "Tool ini digunakan untuk memindahkan titik zona yang\n"
+            "Sudah dipilih pada layer Titik Zona ke layer Titik\n"
+            "Sampel menggunakan metode Kuartil.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
         )
         return [penjelasan]
 
@@ -311,6 +324,252 @@ class Pemilihan_Titik_Sampel_Outlier_Kuartil:
             # Cleanup: hapus temporary layer
             arcpy.management.Delete("in_memory\\temp_copy_quartile")
 
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+
+class Pengembalian_Titik_Sampel_Outlier_Ke_Titik_Zona:
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Pengembalian Titik Sampel Outlier Ke Titik Zona"
+        self.description = ""
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        tz_output  =arcpy.Parameter(
+            name="tz_output",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        ts_output  =arcpy.Parameter(
+            name="ts_output",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        penjelasan = arcpy.Parameter(
+            displayName="Apa yang dilakukan tool ini?",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Optional",
+        )
+
+        penjelasan.value = (
+            "Tool ini  digunakan untuk memindahkan titik sampel outlier\n"
+            "dari layer Titik Sampel ke layer Titik Zona.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
+        )
+        return [tz_output, ts_output, penjelasan]
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        zonalayer.delete_bad_file()
+        config_dan_paths = zonalayer.get_config_values()
+        dataset_path = config_dan_paths['dataset_path']
+        zl = os.path.join(dataset_path, "Zona_Layer")      # Layer zona
+        ts = os.path.join(dataset_path, "Titik_Sampel")
+        tz = os.path.join(dataset_path, "Titik_Zona")      # Layer sumber
+        tzt = "in_memory\\Titik_Zona_Temp" # Layer tujuan sementara
+
+        # MAIN
+        outlier_selected = samplepoint.get_selected_oids('Titik_Sampel')
+        zona_selected = samplepoint.get_selected_oids('Titik_Zona')
+
+        if  zona_selected:
+            arcpy.AddError("Hanya pilih titik di layer Titik Sampel")
+            raise arcpy.ExecuteError
+        elif not outlier_selected and not zona_selected:
+            arcpy.AddError("Tidak ada titik yang dipilih. Silakan pilih titik sampel (pencilan/outlier) di layer Titik Sampel.")
+            raise arcpy.ExecuteError
+
+        if outlier_selected:
+            if self.check_individual_data(ts, outlier_selected):
+                arcpy.AddWarning("Data 'Individual' tidak dapat dipindahkan ke Titik Zona.")
+                sys.exit()
+            arcpy.AddMessage(f"Memindahkan {len(outlier_selected)} titik dari Titik_Sampel ke Titik_Zona...")
+            self.transfer_features(ts, outlier_selected, tz, tzt, zl, dataset_path, config_dan_paths['appdata'])
+            arcpy.AddMessage("Pemindahan fitur selesai. Nilai atribut bersama dipertahankan.")
+
+        return
+
+    def get_necessary_fields(self, tz, tzt, zl, dataset_path, feature_1):
+        # Mendefinisikan path untuk feature classes yang akan digunakan
+
+        # Buat feature class baru berdasarkan geometri sumber
+        spatial_ref = arcpy.Describe(tz).spatialReference
+        geometry_type = arcpy.Describe(tz).shapeType
+
+        # Hapus jika sudah ada
+        if arcpy.Exists(tzt):
+            arcpy.management.Delete(tzt)
+
+        # Buat feature class baru dengan geometri yang sama
+        arcpy.management.CreateFeatureclass("in_memory", "Titik_Zona_Temp", geometry_type, spatial_reference=spatial_ref)
+        arcpy.analysis.Identity(feature_1, zl, tzt)
+        arcpy.management.AddField(tzt, "indeks_sampel", "DOUBLE")
+
+        bulat1 = "100"
+        bulat2 = "100"
+        code_block = """def doSomething(nila,men,jeniszona,bulat1,bulat2):
+                if jeniszona == 1:
+                    return round(bulat1 * ( nila/men ),2)
+                elif jeniszona == 2:
+                    return round(bulat2 * ( nila/men ),2)"""
+
+        arcpy.management.CalculateField(tzt, "indeks_sampel", "doSomething(int(!nilai!),float(!NILAIZN_LAMA!),!JNSZN!," + bulat1 + "," + bulat2 + ")", "PYTHON3", code_block)
+        arcpy.management.Append(tzt, tz, "NO_TEST")
+        arcpy.management.Delete(tzt)
+
+    def transfer_features(self, source_layer, selected_ids, tz, tzt, zl, dataset_path, appdata):
+        where_clause = f"OBJECTID IN ({','.join(map(str, selected_ids))})"
+        temp_layer = arcpy.management.MakeFeatureLayer(source_layer, "temp_selected", where_clause)[0]
+        temp_copy = arcpy.management.CopyFeatures(temp_layer, "in_memory\\Titik_Sampel")[0]
+
+        self.get_necessary_fields(tz, tzt, zl, dataset_path, temp_copy)
+
+        with arcpy.da.UpdateCursor(source_layer, ["OBJECTID"]) as ucur:
+            for row in ucur:
+                if row[0] in selected_ids:
+                    ucur.deleteRow()
+
+        arcpy.management.DeleteFeatures(temp_layer)
+        arcpy.management.Delete("in_memory\\Titik_Sampel")
+
+        ui_folder = os.path.join(appdata, "ui")
+        symbology_folder = os.path.join(ui_folder, "symbology")
+        tz_simbology_path = os.path.join(symbology_folder, "Titik_Zona.lyrx")
+        ts_simbology_path = os.path.join(symbology_folder, "Titik_Sampel.lyrx")
+
+        arcpy.management.MakeFeatureLayer(tz, "Titik_Zona")
+        arcpy.management.ApplySymbologyFromLayer("Titik_Zona", tz_simbology_path)
+
+        arcpy.management.MakeFeatureLayer(source_layer, "Titik_Sampel")
+        arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", ts_simbology_path)
+
+        arcpy.SetParameter(0, "Titik_Zona")
+        arcpy.SetParameter(1, "Titik_Sampel")
+
+    def check_individual_data(self, source_layer, selected_ids):
+        """Check if any selected features have 'Jenis_Data' as 'Individual'."""
+        individual_found = False
+        where_clause = f"OBJECTID IN ({','.join(map(str, selected_ids))})"
+        with arcpy.da.SearchCursor(source_layer, ["Jenis_Data"], where_clause) as cursor:
+            for row in cursor:
+                if row[0] == "Individual":
+                    individual_found = True
+                    break
+        return individual_found
+
+class Pemilihan_Zona_Parsial:
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Pemilihan Zona Parsial"
+        self.description = ""
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        cluster  =arcpy.Parameter(
+            displayName="Nomor Klaster",
+            name="cluster",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        penjelasan = arcpy.Parameter(
+            displayName="Apa yang dilakukan tool ini?",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Optional",
+        )
+
+        penjelasan.value = (
+            "Tool ini digunakan untuk memperbaharui nilai klaster\n"
+            "pada zona terpilih.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
+        )
+        return [cluster, penjelasan]
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        cluster_update = str(parameters[0].valueAsText)
+        zonalayer.delete_bad_file()
+        config_dan_paths = zonalayer.get_config_values()
+
+        zl = "Zona_Layer"
+        titik_zona = 'Titik_Zona'
+
+        # Cek apakah ada seleksi
+        ada_seleksi = len(arcpy.Describe(zl).FIDSet)
+
+        if ada_seleksi <= 0:
+            arcpy.AddError('Tidak terdapat feature yang dipilih')
+            sys.exit(1)
+
+
+        oid_field = arcpy.Describe(zl).OIDFieldName
+        fid_list = arcpy.Describe(zl).FIDSet.split(';')
+
+        # Buat klausa WHERE agar hanya fitur terpilih yang diupdate
+        where_clause = f"{oid_field} IN ({','.join(fid_list)})"
+        where_clause_titik_zona = f"FID_Zona_Layer IN ({','.join(fid_list)})"
+
+
+        count = 0
+        with arcpy.da.UpdateCursor(titik_zona, ["cluster", 'Nomor_Entry', 'OBJECTID'], where_clause_titik_zona) as cursor:
+            for row in cursor:
+                row[0] = cluster_update
+                cursor.updateRow(row)
+                count += 1
+        if count == 0:
+            arcpy.AddWarning('Tidak ada nilai cluster yang diperbarui. Pastikan terdapat titik zona yang terkait dengan zona terpilih.')
+            sys.exit(1)
+        with arcpy.da.UpdateCursor(zl, ['cluster'], where_clause) as cursor:
+            for row in cursor:
+                row[0] = cluster_update
+                cursor.updateRow(row)
+
+        arcpy.AddMessage(f"{count} titik berhasil diperbarui untuk zona terpilih ({len(fid_list)} zona).")
         return
 
     def postExecute(self, parameters):
@@ -554,6 +813,139 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
                 arcpy.management.DeleteField(zl_path, "temp3")
         except Exception as e:
             arcpy.AddWarning(f'Gagal memperbarui HISTZONE: {e}')   
+
+class Perbaharui_Indeks_Sampel_Pada_Titik_Zona:
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Perbaharui Indeks Sampel Pada Titik Zona"
+        self.description = ""
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+
+        penjelasan = arcpy.Parameter(
+            displayName="Apa yang dilakukan tool ini?",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Optional",
+        )
+
+        penjelasan.value = (
+            "Tool ini digunakan untuk memperbarui indeks sampel\n"
+            "pada Titik Zona.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.datetime.now().year)
+        )
+        return [penjelasan]
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        zonalayer.delete_bad_file()
+        config_dan_paths = zonalayer.get_config_values()
+
+        tz_path = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
+        ui_folder = os.path.join(config_dan_paths['appdata'], "ui")
+        symbology_folder = os.path.join(ui_folder, "symbology")
+        tz_simbology_path = os.path.join(symbology_folder, "Titik_Zona.lyrx")
+
+
+        bulat1 = "100"  # Faktor pembulatan untuk jenis zona 1
+        bulat2 = "100"  # Faktor pembulatan untuk jenis zona 2
+        # Mendefinisikan path untuk feature classes yang akan digunakan
+        zl = os.path.join(config_dan_paths['dataset_path'], "Zona_Layer")      # Layer zona
+        # Titik Zona
+        hi = "in_memory\\HitungIndeksZona"    # Output hitung indeks
+
+        tz = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")      # Layer sumber
+        tzt = "in_memory\\Titik_Zona_Temp" # Layer tujuan
+
+        spatial_ref = arcpy.Describe(tz).spatialReference
+        geometry_type = arcpy.Describe(tz).shapeType
+
+
+        if arcpy.Exists(tzt):
+            arcpy.management.Delete(tzt)
+
+        if arcpy.Exists(hi):
+            arcpy.management.Delete(hi)
+
+        arcpy.management.CreateFeatureclass("in_memory", "Titik_Zona_Temp", geometry_type, spatial_reference=spatial_ref)
+
+        fields_to_copy = ["Nomor_Entry", "nilai"]
+
+        for field in fields_to_copy:
+            arcpy.management.AddField(tzt, field, arcpy.ListFields(tz, field)[0].type)
+
+        with arcpy.da.SearchCursor(tz, ["SHAPE@"] + fields_to_copy) as cursor_in:
+            with arcpy.da.InsertCursor(tzt, ["SHAPE@"] + fields_to_copy) as cursor_out:
+                for row in cursor_in:
+                    cursor_out.insertRow(row)
+        arcpy.analysis.Identity(tzt, zl, hi)
+        arcpy.management.AddField(hi, "indeks_sampel", "DOUBLE")
+        code_block = """def doSomething(nila,men,jeniszona,bulat1,bulat2):
+        if jeniszona == 1:
+            return round(bulat1 * ( nila/men ),2)  # Hitung indeks untuk zona jenis 1
+        elif jeniszona == 2:
+            return round(bulat2 * ( nila/men ),2)  # Hitung indeks untuk zona jenis 2"""
+        arcpy.management.CalculateField(hi, "indeks_sampel", "doSomething(int(!nilai!),float(!NILAIZN_LAMA!),!JNSZN!," + bulat1 + "," + bulat2 + ")", "PYTHON3", code_block)
+        fields_hi = {f.name for f in arcpy.ListFields(hi)}
+        fields_tz = {f.name for f in arcpy.ListFields(tz)}
+        common_fields = list((fields_hi & fields_tz) - {"OBJECTID", "Shape", "Shape_Length", "Shape_Area", "Nomor_Entry"})
+        for field_name in common_fields:
+            if field_name not in [f.name for f in arcpy.ListFields(tz)]:
+                arcpy.AddMessage(f"Field {field_name} tidak ada di Titik_Zona, menambahkannya...")
+                field_template = arcpy.ListFields(hi, field_name)[0]
+                arcpy.management.AddField(tz, field_name, field_template.type, field_template.precision, field_template.scale, field_template.length, field_template.aliasName, field_template.isNullable, field_template.required, field_template.domain)
+        arcpy.AddMessage('Membangun mapping dari hasil Identity...')
+        data_dict = {}
+        cursor_fields_hi = ["Nomor_Entry"] + common_fields
+        arcpy.AddMessage(cursor_fields_hi)
+        with arcpy.da.SearchCursor(hi, cursor_fields_hi) as cursor:
+            for row in cursor:
+                nomor_entry = row[0]
+                data_dict[nomor_entry] = row[1:]
+            del cursor
+        arcpy.AddMessage('Memperbarui Titik_Zona dengan data dari hasil Identity...')
+        updated_rows = 0
+        cursor_fields_tz = ["Nomor_Entry"] + common_fields
+        with arcpy.da.UpdateCursor(tz, cursor_fields_tz) as cursor:
+            for row in cursor:
+                nomor_entry = row[0]
+                if nomor_entry in data_dict:
+                    # Buat baris baru dengan nomor_entry dan data baru
+                    new_row = [nomor_entry] + list(data_dict[nomor_entry])
+                    cursor.updateRow(new_row)
+                    updated_rows += 1
+            del cursor
+        arcpy.AddMessage(f'Selesai. {updated_rows} baris di Titik_Zona telah diperbarui.')
+
+        arcpy.management.Delete(tzt)
+        arcpy.management.Delete(hi)
+
+
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
 
 class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
     def __init__(self):

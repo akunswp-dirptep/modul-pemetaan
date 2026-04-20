@@ -645,7 +645,13 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                 # Jika field belum ada, tambahkan
                 arcpy.management.AddField(zona_layer_temp_path, field_name, field_type)
 
-        # Set nilai default
+        arcpy.management.AlterField(
+            in_table=zona_layer_temp_path,
+            field="cluster",
+            new_field_name="cluster",        # boleh sama (tidak ganti nama)
+            new_field_alias="KLASTER"
+        )
+                # Set nilai default
         arcpy.management.CalculateField(zona_layer_temp_path, "WADMKK", "'"+str(config_and_paths['kota'])+"'", "PYTHON3")  # Set kode kabupaten/kota
         arcpy.management.CalculateField(zona_layer_temp_path, "WADMPR", "'"+str(config_and_paths['provinsi'])+"'", "PYTHON3")  # Set kode provinsi
         arcpy.management.CalculateField(zona_layer_temp_path, "THNNILAI", config_and_paths['tahun'], "PYTHON3")  # Set tahun nilai

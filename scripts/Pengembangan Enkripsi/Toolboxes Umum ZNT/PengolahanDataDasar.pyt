@@ -67,11 +67,10 @@ class Hitung_Luas_Zona_M2:
         )
 
         penjelasan.value = (
-            "Tool ini menambahkan field Luas_M2 jika belum\n"
-            "tersedia. kemudian Menghitung luas fitur (m²)\n"
-            "dan menyimpannya ke field tersebut.Jika field \n"
-            "Luas_M2 sudah ada, nilainya akan diperbarui.\n"
-            "\n"
+            "Menghitung luas masing-masing zona (m²)\n"
+            "dan menyimpannya ke field [Luas_M2].\n\n"
+            " - Field dibuat jika belum ada\n"
+            " - Nilai diperbarui jika sudah ada\n\n"
             "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.now().year)
@@ -157,10 +156,11 @@ class Kodifikasi_Zona:
         )
 
         penjelasan.value = (
-            "Tools membuat atau memperbarui field HISTZONE\n"
-            "dengan menggabungkan nomor zona (NOZN)\n"
-            "dan jenis zona (JNSZN) sambil mempertahankan\n"
-            "riwayat perubahan zona.\n\n"
+            "Membuat atau memperbarui field [HISTZONE]\n"
+            "berdasarkan nomor zona dan jenis zona.\n\n"
+            " - Menggabungkan nilai [NOZN] dan [JNSZN]\n"
+            " - Menyimpan riwayat perubahan zona\n"
+            " - Field diperbarui jika sudah ada\n\n"
             "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.now().year)

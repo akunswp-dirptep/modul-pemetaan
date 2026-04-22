@@ -11,11 +11,10 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.constant import NAMA_PROVINSI, KAB_KOTA
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import main_upload_shapefile, main_upload
 from zntutils.system_utils import get_user_data, renew_user_data
-from zntutils import zona_layer as zonalayer
+from zntutils.zona_layer import get_config_values
 
 #Helper Functions
 def is_internal():
@@ -442,7 +441,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         nilai = parameters[3].valueAsText
         jeniszona = parameters[5].valueAsText 
 
-        config_and_paths = zonalayer.get_config_values()
+        config_and_paths = get_config_values()
         dataset_path = config_and_paths['dataset_path']
 
         # --- Validasi: pastikan field nomorzone dan nilai tidak NULL dan bernilai numerik

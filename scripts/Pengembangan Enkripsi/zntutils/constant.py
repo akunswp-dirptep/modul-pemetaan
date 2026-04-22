@@ -573,9 +573,9 @@ KAB_KOTA = {
         "Polewali Mandar"
     ],
     "Maluku": [
-        "Aru",
         "Buru",
         "Buru Selatan",
+        "Kepulauan Aru",
         "Kepulauan Tanimbar",
         "Maluku Barat Daya",
         "Maluku Tengah",

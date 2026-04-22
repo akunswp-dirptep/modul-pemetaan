@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
-from .constant import USER_DATA_KEY, NIK_KEY, NOMOR_KONTRAK_KEY, PREFERRED_SERVER_KEY
+from .constant import USER_DATA_KEY, NIK_KEY, NOMOR_KONTRAK_KEY, PREFERRED_SERVER_KEY, SSO_DATA_KEY
 def current_year():
     try:
         return int(datetime.now().year)
@@ -180,8 +180,8 @@ def get_user_data(key:str):
     except Exception as e:
         return None
 
-def get_all_config():
-    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+def get_all_config(config_path = None):
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin' if config_path is None else config_path
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
@@ -192,16 +192,55 @@ def get_all_config():
     except Exception as e:
         return None
 
-def get_all_berkas_id():
+def get_all_berkas_id(process_type = None, user_data_key = USER_DATA_KEY):
+
+    process_mapping = {
+        'Pembuatan ZNT': '01',
+        'Pembaruan ZNT': '02',
+        'Pembuatan NBT': '03',
+        'Pembaruan NBT': '04',
+    }
+
+    mapped_process_code = process_mapping.get(process_type) if process_type is not None else None
+
     config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            user_data = data.get(USER_DATA_KEY, [])
+            user_data = data.get(user_data_key, [])
             if len(user_data['berkas']) > 0:
                 data_berkas = []
                 for berkas in user_data['berkas']:
-                    data_berkas.append((berkas.get('no_berkas'), berkas.get('nama_perusahaan') if berkas.get('nama_perusahaan') else "Swakelola"))
+                    berkas_id_key = 'no_berkas'
+
+                    no_berkas = berkas.get(berkas_id_key, None)
+
+                    if mapped_process_code is not None:
+                        nomor_depan = (no_berkas or '').split('/')[0]
+                        if nomor_depan != mapped_process_code:
+                            continue
+
+                    data_berkas.append((no_berkas, berkas.get('nama_perusahaan') if berkas.get('nama_perusahaan') else "Swakelola"))
+
+                def sort_key(item):
+                    no_berkas = item[0] or ""
+                    parts = no_berkas.split('/')
+
+                    if len(parts) < 3:
+                        return (9999, 0, no_berkas)
+
+                    try:
+                        nomor_grup = int(parts[0])
+                        nomor_urut = int(parts[-1])
+                        return (nomor_grup, -nomor_urut, no_berkas)
+                    except ValueError:
+                        return (9999, 0, no_berkas)
+
+                data_berkas.sort(key=sort_key)
+
+                if len(data_berkas) == 0:
+                    return None
+                
                 return data_berkas
 
         else:
@@ -210,17 +249,74 @@ def get_all_berkas_id():
     except Exception as e:
         return None
 
-def clear_user_data():
+def clear_user_data(user_data_key = USER_DATA_KEY):
     config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            data[USER_DATA_KEY] = None
+            data[user_data_key] = None
             data[NIK_KEY] = None
             data[NOMOR_KONTRAK_KEY] = None
             data[PREFERRED_SERVER_KEY] = None
             encrypt_message(json.dumps(data), generate_key(), config_path)
             return True
+        else:
+            return False
+        
+    except Exception as e:
+        return False
+
+def setup_project_config(data_dict: dict, config_path):
+    
+    for key, value in data_dict.items():
+        try:
+            # Cek apakah file ada
+            if os.path.exists(config_path):
+                # File ada, baca isinya
+                try:
+                    data = decrypt_message(generate_key(), config_path)                    
+                    # Validasi format JSON
+                    if key not in data or not isinstance(data.get(key), str):
+                        # Format tidak sesuai, tambahkan atau perbarui data
+                        data[key] = value
+                    
+                    if data[key] != value:
+                        data[key] = value
+                        
+                except json.JSONDecodeError:
+                    # File rusak/tidak valid, buat struktur baru
+                    arcpy.AddWarning("File config.json rusak, membuat struktur baru...")
+                    data = {key: value}
+            else:
+                # File belum ada, buat struktur baru
+                # Pastikan direktori Menu ada
+                menu_dir = os.path.dirname(config_path)
+                if not os.path.exists(menu_dir):
+                    os.makedirs(menu_dir)
+                
+                data = {key: value}
+
+            # Simpan kembali ke file
+            encrypt_message(json.dumps(data), generate_key(), config_path)
+            
+        except Exception as e:
+            arcpy.AddError(f"Gagal menyimpan user config: {str(e)}")
+            return False
+    return True
+
+def get_login_status():
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+    try:
+        if os.path.exists(config_path):
+            data = decrypt_message(generate_key(), config_path) 
+            user_data = data.get(USER_DATA_KEY, None)
+            sso_data = data.get(SSO_DATA_KEY, None)
+            if user_data is not None or sso_data is not None:
+                return {
+                    'login_type': 'SSO' if sso_data is not None else 'non-SSO',
+                }
+            else:
+                return False
         else:
             return False
         

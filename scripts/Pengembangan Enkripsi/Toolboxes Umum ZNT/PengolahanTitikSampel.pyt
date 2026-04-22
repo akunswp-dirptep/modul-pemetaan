@@ -18,7 +18,15 @@ if parent_dir not in sys.path:
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
-from zntutils.system_utils import get_user_data, renew_user_data
+from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
+from zntutils.constant import USER_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
+
+# ======================
+# ENVIRONMENT SETTINGS
+# ======================
+arcpy.env.outputZFlag = "Disabled"  # Menonaktifkan output Z values (elevasi)
+arcpy.env.outputMFlag = "Disabled"  # Menonaktifkan output M values (measure)
+
 
 # ======================
 # HELPER FUNCTION SETUP
@@ -221,8 +229,8 @@ def refresh_layer_in_map():
             arcpy.management.MakeFeatureLayer(tsi_path, "Titik_Sampel_Individual")
             arcpy.management.ApplySymbologyFromLayer("Titik_Sampel_Individual", tsi_simbology_path)
 
-        arcpy.SetParameter(4, "Titik_Sampel")
-        arcpy.SetParameter(5, "Titik_Sampel_Individual")
+        arcpy.SetParameter(2, "Titik_Sampel")
+        arcpy.SetParameter(3, "Titik_Sampel_Individual")
 
             
     except Exception as e:
@@ -545,36 +553,9 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
     def getParameterInfo(self):
         """Mendefinisikan parameter input tool"""
-        preferred_server = get_user_data("preferred_server")
-        nik = get_user_data("nik")
-        berkas = get_user_data("berkas")
-        current_year = datetime.datetime.now().year
-        input_nik = arcpy.Parameter(
-            displayName="Nomor Induk Kependudukan (NIK)",
-            name="username",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        if nik:
-            input_nik.value = nik
-
-        input_project_id = arcpy.Parameter(
-            displayName="Nomor Berkas",
-            name="project_id",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        if berkas:
-            input_project_id.value = berkas
-
-        input_tahun = arcpy.Parameter(
-            displayName="Tahun",
-            name="tahun",
-            datatype="GPLong",
-            parameterType="Required",
-            direction="Input")
+        is_login = get_user_data(USER_DATA_KEY)
+        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
+        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
         
         input_metode = arcpy.Parameter(
             displayName="Metode",
@@ -583,6 +564,24 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             parameterType="Required",
             direction="Input")
         
+        input_metode.filter.type = "ValueList"
+        input_metode.filter.list = ["Tambahkan Sampel Baru", 
+                              'Perbarui Sampel Terpilih', 
+                              'Reset Seluruh Sampel']
+        
+        berkas = arcpy.Parameter(
+            displayName="Berkas",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+               
+
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        
+
         output_ts = arcpy.Parameter(
             name="Titik_Sampel",
             datatype="GPFeatureLayer",
@@ -597,34 +596,32 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             direction="Output"
         )
 
-        input_link = arcpy.Parameter(
-            displayName="Pilih Server Sipenta",
-            name="link",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-
-        if preferred_server:
-            input_link.value = preferred_server
-
-        input_tahun.value = current_year
-
         input_metode.filter.type = "ValueList"
         input_metode.filter.list = ["Tambahkan Sampel Baru", 
                               'Perbarui Sampel Terpilih', 
                               'Reset Seluruh Sampel']
 
-        input_link.filter.type = "ValueList"
-        input_link.filter.list = ["Produksi", "Belajar"]
-
-        self.operatorGIS = bool(document.get_credentials("OperatorGISInternal", use_for_tools_validity=True))
+        penjelasan = arcpy.Parameter(
+            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
         
-        if self.operatorGIS:
-            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi, input_link]
-        else:
-            return [input_nik, input_project_id, input_tahun, input_metode, output_ts, output_tsi]
+        penjelasan.value = (
+                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
+                "\n----------------------------------------------\n"
+                "Dikembangkan oleh:\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.datetime.now().year))
+        
 
+        if is_login:
+            params = [input_metode, berkas, output_ts, output_tsi]
+            return params
+        else:
+            return [penjelasan]
     def isLicensed(self):
         """Validasi lisensi ArcGIS"""
         return True
@@ -639,6 +636,20 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
     def execute(self, parameters, messages):
         """Eksekusi utama tool"""
+        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
+
+        if berkas_list is None:
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan ZNT.")
+            return
+        metode = parameters[0].valueAsText
+        berkas_value = parameters[1].valueAsText
+
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        tahun = str(get_user_data(YEAR_KEY))
+        project_id = berkas_value.split(" - ")[0]
+        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
+        username = get_user_data(NIK_KEY)
         self.operatorGIS = bool(document.get_credentials("OperatorGISInternal", use_for_tools_validity=True))
         username = parameters[0].valueAsText
         project_id = parameters[1].valueAsText
@@ -660,16 +671,6 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             self.addSamples(username, project_id, tahun, use_production)
         elif metode == 'Perbarui Sampel Terpilih':
             self.updateSelectedFeature(username, project_id, tahun, use_production)
-
-        preferred_server = get_user_data('preferred_server')
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        if nik != username:
-            renew_user_data('nik', username)
-        if berkas != project_id:
-            renew_user_data('berkas', project_id)
-        if len(parameters) > 6 and link != preferred_server:
-            renew_user_data('preferred_server', link)
 
         return
     

@@ -1,5 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<!-- DAML UNTUK NON LOGIN -->
 <ArcGIS.Desktop xmlns="http://schemas.esri.com/DADF/Registry">
 	<QAT>esri_core_newProjectButton;esri_core_openProjectButton;esri_core_saveProjectButton;esri_core_undoSplitButton;esri_core_redoSplitButton;</QAT>
 	<modules>
@@ -85,6 +84,7 @@
 					<menu refID="menu_login_pengguna" size="large"/>
 				</group>
 				<group id="group_pengolahan_znt" caption="Zona Nilai Tanah">
+					<!-- <menu refID="menu_preview_awal_znt" size="large"/> -->
 					<menu refID="menu_penggabungan_znt" size="large"/>
 				</group>
 			<!-- Sistem Aplikasi -->
@@ -96,17 +96,11 @@
 				</group>
 				<group id="sistem_aplikasi" caption="Sistem Aplikasi">
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
-					<button refID="ButtonLoginPemeta" size="large"/>
-					<button refID="ButtonLoginSSO" size="large" />
-					<button refID="ButtonLogoutPemeta" size="large"/>
-				</group>
-				<group id="sistem_aplikasi" caption="Sistem Aplikasi">
-					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 				</group>
 			</groups>
 			
 			<palettes>
-				<toolPalette id="ToolPalette13" caption="Editing" itemsInRow="2">
+				<toolPalette id="ToolPalette13" caption="Editing" showItemCaption="true" itemsInRow="1">
 					<tool refID="esri_mapping_selectByRectangleTool"/>
 					<tool refID="esri_editing_ShowCreateFeaturesBtn"/>
 					<tool refID="esri_editing_ShowEditFeaturesBtn"/>
@@ -114,11 +108,11 @@
 					<tool refID="esri_editing_SplitCommand"/>
 					<tool refID="esri_editing_ClipCommand"/>
 					<tool refID="esri_editing_MergeFeatures"/>
-					<tool refID="esri_editing_ShowErrorInspectorBtn"/>
 					<tool refID="esri_editing_EditVerticesMove"/>
 					<tool refID="esri_mapping_clearSelectionButton"/>
 					<tool refID="esri_editing_DelSelFeaturesBtn"/>
 					<tool refID="esri_editing_SaveEditsBtn"/>
+
 				</toolPalette>
 			</palettes>
 			
@@ -211,7 +205,7 @@
 					<button refID="ButtonSimpanPembaruanNBT" size="Medium"/>	
 				</menu>
 
-								<menu id="editing" caption="Editing Ruas Jalan" showItemCaption="true" itemsInRow="1">
+				<menu id="editing" caption="Editing Ruas Jalan" showItemCaption="true" itemsInRow="1">
 					<button refID="esri_editing_ShowCreateFeaturesBtn"/>
 					<button  refID="esri_editing_ShowEditFeaturesBtn"/>
 					<button  refID="esri_editing_SketchAutoCompletePolygonTool"/>
@@ -339,7 +333,7 @@
 					<button refID="esri_geoprocessing__SetLokalSetapakPersil"/>
 				</menu>
 
-								<menu id="menu4_1" caption="Persiapan" extendedCaption="Persiapan" keytip="TA"         
+				<menu id="menu4_1" caption="Persiapan" extendedCaption="Persiapan" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\persiapan.png"
 					smallImage="C:\PenilaianTanah\icons\persiapan.png">
 					<button refID="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" size="Medium"/>
@@ -484,11 +478,15 @@
 					largeImage="C:\PenilaianTanah\icons\prepare.png"
 					smallImage="C:\PenilaianTanah\icons\prepare.png">
 					<tooltip heading="Bagian Persiapan">Persiapan Data Untuk Kegiatan Pembuatan Zona Nilai Tanah.</tooltip>
+					<button refID="ButtonUploadPetaRencanaLokasiKegiatan" size="Medium"/>
+					<button refID="ButtonUploadPetaLokasiKegiatan" size="Medium"/>
+					<button refID="ButtonUploadPetaAreaKerja" size="Medium"/>
 					<button refID='menu_persiapan_workspace'/>
 					<button refID="ButtonMasukkanDataDasar" size="Medium"/>	
 					<button refID="ButtonTambahkanCitra"/>
 					<toolPalette refID="ToolPalette13"/>
 					<button refID="ButtonSesuaikanAtributJenisZonaPadaZonaLayer" size="Medium"/>	
+					<button refID="ButtonUploadDelineasiZonaAwalNilaiTanah" size="Medium"/>		
 				</menu>
 
 				<menu id="menu_pengolahan_data_dasar_znt" caption="Pengolahan Data Dasar" extendedCaption="Pengolahan" keytip="TA"         
@@ -497,6 +495,7 @@
 					<tooltip heading="Bagian Pengolahan">Pengolahan Data Dasar Zona Kegiatan Pembuatan Zona Nilai Tanah.</tooltip>
 					<button refID="ButtonHitungLuasZona"/>
 					<button refID="ButtonKodifikasiZona"/>
+					<button refID="ButtonUploadPetaZonaAwalNilaiTanah"/>
 				</menu>
 
 				<menu id="menu_pengolahan_titik_sampel_znt" caption="Pengolahan Titik Sampel" extendedCaption="Pengolahan ZNT" keytip="TA"         
@@ -507,9 +506,6 @@
 					<button refID="menu_titik_sampel_znt" />
 					<button refID="menu_titik_individual" />
 					<button refID="ButtonPerubahanTitikKoordinat" />
-					<button refID="ButtonCekJenisZona"/>	
-					<button refID="ButtonEditJenisZona"/>
-					<button refID="ButtonSesuaikanNomorZonaPembuatan"/>
 					<button refID="ButtonSinkronisasiDataTitikSampelKeSipenta" />
 				</menu>
 
@@ -517,6 +513,9 @@
 					largeImage="C:\PenilaianTanah\icons\calculate.png"
 					smallImage="C:\PenilaianTanah\icons\calculate.png">
 					<tooltip heading="Pengolahan ZNT">Pengolahan Peta Pembuatan Zona Nilai Tanah.</tooltip>
+					<button refID="ButtonCekJenisZona"/>	
+					<button refID="ButtonEditJenisZona"/>
+					<button refID="ButtonSesuaikanNomorZonaPembuatan"/>
 					<button refID="ButtonHitungZNT"/>									
 				</menu>
 
@@ -530,6 +529,9 @@
 					<button refID="ButtonTampilkanPersebaranTitikSampel"/>
 					<button refID="ButtonTampilkanSimpangBakuRelatif"/>
 					<button refID="ButtonTampilkanZNT"/>
+					<button refID="ButtonUploadPetaSebaranSampel"/>					
+					<button refID="ButtonUploadPetaStandarDeviasi"/>					
+					<button refID="ButtonUploadPetaZonaNilaiTanah"/>	
 					<button refID="esri_layouts_importPAGX" caption="Import Template Layout" extendedCaption="Import Template Layout"/>
 				</menu>
 
@@ -553,10 +555,13 @@
 					largeImage="C:\PenilaianTanah\icons\prepare.png"
 					smallImage="C:\PenilaianTanah\icons\prepare.png">
 					<tooltip heading="Bagian Persiapan">Persiapan Data Untuk Kegiatan Pembaruan Zona Nilai Tanah.</tooltip>
+					<button refID="ButtonUploadPetaRencanaAreaKerjaPembaruanZNT" size="Medium"/>
+					<button refID="ButtonUploadPetaAreaKerjaPembaruan" size="Medium"/>
 					<button refID="menu_persiapan_workspace_pembaruan_znt" />	
 					<button refID="buttonMasukkanDataZNTSebelumnya" size="Medium"/>
 					<button refID="ButtonTambahkanCitra" size="Medium"/>
 					<button refID="ButtonSesuaikanAtributJenisZonaPadaZonaLayer" size="Medium"/>
+					<button refID="ButtonUploadDelineasiZonaAwalNilaiTanahPembaruan" size="Medium"/>
 				</menu>
 
 				<menu id="menu_pengolahan_data_dasar_pembaruan_znt" caption="Pengolahan Data Dasar" extendedCaption="Pengolahan" keytip="TA"         
@@ -565,6 +570,7 @@
 					<tooltip heading="Bagian Pengolahan">Pengolahan Data Dasar Zona Kegiatan Pembaruan Zona Nilai Tanah.</tooltip>
 					<button refID="ButtonHitungLuasZona" />
 					<button refID="ButtonKodifikasiZona"/>
+					<button refID="ButtonUploadPetaZonaAwalNilaiTanahPembaruan"/>
 				</menu>
 
 				<menu id="menu_pengolahan_titik_sampel_pembaruan_znt" caption="Pengolahan Titik Sampel" extendedCaption="Pengolahan Titik Sampel" keytip="TA"         
@@ -573,6 +579,7 @@
 					<tooltip heading="Pengolahan Titik Sampel">Pengolahan Titik Sampel Kegiatan Pembaruan Zona Nilai Tanah.</tooltip>
 					<!-- <button refID='ButtonMasukkanTitikSampelDariExcel' /> -->
 					<button refID="menu_titik_sampel_znt" />
+					<button refID="ButtonPerubahanTitikKoordinat" />
 					<button refID="ButtonCekJenisZona"/>	
 					<button refID="ButtonEditJenisZona"/>
 					<button refID="ButtonHitungIndeksSampel"/>
@@ -588,8 +595,8 @@
 					<button refID="menu_pemisahan_titik_zona_pembaruan_znt" />
 					<button refID="menu_penyesuaian_titik_dan_zona_pembaruan_znt" />
 					<button refID="ButtonZonaParsial"/>
-					<button refID="ButtonPeriksaKesesuaianTitikdanZona"/>
 					<button refID="ButtonSinkronisasiDataTitikSampelKeSipenta" />
+					<button refID="ButtonPeriksaKesesuaianTitikdanZona"/>
 				</menu>
 
 				<menu id="menu_pengolahan_data_pembaruan_znt" caption="Pengolahan ZNT" extendedCaption="Pengolahan ZNT" keytip="TA"         
@@ -599,7 +606,7 @@
 					<button refID="ButtonHitungIndeksNilaiTanah" />
 					<button refID="ButtonHitungZonaDariDataOutlier"/>
 					<button refID="ButtonHitungZNTUpdate"/>
-				</menu>pi
+				</menu>
 
 				<menu id="menu_pengolahan_layout_dan_upload_pembaruan_znt" caption="Layout dan Upload" extendedCaption="Layout dan Upload" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\analysis1.png"
@@ -611,6 +618,9 @@
 					<button refID="ButtonTampilkanPersebaranTitikSampelTitikZona"/>
 					<button refID="ButtonTampilkanSimpangBakuRelatif"/>
 					<button refID="ButtonTampilkanZNT"/>
+					<button refID="ButtonUploadPetaSebaranSampelPembaruan"/>					
+					<button refID="ButtonUploadPetaSebaranTitikZonaPembaruan"/>					
+					<button refID="ButtonUploadPetaZonaNilaiTanahPembaruan"/>
 					<button refID="esri_layouts_importPAGX" caption="Import Template Layout" extendedCaption="Import Template Layout"/>
 				</menu>
 				
@@ -636,9 +646,9 @@
 			<!-- Digunakan Keduanya (Pembaruan dan Pembuatan ZNT) -->
 				<!-- Menu-Menu Helper -->
 
-				<menu id="menu_titik_sampel_znt" caption="Tampilkan Titik Sampel">
-					<button refID="ButtonMenarikTitikSampelDariSipenta" />
-					<button refID="ButtonTampilkanSimbologiTitikSampel" />
+				<menu id="menu_titik_sampel_znt" caption="Titik Sampel Sentuh Tanahku">
+					<button refID="ButtonMenarikTitikSampelDariSentuhTanahku" />
+					<button refID="ButtonTampilkanSimbologiTitikSentuhTanahku" />
 				</menu>
 
 				<menu id="menu_titik_individual" caption="Pengolahan Titik Sampel Individual">
@@ -663,6 +673,13 @@
 				</menu>
 			<!-- Zona Nilai Tanah -->
 
+				<menu id="menu_preview_awal_znt" caption="Preview Awal ZNT" extendedCaption="Preview Awal ZNT" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\uploads.png"
+					smallImage="C:\PenilaianTanah\icons\uploads.png">
+					<tooltip heading="Preview Awal ZNT Pengolahan">Preview Awal Zona Nilai Tanah.</tooltip>
+					<button refID="ButtonPreviewAwalZNT" />
+					<button refID="ButtonPreviewAwalZNTDenganDataLokal" />
+				</menu>
 				<menu id="menu_penggabungan_znt" caption="Pengolahan Akhir ZNT" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\mergeznt.png"
 					smallImage="C:\PenilaianTanah\icons\mergeznt.png">
@@ -1599,6 +1616,20 @@
 					<tooltip heading="Logout OGIS Internal">Menu untuk logout dari OGIS Internal</tooltip>
 				</button>
 
+		    <!-- Menu Preview Awal ZNT -->
+				<button id="ButtonPreviewAwalZNT" caption="Menggunakan Data Sipenta" smallImage="C:\PenilaianTanah\icons\previewawalznt.png" largeImage="C:\PenilaianTanah\icons\previewawalznt.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PreviewAwalZNT" name="Preview Awal ZNT" xmlns=""/>
+					</args>
+					<tooltip heading="Preview Awal ZNT">Menu untuk menghitung nilai Zona Nilai Tanah (ZNT) dengan data sampel transaksi dan penawaran dari Sipenta.</tooltip>
+				</button>
+
+				<button id="ButtonPreviewAwalZNTDenganDataLokal" caption="Menggunakan Data Lokal" smallImage="C:\PenilaianTanah\icons\previewzntdatalokal.png" largeImage="C:\PenilaianTanah\icons\previewzntdatalokal.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PreviewAwalZNTDenganDataLokal" name="Preview Awal ZNT Dengan Data Lokal" xmlns=""/>
+					</args>
+					<tooltip heading="Preview Awal ZNT Dengan Data Lokal">Menu untuk menghitung nilai Zona Nilai Tanah (ZNT) dengan data sampel dari layer Titik Sampel</tooltip>
+				</button>
 
 			<!-- Menu Pengolahan Akhir ZNT -->
 				<button id="ButtonUnduhZNT" caption="Unduh Data ZNT dari Sipenta" smallImage="C:\PenilaianTanah\icons\unduhznt.png" largeImage="C:\PenilaianTanah\icons\unduhznt.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
@@ -1687,39 +1718,39 @@
 				</button>
 
 			<!-- Menu Pengolahan Titik Zona  -->
-				<button id="ButtonLabelTitikZona" caption="Tampilkan Simbologi Titik Zona" smallImage="C:\PenilaianTanah\icons\tag.png" largeImage="C:\PenilaianTanah\icons\tag.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonLabelTitikZona" caption="Tampilkan Label Titik Zona" smallImage="C:\PenilaianTanah\icons\tag.png" largeImage="C:\PenilaianTanah\icons\tag.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PengolahanTitikZona.pyt\Simbologi_Titik_Zona" name="Tampilkan Simbologi Titik Zona" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\TampilkanSimbologiTitikZona" name="Tampilkan Label Titik Zona" xmlns=""/>
 					</args>
-					<tooltip heading="Tampilkan Simbologi Titik Zona">Menu untuk menampilkan simbol nilai dari Titik Zona.</tooltip>
+					<tooltip heading="Tampilkan Label">Menu untuk menampilkan label nilai dari Titik Zona.</tooltip>
 				</button>
 				<button id="ButtonPerbaharuiIndeksSampel" caption="Perbaharui Indeks Sampel Pada Titik Zona" smallImage="C:\PenilaianTanah\icons\duplicate.png" largeImage="C:\PenilaianTanah\icons\duplicate.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PengolahanTitikZona.pyt\Perbaharui_Indeks_Sampel_Pada_Titik_Zona" name="Perbaharui Indeks Sampel Pada Titik Zona" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PerbaharuiIndeksSampel" name="Perbaharui Indeks Sampel Pada Titik Zona" xmlns=""/>
 					</args>
 					<tooltip heading="Perbaharui Indeks Sampel Pada Titik Zona">Menu untuk memperbaharui nilai indeks sampel di titik zona.</tooltip>
 				</button>
 				<button id="ButtonPemilihanTitikOutlierManual" caption="Pemilihan Titik Sampel (Pencilan/Outlier) Secara Manual" smallImage="C:\PenilaianTanah\icons\selection.png" largeImage="C:\PenilaianTanah\icons\selection.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PengolahanTitikZona.pyt\Pemilihan_Titik_Sampel_Outlier_Manual" name="Pemilihan Titik Sampel (Pencilan/Outlier) Secara Manual" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PemilihanTitikOutlierManual" name="Pemilihan Titik Sampel (Pencilan/Outlier) Secara Manual" xmlns=""/>
 					</args>
 					<tooltip heading="Pemilihan Titik Sampel (Pencilan/Outlier) Secara Manual">Menu untuk memilih titik sampel (pencilan/outlier) dalam perhitungan updating ZNT dengan metode manual.</tooltip>
 				</button>
 				<button id="ButtonPemilihanTitikOutlierMetodeKuartil" caption="Pemilihan Titik Sampel (Pencilan/Outlier) Metode Kuartil" smallImage="C:\PenilaianTanah\icons\letter-q.png" largeImage="C:\PenilaianTanah\icons\letter-q.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PengolahanTitikZona.pyt\Pemilihan_Titik_Sampel_Outlier_Kuartil" name="Pemilihan Titik Sampel (Pencilan/Outlier) Metode Kuartil" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PemilihanTitikOutlierMetodeKuartil" name="Pemilihan Titik Sampel (Pencilan/Outlier) Metode Kuartil" xmlns=""/>
 					</args>
 					<tooltip heading="Pemilihan Titik Sampel (Pencilan/Outlier) Metode Kuartil">Menu untuk memilih titik sampel (pencilan/outlier) dalam perhitungan updating ZNT dengan metode Kuartil.</tooltip>
 				</button>
 				<button id="ButtonPengembalianTitikOutlier" caption="Pengembalian Titik Sampel (Pencilan/Outlier) Ke Titik Zona" smallImage="C:\PenilaianTanah\icons\duplicate3.png" largeImage="C:\PenilaianTanah\icons\duplicate3.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PengolahanTitikZona.pyt\Pengembalian_Titik_Sampel_Outlier_Ke_Titik_Zona" name="Pengembalian Titik Sampel (Pencilan/Outlier) Ke Titik Zona" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PengembalianTitikOutlierMenjadiTitikZona" name="Pengembalian Titik Sampel (Pencilan/Outlier) Ke Titik Zona" xmlns=""/>
 					</args>
 					<tooltip heading="Pengembalian Titik Sampel (Pencilan/Outlier) Ke Titik Zona">Menu untuk mengembalikan titik zona dari titik sampel (outlier) berdasarkan titik yang dipilih.</tooltip>
 				</button>
 				<button id="ButtonZonaParsial" caption="Pemilihan Zona Parsial" smallImage="C:\PenilaianTanah\icons\num.png" largeImage="C:\PenilaianTanah\icons\num.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PengolahanTitikZona.pyt\Pemilihan_Zona_Parsial" name="Pemilihan Zona Parsial" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\PemilihanZonaParsial" name="PemilihanZona Parsial" xmlns=""/>
 					</args>
 					<tooltip heading="Pemilihan Zona Parsial">Menu untuk menentukan cluster zona secara manual.</tooltip>
 				</button>
@@ -1741,19 +1772,19 @@
 			<!-- Menu Pengolahan ZNT -->
 				<button id="ButtonHitungIndeksNilaiTanah" caption="Hitung Indeks Nilai Tanah" smallImage="C:\PenilaianTanah\icons\average.png" largeImage="C:\PenilaianTanah\icons\average.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\Pengolahan ZNT.pyt\Hitung_Indeks_Nilai_Tanah" name="Hitung Indeks Nilai Tanah Tiap Penggunaan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\HitungIndeksNilaiTanah" name="Hitung Indeks Nilai Tanah Tiap Penggunaan" xmlns=""/>
 					</args>
 					<tooltip heading="Hitung Indeks Nilai Tanah Tiap Penggunaan">Hitung Indeks Nilai Tanah Tiap Penggunaan</tooltip>
 				</button>
 				<button id="ButtonHitungZonaDariDataOutlier" caption="Hitung Nilai ZNT Sampel (Pencilan/Outlier)" smallImage="C:\PenilaianTanah\icons\rgb.png" largeImage="C:\PenilaianTanah\icons\rgb.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\Pengolahan ZNT.pyt\Hitung_Nilai_ZNT_Pencilan_Atau_Outlier" name="Hitung Nilai ZNT (Pencilan/Outlier)" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\HitungNilaiZNTDataOutlier" name="Hitung Nilai ZNT Sampel (Pencilan/Outlier)" xmlns=""/>
 					</args>
-					<tooltip heading="Hitung Nilai ZNT (Pencilan/Outlier)">Menu untuk menghitung zona berdasarkan data outlier.</tooltip>
+					<tooltip heading="Hitung Nilai ZNT Sampel (Pencilan/Outlier)">Menu untuk menghitung zona berdasarkan data outlier titik sampel.</tooltip>
 				</button>
 				<button id="ButtonHitungZNTUpdate" caption="Hitung Nilai ZNT Pembaruan" smallImage="C:\PenilaianTanah\icons\calculator2.png" largeImage="C:\PenilaianTanah\icons\calculator2.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\Pengolahan ZNT.pyt\Hitung_Nilai_ZNT_Pembaruan" name="Hitung Nilai ZNT Pembaruan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\HitungNilaiZNTPembaruan" name="Hitung Nilai ZNT Pembaruan" xmlns=""/>
 					</args>
 					<tooltip heading="Hitung Nilai ZNT Pembaruan">Menu untuk melakukan hitung zona nilai tanah update.</tooltip>
 				</button>
@@ -1821,21 +1852,21 @@
 			<!-- Menu Pengolahan Titik Sampel  -->
 				<button id="ButtonMasukkanTitikSampelDariExcel" caption="Masukkan Titik Sampel Dari Excel" smallImage="C:\PenilaianTanah\icons\xls.png" largeImage="C:\PenilaianTanah\icons\xls.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\ImporTitikSampelDariExcel.pyt\Impor_Titik_Sampel_Dari_Excel" name="Masukkan Titik Sampel Dari Excel" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\Python Toolboxes\ImporTitikSampelDariExcel.pyt\Impor_Titik_Sampel_Dari_Excel" name="Masukkan Titik Sampel Dari Excel" xmlns=""/>
 					</args>
 					<tooltip heading="Masukkan Titik Sampel Dari Excel">Menu untuk menambahkan titik sampel dari file Excel.</tooltip>
 				</button>
-				<button id="ButtonMenarikTitikSampelDariSipenta" caption="Ambil Titik Sampel Dari Sipenta" smallImage="C:\PenilaianTanah\icons\scatter.png" largeImage="C:\PenilaianTanah\icons\scatter.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonMenarikTitikSampelDariSentuhTanahku" caption="Tampilkan Titik Sampel Sentuh Tanahku" smallImage="C:\PenilaianTanah\icons\scatter.png" largeImage="C:\PenilaianTanah\icons\scatter.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampel.pyt\Ambil_Titik_Sampel_Dari_Sipenta" name="Ambil Titik Sampel Dari Sipenta" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampel.pyt\Sampel_Sentuh_Tanahku" name="Sampel Sentuh Tanahku" xmlns=""/>
 					</args>
-					<tooltip heading="Ambil Titik Sampel Dari Sipenta">Menu untuk mengambil titik sampel dari aplikasi Sipenta.</tooltip>
+					<tooltip heading="Tampilkan Titik Sampel Sentuh Tanahku">Menu untuk menampilkan titik sampel dari aplikasi Sentuh Tanahku.</tooltip>
 				</button>
-				<button id="ButtonTampilkanSimbologiTitikSampel" caption="Tampilkan Simbologi Titik Sampel" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonTampilkanSimbologiTitikSentuhTanahku" caption="Tampilkan Simbologi Titik Sentuh Tanahku" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampel.pyt\Tampilkan_Simbologi_Titik_Sampel" name="Tampilkan Simbologi Titik Sampel" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampel.pyt\Tampilkan_Simbologi_Titik_Sampel" name="Tampilkan Simbologi Titik Sentuh Tanahku" xmlns=""/>
 					</args>
-					<tooltip heading="Tampilkan Simbologi Titik Sampel">Menu untuk mengaplikasikan simbologi pada titik sampel.</tooltip>
+					<tooltip heading="Tampilkan Simbologi Titik Sentuh Tanahku">Menu untuk mengaplikasikan simbologi pada titik sampel Sentuh Tanahku.</tooltip>
 				</button>
 
 				<button id="ButtonSetujuiSampelIndividual" caption="Setujui Sampel Individual" smallImage="C:\PenilaianTanah\icons\selection.png" largeImage="C:\PenilaianTanah\icons\selection.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
@@ -1863,19 +1894,23 @@
 					</args>
 					<tooltip heading="Rekomendasi Titik Pembanding">Menu untuk memberikan Rekomendasi Titik Pembanding berdasarkan data di Titik Sampel</tooltip>
 				</button>
-
-				
+				<button id="ButtonLabel" caption="Tampilkan Label Titik Sampel" smallImage="C:\PenilaianTanah\icons\tag.png" largeImage="C:\PenilaianTanah\icons\tag.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Zona Nilai Tanah\General Toolboxes\ZonaNilaiTanah.tbx\TampilkanLabelTitikSampel" name="Tampilkan Label Titik Sampel" xmlns=""/>
+					</args>
+					<tooltip heading="Tampilkan Label">Menu untuk menampilkan label nilai dari Titik Sampel.</tooltip>
+				</button>
 				<button id="ButtonPerubahanTitikKoordinat" caption="Sesuaikan Titik Koordinat" smallImage="C:\PenilaianTanah\icons\pindahtitik.png" largeImage="C:\PenilaianTanah\icons\pindahtitik.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\SesuaikanTitikKoordinat.pyt\Sesuaikan_Titik_Koordinat" name="Sesuaikan Titik Koordinat" xmlns=""/>
 					</args>
 					<tooltip heading="Sesuaikan Titik Koordinat">Menu untuk menyesuaikan koordinat dan mengsinkronisasi perubahan ke Sipenta</tooltip>
 				</button>
-				<button id="ButtonSinkronisasiDataTitikSampelKeSipenta" caption="Sinkronkan Data Lokal Dengan Sipenta" smallImage="C:\PenilaianTanah\icons\sinkronisasisipenta.png" largeImage="C:\PenilaianTanah\icons\sinkronisasisipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonSinkronisasiDataTitikSampelKeSipenta" caption="Sinkronkan Data Lokal Dengan SIPENTA" smallImage="C:\PenilaianTanah\icons\sinkronisasisipenta.png" largeImage="C:\PenilaianTanah\icons\sinkronisasisipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\SinkronisasiDataLokalDenganSipenta.pyt\Sinkronisasi_Data_Lokal_Dengan_Sipenta" name="Sinkronkan Data Lokal Dengan Sipenta" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\SinkronisasiDataLokalDenganSipenta.pyt\Sinkronisasi_Data_Lokal_Dengan_Sipenta" name="Sinkronkan Data Lokal Dengan SIPENTA" xmlns=""/>
 					</args>
-					<tooltip heading="Sinkronkan Data Lokal Dengan Sipenta">Menu untuk menyinkronkan data antara pemetaan dengan Sipenta</tooltip>
+					<tooltip heading="Sinkronkan Data Lokal Dengan SIPENTA">Menu untuk menyinkronkan data antara pemetaan dengan Sipenta</tooltip>
 				</button>
 
 			<!-- Menu Pengolahan ZNT -->

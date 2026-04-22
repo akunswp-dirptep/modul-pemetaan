@@ -1,16 +1,15 @@
-Version: 5.9 - Kotamobagu
-Published: xx April 2025
+Version: 6.x - Jayawijaya
+Published: xx/04/2025
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 
-=============================
-PENAMBAHAN FITUR
-=============================
+Perubahan Struktur Project
+ - Terdapat penambahan key project type pada config project
+ - config project disimpan dalam bentuk bin yang terenkripsi
 
-- Penambahahan Fitur Error Inspector di Menu Editing
-
-=============================
-PERUBAHAN & PENYESUAIAN FITUR
-=============================
-
-- Menyesuaikan Row yang di tampilkan di menu Editing menjadi 2 Row
-- Menambahkan Identitas Direktorat Pada Parameter Tool Setujui Sampel Individual dan Pengembalian Sampel Individual
+Penambahan Fitur
+ - Menambahkan Fitur Baru, Login Pemeta, Login SSO dan Logout Pemeta
+ - 
+Penyesuaian Fitur:
+ - Perbaikan nama pengecekan versi 
+ - Menambahkan ID Unik pada saat import workspace
+ - Menambahkan Pengecekan Path untuk mengecek apakah folder workspace dipindahkan tanpa mengekspor terlebih dahulu

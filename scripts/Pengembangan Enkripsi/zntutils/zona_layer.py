@@ -4,6 +4,9 @@ import sys
 import os
 import datetime
 
+from .constant import PROJECT_CONFIG_FILE_NAME
+from .system_utils import get_all_config
+
 def is_zona_layer_comply(show_path_message = True):
     """
     Memeriksa keberadaan, jumlah, dan validitas layer dengan nama 'Zona_Layer' dalam peta aktif.
@@ -258,7 +261,7 @@ def unselect_field():
 def get_config_values():
 
     """
-    MENDAPATKAN KONFIGURASI DARI FILE config.json
+    MENDAPATKAN KONFIGURASI DARI FILE config.json atau penilaian_tanah_config.bin
     
     Fungsi ini:
     1. Mendapatkan path layer zona dari modul zonalayer
@@ -273,18 +276,20 @@ def get_config_values():
     zl_path = is_zona_layer_comply(show_path_message=False)  # Validasi compliance layer zona
     ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))  # Navigasi ke root workspace
     config_path = os.path.join(ws_dir, "config.json")  # Path ke file config
+    new_config_path = os.path.join(ws_dir, PROJECT_CONFIG_FILE_NAME)  # Path ke file config baru (bin)
     configs = None
-    
-    # Membaca file config.json jika ada
-    if os.path.exists(config_path):
-        with open(config_path, 'r') as f:
+    if arcpy.Exists(config_path):
+         with open(config_path, 'r') as f:
             configs = json.load(f)
+    elif arcpy.Exists(new_config_path):
+        configs = get_all_config(new_config_path)  
+
+    arcpy.AddMessage(f'{configs}')     
 
     # Validasi path GDB
-    if ws_dir != configs.get('ws_path'):
+    if configs['ws_path'] != ws_dir:
         arcpy.AddError(f"Path Geodatabase tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki path kembali dengan cara berikut:\n1. Ekspor Geodatabase menggunakaan Tools Ekspor Geodatabase pada menu Backup dan Ekspor Hasil\n2. Import kembali Geodatabase yang sudah diekspor menggunakan Tools Import Workspace pada menu Persiapan Data")
         sys.exit(1)
-        
     appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     ui_folder = os.path.join(appdata, "ui")
     symbology_folder = os.path.join(ui_folder, "symbology")

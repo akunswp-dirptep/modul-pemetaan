@@ -1,5 +1,6 @@
 ﻿import arcpy
-import os, json, requests, sys, math, re, time
+import os, json, requests, sys, math, re
+from datetime import datetime
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
@@ -8,7 +9,8 @@ if parent_dir not in sys.path:
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
-from zntutils.system_utils import get_user_data, renew_user_data
+from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
+from zntutils.constant import USER_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
 
 
 class Toolbox(object):
@@ -30,26 +32,9 @@ class Sesuaikan_Titik_Koordinat(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        preferred_server = get_user_data('preferred_server')
-        nik_saved = get_user_data('nik')
-        berkas = get_user_data('berkas')
-
-        nik = arcpy.Parameter(
-            displayName="Nomor Induk Kependudukan (NIK)",
-            name="username",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        if nik_saved:
-            nik.value = nik_saved
-        nomor_berkas = arcpy.Parameter(
-            displayName="Nomor Berkas",
-            name="project_id",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        if berkas:
-            nomor_berkas.value = berkas
+        is_login = get_user_data(USER_DATA_KEY)
+        berkas_list = get_all_berkas_id()
+        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 
         catatan = arcpy.Parameter(
             displayName="Catatan",
@@ -57,6 +42,18 @@ class Sesuaikan_Titik_Koordinat(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+
+        berkas = arcpy.Parameter(
+            displayName="Berkas",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+               
+
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
         
         output_ts = arcpy.Parameter(
             name="Titik_Sampel",
@@ -70,27 +67,30 @@ class Sesuaikan_Titik_Koordinat(object):
             parameterType="Derived",
             direction="Output")
         
-        server = arcpy.Parameter(
-            displayName="Server Sipenta",
-            name="link",
+        penjelasan = arcpy.Parameter(
+            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            name="petunjuk",
             datatype="GPString",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
         
-        if preferred_server:
-            server.value = preferred_server
-
-        server.filter.type = "ValueList"
-        server.filter.list = ["Produksi", "Belajar"]
+        penjelasan.value = (
+                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
+                "\n----------------------------------------------\n"
+                "Dikembangkan oleh:\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
         
-        params = [nik, nomor_berkas, catatan, output_ts, output_tsi]
-        # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
-        self.is_gis_internal = bool(document.get_credentials(credential_type="OperatorGISInternal", use_for_tools_validity=True))
-        if self.is_gis_internal:
-            params.append(server)
+
+        if is_login:
+            params = [catatan, berkas, output_ts, output_tsi]
             return params
         else:
-            return params
+            return [penjelasan]
+
+        
+        
 
 
     def isLicensed(self):
@@ -100,53 +100,31 @@ class Sesuaikan_Titik_Koordinat(object):
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter.  This method is called after internal validation."""
-        input_nik = parameters[0]
-        if input_nik.value:
-            # Trim semua spasi (leading, trailing, dan di tengah)
-            nik_str = str(input_nik.value).replace(" ", "")
-            # sinkronkan nilai parameter yang ditampilkan
-            input_nik.value = nik_str
-            
-            # Cek apakah hanya berisi angka
-            if not nik_str.isdigit():
-                input_nik.setErrorMessage("NIK harus berisi angka saja")
-            # Cek apakah panjangnya tepat 16
-            elif len(nik_str) != 16:
-                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
-            else:
-                input_nik.clearMessage()
 
-        # Validasi format Nomor Berkas (project_id): harus seperti 01/2025/0020
-        input_project = parameters[1]
-        if input_project.value:
-            pj_str = str(input_project.value).strip()
-            input_project.value = pj_str
-
-            # Pola: 2 digit / 4 digit (tahun) / 4 digit
-            import re
-            pattern = r"^\d{2}/\d{4}/\d{4}$"
-            if not re.match(pattern, pj_str):
-                input_project.setErrorMessage("Nomor Berkas harus berbentuk NN/YYYY/NNNN, contoh: 01/2025/0020")
-            else:
-                input_project.clearMessage()
         return   
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
         zonalayer.delete_bad_file()
-        self.username = str(parameters[0].valueAsText).replace(" ", "")
-        self.project_id = str(parameters[1].valueAsText).replace(" ", "")
-        self.catatan = parameters[2].valueAsText
-        server = parameters[5].valueAsText if len(parameters) > 5 else None
+        berkas_list = get_all_berkas_id()
+
+        if berkas_list is None:
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid")
+            return
+        self.catatan = parameters[0].valueAsText
+        berkas_value = parameters[1].valueAsText
+        server = get_user_data(PREFERRED_SERVER_KEY)
         self.use_production = True if server == "Produksi" or server == None else False
+        self.tahun = str(get_user_data(YEAR_KEY))
+        self.project_id = berkas_value.split(" - ")[0]
+        arcpy.AddMessage(f"Berkas yang dipilih: {self.project_id}")
+        self.username = get_user_data(NIK_KEY)
 
         aprx = arcpy.mp.ArcGISProject('CURRENT')
         layer_name = []
         for m in aprx.listMaps():
             for lyr in m.listLayers():
                 layer_name.append(lyr.name)
-
-
 
         self.config_paths = self.get_config_values()
         if arcpy.Exists(self.config_paths['path_titik_sampel']) and "Titik_Sampel" in layer_name:
@@ -210,10 +188,10 @@ class Sesuaikan_Titik_Koordinat(object):
         arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", ts_symbology)
         if arcpy.Exists(self.config_paths['path_titik_sampel_individual']):
             arcpy.management.ApplySymbologyFromLayer("Titik_Sampel_Individual", tsi_symbology)
-        arcpy.SetParameter(3, "Titik_Sampel")  # Output Titik_Sampel
+        arcpy.SetParameter(2, "Titik_Sampel")  # Output Titik_Sampel
 
         if arcpy.Exists(self.config_paths['path_titik_sampel_individual']):
-            arcpy.SetParameter(4, "Titik_Sampel_Individual")  # Output Titik_Sampel_Individual
+            arcpy.SetParameter(3, "Titik_Sampel_Individual")  # Output Titik_Sampel_Individual
 
 
 

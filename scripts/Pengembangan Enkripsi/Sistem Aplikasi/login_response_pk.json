@@ -1,0 +1,39 @@
+{
+    "success": true,
+    "status": "ok",
+    "message": "OK",
+    "logged_in": "2026-04-14 07:52:40",
+    "end_session": "2026-04-19 07:52:40",
+    "berkas": [
+        {
+            "no_berkas": "02/2026/0018",
+            "nama_petugas": "Pemeta Nilai Tanah",
+            "nama_perusahaan": null,
+            "tgl_mulai": "2026-02-18",
+            "tgl_selesai": "2027-01-31",
+            "nik": "3320024102990008",
+            "nomor_sk_kontrak": "1122",
+            "tahun": "2026",
+            "can_upload": true
+        }
+    ]
+}{
+    "success": true,
+    "status": "ok",
+    "message": "OK",
+    "logged_in": "2026-04-09 07:41:58",
+    "end_session": "2026-04-14 07:41:58",
+    "berkas": [
+        {
+            "no_berkas": "02/2026/0018",
+            "nama_petugas": "Pemeta Nilai Tanah",
+            "nama_perusahaan": null,
+            "tgl_mulai": "2026-02-18",
+            "tgl_selesai": "2027-01-31",
+            "nik": "3320024102990008",
+            "nomor_sk_kontrak": "1122",
+            "tahun": "2026",
+            "can_upload": true
+        }
+    ]
+}

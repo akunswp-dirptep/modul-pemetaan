@@ -1,10 +1,7 @@
 import arcpy, os, json, sys
 
 from datetime import datetime
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
+
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -16,7 +13,8 @@ if parent_dir not in sys.path:
 
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import main_upload
-from zntutils.system_utils import get_user_data, renew_user_data
+from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
+from zntutils.constant import USER_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
 from zntutils import zona_layer as zonalayer
 
 #Helper Functions
@@ -60,67 +58,49 @@ class Upload_Peta_Sebaran_Sampel:
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        self.is_gis_internal = is_internal()
-        preferred_server = get_user_data("preferred_server") if self.is_gis_internal else None
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        self.current_year = current_year()
-        param0 = arcpy.Parameter(
-            displayName="Nomor Induk Kependudukan (NIK)",
-            name="username",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        if nik:
-            param0.value = nik
+        is_login = get_user_data(USER_DATA_KEY)
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
+        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 
-        param1 = arcpy.Parameter(
-            displayName="Nomor Berkas",
-            name="project_id",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        if berkas:
-            param1.value = berkas
-
-        param2 = arcpy.Parameter(
-            displayName="Tahun",
-            name="tahun",
-            datatype="GPLong",
-            parameterType="Required",
-            direction="Input")
-        
-        param3 = arcpy.Parameter(
+        feature_class = arcpy.Parameter(
             displayName="Titik Sampel (Feature Class)",
             name="feature_layer",
-            datatype="GPFeatureLayer",
+            datatype="GPFeatureLayer",  
+            parameterType="Required",
             direction="Input")
         
-        param4 = arcpy.Parameter(
-            displayName="Server Sipenta",
+        berkas = arcpy.Parameter(
+            displayName="Berkas",
             name="link",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
         
-        if self.current_year:
-            param2.value = self.current_year
-
-        if preferred_server:
-            param4.value = preferred_server
-
-        param4.filter.type = "ValueList"
-        param4.filter.list = ["Produksi", "Belajar"]
+        penjelasan = arcpy.Parameter(
+            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
         
-        params = [param0, param1, param2, param3]
+        penjelasan.value = (
+                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
+                "\n----------------------------------------------\n"
+                "Dikembangkan oleh:\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(current_year()))
+        
 
-        if self.is_gis_internal:
-            params.append(param4)
+        if is_login:
+            params = [feature_class, berkas]
             return params
         else:
-            return params
+            return [penjelasan]
 
 
     def isLicensed(self):
@@ -136,60 +116,34 @@ class Upload_Peta_Sebaran_Sampel:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        input_nik = parameters[0]
-        if input_nik.value:
-            # Trim semua spasi (leading, trailing, dan di tengah)
-            nik_str = str(input_nik.value).replace(" ", "")
-            # sinkronkan nilai parameter yang ditampilkan
-            input_nik.value = nik_str
-            
-            # Cek apakah hanya berisi angka
-            if not nik_str.isdigit():
-                input_nik.setErrorMessage("NIK harus berisi angka saja")
-            # Cek apakah panjangnya tepat 16
-            elif len(nik_str) != 16:
-                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
-            else:
-                input_nik.clearMessage()
 
-        # Validasi format Nomor Berkas (project_id): harus seperti 01/2025/0020
-        input_project = parameters[1]
-        if input_project.value:
-            pj_str = str(input_project.value).strip()
-            input_project.value = pj_str
-
-            # Pola: 2 digit / 4 digit (tahun) / 4 digit
-            import re
-            pattern = r"^\d{2}/\d{4}/\d{4}$"
-            if not re.match(pattern, pj_str):
-                input_project.setErrorMessage("Nomor Berkas harus berbentuk NN/YYYY/NNNN, contoh: 01/2025/0020")
-            else:
-                input_project.clearMessage()
         return  
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        username = str(parameters[0].valueAsText).replace(" ", "")
-        project_id = str(parameters[1].valueAsText).replace(" ", "")
-        tahun = parameters[2].valueAsText
-        feature_class = parameters[3].valueAsText
-        server = parameters[4].valueAsText if len(parameters) > 4 else None
-        use_production = True if server == "Produksi" or server == None else False
         delete_topology_file()
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
+
+        if berkas_list is None:
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembuatan ZNT.")
+            return
+        
+        feature_class = parameters[0].valueAsText
+        berkas_value = parameters[1].valueAsText
+
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        username = get_user_data(NIK_KEY)
+        tahun = get_user_data(YEAR_KEY)
+
+
+        project_id = berkas_value.split(" - ")[0]
+        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
 
         
         validate_document_type(project_id, target='Pembuatan ZNT')
         main_upload(project_id, username, "Peta Sebaran Sampel", "Analisis dan Pengolahan Data", "Titik_Sampel", tahun, "ZNT", feature_class, use_production)
- 
-        preferred_server = get_user_data('preferred_server')
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        if nik != username:
-            renew_user_data('nik', username)
-        if berkas != project_id:
-            renew_user_data('berkas', project_id)
-        if len(parameters) > 4 and server != preferred_server:
-            renew_user_data('preferred_server', server)
+
         return
 
     def postExecute(self, parameters):
@@ -205,68 +159,49 @@ class Upload_Peta_Simpangan_Baku_Relatif:
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        self.is_gis_internal = is_internal()
-        preferred_server = get_user_data("preferred_server") if self.is_gis_internal else None
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        self.current_year = current_year()
-        param0 = arcpy.Parameter(
-            displayName="Nomor Induk Kependudukan (NIK)",
-            name="username",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        if nik:
-            param0.value = nik
+        is_login = get_user_data(USER_DATA_KEY)
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
+        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 
-        param1 = arcpy.Parameter(
-            displayName="Nomor Berkas",
-            name="project_id",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        if berkas:
-            param1.value = berkas
-
-        param2 = arcpy.Parameter(
-            displayName="Tahun",
-            name="tahun",
-            datatype="GPLong",
-            parameterType="Required",
-            direction="Input")
-        
-        param3 = arcpy.Parameter(
+        feature_class = arcpy.Parameter(
             displayName="Zona Layer (Feature Class)",
             name="feature_layer",
-            datatype="GPFeatureLayer",
+            datatype="GPFeatureLayer",  
+            parameterType="Required",
             direction="Input")
         
-        param4 = arcpy.Parameter(
-            displayName="Server Sipenta",
+        berkas = arcpy.Parameter(
+            displayName="Berkas",
             name="link",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
         
-        if self.current_year:
-            param2.value = self.current_year
-
-        if preferred_server:
-            param4.value = preferred_server
-
-        param4.filter.type = "ValueList"
-        param4.filter.list = ["Produksi", "Belajar"]
+        penjelasan = arcpy.Parameter(
+            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
         
-        params = [param0, param1, param2, param3]
+        penjelasan.value = (
+                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
+                "\n----------------------------------------------\n"
+                "Dikembangkan oleh:\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(current_year()))
+        
 
-        if self.is_gis_internal:
-            params.append(param4)
+        if is_login:
+            params = [feature_class, berkas]
             return params
         else:
-            return params
-
+            return [penjelasan]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
@@ -281,60 +216,35 @@ class Upload_Peta_Simpangan_Baku_Relatif:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        input_nik = parameters[0]
-        if input_nik.value:
-            # Trim semua spasi (leading, trailing, dan di tengah)
-            nik_str = str(input_nik.value).replace(" ", "")
-            # sinkronkan nilai parameter yang ditampilkan
-            input_nik.value = nik_str
-            
-            # Cek apakah hanya berisi angka
-            if not nik_str.isdigit():
-                input_nik.setErrorMessage("NIK harus berisi angka saja")
-            # Cek apakah panjangnya tepat 16
-            elif len(nik_str) != 16:
-                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
-            else:
-                input_nik.clearMessage()
 
-        # Validasi format Nomor Berkas (project_id): harus seperti 01/2025/0020
-        input_project = parameters[1]
-        if input_project.value:
-            pj_str = str(input_project.value).strip()
-            input_project.value = pj_str
-
-            # Pola: 2 digit / 4 digit (tahun) / 4 digit
-            import re
-            pattern = r"^\d{2}/\d{4}/\d{4}$"
-            if not re.match(pattern, pj_str):
-                input_project.setErrorMessage("Nomor Berkas harus berbentuk NN/YYYY/NNNN, contoh: 01/2025/0020")
-            else:
-                input_project.clearMessage()
         return  
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        username = str(parameters[0].valueAsText).replace(" ", "")
-        project_id = str(parameters[1].valueAsText).replace(" ", "")
-        tahun = parameters[2].valueAsText
-        feature_class = parameters[3].valueAsText
-        server = parameters[4].valueAsText if len(parameters) > 4 else None
-        use_production = True if server == "Produksi" or server == None else False
         delete_topology_file()
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
+
+        if berkas_list is None:
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembuatan ZNT.")
+            return
+        
+        feature_class = parameters[0].valueAsText
+        berkas_value = parameters[1].valueAsText
+
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        username = get_user_data(NIK_KEY)
+        tahun = get_user_data(YEAR_KEY)
+
+
+        project_id = berkas_value.split(" - ")[0]
+        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
+
 
         
         validate_document_type(project_id, target='Pembuatan ZNT')
         main_upload(project_id, username, "Peta Standar Deviasi", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
  
-        preferred_server = get_user_data('preferred_server')
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        if nik != username:
-            renew_user_data('nik', username)
-        if berkas != project_id:
-            renew_user_data('berkas', project_id)
-        if len(parameters) > 4 and server != preferred_server:
-            renew_user_data('preferred_server', server)
         return
 
     def postExecute(self, parameters):
@@ -350,67 +260,49 @@ class Upload_Peta_Zona_Nilai_Tanah:
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        self.is_gis_internal = is_internal()
-        preferred_server = get_user_data("preferred_server") if self.is_gis_internal else None
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        self.current_year = current_year()
-        param0 = arcpy.Parameter(
-            displayName="Nomor Induk Kependudukan (NIK)",
-            name="username",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        if nik:
-            param0.value = nik
+        is_login = get_user_data(USER_DATA_KEY)
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
+        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 
-        param1 = arcpy.Parameter(
-            displayName="Nomor Berkas",
-            name="project_id",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        if berkas:
-            param1.value = berkas
-
-        param2 = arcpy.Parameter(
-            displayName="Tahun",
-            name="tahun",
-            datatype="GPLong",
-            parameterType="Required",
-            direction="Input")
-        
-        param3 = arcpy.Parameter(
+        feature_class = arcpy.Parameter(
             displayName="Zona Layer (Feature Class)",
             name="feature_layer",
-            datatype="GPFeatureLayer",
+            datatype="GPFeatureLayer",  
+            parameterType="Required",
             direction="Input")
         
-        param4 = arcpy.Parameter(
-            displayName="Server Sipenta",
+        berkas = arcpy.Parameter(
+            displayName="Berkas",
             name="link",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
         
-        if self.current_year:
-            param2.value = self.current_year
-
-        if preferred_server:
-            param4.value = preferred_server
-
-        param4.filter.type = "ValueList"
-        param4.filter.list = ["Produksi", "Belajar"]
+        penjelasan = arcpy.Parameter(
+            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
         
-        params = [param0, param1, param2, param3]
+        penjelasan.value = (
+                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
+                "\n----------------------------------------------\n"
+                "Dikembangkan oleh:\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(current_year()))
+        
 
-        if self.is_gis_internal:
-            params.append(param4)
+        if is_login:
+            params = [feature_class, berkas]
             return params
         else:
-            return params
+            return [penjelasan]
 
 
     def isLicensed(self):
@@ -426,60 +318,39 @@ class Upload_Peta_Zona_Nilai_Tanah:
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        input_nik = parameters[0]
-        if input_nik.value:
-            # Trim semua spasi (leading, trailing, dan di tengah)
-            nik_str = str(input_nik.value).replace(" ", "")
-            # sinkronkan nilai parameter yang ditampilkan
-            input_nik.value = nik_str
-            
-            # Cek apakah hanya berisi angka
-            if not nik_str.isdigit():
-                input_nik.setErrorMessage("NIK harus berisi angka saja")
-            # Cek apakah panjangnya tepat 16
-            elif len(nik_str) != 16:
-                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
-            else:
-                input_nik.clearMessage()
+
 
         # Validasi format Nomor Berkas (project_id): harus seperti 01/2025/0020
-        input_project = parameters[1]
-        if input_project.value:
-            pj_str = str(input_project.value).strip()
-            input_project.value = pj_str
 
-            # Pola: 2 digit / 4 digit (tahun) / 4 digit
-            import re
-            pattern = r"^\d{2}/\d{4}/\d{4}$"
-            if not re.match(pattern, pj_str):
-                input_project.setErrorMessage("Nomor Berkas harus berbentuk NN/YYYY/NNNN, contoh: 01/2025/0020")
-            else:
-                input_project.clearMessage()
         return  
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        username = str(parameters[0].valueAsText).replace(" ", "")
-        project_id = str(parameters[1].valueAsText).replace(" ", "")
-        tahun = parameters[2].valueAsText
-        feature_class = parameters[3].valueAsText
-        server = parameters[4].valueAsText if len(parameters) > 4 else None
-        use_production = True if server == "Produksi" or server == None else False
         delete_topology_file()
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
+
+        if berkas_list is None:
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembuatan ZNT.")
+            return
+        
+        feature_class = parameters[0].valueAsText
+        berkas_value = parameters[1].valueAsText
+
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        username = get_user_data(NIK_KEY)
+        tahun = get_user_data(YEAR_KEY)
+
+
+        project_id = berkas_value.split(" - ")[0]
+        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
+
 
         
         validate_document_type(project_id, target='Pembuatan ZNT')
         main_upload(project_id, username, "Peta Zona Nilai Tanah", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
  
-        preferred_server = get_user_data('preferred_server')
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        if nik != username:
-            renew_user_data('nik', username)
-        if berkas != project_id:
-            renew_user_data('berkas', project_id)
-        if len(parameters) > 4 and server != preferred_server:
-            renew_user_data('preferred_server', server)
+
         return
 
     def postExecute(self, parameters):

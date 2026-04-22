@@ -11,7 +11,7 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from zntutils.system_utils import renew_user_data, get_all_config, get_user_data, clear_user_data, get_all_berkas_id, renew_multiple_user_data
-from zntutils.constant import USER_DATA_KEY, NIK_KEY, NOMOR_KONTRAK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY
+from zntutils.constant import USER_DATA_KEY, NIK_KEY, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY
 
 class Toolbox:
     def __init__(self):
@@ -21,10 +21,10 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Login_Pengguna, Logout_Pengguna, Login_SSO]
+        self.tools = [Login_Pihak_Ketiga, Logout_Pengguna, Login_SSO]
 
 
-class Login_Pengguna:
+class Login_Pihak_Ketiga:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Login Pemeta Nilai Tanah"
@@ -57,21 +57,12 @@ class Login_Pengguna:
             direction="Input"
             )
 
-        input_nomor_kontrak = arcpy.Parameter(
-            displayName="Nomor Kontrak",
-            name="project_id",
+        input_password = arcpy.Parameter(
+            displayName="Password",
+            name="password",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
-        
-        tahun  = arcpy.Parameter(
-            displayName="Tahun",
-            name="tahun",
-            datatype="GPLong",
-            parameterType="Required",
-            direction="Input")
-        
-        tahun.value = datetime.now().year
         
         server = arcpy.Parameter(
             displayName="Server Sipenta",
@@ -90,7 +81,7 @@ class Login_Pengguna:
             penjelasan.value = already_login_sso_explanation
             return [penjelasan]
         else: 
-            return [input_nik, input_nomor_kontrak, tahun, server]
+            return [input_nik, input_password, server]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
@@ -133,12 +124,11 @@ class Login_Pengguna:
         sso_data = get_user_data(SSO_DATA_KEY)
         if user_data is None and sso_data is None:
             nik = parameters[0].value
-            nomor_kontrak = parameters[1].value
-            tahun = parameters[2].value
-            server = parameters[3].value
+            password = parameters[1].value
+            server = parameters[2].value
             use_production = True if server == "Produksi" or server == None else False
 
-            self.call_sipenta_api(nik, nomor_kontrak, tahun, use_production)
+            self.call_sipenta_api(nik, password, use_production)
 
 
         return
@@ -150,14 +140,13 @@ class Login_Pengguna:
 
         return
     
-    def call_sipenta_api(self, nik, nomor_kontrak, tahun, use_production=True):
+    def call_sipenta_api(self, nik, password, use_production=True):
         """
         Fungsi untuk memanggil API SIPENTA dan mendapatkan data survey.
         
         Parameters:
         nik (str): NIK pengguna untuk autentikasi API
-        nomor_kontrak (str): Nomor kontrak proyek
-        tahun (int): Tahun proyek
+        password (str): Password pengguna untuk autentikasi API
         use_production (bool): True untuk production URL, False untuk testing URL
         
         Returns:
@@ -165,8 +154,8 @@ class Login_Pengguna:
         """
         
         # URL untuk testing dan produksi
-        test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/login-pemeta"
-        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/apis/login-pemeta"
+        test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/login/3/pemeta"
+        prod_url = f"https://sipentan.go.id/tatausaha-2/login/3/pemeta"
     
         # url = prod_url if use_production else test_url
         url = prod_url if use_production else test_url
@@ -176,15 +165,14 @@ class Login_Pengguna:
 
             payload = {
                 "nik": nik,
-                "nomor_sk_kontrak": nomor_kontrak,
-                "tahun": tahun
+                "password": password
             }
 
             response = requests.post(url, data=payload, timeout=60)  
             arcpy.AddMessage(f"Status Code: {response.status_code}")
 
-
             if response.status_code == 200:
+                tahun = datetime.now().year
                 data = response.json()
                 if data.get("success"):
                     with open(os.path.join(os.path.dirname(__file__), "login_response_pk.json"), "w") as f:
@@ -192,17 +180,17 @@ class Login_Pengguna:
                     renew_data = {
                         USER_DATA_KEY: data,
                         NIK_KEY: nik,
-                        NOMOR_KONTRAK_KEY: nomor_kontrak,
+                        AUTH_KEY: data.get("token", ""),
                         PREFERRED_SERVER_KEY: "Produksi" if use_production else "Belajar",
                         YEAR_KEY: tahun
                     }
                     renew_multiple_user_data(renew_data)
-                    shutil.copy(r'C:\PenilaianTanah\ui\nik_login\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-                    aprx = arcpy.mp.ArcGISProject("CURRENT")
-                    aprx.save()
-                    subprocess.Popen(r"C:\PenilaianTanah\ui\restart_arcgis.bat")
-                    # Tutup ArcGIS Pro
-                    os.system("taskkill /f /im ArcGISPro.exe")
+                    # shutil.copy(r'C:\PenilaianTanah\ui\nik_login\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
+                    # aprx = arcpy.mp.ArcGISProject("CURRENT")
+                    # aprx.save()
+                    # subprocess.Popen(r"C:\PenilaianTanah\ui\restart_arcgis.bat")
+                    # # Tutup ArcGIS Pro
+                    # os.system("taskkill /f /im ArcGISPro.exe")
                 else:
                     arcpy.AddError(f"Login gagal: {data.get('message', 'Tidak ada pesan error yang diberikan')}")
 

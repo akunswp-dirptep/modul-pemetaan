@@ -1991,7 +1991,7 @@
 
 				<button id="ButtonLoginPemeta" caption="Login Pemeta" smallImage="C:\PenilaianTanah\icons\logo_login_sipenta.png" largeImage="C:\PenilaianTanah\icons\logo_login_sipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\LoginPengguna.pyt\Login_Pengguna" name="Login Pemeta" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\LoginPengguna.pyt\Login_Pihak_Ketiga" name="Login Pemeta" xmlns=""/>
 					</args>
 					<tooltip heading="Login Pemeta">Menu untuk login pemeta ke dalam aplikasi penilaian tanah</tooltip>
 				</button>

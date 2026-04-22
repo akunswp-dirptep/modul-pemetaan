@@ -2,37 +2,27 @@
     "success": true,
     "status": "ok",
     "message": "OK",
-    "logged_in": "2026-04-14 07:52:40",
-    "end_session": "2026-04-19 07:52:40",
+    "token": "NsK8fzaz75skf3Yj7Cj2WK8DOgPE4iWEVDPZkITL5bJDOqNOoelIYUE_sWG9NY-wUAXa4ibXDkLX6gs0IRmQBgcUZmv0qh2uBHz-LU9pQx6rM9_xFNoRNs9h60GlxcsfWwFJU2UgReo0ui8RcnHLlc0TB5pWA6ai8lGw3BoW69_rT72ZkYFuDHUEg3CrZIMvZ6wc1PAQII073OsiM-5L",
+    "logged_in": "2026-04-22 16:07:31",
+    "end_session": "2026-04-24 16:07:31",
+    "user": {
+        "user_id": "3174100802950001",
+        "nama": "Febri Ramadhandi",
+        "perusahaan_nama": "PT. Webgis Indonesia",
+        "perusahaan_id": "Z9X8C7V6B5N4M3L2K1J0H9G8F7D6S5A",
+        "roles": [
+            "Pemeta Nilai Tanah"
+        ]
+    },
     "berkas": [
         {
-            "no_berkas": "02/2026/0018",
-            "nama_petugas": "Pemeta Nilai Tanah",
-            "nama_perusahaan": null,
-            "tgl_mulai": "2026-02-18",
-            "tgl_selesai": "2027-01-31",
-            "nik": "3320024102990008",
-            "nomor_sk_kontrak": "1122",
-            "tahun": "2026",
+            "berkas_id": "44",
+            "no_berkas": "01/2025/0039",
             "can_upload": true
-        }
-    ]
-}{
-    "success": true,
-    "status": "ok",
-    "message": "OK",
-    "logged_in": "2026-04-09 07:41:58",
-    "end_session": "2026-04-14 07:41:58",
-    "berkas": [
+        },
         {
-            "no_berkas": "02/2026/0018",
-            "nama_petugas": "Pemeta Nilai Tanah",
-            "nama_perusahaan": null,
-            "tgl_mulai": "2026-02-18",
-            "tgl_selesai": "2027-01-31",
-            "nik": "3320024102990008",
-            "nomor_sk_kontrak": "1122",
-            "tahun": "2026",
+            "berkas_id": "1032",
+            "no_berkas": "01/2026/0089",
             "can_upload": true
         }
     ]

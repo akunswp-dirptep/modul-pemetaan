@@ -111,20 +111,6 @@ def renew_multiple_user_data(data_dict: dict):
     for key, value in data_dict.items():
         setup_user_data(key, value)
 
-    all_toolboxes_folder_need_reload = [
-                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT",
-                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT",
-                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi",
-                r"C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT"
-            ]
-
-    try:
-        for folder in all_toolboxes_folder_need_reload:
-            reload_all_toolboxes_in_folder(folder)
-
-    except Exception as e:
-        arcpy.AddWarning(f"Gagal memuat ulang toolbox: {str(e)}")
-
 def setup_user_data(key:str, value:str):
 
     config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'

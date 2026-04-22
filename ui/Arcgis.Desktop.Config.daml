@@ -96,12 +96,6 @@
 				</group>
 				<group id="sistem_aplikasi" caption="Sistem Aplikasi">
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
-					<button refID="ButtonLoginPemeta" size="large"/>
-					<button refID="ButtonLoginSSO" size="large" />
-					<button refID="ButtonLogoutPemeta" size="large"/>
-				</group>
-				<group id="sistem_aplikasi" caption="Sistem Aplikasi">
-					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 				</group>
 			</groups>
 			

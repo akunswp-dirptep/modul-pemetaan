@@ -16,3 +16,4 @@ PERUBAHAN & PENYESUAIAN FITUR
 - Menambahkan Identitas Direktorat Pada Parameter Tool Setujui Sampel Individual dan Pengembalian Sampel Individual
 - Menambahkan Filter untuk Jenis Zona Selain 1 dan 2 Pada Tools Memasukkan Data ZNT Sebelumnya
 - Mengganti Penyimpanan Zona_Layer_Temp menjadi in memory pada Tools Memasukkan Data ZNT Sebelumnya
+- Mengubah Status Tidak ada data Titik_Sampel_Individual ditemukan dari Warning Ke Massage

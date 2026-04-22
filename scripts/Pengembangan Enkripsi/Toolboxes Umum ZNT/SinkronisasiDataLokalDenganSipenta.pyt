@@ -447,7 +447,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             # Konversi JSON ke Feature Class
             arcpy.conversion.JSONToFeatures(self.config_paths['path_individual_sementara_json'], self.config_paths['path_titik_sampel_individual_sementara'], 'POINT')
         else:
-            arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
+            arcpy.AddMessage("Tidak ada data Titik_Sampel_Individual ditemukan.")
 
     # Kode Utama
     def build_pembanding_data(self, titik_sampel_individual_fc, titik_sampel_path):

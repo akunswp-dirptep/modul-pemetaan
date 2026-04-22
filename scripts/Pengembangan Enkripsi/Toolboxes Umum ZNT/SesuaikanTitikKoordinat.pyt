@@ -296,12 +296,12 @@ class Sesuaikan_Titik_Koordinat(object):
 
         try:
             # Mengambil data dari API
-            arcpy.AddMessage("Memanggil API SIPENTA...")
+
             response = requests.get(url, timeout=60)  # Timeout 60 detik
             response.raise_for_status()  # Akan raise exception untuk HTTP error
             
             data = response.json()
-            arcpy.AddMessage(f"Status API: {data.get('status', 'N/A')}")
+
             
             self.data = data
             
@@ -453,7 +453,7 @@ class Sesuaikan_Titik_Koordinat(object):
                 y = round(data_sampel['geometry']['coordinates'][1], 8)
                 semua_data_koordinat[nomor_entry] = [x, y]
         else:
-            arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
+            arcpy.AddMessage("Tidak ada data Titik_Sampel_Individual ditemukan.")
         
 
         # Kembalikan semua data gabungan

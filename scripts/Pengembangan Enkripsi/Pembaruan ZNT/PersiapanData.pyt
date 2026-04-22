@@ -251,7 +251,8 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             "Field nomor zona adalah field\n"
             "yang berisi nomor identifikasi zona.\n"
             "Field ini harus berisi nilai unik\n"
-            "untuk setiap zona, dan biasanya berupa angka."
+            "untuk setiap zona, dan bentuknya\n"
+            "berupa angka bulat. (1, 2, 3, dst.)"
         )
 
         nilai = arcpy.Parameter(
@@ -272,11 +273,14 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         )
 
         penjelasan_nilai.value = (
-            "Field nilai adalah field yang berisi nilai\n"
-            "ZNT Sebelumnya untuk setiap zona. Nilai ini \n"
-            "harus berupa angka, dan akan digunakan\n"
-            "sebagai dasar perhitungan nilai tanah pada ZNT baru.\n"
-            "Field Nilai tidak boleh bernilai null atau 0.")
+            "Field nilai adalah field yang \n"
+            "berisi nilai ZNT Sebelumnya \n"
+            "untuk setiap zona. Nilai ini \n"
+            "harus berupa angka, dan akan \n"
+            "digunakan sebagai dasar perhitungan \n"
+            "nilai tanah pada ZNT baru.\n"
+            "Field Nilai tidak boleh bernilai\n"
+            "null atau 0.")
 
         jeniszona = arcpy.Parameter(
             displayName="Pilih Field Jenis Zona",
@@ -296,11 +300,13 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             direction="Input"
         )
         penjelasan_jeniszona.value = (
-            "Field jenis zona adalah field yang berisi \n"
-            "angka 1 atau 2 yang menunjukkan jenis zona: \n"
-            "1 untuk Non-Pertanian, 2 untuk Pertanian.\n"
-            "Field ini tidak boleh null atau 0 ataupun \n"
-            "bernilai selain 1 atau 2."
+            "Field jenis zona adalah field \n"
+            "yang berisi angka 1 atau 2 \n"
+            "yang menunjukkan jenis zona: \n"
+            " - 1 untuk Non-Pertanian, \n"
+            " - 2 untuk Pertanian.\n"
+            "Field ini tidak boleh null \n"
+            "atau 0 ataupun bernilai selain 1 atau 2."
         )
 
 
@@ -354,6 +360,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+
         znt_lama = parameters[0].valueAsText
         nomorzone = parameters[1].valueAsText
         nilai = parameters[3].valueAsText
@@ -382,6 +389,10 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                             return
                         if val == 0 or val == '0':
                                 arcpy.AddError(f"Field '{field_name}' mengandung nilai 0 pada record {rownum}.")
+                                return
+                        if field_name == jeniszona:
+                            if val not in [1, 2, '1', '2']:
+                                arcpy.AddError(f"Field '{field_name}' pada record {rownum} memiliki nilai '{val}' yang tidak valid. Nilai harus 1 (Non-Pertanian) atau 2 (Pertanian).")
                                 return
 
                         if isinstance(val, str):
@@ -412,7 +423,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
 
         # --- Proses memasukkan data ZNT sebelumnya ke layer ZNT saat ini
         zona_layer_path = os.path.join(dataset_path, "Zona_Layer")
-        zona_layer_temp_path = os.path.join(dataset_path, "Zona_Layer_Temp")
+        zona_layer_temp_path = 'in_memory/Zona_Layer_Temp'
 
         # Hapus topology dan layer zona jika sudah ada
         topo = os.path.join(dataset_path, "Zona_Layer_Topology")
@@ -433,12 +444,10 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             if field_map.outputField.name.upper() == "OBJECTID":
                 field_mappings.removeFieldMap(field_mappings.findFieldMapIndex(field_map.outputField.name))
 
-        # ======================
-        # KONVERSI FITUR
-        # ======================
+
         arcpy.conversion.FeatureClassToFeatureClass(
             znt_lama,
-            dataset_path,
+            'in_memory',
             "Zona_Layer_Temp",
             field_mapping=field_mappings
         )

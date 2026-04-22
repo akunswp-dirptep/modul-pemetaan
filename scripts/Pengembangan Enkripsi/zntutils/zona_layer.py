@@ -336,6 +336,4 @@ def delete_bad_file():
                 arcpy.management.Delete(dataset_path)
 
     arcpy.management.ClearWorkspaceCache()
-    return 
-
-
+    return

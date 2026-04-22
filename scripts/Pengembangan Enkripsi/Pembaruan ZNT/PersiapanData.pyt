@@ -148,6 +148,7 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
         return   
     
     def execute(self, parameters, messages):
+    
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText
@@ -442,6 +443,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+
         znt_lama = parameters[0].valueAsText
         nomorzone = parameters[1].valueAsText
         nilai = parameters[3].valueAsText
@@ -525,9 +527,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             if field_map.outputField.name.upper() == "OBJECTID":
                 field_mappings.removeFieldMap(field_mappings.findFieldMapIndex(field_map.outputField.name))
 
-        # ======================
-        # KONVERSI FITUR
-        # ======================
+
         arcpy.conversion.FeatureClassToFeatureClass(
             znt_lama,
             'in_memory',

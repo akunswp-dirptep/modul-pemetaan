@@ -80,23 +80,11 @@ class Periksa_Jenis_Zona(object):
         self.config_dan_paths = get_config_values()
         ts_path = os.path.join(self.config_dan_paths['dataset_path'], "Titik_Sampel")  # Path layer titik sampel
         zl_path = os.path.join(self.config_dan_paths['dataset_path'], "Zona_Layer")  # Path zona layer
-        zl_temp_path = os.path.join(self.config_dan_paths['dataset_path'], "Zona_Layer_Temp")  # Path zona layer temporary
         sim_path = os.path.join(self.config_dan_paths['symbology_folder'], "Simbologi_Periksa_Jenis_Zona.lyrx")  # Path file simbologi
         zl_topology_path = os.path.join(self.config_dan_paths['dataset_path'], "Zona_Layer_Topology")  # Path zona layer topology
 
         if arcpy.Exists(zl_topology_path):
             arcpy.management.Delete(zl_topology_path) 
-            
-        # Membuat salinan temporary zona layer jika belum ada
-        if not arcpy.Exists(zl_temp_path):
-            arcpy.management.Copy(zl_path, zl_temp_path)
-
-        # Menghapus field BEDA_ZONA jika sudah ada dan menambahkannya kembali
-        field_names = [field.name for field in arcpy.ListFields(zl_temp_path)]
-        if "BEDA_ZONA" in field_names:
-            arcpy.management.DeleteField(zl_temp_path, "BEDA_ZONA")
-
-        arcpy.management.AddField(zl_temp_path, "BEDA_ZONA", "TEXT")
 
         # Melakukan analisis Identity antara titik sampel dan zona layer
         arcpy.analysis.Identity(ts_path, zl_path, 'identity')
@@ -142,7 +130,6 @@ class Periksa_Jenis_Zona(object):
                 cursor.updateRow(row)
         arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
         arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
-        arcpy.management.Delete(zl_temp_path)
         arcpy.SetParameter(1, "Zona_Layer")  # Mengatur parameter output
         return
 

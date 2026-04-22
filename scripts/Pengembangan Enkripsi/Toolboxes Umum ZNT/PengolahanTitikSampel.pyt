@@ -77,7 +77,7 @@ def get_config_values():
         'lokasi': lokasi,
         'coor': coor,
         'path_titik_sampel': os.path.join(dataset_path, titiksampel),
-        'path_titik_sampel_sementara': os.path.join(dataset_path, titiksampelsementara),
+        'path_titik_sampel_sementara': os.path.join('in_memory', titiksampelsementara),
         'path_titik_sampel_individual': os.path.join(dataset_path, titiksampelindividual),
         'path_output_titik_sampel': os.path.join(dataset_path, titiksampelfull),
         'path_json': os.path.join(ws_dir, 'titik_sampel.geojson'),
@@ -426,6 +426,9 @@ def json_to_feature_class(json_path, ds_path, file_name, spatial_ref, lokasi, ta
 
     feature_class_path = os.path.join(ds_path, file_name)
 
+    if arcpy.Exists(feature_class_path):
+        arcpy.management.Delete(feature_class_path)
+
     # -----------------------------
     # 1. Create feature class
     # -----------------------------
@@ -730,7 +733,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 tahun=tahun)
 
         else:
-            arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
+            arcpy.AddMessage("Tidak ada data Titik_Sampel_Individual ditemukan.")
 
         # Pemenuhan Kondisi 6: Mendapatkan nomor entry terakhir dari data API dan menyimpannya ke config untuk referensi di masa depan
         last_nomor_entries = get_last_nomor_entry(api_data)
@@ -816,7 +819,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
                 json_to_feature_class(
                     json_path=config_paths['path_sementara_json'], 
-                    ds_path=config_paths['dataset_path'], 
+                    ds_path="in_memory", 
                     file_name="Titik_Sampel_Sementara", 
                     spatial_ref=config_paths['coor'], 
                     lokasi=config_paths['lokasi'], 
@@ -858,7 +861,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                     tahun=tahun)
 
             else:
-                arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan.")
+                arcpy.AddMessage("Tidak ada data Titik_Sampel_Individual ditemukan.")
 
         # 5.2: Jika dataset sudah ada, filter data baru berdasarkan nomor entry terakhir dan append ke dataset existing
         elif arcpy.Exists(config_paths['path_titik_sampel_individual']) and int(api_data["jmlh_individual"]) > 0:
@@ -876,7 +879,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 # Konversi dan update data individual
                 json_to_feature_class(
                     json_path=config_paths['path_sementara_json'], 
-                    ds_path=config_paths['dataset_path'], 
+                    ds_path="in_memory", 
                     file_name="Titik_Sampel_Sementara", 
                     spatial_ref=config_paths['coor'],
                     lokasi=config_paths['lokasi'], 
@@ -1010,7 +1013,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
                     json_to_feature_class(
                         json_path=config_paths['path_sementara_json'], 
-                        ds_path=config_paths['dataset_path'], 
+                        ds_path="in_memory", 
                         file_name="Titik_Sampel_Sementara", 
                         spatial_ref=config_paths['coor'],
                         lokasi=config_paths['lokasi'], 
@@ -1068,7 +1071,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                     
                     json_to_feature_class(
                     json_path=config_paths['path_sementara_json'], 
-                    ds_path=config_paths['dataset_path'], 
+                    ds_path="in_memory", 
                     file_name="Titik_Sampel_Sementara", 
                     spatial_ref=config_paths['coor'],
                     lokasi=config_paths['lokasi'], 

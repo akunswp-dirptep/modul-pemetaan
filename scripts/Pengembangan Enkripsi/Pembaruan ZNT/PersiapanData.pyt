@@ -215,11 +215,12 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Masukkan Data ZNT Sebelumnya"
-        self.description = ""
+        self.description = "Tools untuk memasukkan data ZNT sebelumnya ke dalam sistem sebagai dasar perhitungan ZNT baru. Pastikan data ZNT lama sudah benar dan lengkap sebelum menggunakan tool ini."
 
     def getParameterInfo(self):
         """Define the tool parameters."""
-                # 1. Input layer ZNT Lama
+
+        # 1. Input layer ZNT Lama
         znt_awal = arcpy.Parameter(
             displayName="Pilih Data ZNT",
             name="old_znt_layer",
@@ -228,33 +229,32 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             direction="Input"
         )
 
-        # === 2. Parameter mapping field (dengan filter Field) ===
+        # === 2. Field Nomor Zona ===
         nomorzone = arcpy.Parameter(
             displayName="Pilih Field Nomor Zona",
             name="nomorzone_field",
             datatype="Field",
             parameterType="Required",
             direction="Input"
-        )       
-
+        )
         nomorzone.parameterDependencies = [znt_awal.name]
+        nomorzone.description = "ID unik untuk setiap zona"
 
         penjelasan_nomorzone = arcpy.Parameter(
-            displayName="Penjelasan Field Nomor Zona",
+            displayName="Info Field Nomor Zona",
             name="penjelasan_nomorzone",
             datatype="GPString",
             parameterType="Optional",
             direction="Input"
         )
-
         penjelasan_nomorzone.value = (
-            "Field nomor zona adalah field\n"
-            "yang berisi nomor identifikasi zona.\n"
-            "Field ini harus berisi nilai unik\n"
-            "untuk setiap zona, dan bentuknya\n"
-            "berupa angka bulat. (1, 2, 3, dst.)"
+            "Ketentuan untuk field nomor zona:\n"
+            " - Berisi ID unik untuk setiap zona\n"
+            " - Harus unik (tidak boleh duplikat)\n"
+            " - Format: angka bulat (1, 2, 3, ...)"
         )
 
+        # === 3. Field Nilai ===
         nilai = arcpy.Parameter(
             displayName="Pilih Field Nilai",
             name="nilai_field",
@@ -263,9 +263,10 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             direction="Input"
         )
         nilai.parameterDependencies = [znt_awal.name]
+        nilai.description = "Nilai ZNT sebelumnya"
 
         penjelasan_nilai = arcpy.Parameter(
-            displayName="Penjelasan Field Nilai",
+            displayName="Info Field Nilai",
             name="penjelasan_nilai",
             datatype="GPString",
             parameterType="Optional",
@@ -273,15 +274,13 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         )
 
         penjelasan_nilai.value = (
-            "Field nilai adalah field yang \n"
-            "berisi nilai ZNT Sebelumnya \n"
-            "untuk setiap zona. Nilai ini \n"
-            "harus berupa angka, dan akan \n"
-            "digunakan sebagai dasar perhitungan \n"
-            "nilai tanah pada ZNT baru.\n"
-            "Field Nilai tidak boleh bernilai\n"
-            "null atau 0.")
+            "Ketentuan untuk field nilai:\n"
+            " - Berisi Nilai ZNT sebelumnya\n"
+            " - Format: numerik (angka)\n"
+            " - Tidak boleh <null> atau 0"
+        )
 
+        # === 4. Field Jenis Zona ===
         jeniszona = arcpy.Parameter(
             displayName="Pilih Field Jenis Zona",
             name="jeniszona_field",
@@ -290,27 +289,31 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             direction="Input"
         )
         jeniszona.parameterDependencies = [znt_awal.name]
-
+        jeniszona.description = "Kategori zona"
 
         penjelasan_jeniszona = arcpy.Parameter(
-            displayName="Penjelasan Field Jenis Zona",
+            displayName="Info Field Jenis Zona",
             name="penjelasan_jeniszona",
             datatype="GPString",
             parameterType="Optional",
             direction="Input"
         )
+
         penjelasan_jeniszona.value = (
-            "Field jenis zona adalah field \n"
-            "yang berisi angka 1 atau 2 \n"
-            "yang menunjukkan jenis zona: \n"
-            " - 1 untuk Non-Pertanian, \n"
-            " - 2 untuk Pertanian.\n"
-            "Field ini tidak boleh null \n"
-            "atau 0 ataupun bernilai selain 1 atau 2."
+            "Ketentuan untuk field jenis zona:\n"
+            " - Berisi kategori zona dengan kode:\n"
+            "   - 1 → Non-Pertanian\n"
+            "   - 2 → Pertanian\n"
+            " - Tidak boleh berisi <null>\n"
+            " - Tidak boleh berisi nilai selain 1 atau 2"
         )
 
-
-        return [znt_awal, nomorzone, penjelasan_nomorzone, nilai, penjelasan_nilai, jeniszona, penjelasan_jeniszona]
+        return [
+            znt_awal,
+            nomorzone, penjelasan_nomorzone,
+            nilai, penjelasan_nilai,
+            jeniszona, penjelasan_jeniszona
+        ]
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
         return True

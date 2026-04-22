@@ -4,3 +4,4 @@ test_folder/
 config/penilaiantanah.bin
 __pycache__/
 *.pyc
+*.pyt.xml

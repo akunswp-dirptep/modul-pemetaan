@@ -504,7 +504,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
 
         # --- Proses memasukkan data ZNT sebelumnya ke layer ZNT saat ini
         zona_layer_path = os.path.join(dataset_path, "Zona_Layer")
-        zona_layer_temp_path = os.path.join(dataset_path, "Zona_Layer_Temp")
+        zona_layer_temp_path = 'in_memory/Zona_Layer_Temp'
 
         # Hapus topology dan layer zona jika sudah ada
         topo = os.path.join(dataset_path, "Zona_Layer_Topology")
@@ -530,7 +530,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         # ======================
         arcpy.conversion.FeatureClassToFeatureClass(
             znt_lama,
-            dataset_path,
+            'in_memory',
             "Zona_Layer_Temp",
             field_mapping=field_mappings
         )

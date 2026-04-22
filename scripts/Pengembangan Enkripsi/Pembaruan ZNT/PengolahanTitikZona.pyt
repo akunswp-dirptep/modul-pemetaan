@@ -26,6 +26,7 @@ class Toolbox:
                       Pemilihan_Titik_Sampel_Outlier_Kuartil,
                       Pengembalian_Titik_Sampel_Outlier_Ke_Titik_Zona,
                       Pemilihan_Zona_Parsial,
+                      Klastering_Indeks_Nilai_Tanah,
                       Perbaharui_Indeks_Sampel_Pada_Titik_Zona,
                       Penyesuaian_Nomor_Zona_Pembaruan,
                       Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan]
@@ -576,6 +577,222 @@ class Pemilihan_Zona_Parsial:
         """This method takes place after outputs are processed and
         added to the display."""
         return
+
+class Klastering_Indeks_Nilai_Tanah(object):
+    def __init__(self):
+        self.label = "Rekomendasi Klaster Indeks Nilai Tanah"
+        self.description = "Membentuk cluster dari titik dengan perubahan signifikan"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        params = []
+
+        in_features = arcpy.Parameter(
+            displayName="Input Titik",
+            name="in_features",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        field_indeks = arcpy.Parameter(
+            displayName="Field Indeks",
+            name="field_indeks",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        field_indeks.parameterDependencies = [in_features.name]
+
+        eps_distance = arcpy.Parameter(
+            displayName="Jarak Cluster (meter)",
+            name="eps_distance",
+            datatype="Double",
+            parameterType="Required",
+            direction="Input"
+        )
+        eps_distance.value = 500
+
+        min_points = arcpy.Parameter(
+            displayName="Minimum Titik dalam Cluster",
+            name="min_points",
+            datatype="Long",
+            parameterType="Required",
+            direction="Input"
+        )
+        min_points.value = 3
+
+        out_feature = arcpy.Parameter(
+            displayName="Output Cluster",
+            name="out_feature",
+            datatype="DEFeatureClass",
+            parameterType="Required",
+            direction="Output"
+        )
+
+        params.extend([in_features, field_indeks, eps_distance, min_points, out_feature])
+        return params
+
+    def execute(self, parameters, messages):
+        in_features = parameters[0].valueAsText
+        field_indeks = parameters[1].valueAsText
+        eps = parameters[2].value
+        min_pts = parameters[3].value
+        out_fc = parameters[4].valueAsText
+
+        arcpy.env.overwriteOutput = True
+
+        # Workspace sementara
+        temp_gdb = arcpy.env.scratchGDB
+
+        naik_layer = os.path.join(temp_gdb, "naik")
+        turun_layer = os.path.join(temp_gdb, "turun")
+
+        arcpy.AddMessage("Memfilter titik signifikan...")
+
+        # Filter naik (>120)
+        arcpy.analysis.Select(
+            in_features,
+            naik_layer,
+            f"{field_indeks} > 120"
+        )
+
+        # Filter turun (<80)
+        arcpy.analysis.Select(
+            in_features,
+            turun_layer,
+            f"{field_indeks} < 90"
+        )
+
+        def process_cluster(input_layer, label):
+            if int(arcpy.management.GetCount(input_layer)[0]) == 0:
+                return None
+
+            buffer_fc = os.path.join(temp_gdb, f"buffer_{label}")
+            dissolve_fc = os.path.join(temp_gdb, f"dissolve_{label}")
+            cluster_fc = os.path.join(temp_gdb, f"cluster_{label}")
+            filtered_fc = os.path.join(temp_gdb, f"filtered_{label}")
+
+            arcpy.AddMessage(f"Clustering {label}...")
+
+            # Buffer
+            arcpy.analysis.Buffer(
+                input_layer,
+                buffer_fc,
+                f"{eps} Meters",
+                dissolve_option="ALL"
+            )
+
+            # Multipart to singlepart (pisah cluster)
+            arcpy.management.MultipartToSinglepart(buffer_fc, dissolve_fc)
+
+            # Spatial Join (hitung statistik titik pada setiap buffer cluster)
+            field_mappings = arcpy.FieldMappings()
+            field_mappings.addTable(dissolve_fc)
+            field_mappings.addTable(input_layer)
+
+            field_map_index = field_mappings.findFieldMapIndex(field_indeks)
+            if field_map_index == -1:
+                raise Exception(f"Field indeks {field_indeks} tidak ditemukan pada layer input")
+
+            field_map = field_mappings.getFieldMap(field_map_index)
+            field_map.mergeRule = "Mean"
+            output_field = field_map.outputField
+            output_field.name = "AVG_INDEKS"
+            output_field.aliasName = "AVG_INDEKS"
+            field_map.outputField = output_field
+            field_mappings.replaceFieldMap(field_map_index, field_map)
+
+            arcpy.analysis.SpatialJoin(
+                dissolve_fc,
+                input_layer,
+                cluster_fc,
+                join_operation="JOIN_ONE_TO_ONE",
+                field_mapping=field_mappings,
+                match_option="INTERSECT"
+            )
+
+            # Tambahkan field cluster type
+            arcpy.management.AddField(cluster_fc, "jenis_cluster", "TEXT")
+            arcpy.management.CalculateField(
+                cluster_fc,
+                "jenis_cluster",
+                f"'{label}'",
+                "PYTHON3"
+            )
+
+            arcpy.analysis.Select(
+                cluster_fc,
+                filtered_fc,
+                f"Join_Count >= {min_pts}"
+            )
+
+            if int(arcpy.management.GetCount(filtered_fc)[0]) == 0:
+                arcpy.AddWarning(f"Tidak ada cluster {label} yang memenuhi minimum {min_pts} titik")
+                return None
+
+            return filtered_fc
+
+        cluster_naik = process_cluster(naik_layer, "NAIK")
+        cluster_turun = process_cluster(turun_layer, "TURUN")
+
+        arcpy.AddMessage("Menggabungkan hasil...")
+
+        outputs = [fc for fc in [cluster_naik, cluster_turun] if fc]
+
+        if len(outputs) == 0:
+            raise Exception("Tidak ada cluster yang terbentuk")
+
+        arcpy.management.Merge(outputs, out_fc)
+
+        # # Tambahkan jumlah titik per cluster
+        # arcpy.AddMessage("Menghitung statistik cluster...")
+
+        # stats_table = os.path.join(temp_gdb, "stats")
+        # oid_field = arcpy.Describe(out_fc).OIDFieldName
+
+        # arcpy.analysis.Statistics(
+        #     out_fc,
+        #     stats_table,
+        #     [[oid_field, "COUNT"]],
+        #     ["TARGET_FID"]
+        # )
+
+        # arcpy.management.JoinField(
+        #     out_fc,
+        #     "TARGET_FID",
+        #     stats_table,
+        #     "TARGET_FID",
+        #     ["COUNT_OBJECTID"]
+        # )
+
+        # # # Filter cluster kecil
+        # # arcpy.AddMessage("Memfilter cluster kecil...")
+
+        # # arcpy.AddMessage("Cek jumlah fitur sebelum filter:")
+        # # arcpy.AddMessage(arcpy.management.GetCount(out_fc))
+
+        # # arcpy.management.MakeFeatureLayer(out_fc, "layer_temp")
+
+        # # arcpy.AddMessage("Cek jumlah fitur setelah seleksi:")
+        # # arcpy.management.SelectLayerByAttribute(
+        # #     "layer_temp",
+        # #     "NEW_SELECTION",
+        # #     f"Join_Count >= {min_pts}"
+        # # )
+
+        # # arcpy.AddMessage(arcpy.management.GetCount("layer_temp"))
+
+        # # temp_filtered = os.path.join(temp_gdb, "filtered_cluster")
+
+        # # arcpy.management.CopyFeatures("layer_temp", temp_filtered)
+
+        # # # Hapus output lama
+        # # arcpy.management.Delete(out_fc)
+
+        # # arcpy.management.CopyFeatures(temp_filtered, out_fc)
+        
+        # # arcpy.AddMessage("Selesai! Cluster berhasil dibuat.")
 
 class Penyesuaian_Nomor_Zona_Pembaruan:
     def __init__(self):

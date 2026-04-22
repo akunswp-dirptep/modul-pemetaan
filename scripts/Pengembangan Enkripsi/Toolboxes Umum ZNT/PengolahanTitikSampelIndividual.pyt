@@ -1350,10 +1350,17 @@ class Setujui_Sampel_Individual(object):
             direction="Input")
         
         penjelasan.value = (
-            "Tool ini digunakan untuk menyetujui titik sampel individual\n"
-            "yang telah dihitung kesesuaiannya.Tool ini akan memindahkan\n"
-            "titik sampel individual yang dipilih ke layer Titik_Sampel\n"
-            "dan menghapusnya dari layer Titik_Sampel_Individual. "
+            "Tool ini digunakan untuk menyetujui titik sampel\n"
+            "individual yang telah dihitung kesesuaiannya.\n"
+            "Tool ini akan memindahkan titik sampel individual\n"
+            "yang dipilih ke layer Titik_Sampel dan menghapusnya\n"
+            "dari layer Titik_Sampel_Individual. Pastikan untuk\n"
+            "memilih titik sampel individual yang sudah dihitung\n"
+            "kesesuaiannya dan siap untuk disetujui sebelum\n"
+            "menjalankan tool ini.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year)
         )
 
         return [penjelasan]
@@ -1445,10 +1452,14 @@ class Pengembalian_Sampel_Individual(object):
             direction="Input")
         
         penjelasan.value = (
-            "Tool ini digunakan untuk mengembalikan titik sampel individual\n"
-            "yang telah disetujui sebelumnya. Tool ini akan memindahkan\n"
-            "titik sampel individual yang dipilih kembali ke layer\n"
-            "Titik_Sampel_Individual dan menghapusnya dari layer Titik_Sampel."
+            "Tool ini digunakan untuk mengembalikan titik \n"
+            "sampel individual yang telah disetujui sebelumnya.\n"
+            "Tool ini akan memindahkan titik sampel individual \n"
+            "yang dipilih kembali ke layer Titik_Sampel_Individual\n"
+            "dan menghapusnya dari layer Titik_Sampel.\n\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year)
         )
 
         return [penjelasan]

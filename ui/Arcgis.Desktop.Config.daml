@@ -98,10 +98,11 @@
 				<group id="sistem_aplikasi" caption="Penilaian Tanah">
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 				</group>
+
 			</groups>
 			
 			<palettes>
-				<toolPalette id="ToolPalette13" caption="Editing" showItemCaption="true" itemsInRow="1">
+				<toolPalette id="ToolPalette13" caption="Editing" itemsInRow="2">
 					<tool refID="esri_mapping_selectByRectangleTool"/>
 					<tool refID="esri_editing_ShowCreateFeaturesBtn"/>
 					<tool refID="esri_editing_ShowEditFeaturesBtn"/>
@@ -109,11 +110,11 @@
 					<tool refID="esri_editing_SplitCommand"/>
 					<tool refID="esri_editing_ClipCommand"/>
 					<tool refID="esri_editing_MergeFeatures"/>
+					<tool refID="esri_editing_ShowErrorInspectorBtn"/>
 					<tool refID="esri_editing_EditVerticesMove"/>
 					<tool refID="esri_mapping_clearSelectionButton"/>
 					<tool refID="esri_editing_DelSelFeaturesBtn"/>
 					<tool refID="esri_editing_SaveEditsBtn"/>
-
 				</toolPalette>
 			</palettes>
 			

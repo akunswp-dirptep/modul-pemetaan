@@ -33,6 +33,8 @@ class Login_Pihak_Ketiga:
         user_data = get_user_data(THIRD_PARTY_DATA_KEY)
         sso_data = get_user_data(SSO_DATA_KEY)
 
+        
+
         penjelasan = arcpy.Parameter(
             displayName="Penjelasan",
             name="penjelasan",
@@ -40,16 +42,8 @@ class Login_Pihak_Ketiga:
             parameterType="Optional",
             direction="Input"
         )
-        already_user_login_explanation = (
-            "Anda sudah login sebagai Pemeta Pihak Ketiga\n"
-            "Dengan Kredensial sebagai berikut:\n"
-                f"NIK: {user_data.get(NIK_KEY, 'N/A')}\n"
-            "Untuk menggunakan SSO, Anda harus logout\n"
-            "terlebih dahulu\n\n"
-            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-            "Kementerian ATR/BPN\n"
-            "Tahun: {}".format(datetime.now().year)
-        )
+
+
         already_login_sso_explanation = (
             "Anda sudah login menggunakan SSO\n"
             "Untuk menggunakan Pemeta, Anda harus logout\n"
@@ -94,6 +88,18 @@ class Login_Pihak_Ketiga:
         server.filter.list = ["Belajar", "Produksi"]
         server.value = "Belajar"
         if user_data:
+            already_user_login_explanation = (
+                "Anda sudah login sebagai Pemeta Pihak Ketiga\n"
+                "Dengan Kredensial sebagai berikut:\n\n"
+                f"Nama Pemeta: {user_data['user']['nama']}\n"
+                f"Badan Usaha : {user_data['user']['perusahaan_nama']}\n\n"
+
+                "Untuk menggunakan SSO, Anda harus logout\n"
+                "terlebih dahulu\n\n"
+                "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                "Kementerian ATR/BPN\n"
+                "Tahun: {}".format(datetime.now().year)
+            )
             penjelasan.value = already_user_login_explanation
             return [penjelasan]
         if sso_data:
@@ -265,15 +271,11 @@ class Logout_Pengguna:
             berkas_list = get_all_berkas_id()
             berkas_messages = "\n".join([f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list])
             server = get_user_data(PREFERRED_SERVER_KEY)
-            kontrak = '20202020'
-            tahun = get_user_data(YEAR_KEY)
-            nama_pengguna = user_data['berkas'][0]['nama_petugas']
+            nama_pengguna = user_data['user']['nama']
 
             penjelasan.value = (
                 f"Anda saat ini masuk sebagai Pemeta Nilai Tanah\n\n"
                 f"Nama Pemeta: {nama_pengguna}\n"
-                f"Nomor Kontrak: {kontrak}\n"
-                f"Tahun Kontrak: {tahun}\n"
                 f"Server Sipenta: {server}\n\n"
                 "Anda memiliki akses ke berkas-berkas berikut:\n"
                 f"{berkas_messages}\n\n"

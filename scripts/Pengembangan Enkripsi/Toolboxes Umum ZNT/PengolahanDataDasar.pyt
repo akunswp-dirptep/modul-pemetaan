@@ -18,7 +18,7 @@ from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import main_upload
 from zntutils.zona_layer import get_config_values, check_if_there_selected_field
 from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
-from zntutils.constant import USER_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
+from zntutils.constant import THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
 
 # ======================
 # ENVIRONMENT SETTINGS
@@ -445,7 +445,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        is_login = get_user_data(USER_DATA_KEY)
+        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 

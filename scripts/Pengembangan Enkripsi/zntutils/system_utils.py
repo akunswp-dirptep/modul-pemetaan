@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
-from .constant import USER_DATA_KEY, NIK_KEY, NOMOR_KONTRAK_KEY, PREFERRED_SERVER_KEY, SSO_DATA_KEY
+from .constant import AUTH_KEY, THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, SSO_DATA_KEY
 def current_year():
     try:
         return int(datetime.now().year)
@@ -178,7 +178,7 @@ def get_all_config(config_path = None):
     except Exception as e:
         return None
 
-def get_all_berkas_id(process_type = None, user_data_key = USER_DATA_KEY):
+def get_all_berkas_id(process_type = None, THIRD_PARTY_DATA_KEY = THIRD_PARTY_DATA_KEY):
 
     process_mapping = {
         'Pembuatan ZNT': '01',
@@ -193,7 +193,7 @@ def get_all_berkas_id(process_type = None, user_data_key = USER_DATA_KEY):
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            user_data = data.get(user_data_key, [])
+            user_data = data.get(THIRD_PARTY_DATA_KEY, [])
             if len(user_data['berkas']) > 0:
                 data_berkas = []
                 for berkas in user_data['berkas']:
@@ -235,14 +235,14 @@ def get_all_berkas_id(process_type = None, user_data_key = USER_DATA_KEY):
     except Exception as e:
         return None
 
-def clear_user_data(user_data_key = USER_DATA_KEY):
+def clear_user_data(THIRD_PARTY_DATA_KEY = THIRD_PARTY_DATA_KEY):
     config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            data[user_data_key] = None
+            data[THIRD_PARTY_DATA_KEY] = None
             data[NIK_KEY] = None
-            data[NOMOR_KONTRAK_KEY] = None
+            data[AUTH_KEY] = None
             data[PREFERRED_SERVER_KEY] = None
             encrypt_message(json.dumps(data), generate_key(), config_path)
             return True
@@ -295,7 +295,7 @@ def get_login_status():
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            user_data = data.get(USER_DATA_KEY, None)
+            user_data = data.get(THIRD_PARTY_DATA_KEY, None)
             sso_data = data.get(SSO_DATA_KEY, None)
             if user_data is not None or sso_data is not None:
                 return {

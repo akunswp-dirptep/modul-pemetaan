@@ -11,7 +11,7 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.constant import PREFERRED_SERVER_KEY, NIK_KEY, YEAR_KEY, USER_DATA_KEY
+from zntutils.constant import PREFERRED_SERVER_KEY, NIK_KEY, YEAR_KEY, THIRD_PARTY_DATA_KEY
 from zntutils.document import validate_document_type, get_credentials, get_all_berkas_id
 from zntutils.upload_utils import main_upload_shapefile, main_upload
 from zntutils.system_utils import get_user_data, renew_user_data
@@ -52,7 +52,7 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
 
 
     def getParameterInfo(self):
-        is_login = get_user_data(USER_DATA_KEY)
+        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 
@@ -136,7 +136,7 @@ class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
         self.canRunInBackground = False
 
     def getParameterInfo(self):
-        is_login = get_user_data(USER_DATA_KEY)
+        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 
@@ -750,7 +750,7 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        is_login = get_user_data(USER_DATA_KEY)
+        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 

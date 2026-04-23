@@ -30,7 +30,14 @@ class Impor_Titik_Sampel_Dari_Excel(object):
         self.label = "Impor Titik Sampel Dari Excel"
         self.description = "Tool untuk mengimpor titik sampel dari file Excel ke dalam feature class."
         self.canRunInBackground = False
-        self.dataset_path, self.tahun, self.provinsi, self.kota, self.coor, self.gdb_path = get_config_values()
+        config_data = get_config_values()
+        self.dataset_path = config_data.get('dataset_path')
+        self.tahun = config_data.get('tahun')
+        self.provinsi = config_data.get('provinsi')
+        self.kota = config_data.get('kota')
+        self.coor = config_data.get('coor')
+        self.gdb_path = config_data.get('gdb_path')
+
         # Daftar field target yang harus di-mapping ke kolom Excel
 
 

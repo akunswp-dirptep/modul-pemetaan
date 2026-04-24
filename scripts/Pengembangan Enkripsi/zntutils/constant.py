@@ -665,4 +665,5 @@ NIK_KEY = "nomor_induk_kependudukan"
 AUTH_KEY = "auth_key"
 PREFERRED_SERVER_KEY = "preferred_server"
 YEAR_KEY = "tahun"
+CREDENTIAL_KEY = "user_credential"
 PROJECT_CONFIG_FILE_NAME = 'penilaian_tanah_config.bin'

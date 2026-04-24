@@ -1,0 +1,2416 @@
+{
+    "success": true,
+    "status": "ok",
+    "message": "OK",
+    "token": "5o2UgxMT-JAp49YaHpkmRKwu6QKKtK_1wvGVjH7cC8Toh2SluGNUpkbD275qdLEJv1Hu6Nu0YoBemlK_pOYXWUIv0WPSiWPELGWpaCDYqR5xoKtdWN0a-xSOZhtuLGlPHN95ggh_yFJNWEdWc2Ogd3KUVAXR1ZE5qE25Cn3G7nxcvfW0Z4dLr1tU3hHzvZ1jVL_rwjBK_jfiIhJa7ixJQinml8HwoaQ_WZWukba_feL_lXxIx3SiTd3IGNSSanW2cNrz108hlA",
+    "logged_in": "2026-04-24 11:07:22",
+    "end_session": "2026-04-26 11:07:22",
+    "user": {
+        "user_id": "199402012022042001",
+        "nama": "Adhelina Rinta Iswari",
+        "kantor_id": "980FECFC746D8C80E0400B0A9214067D",
+        "nama_kantor": "Kementerian Agraria dan Tata Ruang/Badan Pertanahan Nasional",
+        "tipe_kantor_id": "1",
+        "roles": [
+            "PemetaanNilaiTanah",
+            "SurveyorPenilaiTanah"
+        ]
+    },
+    "berkas": [
+        {
+            "berkas_id": "786",
+            "no_berkas": "01/2026/0078",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "801",
+            "no_berkas": "01/2026/0079",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "813",
+            "no_berkas": "01/2026/0080",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "830",
+            "no_berkas": "01/2026/0081",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "831",
+            "no_berkas": "01/2026/0082",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "892",
+            "no_berkas": "01/2026/0082",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "897",
+            "no_berkas": "01/2026/0083",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "904",
+            "no_berkas": "01/2026/0084",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "905",
+            "no_berkas": "01/2026/0085",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "966",
+            "no_berkas": "01/2026/0086",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1026",
+            "no_berkas": "01/2026/0088",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1032",
+            "no_berkas": "01/2026/0089",
+            "can_upload": true
+        },
+        {
+            "berkas_id": "1127",
+            "no_berkas": "01/2026/0092",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1216",
+            "no_berkas": "01/2026/0094",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "64",
+            "no_berkas": "02/2026/0011",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "73",
+            "no_berkas": "02/2026/0018",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "74",
+            "no_berkas": "02/2026/0019",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "76",
+            "no_berkas": "02/2026/0021",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "80",
+            "no_berkas": "02/2026/0024",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "86",
+            "no_berkas": "02/2026/0030",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "90",
+            "no_berkas": "02/2026/0033",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "94",
+            "no_berkas": "02/2026/0037",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "95",
+            "no_berkas": "02/2026/0038",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "99",
+            "no_berkas": "02/2026/0042",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "101",
+            "no_berkas": "02/2026/0044",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "102",
+            "no_berkas": "02/2026/0045",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "105",
+            "no_berkas": "02/2026/0048",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "107",
+            "no_berkas": "02/2026/0050",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "109",
+            "no_berkas": "02/2026/0052",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "112",
+            "no_berkas": "02/2026/0055",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "113",
+            "no_berkas": "02/2026/0056",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "118",
+            "no_berkas": "02/2026/0061",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "126",
+            "no_berkas": "02/2026/0068",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "127",
+            "no_berkas": "02/2026/0069",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "129",
+            "no_berkas": "02/2026/0071",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "131",
+            "no_berkas": "02/2026/0073",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "133",
+            "no_berkas": "02/2026/0075",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "188",
+            "no_berkas": "02/2026/0124",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "235",
+            "no_berkas": "02/2026/0167",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "283",
+            "no_berkas": "02/2026/0214",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "345",
+            "no_berkas": "02/2026/0273",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "422",
+            "no_berkas": "02/2026/0347",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "437",
+            "no_berkas": "02/2026/0361",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "464",
+            "no_berkas": "02/2026/0387",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "471",
+            "no_berkas": "02/2026/0394",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "476",
+            "no_berkas": "02/2026/0399",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "484",
+            "no_berkas": "02/2026/0407",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "493",
+            "no_berkas": "02/2026/0415",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "537",
+            "no_berkas": "02/2026/0455",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "570",
+            "no_berkas": "02/2026/0486",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "576",
+            "no_berkas": "02/2026/0492",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "591",
+            "no_berkas": "02/2026/0507",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "592",
+            "no_berkas": "02/2026/0508",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "594",
+            "no_berkas": "02/2026/0510",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "596",
+            "no_berkas": "02/2026/0512",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "597",
+            "no_berkas": "02/2026/0513",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "599",
+            "no_berkas": "02/2026/0515",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "602",
+            "no_berkas": "02/2026/0518",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "603",
+            "no_berkas": "02/2026/0519",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "605",
+            "no_berkas": "02/2026/0521",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "606",
+            "no_berkas": "02/2026/0522",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "608",
+            "no_berkas": "02/2026/0524",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "610",
+            "no_berkas": "02/2026/0526",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "611",
+            "no_berkas": "02/2026/0527",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "612",
+            "no_berkas": "02/2026/0528",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "614",
+            "no_berkas": "02/2026/0530",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "615",
+            "no_berkas": "02/2026/0531",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "619",
+            "no_berkas": "02/2026/0535",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "621",
+            "no_berkas": "02/2026/0537",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "626",
+            "no_berkas": "02/2026/0542",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "628",
+            "no_berkas": "02/2026/0544",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "631",
+            "no_berkas": "02/2026/0546",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "632",
+            "no_berkas": "02/2026/0548",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "635",
+            "no_berkas": "02/2026/0551",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "646",
+            "no_berkas": "02/2026/0562",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "649",
+            "no_berkas": "02/2026/0565",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "650",
+            "no_berkas": "02/2026/0566",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "653",
+            "no_berkas": "02/2026/0569",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "656",
+            "no_berkas": "02/2026/0572",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "657",
+            "no_berkas": "02/2026/0573",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "658",
+            "no_berkas": "02/2026/0574",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "661",
+            "no_berkas": "02/2026/0577",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "664",
+            "no_berkas": "02/2026/0580",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "665",
+            "no_berkas": "02/2026/0581",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "666",
+            "no_berkas": "02/2026/0582",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "667",
+            "no_berkas": "02/2026/0583",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "669",
+            "no_berkas": "02/2026/0585",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "670",
+            "no_berkas": "02/2026/0586",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "674",
+            "no_berkas": "02/2026/0590",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "675",
+            "no_berkas": "02/2026/0591",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "678",
+            "no_berkas": "02/2026/0594",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "679",
+            "no_berkas": "02/2026/0595",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "680",
+            "no_berkas": "02/2026/0596",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "683",
+            "no_berkas": "02/2026/0599",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "684",
+            "no_berkas": "02/2026/0600",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "688",
+            "no_berkas": "02/2026/0604",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "692",
+            "no_berkas": "02/2026/0608",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "693",
+            "no_berkas": "02/2026/0609",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "695",
+            "no_berkas": "02/2026/0611",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "707",
+            "no_berkas": "02/2026/0622",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "709",
+            "no_berkas": "02/2026/0624",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "713",
+            "no_berkas": "02/2026/0628",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "716",
+            "no_berkas": "02/2026/0631",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "718",
+            "no_berkas": "02/2026/0632",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "723",
+            "no_berkas": "02/2026/0636",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "732",
+            "no_berkas": "02/2026/0644",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "733",
+            "no_berkas": "02/2026/0645",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "735",
+            "no_berkas": "02/2026/0647",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "736",
+            "no_berkas": "02/2026/0648",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "738",
+            "no_berkas": "02/2026/0650",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "739",
+            "no_berkas": "02/2026/0651",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "744",
+            "no_berkas": "02/2026/0656",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "745",
+            "no_berkas": "02/2026/0657",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "746",
+            "no_berkas": "02/2026/0658",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "747",
+            "no_berkas": "02/2026/0659",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "751",
+            "no_berkas": "02/2026/0663",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "752",
+            "no_berkas": "02/2026/0664",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "755",
+            "no_berkas": "02/2026/0667",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "757",
+            "no_berkas": "02/2026/0669",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "759",
+            "no_berkas": "02/2026/0671",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "763",
+            "no_berkas": "02/2026/0674",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "769",
+            "no_berkas": "02/2026/0680",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "770",
+            "no_berkas": "02/2026/0681",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "771",
+            "no_berkas": "02/2026/0682",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "774",
+            "no_berkas": "02/2026/0685",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "777",
+            "no_berkas": "02/2026/0688",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "782",
+            "no_berkas": "02/2026/0693",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "790",
+            "no_berkas": "02/2026/0700",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "797",
+            "no_berkas": "02/2026/0707",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "804",
+            "no_berkas": "02/2026/0713",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "809",
+            "no_berkas": "02/2026/0718",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "814",
+            "no_berkas": "02/2026/0722",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "818",
+            "no_berkas": "02/2026/0726",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "819",
+            "no_berkas": "02/2026/0727",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "822",
+            "no_berkas": "02/2026/0730",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "823",
+            "no_berkas": "02/2026/0731",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "824",
+            "no_berkas": "02/2026/0732",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "829",
+            "no_berkas": "02/2026/0737",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "834",
+            "no_berkas": "02/2026/0740",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "838",
+            "no_berkas": "02/2026/0744",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "839",
+            "no_berkas": "02/2026/0745",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "847",
+            "no_berkas": "02/2026/0753",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "851",
+            "no_berkas": "02/2026/0757",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "853",
+            "no_berkas": "02/2026/0759",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "854",
+            "no_berkas": "02/2026/0760",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "857",
+            "no_berkas": "02/2026/0763",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "859",
+            "no_berkas": "02/2026/0765",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "860",
+            "no_berkas": "02/2026/0766",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "861",
+            "no_berkas": "02/2026/0767",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "862",
+            "no_berkas": "02/2026/0768",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "863",
+            "no_berkas": "02/2026/0769",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "864",
+            "no_berkas": "02/2026/0770",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "865",
+            "no_berkas": "02/2026/0771",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "866",
+            "no_berkas": "02/2026/0772",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "868",
+            "no_berkas": "02/2026/0773",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "869",
+            "no_berkas": "02/2026/0774",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "870",
+            "no_berkas": "02/2026/0775",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "871",
+            "no_berkas": "02/2026/0776",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "872",
+            "no_berkas": "02/2026/0777",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "873",
+            "no_berkas": "02/2026/0778",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "874",
+            "no_berkas": "02/2026/0779",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "875",
+            "no_berkas": "02/2026/0780",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "876",
+            "no_berkas": "02/2026/0781",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "877",
+            "no_berkas": "02/2026/0782",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "878",
+            "no_berkas": "02/2026/0783",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "879",
+            "no_berkas": "02/2026/0784",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "880",
+            "no_berkas": "02/2026/0785",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "881",
+            "no_berkas": "02/2026/0786",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "882",
+            "no_berkas": "02/2026/0787",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "883",
+            "no_berkas": "02/2026/0788",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "884",
+            "no_berkas": "02/2026/0789",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "885",
+            "no_berkas": "02/2026/0790",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "886",
+            "no_berkas": "02/2026/0791",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "888",
+            "no_berkas": "02/2026/0793",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "889",
+            "no_berkas": "02/2026/0794",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "890",
+            "no_berkas": "02/2026/0795",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "891",
+            "no_berkas": "02/2026/0796",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "893",
+            "no_berkas": "02/2026/0797",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "894",
+            "no_berkas": "02/2026/0798",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "895",
+            "no_berkas": "02/2026/0799",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "896",
+            "no_berkas": "02/2026/0800",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "898",
+            "no_berkas": "02/2026/0801",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "899",
+            "no_berkas": "02/2026/0802",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "900",
+            "no_berkas": "02/2026/0803",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "901",
+            "no_berkas": "02/2026/0804",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "902",
+            "no_berkas": "02/2026/0805",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "903",
+            "no_berkas": "02/2026/0806",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "906",
+            "no_berkas": "02/2026/0807",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "908",
+            "no_berkas": "02/2026/0809",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "909",
+            "no_berkas": "02/2026/0810",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "910",
+            "no_berkas": "02/2026/0811",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "911",
+            "no_berkas": "02/2026/0812",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "912",
+            "no_berkas": "02/2026/0813",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "913",
+            "no_berkas": "02/2026/0814",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "914",
+            "no_berkas": "02/2026/0815",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "915",
+            "no_berkas": "02/2026/0816",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "916",
+            "no_berkas": "02/2026/0817",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "917",
+            "no_berkas": "02/2026/0818",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "918",
+            "no_berkas": "02/2026/0819",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "919",
+            "no_berkas": "02/2026/0820",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "920",
+            "no_berkas": "02/2026/0821",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "921",
+            "no_berkas": "02/2026/0822",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "922",
+            "no_berkas": "02/2026/0823",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "923",
+            "no_berkas": "02/2026/0824",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "925",
+            "no_berkas": "02/2026/0826",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "926",
+            "no_berkas": "02/2026/0827",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "927",
+            "no_berkas": "02/2026/0828",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "929",
+            "no_berkas": "02/2026/0830",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "930",
+            "no_berkas": "02/2026/0831",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "932",
+            "no_berkas": "02/2026/0833",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "933",
+            "no_berkas": "02/2026/0834",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "934",
+            "no_berkas": "02/2026/0835",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "935",
+            "no_berkas": "02/2026/0836",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "936",
+            "no_berkas": "02/2026/0837",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "937",
+            "no_berkas": "02/2026/0838",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "938",
+            "no_berkas": "02/2026/0839",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "939",
+            "no_berkas": "02/2026/0840",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "940",
+            "no_berkas": "02/2026/0841",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "941",
+            "no_berkas": "02/2026/0842",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "942",
+            "no_berkas": "02/2026/0843",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "943",
+            "no_berkas": "02/2026/0844",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "944",
+            "no_berkas": "02/2026/0845",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "945",
+            "no_berkas": "02/2026/0846",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "946",
+            "no_berkas": "02/2026/0847",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "947",
+            "no_berkas": "02/2026/0848",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "948",
+            "no_berkas": "02/2026/0849",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "949",
+            "no_berkas": "02/2026/0850",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "950",
+            "no_berkas": "02/2026/0851",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "951",
+            "no_berkas": "02/2026/0852",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "952",
+            "no_berkas": "02/2026/0853",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "953",
+            "no_berkas": "02/2026/0854",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "954",
+            "no_berkas": "02/2026/0855",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "955",
+            "no_berkas": "02/2026/0856",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "956",
+            "no_berkas": "02/2026/0857",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "957",
+            "no_berkas": "02/2026/0858",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "958",
+            "no_berkas": "02/2026/0859",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "959",
+            "no_berkas": "02/2026/0860",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "960",
+            "no_berkas": "02/2026/0861",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "961",
+            "no_berkas": "02/2026/0862",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "962",
+            "no_berkas": "02/2026/0863",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "963",
+            "no_berkas": "02/2026/0864",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "964",
+            "no_berkas": "02/2026/0865",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "965",
+            "no_berkas": "02/2026/0866",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "967",
+            "no_berkas": "02/2026/0867",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "968",
+            "no_berkas": "02/2026/0868",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "969",
+            "no_berkas": "02/2026/0869",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "970",
+            "no_berkas": "02/2026/0870",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "971",
+            "no_berkas": "02/2026/0871",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "972",
+            "no_berkas": "02/2026/0872",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "973",
+            "no_berkas": "02/2026/0873",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "974",
+            "no_berkas": "02/2026/0874",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "977",
+            "no_berkas": "02/2026/0876",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "978",
+            "no_berkas": "02/2026/0877",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "979",
+            "no_berkas": "02/2026/0878",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "980",
+            "no_berkas": "02/2026/0879",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "981",
+            "no_berkas": "02/2026/0880",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "982",
+            "no_berkas": "02/2026/0881",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "983",
+            "no_berkas": "02/2026/0882",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "984",
+            "no_berkas": "02/2026/0883",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "986",
+            "no_berkas": "02/2026/0884",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "987",
+            "no_berkas": "02/2026/0885",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "988",
+            "no_berkas": "02/2026/0886",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "989",
+            "no_berkas": "02/2026/0887",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "990",
+            "no_berkas": "02/2026/0888",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "991",
+            "no_berkas": "02/2026/0889",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "992",
+            "no_berkas": "02/2026/0890",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "993",
+            "no_berkas": "02/2026/0891",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "994",
+            "no_berkas": "02/2026/0892",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "995",
+            "no_berkas": "02/2026/0893",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "996",
+            "no_berkas": "02/2026/0894",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "997",
+            "no_berkas": "02/2026/0895",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "998",
+            "no_berkas": "02/2026/0896",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "999",
+            "no_berkas": "02/2026/0897",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1000",
+            "no_berkas": "02/2026/0898",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1001",
+            "no_berkas": "02/2026/0899",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1002",
+            "no_berkas": "02/2026/0900",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1004",
+            "no_berkas": "02/2026/0902",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1005",
+            "no_berkas": "02/2026/0903",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1006",
+            "no_berkas": "02/2026/0904",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1007",
+            "no_berkas": "02/2026/0905",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1008",
+            "no_berkas": "02/2026/0906",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1010",
+            "no_berkas": "02/2026/0908",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1011",
+            "no_berkas": "02/2026/0909",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1012",
+            "no_berkas": "02/2026/0910",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1013",
+            "no_berkas": "02/2026/0911",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1014",
+            "no_berkas": "02/2026/0912",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1016",
+            "no_berkas": "02/2026/0913",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1017",
+            "no_berkas": "02/2026/0914",
+            "can_upload": true
+        },
+        {
+            "berkas_id": "1018",
+            "no_berkas": "02/2026/0915",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1019",
+            "no_berkas": "02/2026/0916",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1020",
+            "no_berkas": "02/2026/0917",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1021",
+            "no_berkas": "02/2026/0918",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1022",
+            "no_berkas": "02/2026/0919",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1023",
+            "no_berkas": "02/2026/0920",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1024",
+            "no_berkas": "02/2026/0921",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1025",
+            "no_berkas": "02/2026/0922",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1027",
+            "no_berkas": "02/2026/0923",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1028",
+            "no_berkas": "02/2026/0924",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1029",
+            "no_berkas": "02/2026/0925",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1030",
+            "no_berkas": "02/2026/0926",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1031",
+            "no_berkas": "02/2026/0927",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1036",
+            "no_berkas": "02/2026/0929",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1037",
+            "no_berkas": "02/2026/0930",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1038",
+            "no_berkas": "02/2026/0931",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1039",
+            "no_berkas": "02/2026/0932",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1040",
+            "no_berkas": "02/2026/0933",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1041",
+            "no_berkas": "02/2026/0934",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1042",
+            "no_berkas": "02/2026/0935",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1043",
+            "no_berkas": "02/2026/0936",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1044",
+            "no_berkas": "02/2026/0937",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1045",
+            "no_berkas": "02/2026/0938",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1046",
+            "no_berkas": "02/2026/0939",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1047",
+            "no_berkas": "02/2026/0940",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1048",
+            "no_berkas": "02/2026/0941",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1049",
+            "no_berkas": "02/2026/0942",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1050",
+            "no_berkas": "02/2026/0943",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1051",
+            "no_berkas": "02/2026/0944",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1052",
+            "no_berkas": "02/2026/0945",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1053",
+            "no_berkas": "02/2026/0946",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1054",
+            "no_berkas": "02/2026/0947",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1055",
+            "no_berkas": "02/2026/0948",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1056",
+            "no_berkas": "02/2026/0949",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1057",
+            "no_berkas": "02/2026/0950",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1058",
+            "no_berkas": "02/2026/0951",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1059",
+            "no_berkas": "02/2026/0952",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1060",
+            "no_berkas": "02/2026/0953",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1061",
+            "no_berkas": "02/2026/0954",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1062",
+            "no_berkas": "02/2026/0955",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1063",
+            "no_berkas": "02/2026/0956",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1064",
+            "no_berkas": "02/2026/0957",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1065",
+            "no_berkas": "02/2026/0958",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1066",
+            "no_berkas": "02/2026/0959",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1067",
+            "no_berkas": "02/2026/0960",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1070",
+            "no_berkas": "02/2026/0963",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1071",
+            "no_berkas": "02/2026/0964",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1072",
+            "no_berkas": "02/2026/0965",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1073",
+            "no_berkas": "02/2026/0966",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1074",
+            "no_berkas": "02/2026/0967",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1075",
+            "no_berkas": "02/2026/0968",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1077",
+            "no_berkas": "02/2026/0970",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1079",
+            "no_berkas": "02/2026/0972",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1080",
+            "no_berkas": "02/2026/0973",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1081",
+            "no_berkas": "02/2026/0974",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1082",
+            "no_berkas": "02/2026/0975",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1083",
+            "no_berkas": "02/2026/0976",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1086",
+            "no_berkas": "02/2026/0979",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1087",
+            "no_berkas": "02/2026/0980",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1088",
+            "no_berkas": "02/2026/0981",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1089",
+            "no_berkas": "02/2026/0982",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1090",
+            "no_berkas": "02/2026/0983",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1092",
+            "no_berkas": "02/2026/0985",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1093",
+            "no_berkas": "02/2026/0986",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1095",
+            "no_berkas": "02/2026/0988",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1096",
+            "no_berkas": "02/2026/0989",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1097",
+            "no_berkas": "02/2026/0990",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1098",
+            "no_berkas": "02/2026/0991",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1099",
+            "no_berkas": "02/2026/0992",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1100",
+            "no_berkas": "02/2026/0993",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1102",
+            "no_berkas": "02/2026/0995",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1104",
+            "no_berkas": "02/2026/0997",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1105",
+            "no_berkas": "02/2026/0998",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1106",
+            "no_berkas": "02/2026/0999",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1107",
+            "no_berkas": "02/2026/1000",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1108",
+            "no_berkas": "02/2026/1001",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1109",
+            "no_berkas": "02/2026/1002",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1110",
+            "no_berkas": "02/2026/1003",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1111",
+            "no_berkas": "02/2026/1004",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1112",
+            "no_berkas": "02/2026/1005",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1113",
+            "no_berkas": "02/2026/1006",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1114",
+            "no_berkas": "02/2026/1007",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1115",
+            "no_berkas": "02/2026/1008",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1116",
+            "no_berkas": "02/2026/1009",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1117",
+            "no_berkas": "02/2026/1010",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1118",
+            "no_berkas": "02/2026/1011",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1119",
+            "no_berkas": "02/2026/1012",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1120",
+            "no_berkas": "02/2026/1013",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1123",
+            "no_berkas": "02/2026/1014",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1124",
+            "no_berkas": "02/2026/1015",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1125",
+            "no_berkas": "02/2026/1016",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1126",
+            "no_berkas": "02/2026/1017",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1128",
+            "no_berkas": "02/2026/1018",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1129",
+            "no_berkas": "02/2026/1019",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1130",
+            "no_berkas": "02/2026/1020",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1131",
+            "no_berkas": "02/2026/1021",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1132",
+            "no_berkas": "02/2026/1022",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1133",
+            "no_berkas": "02/2026/1023",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1134",
+            "no_berkas": "02/2026/1024",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1135",
+            "no_berkas": "02/2026/1025",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1136",
+            "no_berkas": "02/2026/1026",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1138",
+            "no_berkas": "02/2026/1028",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1139",
+            "no_berkas": "02/2026/1029",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1140",
+            "no_berkas": "02/2026/1030",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1141",
+            "no_berkas": "02/2026/1031",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1142",
+            "no_berkas": "02/2026/1032",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1143",
+            "no_berkas": "02/2026/1033",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1145",
+            "no_berkas": "02/2026/1035",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1146",
+            "no_berkas": "02/2026/1036",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1147",
+            "no_berkas": "02/2026/1037",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1148",
+            "no_berkas": "02/2026/1038",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1149",
+            "no_berkas": "02/2026/1039",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1150",
+            "no_berkas": "02/2026/1040",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1151",
+            "no_berkas": "02/2026/1041",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1153",
+            "no_berkas": "02/2026/1043",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1154",
+            "no_berkas": "02/2026/1044",
+            "can_upload": true
+        },
+        {
+            "berkas_id": "1155",
+            "no_berkas": "02/2026/1045",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1156",
+            "no_berkas": "02/2026/1046",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1157",
+            "no_berkas": "02/2026/1047",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1158",
+            "no_berkas": "02/2026/1048",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1159",
+            "no_berkas": "02/2026/1049",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1160",
+            "no_berkas": "02/2026/1050",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1161",
+            "no_berkas": "02/2026/1051",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1162",
+            "no_berkas": "02/2026/1052",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1163",
+            "no_berkas": "02/2026/1053",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1164",
+            "no_berkas": "02/2026/1054",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1165",
+            "no_berkas": "02/2026/1055",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1166",
+            "no_berkas": "02/2026/1056",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1167",
+            "no_berkas": "02/2026/1057",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1168",
+            "no_berkas": "02/2026/1058",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1169",
+            "no_berkas": "02/2026/1059",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1170",
+            "no_berkas": "02/2026/1060",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1171",
+            "no_berkas": "02/2026/1061",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1172",
+            "no_berkas": "02/2026/1062",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1173",
+            "no_berkas": "02/2026/1063",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1174",
+            "no_berkas": "02/2026/1064",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1175",
+            "no_berkas": "02/2026/1065",
+            "can_upload": true
+        },
+        {
+            "berkas_id": "1176",
+            "no_berkas": "02/2026/1066",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1177",
+            "no_berkas": "02/2026/1067",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1178",
+            "no_berkas": "02/2026/1068",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1179",
+            "no_berkas": "02/2026/1069",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1181",
+            "no_berkas": "02/2026/1070",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1182",
+            "no_berkas": "02/2026/1071",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1184",
+            "no_berkas": "02/2026/1072",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1185",
+            "no_berkas": "02/2026/1073",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1186",
+            "no_berkas": "02/2026/1074",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1187",
+            "no_berkas": "02/2026/1075",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1188",
+            "no_berkas": "02/2026/1076",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1190",
+            "no_berkas": "02/2026/1078",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1191",
+            "no_berkas": "02/2026/1079",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1192",
+            "no_berkas": "02/2026/1080",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1193",
+            "no_berkas": "02/2026/1081",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1194",
+            "no_berkas": "02/2026/1082",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1195",
+            "no_berkas": "02/2026/1083",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1196",
+            "no_berkas": "02/2026/1084",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1197",
+            "no_berkas": "02/2026/1085",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1199",
+            "no_berkas": "02/2026/1087",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1200",
+            "no_berkas": "02/2026/1088",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1201",
+            "no_berkas": "02/2026/1089",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1202",
+            "no_berkas": "02/2026/1090",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1203",
+            "no_berkas": "02/2026/1091",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1204",
+            "no_berkas": "02/2026/1092",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1205",
+            "no_berkas": "02/2026/1093",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1206",
+            "no_berkas": "02/2026/1094",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1207",
+            "no_berkas": "02/2026/1095",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1208",
+            "no_berkas": "02/2026/1096",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1209",
+            "no_berkas": "02/2026/1097",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1210",
+            "no_berkas": "02/2026/1098",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1211",
+            "no_berkas": "02/2026/1099",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1212",
+            "no_berkas": "02/2026/1100",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1213",
+            "no_berkas": "02/2026/1101",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1214",
+            "no_berkas": "02/2026/1102",
+            "can_upload": true
+        },
+        {
+            "berkas_id": "1215",
+            "no_berkas": "02/2026/1103",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1217",
+            "no_berkas": "02/2026/1104",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1218",
+            "no_berkas": "02/2026/1105",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1219",
+            "no_berkas": "02/2026/1106",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1220",
+            "no_berkas": "02/2026/1107",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1221",
+            "no_berkas": "02/2026/1108",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1222",
+            "no_berkas": "02/2026/1109",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1223",
+            "no_berkas": "02/2026/1110",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1224",
+            "no_berkas": "02/2026/1111",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1225",
+            "no_berkas": "02/2026/1112",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1226",
+            "no_berkas": "02/2026/1113",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1227",
+            "no_berkas": "02/2026/1114",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1228",
+            "no_berkas": "02/2026/1115",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1229",
+            "no_berkas": "02/2026/1116",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "443",
+            "no_berkas": "04/2026/0005",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "867",
+            "no_berkas": "04/2026/0008",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "976",
+            "no_berkas": "04/2026/0009",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "985",
+            "no_berkas": "04/2026/0010",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1183",
+            "no_berkas": "04/2026/0013",
+            "can_upload": false
+        }
+    ]
+}

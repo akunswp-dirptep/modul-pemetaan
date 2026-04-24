@@ -178,8 +178,9 @@ def get_all_config(config_path = None):
     except Exception as e:
         return None
 
-def get_all_berkas_id(process_type = None, THIRD_PARTY_DATA_KEY = THIRD_PARTY_DATA_KEY):
+def get_all_berkas_id(process_type = None, DATA_KEY = THIRD_PARTY_DATA_KEY):
 
+    nama_instansi = get_user_data()
     process_mapping = {
         'Pembuatan ZNT': '01',
         'Pembaruan ZNT': '02',
@@ -193,7 +194,7 @@ def get_all_berkas_id(process_type = None, THIRD_PARTY_DATA_KEY = THIRD_PARTY_DA
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            user_data = data.get(THIRD_PARTY_DATA_KEY, [])
+            user_data = data.get(DATA_KEY, [])
             if len(user_data['berkas']) > 0:
                 data_berkas = []
                 for berkas in user_data['berkas']:
@@ -206,7 +207,7 @@ def get_all_berkas_id(process_type = None, THIRD_PARTY_DATA_KEY = THIRD_PARTY_DA
                         if nomor_depan != mapped_process_code:
                             continue
 
-                    data_berkas.append((no_berkas, berkas.get('nama_perusahaan') if berkas.get('nama_perusahaan') else "Swakelola"))
+                    data_berkas.append((no_berkas, ))
 
                 def sort_key(item):
                     no_berkas = item[0] or ""

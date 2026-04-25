@@ -26,7 +26,7 @@ class Toolbox:
                       Pemilihan_Titik_Sampel_Outlier_Kuartil,
                       Pengembalian_Titik_Sampel_Outlier_Ke_Titik_Zona,
                       Pemilihan_Zona_Parsial,
-                      Klastering_Indeks_Nilai_Tanah,
+                      Rekomendasi_Klaster,
                       Perbaharui_Indeks_Sampel_Pada_Titik_Zona,
                       Penyesuaian_Nomor_Zona_Pembaruan,
                       Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan]
@@ -578,43 +578,35 @@ class Pemilihan_Zona_Parsial:
         added to the display."""
         return
 
-class Klastering_Indeks_Nilai_Tanah(object):
+class Rekomendasi_Klaster(object):
     def __init__(self):
-        self.label = "Rekomendasi Klaster Indeks Nilai Tanah"
+        self.label = "Rekomendasi Klaster"
         self.description = "Membentuk cluster dari titik dengan perubahan signifikan"
         self.canRunInBackground = False
 
     def getParameterInfo(self):
         params = []
 
-        in_features = arcpy.Parameter(
-            displayName="Input Titik",
-            name="in_features",
-            datatype="GPFeatureLayer",
-            parameterType="Required",
-            direction="Input"
-        )
-
-        field_indeks = arcpy.Parameter(
-            displayName="Field Indeks",
-            name="field_indeks",
-            datatype="Field",
-            parameterType="Required",
-            direction="Input"
-        )
-        field_indeks.parameterDependencies = [in_features.name]
-
-        eps_distance = arcpy.Parameter(
-            displayName="Jarak Cluster (meter)",
-            name="eps_distance",
+        eps_pertanian = arcpy.Parameter(
+            displayName="Jarak Klaster Pertanian (meter)",
+            name="eps_pertanian",
             datatype="Double",
             parameterType="Required",
             direction="Input"
         )
-        eps_distance.value = 500
+        eps_pertanian.value = 500
+
+        eps_non_pertanian = arcpy.Parameter(
+            displayName="Jarak Klaster Non-Pertanian (meter)",
+            name="eps_non_pertanian",
+            datatype="Double",
+            parameterType="Required",
+            direction="Input"
+        )
+        eps_non_pertanian.value = 300
 
         min_points = arcpy.Parameter(
-            displayName="Minimum Titik dalam Cluster",
+            displayName="Minimum Titik dalam Klaster",
             name="min_points",
             datatype="Long",
             parameterType="Required",
@@ -623,24 +615,33 @@ class Klastering_Indeks_Nilai_Tanah(object):
         min_points.value = 3
 
         out_feature = arcpy.Parameter(
-            displayName="Output Cluster",
             name="out_feature",
-            datatype="DEFeatureClass",
-            parameterType="Required",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
             direction="Output"
         )
 
-        params.extend([in_features, field_indeks, eps_distance, min_points, out_feature])
+        params.extend([eps_pertanian, eps_non_pertanian, min_points, out_feature])
         return params
 
     def execute(self, parameters, messages):
-        in_features = parameters[0].valueAsText
-        field_indeks = parameters[1].valueAsText
-        eps = parameters[2].value
-        min_pts = parameters[3].value
-        out_fc = parameters[4].valueAsText
+        zonalayer.delete_bad_file()
+        eps_pertanian = float(parameters[0].value)
+        eps_non_pertanian = float(parameters[1].value)
+        min_pts = int(parameters[2].value)
 
+        config_dan_paths = zonalayer.get_config_values()
+        titik_zona = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
+        zona_layer = os.path.join(config_dan_paths['dataset_path'], "Zona_Layer")
+        out_fc = os.path.join(config_dan_paths['dataset_path'], 'Rekomendasi_Klaster')
+        field_indeks = "indeks_sampel"
+        field_jnszn = "JNSZN"
+        
         arcpy.env.overwriteOutput = True
+
+        for required_field, feature_class in [(field_indeks, titik_zona), (field_jnszn, titik_zona), (field_jnszn, zona_layer)]:
+            if required_field not in [field.name for field in arcpy.ListFields(feature_class)]:
+                raise Exception(f"Field {required_field} tidak ditemukan pada {os.path.basename(feature_class)}")
 
         # Workspace sementara
         temp_gdb = arcpy.env.scratchGDB
@@ -652,34 +653,52 @@ class Klastering_Indeks_Nilai_Tanah(object):
 
         # Filter naik (>120)
         arcpy.analysis.Select(
-            in_features,
+            titik_zona,
             naik_layer,
             f"{field_indeks} > 120"
         )
 
-        # Filter turun (<80)
+        # Filter turun (<85)
         arcpy.analysis.Select(
-            in_features,
+            titik_zona,
             turun_layer,
-            f"{field_indeks} < 90"
+            f"{field_indeks} < 85"
         )
 
-        def process_cluster(input_layer, label):
-            if int(arcpy.management.GetCount(input_layer)[0]) == 0:
+        def ensure_field(feature_class, field_name, field_type, field_length=None):
+            existing_fields = [field.name for field in arcpy.ListFields(feature_class)]
+            if field_name in existing_fields:
+                return
+
+            if field_length:
+                arcpy.management.AddField(feature_class, field_name, field_type, field_length=field_length)
+            else:
+                arcpy.management.AddField(feature_class, field_name, field_type)
+
+        def process_cluster(input_layer, arah_perubahan, jenis_zona, label_zona, eps_distance):
+            zoned_layer = os.path.join(temp_gdb, f"{arah_perubahan.lower()}_{jenis_zona}_titik")
+            arcpy.analysis.Select(
+                input_layer,
+                zoned_layer,
+                f"{field_jnszn} = {jenis_zona}"
+            )
+
+            if int(arcpy.management.GetCount(zoned_layer)[0]) == 0:
+                arcpy.AddWarning(f"Tidak ada titik {arah_perubahan} untuk zona {label_zona}")
                 return None
 
-            buffer_fc = os.path.join(temp_gdb, f"buffer_{label}")
-            dissolve_fc = os.path.join(temp_gdb, f"dissolve_{label}")
-            cluster_fc = os.path.join(temp_gdb, f"cluster_{label}")
-            filtered_fc = os.path.join(temp_gdb, f"filtered_{label}")
+            buffer_fc = os.path.join(temp_gdb, f"buffer_{arah_perubahan.lower()}_{jenis_zona}")
+            dissolve_fc = os.path.join(temp_gdb, f"dissolve_{arah_perubahan.lower()}_{jenis_zona}")
+            cluster_fc = os.path.join(temp_gdb, f"cluster_{arah_perubahan.lower()}_{jenis_zona}")
+            filtered_fc = os.path.join(temp_gdb, f"filtered_{arah_perubahan.lower()}_{jenis_zona}")
 
-            arcpy.AddMessage(f"Clustering {label}...")
+            arcpy.AddMessage(f"Clustering {arah_perubahan} untuk zona {label_zona} dengan jarak {eps_distance} meter...")
 
             # Buffer
             arcpy.analysis.Buffer(
-                input_layer,
+                zoned_layer,
                 buffer_fc,
-                f"{eps} Meters",
+                f"{eps_distance} Meters",
                 dissolve_option="ALL"
             )
 
@@ -689,7 +708,7 @@ class Klastering_Indeks_Nilai_Tanah(object):
             # Spatial Join (hitung statistik titik pada setiap buffer cluster)
             field_mappings = arcpy.FieldMappings()
             field_mappings.addTable(dissolve_fc)
-            field_mappings.addTable(input_layer)
+            field_mappings.addTable(zoned_layer)
 
             field_map_index = field_mappings.findFieldMapIndex(field_indeks)
             if field_map_index == -1:
@@ -705,20 +724,11 @@ class Klastering_Indeks_Nilai_Tanah(object):
 
             arcpy.analysis.SpatialJoin(
                 dissolve_fc,
-                input_layer,
+                zoned_layer,
                 cluster_fc,
                 join_operation="JOIN_ONE_TO_ONE",
                 field_mapping=field_mappings,
                 match_option="INTERSECT"
-            )
-
-            # Tambahkan field cluster type
-            arcpy.management.AddField(cluster_fc, "jenis_cluster", "TEXT")
-            arcpy.management.CalculateField(
-                cluster_fc,
-                "jenis_cluster",
-                f"'{label}'",
-                "PYTHON3"
             )
 
             arcpy.analysis.Select(
@@ -728,71 +738,154 @@ class Klastering_Indeks_Nilai_Tanah(object):
             )
 
             if int(arcpy.management.GetCount(filtered_fc)[0]) == 0:
-                arcpy.AddWarning(f"Tidak ada cluster {label} yang memenuhi minimum {min_pts} titik")
+                arcpy.AddWarning(f"Tidak ada cluster {arah_perubahan} untuk zona {label_zona} yang memenuhi minimum {min_pts} titik")
                 return None
+
+            ensure_field(filtered_fc, "jenis_cluster", "TEXT", field_length=20)
+            ensure_field(filtered_fc, "JNSZN_CL", "SHORT")
+            ensure_field(filtered_fc, "ZONA_TIPE", "TEXT", field_length=30)
+            ensure_field(filtered_fc, "EPS_METER", "DOUBLE")
+            ensure_field(filtered_fc, "cluster_rek", "TEXT", field_length=50)
+
+            arcpy.management.CalculateField(filtered_fc, "jenis_cluster", f"'{arah_perubahan}'", "PYTHON3")
+            arcpy.management.CalculateField(filtered_fc, "JNSZN_CL", str(jenis_zona), "PYTHON3")
+            arcpy.management.CalculateField(filtered_fc, "ZONA_TIPE", f"'{label_zona}'", "PYTHON3")
+            arcpy.management.CalculateField(filtered_fc, "EPS_METER", str(float(eps_distance)), "PYTHON3")
+
+            cluster_prefix = "P" if jenis_zona == 2 else "NP"
+            with arcpy.da.UpdateCursor(filtered_fc, ["cluster_rek"]) as cursor:
+                nomor_cluster = 1
+                for row in cursor:
+                    row[0] = f"{cluster_prefix}_{arah_perubahan}_{nomor_cluster}"
+                    cursor.updateRow(row)
+                    nomor_cluster += 1
 
             return filtered_fc
 
-        cluster_naik = process_cluster(naik_layer, "NAIK")
-        cluster_turun = process_cluster(turun_layer, "TURUN")
+        cluster_outputs = []
+        zone_configs = [
+            (1, "Non-Pertanian", eps_non_pertanian),
+            (2, "Pertanian", eps_pertanian)
+        ]
 
-        arcpy.AddMessage("Menggabungkan hasil...")
+        for jenis_zona, label_zona, eps_distance in zone_configs:
+            cluster_naik = process_cluster(naik_layer, "NAIK", jenis_zona, label_zona, eps_distance)
+            if cluster_naik:
+                cluster_outputs.append(cluster_naik)
 
-        outputs = [fc for fc in [cluster_naik, cluster_turun] if fc]
+            cluster_turun = process_cluster(turun_layer, "TURUN", jenis_zona, label_zona, eps_distance)
+            if cluster_turun:
+                cluster_outputs.append(cluster_turun)
 
-        if len(outputs) == 0:
+        if len(cluster_outputs) == 0:
             raise Exception("Tidak ada cluster yang terbentuk")
 
-        arcpy.management.Merge(outputs, out_fc)
+        arcpy.AddMessage("Menggabungkan cluster hasil rekomendasi...")
 
-        # # Tambahkan jumlah titik per cluster
-        # arcpy.AddMessage("Menghitung statistik cluster...")
+        merged_cluster_fc = os.path.join(temp_gdb, "merged_cluster_rekomendasi")
+        if len(cluster_outputs) == 1:
+            arcpy.management.CopyFeatures(cluster_outputs[0], merged_cluster_fc)
+        else:
+            arcpy.management.Merge(cluster_outputs, merged_cluster_fc)
 
-        # stats_table = os.path.join(temp_gdb, "stats")
-        # oid_field = arcpy.Describe(out_fc).OIDFieldName
+        zona_work = os.path.join(temp_gdb, "zona_layer_rekomendasi")
+        arcpy.management.CopyFeatures(zona_layer, zona_work)
 
-        # arcpy.analysis.Statistics(
-        #     out_fc,
-        #     stats_table,
-        #     [[oid_field, "COUNT"]],
-        #     ["TARGET_FID"]
-        # )
+        ensure_field(zona_work, "ZONE_OID", "LONG")
+        ensure_field(zona_work, "ZONE_AREA", "DOUBLE")
 
-        # arcpy.management.JoinField(
-        #     out_fc,
-        #     "TARGET_FID",
-        #     stats_table,
-        #     "TARGET_FID",
-        #     ["COUNT_OBJECTID"]
-        # )
+        arcpy.management.CalculateField(zona_work, "ZONE_OID", "!OBJECTID!", "PYTHON3")
+        arcpy.management.CalculateGeometryAttributes(zona_work, [["ZONE_AREA", "AREA"]], area_unit="SQUARE_METERS")
 
-        # # # Filter cluster kecil
-        # # arcpy.AddMessage("Memfilter cluster kecil...")
+        overlay_fc = os.path.join(temp_gdb, "overlay_cluster_zona")
+        arcpy.analysis.Intersect([zona_work, merged_cluster_fc], overlay_fc, "ALL", output_type="INPUT")
 
-        # # arcpy.AddMessage("Cek jumlah fitur sebelum filter:")
-        # # arcpy.AddMessage(arcpy.management.GetCount(out_fc))
+        ensure_field(overlay_fc, "OVR_AREA", "DOUBLE")
+        arcpy.management.CalculateGeometryAttributes(overlay_fc, [["OVR_AREA", "AREA"]], area_unit="SQUARE_METERS")
 
-        # # arcpy.management.MakeFeatureLayer(out_fc, "layer_temp")
+        rekomendasi_zona = {}
+        fields_overlay = ["ZONE_OID", "ZONE_AREA", "OVR_AREA", field_jnszn, "JNSZN_CL", "cluster_rek", "jenis_cluster", "AVG_INDEKS", "EPS_METER"]
 
-        # # arcpy.AddMessage("Cek jumlah fitur setelah seleksi:")
-        # # arcpy.management.SelectLayerByAttribute(
-        # #     "layer_temp",
-        # #     "NEW_SELECTION",
-        # #     f"Join_Count >= {min_pts}"
-        # # )
+        with arcpy.da.SearchCursor(overlay_fc, fields_overlay) as cursor:
+            for zone_oid, zone_area, overlap_area, jnszn_zona, jnszn_cluster, cluster_rek, jenis_cluster, avg_indeks, eps_meter in cursor:
+                if zone_area in [None, 0] or jnszn_zona != jnszn_cluster:
+                    continue
 
-        # # arcpy.AddMessage(arcpy.management.GetCount("layer_temp"))
+                overlap_ratio = float(overlap_area) / float(zone_area)
+                if overlap_ratio <= 0.3:
+                    continue
 
-        # # temp_filtered = os.path.join(temp_gdb, "filtered_cluster")
+                existing = rekomendasi_zona.get(zone_oid)
+                if existing is None or overlap_ratio > existing["overlap_ratio"]:
+                    rekomendasi_zona[zone_oid] = {
+                        "cluster": cluster_rek,
+                        "jenis_cluster": jenis_cluster,
+                        "avg_indeks": avg_indeks,
+                        "eps_meter": eps_meter,
+                        "overlap_ratio": overlap_ratio
+                    }
 
-        # # arcpy.management.CopyFeatures("layer_temp", temp_filtered)
+        if len(rekomendasi_zona) == 0:
+            raise Exception("Tidak ada zona yang tertimpa cluster lebih dari 30% luasnya")
 
-        # # # Hapus output lama
-        # # arcpy.management.Delete(out_fc)
+        where_clause = f"ZONE_OID IN ({','.join(str(oid) for oid in sorted(rekomendasi_zona.keys()))})"
+        zona_layer_lyr = arcpy.management.MakeFeatureLayer(zona_work, "zona_layer_rekomendasi_lyr", where_clause)[0]
+        rekomendasi_fc = os.path.join(temp_gdb, "zona_rekomendasi_sebelum_dissolve")
+        arcpy.management.CopyFeatures(zona_layer_lyr, rekomendasi_fc)
 
-        # # arcpy.management.CopyFeatures(temp_filtered, out_fc)
-        
-        # # arcpy.AddMessage("Selesai! Cluster berhasil dibuat.")
+        ensure_field(rekomendasi_fc, "jenis_cluster", "TEXT", field_length=20)
+        ensure_field(rekomendasi_fc, "AVG_INDEKS", "DOUBLE")
+        ensure_field(rekomendasi_fc, "OVLP_PCT", "DOUBLE")
+        ensure_field(rekomendasi_fc, "EPS_METER", "DOUBLE")
+        ensure_field(rekomendasi_fc, "ZONE_OID_TXT", "TEXT", field_length=255)
+
+        with arcpy.da.UpdateCursor(rekomendasi_fc, ["ZONE_OID", "ZONE_OID_TXT", "cluster", "jenis_cluster", "AVG_INDEKS", "OVLP_PCT", "EPS_METER"]) as cursor:
+            for row in cursor:
+                data_rekomendasi = rekomendasi_zona.get(row[0])
+                if data_rekomendasi:
+                    row[1] = str(row[0])
+                    row[2] = data_rekomendasi["cluster"]
+                    row[3] = data_rekomendasi["jenis_cluster"]
+                    row[4] = round(data_rekomendasi["avg_indeks"], 2)
+                    row[5] = round(data_rekomendasi["overlap_ratio"] * 100, 2)
+                    row[6] = data_rekomendasi["eps_meter"]
+                    cursor.updateRow(row)
+
+        dissolve_stats = [
+            ["ZONE_OID_TXT", "CONCATENATE"],
+            ["jenis_cluster", "FIRST"],
+            ["AVG_INDEKS", "FIRST"],
+            ["OVLP_PCT", "MAX"],
+            ["EPS_METER", "FIRST"]
+        ]
+
+        arcpy.management.Dissolve(
+            rekomendasi_fc,
+            out_fc,
+            ["cluster"],
+            dissolve_stats,
+            multi_part="MULTI_PART"
+        )
+
+        if "CONCATENATE_ZONE_OID_TXT" in [field.name for field in arcpy.ListFields(out_fc)]:
+            arcpy.management.AlterField(out_fc, "CONCATENATE_ZONE_OID_TXT", new_field_name="ZONE_OID", new_field_alias="ZONE_OID")
+
+        rename_targets = {
+            "FIRST_jenis_cluster": "jenis_cluster",
+            "FIRST_AVG_INDEKS": "AVG_INDEKS",
+            "MAX_OVLP_PCT": "OVLP_PCT",
+            "FIRST_EPS_METER": "EPS_METER"
+        }
+
+        existing_out_fields = [field.name for field in arcpy.ListFields(out_fc)]
+        for old_name, new_name in rename_targets.items():
+            if old_name in existing_out_fields:
+                arcpy.management.AlterField(out_fc, old_name, new_field_name=new_name, new_field_alias=new_name)
+
+        arcpy.AddMessage(f"Selesai. {len(rekomendasi_zona)} zona direkomendasikan sebagai cluster.")
+        arcpy.management.MakeFeatureLayer(out_fc, "Rekomendasi_Klaster")
+        arcpy.management.ApplySymbologyFromLayer("Rekomendasi_Klaster", os.path.join(config_dan_paths['symbology_folder'], "Rekomendasi_Klaster.lyrx"))
+        arcpy.SetParameter(3, "Rekomendasi_Klaster")
 
 class Penyesuaian_Nomor_Zona_Pembaruan:
     def __init__(self):
@@ -1064,14 +1157,9 @@ class Perbaharui_Indeks_Sampel_Pada_Titik_Zona:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field()
         zonalayer.delete_bad_file()
         config_dan_paths = zonalayer.get_config_values()
-
-        tz_path = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
-        ui_folder = os.path.join(config_dan_paths['appdata'], "ui")
-        symbology_folder = os.path.join(ui_folder, "symbology")
-        tz_simbology_path = os.path.join(symbology_folder, "Titik_Zona.lyrx")
-
 
         bulat1 = "100"  # Faktor pembulatan untuk jenis zona 1
         bulat2 = "100"  # Faktor pembulatan untuk jenis zona 2
@@ -1120,10 +1208,8 @@ class Perbaharui_Indeks_Sampel_Pada_Titik_Zona:
                 arcpy.AddMessage(f"Field {field_name} tidak ada di Titik_Zona, menambahkannya...")
                 field_template = arcpy.ListFields(hi, field_name)[0]
                 arcpy.management.AddField(tz, field_name, field_template.type, field_template.precision, field_template.scale, field_template.length, field_template.aliasName, field_template.isNullable, field_template.required, field_template.domain)
-        arcpy.AddMessage('Membangun mapping dari hasil Identity...')
         data_dict = {}
         cursor_fields_hi = ["Nomor_Entry"] + common_fields
-        arcpy.AddMessage(cursor_fields_hi)
         with arcpy.da.SearchCursor(hi, cursor_fields_hi) as cursor:
             for row in cursor:
                 nomor_entry = row[0]

@@ -596,10 +596,11 @@
 					<button refID="ButtonLabelTitikZona"/>
 					<button refID="menu_pemisahan_titik_zona_pembaruan_znt" />
 					<button refID="menu_penyesuaian_titik_dan_zona_pembaruan_znt" />
-					<button refID="ButtonZonaParsial"/>
+					<button refID="menu_zona_parsial_pembaruan_znt"/>
 					<button refID="ButtonPeriksaKesesuaianTitikdanZona"/>
 					<button refID="ButtonSinkronisasiDataTitikSampelKeSipenta" />
 				</menu>
+
 
 				<menu id="menu_pengolahan_data_pembaruan_znt" caption="Pengolahan ZNT" extendedCaption="Pengolahan ZNT" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\calculate.png"
@@ -643,6 +644,10 @@
 				<menu id="menu_penyesuaian_titik_dan_zona_pembaruan_znt" caption="Penyesuaian Titik dan Zona">
 					<button refID="ButtonPerbaharuiIndeksSampel"/>
 					<button refID="ButtonSesuaikanNomorZona"/>
+				</menu>
+				<menu id="menu_zona_parsial_pembaruan_znt" caption="Zona Parsial">
+					<button refID="ButtonRekomendasiKlaster" />
+					<button refID="ButtonZonaParsial" />
 				</menu>
 				
 			<!-- Digunakan Keduanya (Pembaruan dan Pembuatan ZNT) -->
@@ -1737,6 +1742,12 @@
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PengolahanTitikZona.pyt\Pemilihan_Zona_Parsial" name="Pemilihan Zona Parsial" xmlns=""/>
 					</args>
 					<tooltip heading="Pemilihan Zona Parsial">Menu untuk menentukan cluster zona secara manual.</tooltip>
+				</button>
+				<button id="ButtonRekomendasiKlaster" caption="Rekomendasi Klaster" smallImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" largeImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan ZNT\PengolahanTitikZona.pyt\Rekomendasi_Klaster" name="Rekomendasi Klaster" xmlns=""/>
+					</args>
+					<tooltip heading="Rekomendasi Klaster">Menu untuk menentukan rekomendasi klaster secara otomatis.</tooltip>
 				</button>
 
 				<button id="ButtonPeriksaKesesuaianTitikdanZona" caption="Periksa Kesesuaian Titik dan Zona" smallImage="C:\PenilaianTanah\icons\periksakesesuiantitikdanzona.png" largeImage="C:\PenilaianTanah\icons\periksakesesuiantitikdanzona.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

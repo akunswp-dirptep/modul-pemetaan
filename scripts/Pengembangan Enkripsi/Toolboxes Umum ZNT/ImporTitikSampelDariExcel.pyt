@@ -41,15 +41,29 @@ class Impor_Titik_Sampel_Dari_Excel(object):
 
     def _ensure_config_loaded(self):
         if self.dataset_path and self.gdb_path:
-            return
+            return True
 
-        config_data = get_config_values()
+        try:
+            config_data = get_config_values()
+        except SystemExit:
+            arcpy.AddError("Konfigurasi proyek belum siap. Pastikan Zona_Layer valid dan konfigurasi workspace sudah tersedia sebelum menjalankan impor.")
+            return False
+        except Exception as exc:
+            arcpy.AddError(f"Gagal membaca konfigurasi proyek: {exc}")
+            return False
+
         self.dataset_path = config_data.get('dataset_path')
         self.tahun = config_data.get('tahun')
         self.provinsi = config_data.get('provinsi')
         self.kota = config_data.get('kota')
         self.coor = config_data.get('coor')
         self.gdb_path = config_data.get('gdb_path')
+
+        if not self.dataset_path or not self.gdb_path:
+            arcpy.AddError("Konfigurasi proyek tidak lengkap. Nilai dataset_path atau gdb_path tidak ditemukan.")
+            return False
+
+        return True
 
 
     def getParameterInfo(self):
@@ -85,7 +99,9 @@ class Impor_Titik_Sampel_Dari_Excel(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        self._ensure_config_loaded()
+        if not self._ensure_config_loaded():
+            return
+
         # Ambil path file Excel yang dipilih pengguna
         appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
         temp_folder = os.path.join(appdata, 'temp')

@@ -11,24 +11,29 @@ if parent_dir not in sys.path:
 from zntutils.system_utils import renew_user_data, get_all_config, get_user_data, clear_user_data, get_all_berkas_id, renew_multiple_user_data
 from zntutils.constant import THIRD_PARTY_DATA_KEY, TIPE_USER_PIHAK_KETIGA, TIPE_USER_SSO, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
 
+def prepare_restart_arcgis_bat(project_path=None):
+    restart_bat_path = r"C:\PenilaianTanah\ui\restart_arcgis.bat"
+    arcgis_exe_path = r"C:\Program Files\ArcGIS\Pro\bin\ArcGISPro.exe"
+    sanitized_project_path = (project_path or "").replace('"', "")
 
-def format_berkas_access_summary(berkas_list, preview_limit=8):
-    if not berkas_list:
-        return "Anda belum memiliki akses ke berkas apa pun."
-
-    total_berkas = len(berkas_list)
-    if total_berkas <= preview_limit:
-        listed_berkas = "\n".join([f"- {berkas[0]} - {berkas[1]}" for berkas in berkas_list])
-        return f"Anda memiliki akses ke {total_berkas} berkas berikut:\n{listed_berkas}"
-
-    preview_berkas = "\n".join([f"- {berkas[0]} - {berkas[1]}" for berkas in berkas_list[:preview_limit]])
-    sisa_berkas = total_berkas - preview_limit
-    return (
-        f"Anda memiliki akses ke {total_berkas} berkas.\n"
-        f"Menampilkan {preview_limit} berkas pertama:\n"
-        f"{preview_berkas}\n"
-        f"... dan {sisa_berkas} berkas lainnya."
+    bat_content = (
+        "@echo off\n"
+        "echo Membuka ulang ArcGIS...\n"
+        "timeout /t 2\n"
+        f"set \"ARCGIS_EXE={arcgis_exe_path}\"\n"
+        f"set \"ARCGIS_PROJECT={sanitized_project_path}\"\n"
+        "\n"
+        "if exist \"%ARCGIS_PROJECT%\" (\n"
+        "    start \"\" \"%ARCGIS_EXE%\" \"%ARCGIS_PROJECT%\"\n"
+        ") else (\n"
+        "    start \"\" \"%ARCGIS_EXE%\"\n"
+        ")\n"
     )
+
+    with open(restart_bat_path, "w") as bat_file:
+        bat_file.write(bat_content)
+
+    return restart_bat_path
 
 class Toolbox:
     def __init__(self):
@@ -38,7 +43,7 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Login_Pemeta_Nilai_Tanah, Logout_Pengguna, Login_SSO]
+        self.tools = [Login_Pemeta_Nilai_Tanah, Login_SSO]
 
 
 class Login_Pemeta_Nilai_Tanah:
@@ -113,20 +118,20 @@ class Login_Pemeta_Nilai_Tanah:
         automatic_reload.value = False
         automatic_reload.enabled = False
 
-        pilihan_jenis_berkas = arcpy.Parameter(
-            displayName="Jenis Berkas yang Diakses",
-            name="pilihan_jenis_berkas",
+        pilihan_jenis_kegiatan = arcpy.Parameter(
+            displayName="Pilih Jenis Kegiatan",
+            name="pilihan_jenis_kegiatan",
             datatype="GPString",
             parameterType="Optional",
             direction="Input"
         )
-        pilihan_jenis_berkas.filter.type = "ValueList"
-        pilihan_jenis_berkas.filter.list = ["Pembuatan ZNT", "Pembaruan ZNT", "Pembuatan NBT", "Pembaruan NBT"]
-        pilihan_jenis_berkas.value = "Pembuatan ZNT"
-        pilihan_jenis_berkas.enabled = False
+        pilihan_jenis_kegiatan.filter.type = "ValueList"
+        pilihan_jenis_kegiatan.filter.list = ["Pembuatan ZNT", "Pembaruan ZNT", "Pembuatan NBT", "Pembaruan NBT"]
+        pilihan_jenis_kegiatan.value = "Pembuatan ZNT"
+        pilihan_jenis_kegiatan.enabled = False
 
         daftar_berkas = arcpy.Parameter(   
-            displayName="Daftar Berkas yang Diakses",
+            displayName="Daftar Berkas",
             name="daftar_berkas",
             datatype="GPString",
             parameterType="Optional",
@@ -136,26 +141,21 @@ class Login_Pemeta_Nilai_Tanah:
         daftar_berkas.enabled = False
 
         
-        if user_data is not None:
-            if user_data['tipe_kredensial'] == TIPE_USER_PIHAK_KETIGA:
-                berkas = get_all_berkas_id()
-
-                already_user_login_explanation = (
-                    "Anda sudah login sebagai Pemeta Pihak Ketiga\n"
-                    "Dengan Kredensial sebagai berikut:\n\n"
-                    f"Nama Pemeta: {user_data['nama_pengguna']}\n"
-                    f"Badan Usaha : {user_data['instansi']}\n\n"
-                    f"{format_berkas_access_summary(berkas)}\n\n"
-
+        if user_data is not None:           
+            akun_tipe = "Login berhasil sebagai Pemeta Pihak Ketiga.\n" if user_data['tipe_kredensial'] == TIPE_USER_PIHAK_KETIGA else "Login berhasil sebagai Pemeta ASN ATR/BPN.\n"
+            already_user_login_explanation = (
+                    akun_tipe +
+                    "Informasi akun:\n\n"
+                    f"Nama: {user_data['nama_pengguna']}\n"
+                    f"Instansi: {user_data['instansi']}\n\n"
+                    "Kalau baru saja login, silakan restart ArcGIS Pro\n"
+                    "agar fitur terbaru bisa digunakan. Untuk logout, \n"
+                    "jalankan kembali tool ini.\n\n"
+                    "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                    "Kementerian ATR/BPN\n"
+                    f"Tahun: {datetime.now().year}"
                 )
-                penjelasan.value = already_user_login_explanation
-
-            elif user_data['tipe_kredensial'] == 'SSO':
-                already_login_sso_explanation = (
-                    "Anda sudah login sebagai Pemeta \n"
-                    "ASN Kementerian ATR/BPN\n"
-                )
-                penjelasan.value = already_login_sso_explanation
+            penjelasan.value = already_user_login_explanation
 
         else:
             penjelasan.value = (
@@ -167,7 +167,7 @@ class Login_Pemeta_Nilai_Tanah:
                 "Kementerian ATR/BPN\n"
                 "Tahun: {}".format(datetime.now().year) 
             )
-        return [penjelasan, pilihan_jenis_login, input_nik, input_password, server, pilihan_jenis_berkas, daftar_berkas, automatic_reload]
+        return [penjelasan, pilihan_jenis_login, input_nik, input_password, server, pilihan_jenis_kegiatan, daftar_berkas, automatic_reload]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
@@ -181,27 +181,47 @@ class Login_Pemeta_Nilai_Tanah:
         input_nik = parameters[2]
         input_password = parameters[3]
         server = parameters[4]
-        pilihan_jenis_berkas = parameters[5]
+        pilihan_jenis_kegiatan = parameters[5]
         daftar_berkas = parameters[6]
         automatic_reload = parameters[7]
 
         if user_data is not None:
-            pilihan_jenis_berkas.enabled = True
+            pilihan_login.enabled = False
+            input_nik.enabled = False
+            input_password.enabled = False
+            server.enabled = False
+            pilihan_jenis_kegiatan.enabled = True
             daftar_berkas.enabled = True
             automatic_reload.enabled = True
-            input_pilihan_jenis_berkas = pilihan_jenis_berkas.valueAsText
-            if input_pilihan_jenis_berkas:
+            akun_tipe = "Login berhasil sebagai Pemeta Pihak Ketiga.\n" if user_data['tipe_kredensial'] == TIPE_USER_PIHAK_KETIGA else "Login berhasil sebagai Pemeta ASN ATR/BPN.\n"
+            already_user_login_explanation = (
+                    akun_tipe +
+                    "Informasi akun:\n\n"
+                    f"Nama: {user_data['nama_pengguna']}\n"
+                    f"Instansi: {user_data['instansi']}\n\n"
+                    "Kalau baru saja login, silakan restart ArcGIS Pro\n"
+                    "agar fitur terbaru bisa digunakan. Untuk logout, \n"
+                    "jalankan kembali tool ini.\n\n"
+                    "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                    "Kementerian ATR/BPN\n"
+                    f"Tahun: {datetime.now().year}"
+                )
+            penjelasan.value = already_user_login_explanation
+            input_pilihan_jenis_kegiatan = pilihan_jenis_kegiatan.valueAsText
+            if input_pilihan_jenis_kegiatan:
                 daftar_berkas.value = ""
-                berkas_list = get_all_berkas_id(process_type=input_pilihan_jenis_berkas)
-                simplifyed_berkas_list = [f"{berkas[0]} - {'Bisa Upload' if berkas[1] else 'Tidak Bisa Upload'}" for berkas in berkas_list] if berkas_list else []
+                berkas_list = get_all_berkas_id(process_type=input_pilihan_jenis_kegiatan)
+                simplifyed_berkas_list = [f"{berkas[0]} - {'Pemeta' if berkas[1] else 'Bukan Pemeta'}" for berkas in berkas_list] if berkas_list else []
                 daftar_berkas.filter.list = simplifyed_berkas_list
-                daftar_berkas.value = simplifyed_berkas_list[0] if len(simplifyed_berkas_list) > 0 else "Tidak ada berkas yang dapat diakses"
+                daftar_berkas.value = simplifyed_berkas_list[0] if len(simplifyed_berkas_list) > 0 else "Tidak ada berkas"
             else:
                 daftar_berkas.filter.list = []
             return
 
 
         else:
+            pilihan_jenis_kegiatan.enabled = False
+            daftar_berkas.enabled = False
             pilihan_login.enabled = True
             automatic_reload.enabled = True
             server.enabled = True
@@ -279,18 +299,18 @@ class Login_Pemeta_Nilai_Tanah:
     def execute(self, parameters, messages):
         """The source code of the tool."""
         user_data = get_user_data(CREDENTIAL_KEY)
+        server = parameters[4].value
         automatic_reload = parameters[7].value
         if user_data is None:
             pilihan_login = parameters[1].valueAsText
             
             if pilihan_login == "Pemeta ASN ATR/BPN (SSO)":
-                login_type = "SSO"
+                self.login_sso(server, automatic_reload)
+                
             else:
                 nik = parameters[2].value
                 password = parameters[3].value
-                server = parameters[4].value
                 use_production = True if server == "Produksi" or server == None else False
-                arcpy.AddMessage(f"Memulai proses login dengan NIK: {nik}, Server: {server}, Automatic Reload: {automatic_reload}")
 
                 self.login_pihak_ketiga(nik, password, use_production, automatic_reload)
                  
@@ -359,7 +379,8 @@ class Login_Pemeta_Nilai_Tanah:
                     aprx = arcpy.mp.ArcGISProject("CURRENT")
                     aprx.save()
                     if automatic_reload:
-                        subprocess.Popen(r"C:\PenilaianTanah\ui\restart_arcgis.bat")
+                        restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
+                        subprocess.Popen(restart_bat_path)
                         # Tutup ArcGIS Pro
                         os.system("taskkill /f /im ArcGISPro.exe")
                     else:
@@ -389,137 +410,71 @@ class Login_Pemeta_Nilai_Tanah:
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         aprx.save()
         if automatic_reload == True:
-            subprocess.Popen(r"C:\PenilaianTanah\ui\restart_arcgis.bat")
+            restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
+            subprocess.Popen(restart_bat_path)
             
             os.system("taskkill /f /im ArcGISPro.exe")
         else:
             arcpy.AddMessage("Logout berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
-class Logout_Pengguna:
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Logout Pemeta Nilai Tanah"
-        self.description = ""
 
-    def getParameterInfo(self):
-        """Define the tool parameters."""
+    def login_sso(self, server, automatic_reload=False):
+        mapping_server = {
+            'Belajar': 'belajar-2',
+            'Produksi': 'prod'
+        }
+        exe_path = os.path.join(os.path.dirname(__file__), "login.exe")
 
-        user_data = get_user_data(THIRD_PARTY_DATA_KEY)
-        sso_data = get_user_data(SSO_DATA_KEY)
-
-
-        penjelasan = arcpy.Parameter(
-            displayName="Penjelasan",
-            name="penjelasan",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input"
-        )
-        automatic_reload = arcpy.Parameter(
-            displayName="Reload Otomatis ArcGIS Pro setelah logout berhasil",
-            name="automatic_reload",
-            datatype="GPBoolean",
-            parameterType="Optional",
-            direction="Input"
-        )
-        if user_data:
-            berkas_list = get_all_berkas_id()
-            berkas_messages = format_berkas_access_summary(berkas_list)
-            server = get_user_data(PREFERRED_SERVER_KEY)
-            nama_pengguna = user_data['user']['nama']
-
-            penjelasan.value = (
-                f"Anda saat ini masuk sebagai Pemeta Nilai Tanah\n\n"
-                f"Nama Pemeta: {nama_pengguna}\n"
-                f"Server Sipenta: {server}\n\n"
-                f"{berkas_messages}\n\n"
-                "Gunakan tools ini untuk logout"
-                
-                "Dikembangkan oleh:\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
-                "Kementerian ATR/BPN.\n"
+        try:
+            result = subprocess.run(
+                [exe_path, mapping_server.get(server, server)],
+                capture_output=True,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
             )
-            return [penjelasan, automatic_reload]
-        
-        elif sso_data:
-            berkas_list = get_all_berkas_id(DATA_KEY=SSO_DATA_KEY)
-            berkas_messages = format_berkas_access_summary(berkas_list)
-            server = get_user_data(PREFERRED_SERVER_KEY)
-            nama_pengguna = sso_data['user']['nama']
-            penjelasan.value = (
-                f"Anda saat ini masuk sebagai ASN ATR/BPN\n\n"
-                f"Nama ASN: {nama_pengguna}\n"
-                f"Server Sipenta: {server}\n\n"
-                f"{berkas_messages}\n\n"
-                "Gunakan tools ini untuk logout"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
-                "Kementerian ATR/BPN.\n"
-            )
-            return [penjelasan, automatic_reload]
-        else:       
-            penjelasan.value = (
-                "Anda belum login.\n"
-                "Tools ini hanya untuk logout"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
-                "Kementerian ATR/BPN.\n"
-            )
-            return [penjelasan]
 
-        
+            if not result.stdout:
+                arcpy.AddError("Login failed: no response")
+                return
 
-    def isLicensed(self):
-        """Set whether the tool is licensed to execute."""
-        return True
+            data = json.loads(result.stdout.strip())
 
-    def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
+            if not data.get("success", False):
+                arcpy.AddError("Login failed")
+                arcpy.AddError(data.get("message", "Unknown error"))
+                return
 
-        return
+            with open(os.path.join(os.path.dirname(__file__), "login_response.json"), "w") as f:
+                json.dump(data, f, indent=4)
 
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
-        return
-
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-        automatic_reload = parameters[1]
-        user_data = get_user_data(THIRD_PARTY_DATA_KEY)
-        sso_data = get_user_data(SSO_DATA_KEY)
-        if user_data is None and sso_data is None:
-            arcpy.AddMessage("Anda belum login, tidak perlu logout")
-            return
-
-        if get_user_data(THIRD_PARTY_DATA_KEY):
-            clear_user_data()
-        elif get_user_data(SSO_DATA_KEY):
-            clear_user_data(SSO_DATA_KEY)
-        
-        
-        shutil.copy(r'C:\PenilaianTanah\ui\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprx.save()
-        if automatic_reload.value == True:
-            subprocess.Popen(r"C:\PenilaianTanah\ui\restart_arcgis.bat")
+            renew_data = {
+                        CREDENTIAL_KEY: {
+                                'nama_pengguna': data['user']['nama'],
+                                'instansi': data['user']['nama_kantor'],
+                                'token': data['token'],
+                                'berkas': data['berkas'],
+                                'role': data['user']['roles'],
+                                'instansi_id': data['user']['kantor_id'],
+                                'tipe_kantor_id': data['user']['tipe_kantor_id'],
+                                'tipe_kredensial': TIPE_USER_SSO },
+                        PREFERRED_SERVER_KEY: server,
+                    }
+            renew_multiple_user_data(renew_data)
             
-            os.system("taskkill /f /im ArcGISPro.exe")
-        else:
-            arcpy.AddMessage("Logout berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
-        
-        return
+            arcpy.AddMessage("Login OK")
+            shutil.copy(r'C:\PenilaianTanah\ui\penjatek\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            aprx.save()
 
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
+            if automatic_reload:
+                restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
+                subprocess.Popen(restart_bat_path)
+                os.system("taskkill /f /im ArcGISPro.exe")
+            else:
+                arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
 
-
-        return
-    
+        except Exception as e:
+            arcpy.AddError(str(e))
+   
 class Login_SSO(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
@@ -668,7 +623,8 @@ class Login_SSO(object):
             aprx.save()
 
             if automatic_reload:
-                subprocess.Popen(r"C:\PenilaianTanah\ui\restart_arcgis.bat")
+                restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
+                subprocess.Popen(restart_bat_path)
                 os.system("taskkill /f /im ArcGISPro.exe")
             else:
                 arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")

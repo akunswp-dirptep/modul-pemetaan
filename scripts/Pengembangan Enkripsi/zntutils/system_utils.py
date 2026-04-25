@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
-from .constant import AUTH_KEY, THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, SSO_DATA_KEY
+from .constant import AUTH_KEY, THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
 def current_year():
     try:
         return int(datetime.now().year)
@@ -178,9 +178,8 @@ def get_all_config(config_path = None):
     except Exception as e:
         return None
 
-def get_all_berkas_id(process_type = None, DATA_KEY = THIRD_PARTY_DATA_KEY):
+def get_all_berkas_id(process_type = None, DATA_KEY = CREDENTIAL_KEY):
 
-    nama_instansi = get_user_data()
     process_mapping = {
         'Pembuatan ZNT': '01',
         'Pembaruan ZNT': '02',
@@ -194,20 +193,21 @@ def get_all_berkas_id(process_type = None, DATA_KEY = THIRD_PARTY_DATA_KEY):
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            user_data = data.get(DATA_KEY, [])
-            if len(user_data['berkas']) > 0:
+            user_data = data.get(DATA_KEY, {})
+            if len(user_data.get('berkas', [])) > 0:
                 data_berkas = []
                 for berkas in user_data['berkas']:
                     berkas_id_key = 'no_berkas'
 
                     no_berkas = berkas.get(berkas_id_key, None)
+                    bisa_upload = berkas.get('can_upload', False)
 
                     if mapped_process_code is not None:
                         nomor_depan = (no_berkas or '').split('/')[0]
                         if nomor_depan != mapped_process_code:
                             continue
 
-                    data_berkas.append((no_berkas, ))
+                    data_berkas.append((no_berkas, bisa_upload ))
 
                 def sort_key(item):
                     no_berkas = item[0] or ""
@@ -236,14 +236,12 @@ def get_all_berkas_id(process_type = None, DATA_KEY = THIRD_PARTY_DATA_KEY):
     except Exception as e:
         return None
 
-def clear_user_data(THIRD_PARTY_DATA_KEY = THIRD_PARTY_DATA_KEY):
+def clear_user_data():
     config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            data[THIRD_PARTY_DATA_KEY] = None
-            data[NIK_KEY] = None
-            data[AUTH_KEY] = None
+            data[CREDENTIAL_KEY ] = None
             data[PREFERRED_SERVER_KEY] = None
             encrypt_message(json.dumps(data), generate_key(), config_path)
             return True

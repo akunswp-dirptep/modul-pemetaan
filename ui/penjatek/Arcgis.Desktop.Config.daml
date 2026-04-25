@@ -17,7 +17,6 @@
 					<group refID="group_pembaruan_znt"/>
 				</tab>
 				<tab id='SistemAplikasi' caption='Penilaian Tanah'>
-					<group refID='kredensial_pengguna'/>
 					<group refID='sistem_aplikasi'/>
 				</tab>
 
@@ -88,13 +87,8 @@
 					<menu refID="menu_penggabungan_znt" size="large"/>
 				</group>
 			<!-- Sistem Aplikasi -->
-				<group id="kredensial_pengguna" caption="Kredensial Pemeta">
-\
-					<button refID="ButtonLoginPemeta" size="large"/>
-					<button refID="ButtonLoginSSO" size="large" />
-					<button refID="ButtonLogoutPemeta" size="large"/>
-				</group>
 				<group id="sistem_aplikasi" caption="Sistem Aplikasi">
+					<button refID="ButtonLoginPemeta" size="large"/>
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 				</group>
 			</groups>
@@ -1989,24 +1983,13 @@
 					<tooltip heading="Informasi Pembaruan">Menu untuk mengecek Informasi Pembaruan penilaian tanah</tooltip>
 				</button>
 
-				<button id="ButtonLoginPemeta" caption="Login Pihak Ketiga" smallImage="C:\PenilaianTanah\icons\logo_login_sipenta.png" largeImage="C:\PenilaianTanah\icons\logo_login_sipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonLoginPemeta" caption="Login Pemeta Nilai Tanah" smallImage="C:\PenilaianTanah\icons\logo_login_SSO.png" largeImage="C:\PenilaianTanah\icons\logo_login_SSO.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\LoginPengguna.pyt\Login_Pihak_Ketiga" name="Login Pihak Ketiga" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\LoginPengguna.pyt\Login_Pemeta_Nilai_Tanah" name="Login Pemeta Nilai Tanah" xmlns=""/>
 					</args>
-					<tooltip heading="Login Pihak Ketiga">Menu untuk Login Pihak Ketiga ke dalam aplikasi penilaian tanah</tooltip>
+					<tooltip heading="Login Pemeta Nilai Tanah">Menu untuk Login Pemeta Nilai Tanah ke dalam aplikasi penilaian tanah</tooltip>
 				</button>
-				<button id="ButtonLoginSSO" caption="Login SSO" smallImage="C:\PenilaianTanah\icons\logo_login_SSO.png" largeImage="C:\PenilaianTanah\icons\logo_login_SSO.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\LoginPengguna.pyt\Login_SSO" name="Login SSO" xmlns=""/>
-					</args>
-					<tooltip heading="Login SSO">Menu untuk login menggunakan akun SSO ATR/BPN</tooltip>
-				</button>
-				<button id="ButtonLogoutPemeta" caption="Logout Pemeta" smallImage="C:\PenilaianTanah\icons\logo_logout_sipenta.png" largeImage="C:\PenilaianTanah\icons\logo_logout_sipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\LoginPengguna.pyt\Logout_Pengguna" name="Logout Pemeta" xmlns=""/>
-					</args>
-					<tooltip heading="Logout Pemeta">Menu untuk logout Pemeta</tooltip>
-				</button>
+
 			<!--  -->
 
 				<!-- BUTTON UPLOAD PEMBUATAN NBT SIPENTA - START -->

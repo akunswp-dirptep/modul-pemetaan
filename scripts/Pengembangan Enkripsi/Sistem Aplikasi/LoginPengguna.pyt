@@ -1,4 +1,4 @@
-import arcpy
+﻿import arcpy
 from datetime import datetime
 import requests, os, sys, time
 import json, subprocess, shutil, subprocess
@@ -9,7 +9,7 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from zntutils.system_utils import renew_user_data, get_all_config, get_user_data, clear_user_data, get_all_berkas_id, renew_multiple_user_data
-from zntutils.constant import THIRD_PARTY_DATA_KEY, NIK_KEY, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
+from zntutils.constant import THIRD_PARTY_DATA_KEY, TIPE_USER_PIHAK_KETIGA, TIPE_USER_SSO, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
 
 
 def format_berkas_access_summary(berkas_list, preview_limit=8):
@@ -38,13 +38,13 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Login_Pihak_Ketiga, Logout_Pengguna, Login_SSO]
+        self.tools = [Login_Pemeta_Nilai_Tanah, Logout_Pengguna, Login_SSO]
 
 
-class Login_Pihak_Ketiga:
+class Login_Pemeta_Nilai_Tanah:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Login Pemeta Pihak Ketiga"
+        self.label = "Kredensial Pemeta Nilai Tanah"
         self.description = ""
 
     def getParameterInfo(self):
@@ -55,12 +55,13 @@ class Login_Pihak_Ketiga:
             displayName="Login Sebagai",
             name="pilihan_jenis_login",
             datatype="GPString",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input"
         )
 
         pilihan_jenis_login.filter.type = "ValueList"
         pilihan_jenis_login.filter.list = ["Pemeta Pihak Ketiga", "Pemeta ASN ATR/BPN (SSO)"]
+        pilihan_jenis_login.enabled = False
 
         penjelasan = arcpy.Parameter(
             displayName="Penjelasan",
@@ -74,7 +75,7 @@ class Login_Pihak_Ketiga:
             displayName="NIK Pemeta Nilai Tanah (16 digit)",
             name="username",
             datatype="GPString",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input"
             )
         
@@ -84,7 +85,7 @@ class Login_Pihak_Ketiga:
             displayName="Password",
             name="password",
             datatype="GPString",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
         
         input_password.enabled = False
@@ -93,12 +94,13 @@ class Login_Pihak_Ketiga:
             displayName="Server Sipenta",
             name="link",
             datatype="GPString",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
 
         server.filter.type = "ValueList"
         server.filter.list = ["Belajar", "Produksi"]
         server.value = "Belajar"
+        server.enabled = False
         
         automatic_reload = arcpy.Parameter(
             displayName="Reload Otomatis ArcGIS Pro",
@@ -110,25 +112,51 @@ class Login_Pihak_Ketiga:
 
         automatic_reload.value = False
         automatic_reload.enabled = False
+
+        pilihan_jenis_berkas = arcpy.Parameter(
+            displayName="Jenis Berkas yang Diakses",
+            name="pilihan_jenis_berkas",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        pilihan_jenis_berkas.filter.type = "ValueList"
+        pilihan_jenis_berkas.filter.list = ["Pembuatan ZNT", "Pembaruan ZNT", "Pembuatan NBT", "Pembaruan NBT"]
+        pilihan_jenis_berkas.value = "Pembuatan ZNT"
+        pilihan_jenis_berkas.enabled = False
+
+        daftar_berkas = arcpy.Parameter(   
+            displayName="Daftar Berkas yang Diakses",
+            name="daftar_berkas",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        daftar_berkas.filter.type = "ValueList"
+        daftar_berkas.enabled = False
+
         
         if user_data is not None:
-            if user_data['tipe_kredensial'] == 'Pihak_Ketiga':
+            if user_data['tipe_kredensial'] == TIPE_USER_PIHAK_KETIGA:
+                berkas = get_all_berkas_id()
+
                 already_user_login_explanation = (
                     "Anda sudah login sebagai Pemeta Pihak Ketiga\n"
                     "Dengan Kredensial sebagai berikut:\n\n"
                     f"Nama Pemeta: {user_data['nama_pengguna']}\n"
                     f"Badan Usaha : {user_data['instansi']}\n\n"
+                    f"{format_berkas_access_summary(berkas)}\n\n"
 
                 )
                 penjelasan.value = already_user_login_explanation
-                return [penjelasan]
+
             elif user_data['tipe_kredensial'] == 'SSO':
                 already_login_sso_explanation = (
                     "Anda sudah login sebagai Pemeta \n"
                     "ASN Kementerian ATR/BPN\n"
                 )
                 penjelasan.value = already_login_sso_explanation
-                return [penjelasan]
+
         else:
             penjelasan.value = (
                 "Silahkan Login untuk dapat mengakses Fitur\n"
@@ -139,82 +167,107 @@ class Login_Pihak_Ketiga:
                 "Kementerian ATR/BPN\n"
                 "Tahun: {}".format(datetime.now().year) 
             )
-            return [penjelasan, pilihan_jenis_login, input_nik, input_password, server, automatic_reload]
+        return [penjelasan, pilihan_jenis_login, input_nik, input_password, server, pilihan_jenis_berkas, daftar_berkas, automatic_reload]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
         return True
 
     def updateParameters(self, parameters):
+        user_data = get_user_data(CREDENTIAL_KEY)
+
         penjelasan = parameters[0]
         pilihan_login = parameters[1]   
         input_nik = parameters[2]
         input_password = parameters[3]
         server = parameters[4]
-        automatic_reload = parameters[5]
+        pilihan_jenis_berkas = parameters[5]
+        daftar_berkas = parameters[6]
+        automatic_reload = parameters[7]
 
-        # Default: disable dulu
-        input_nik.enabled = False
-        input_password.enabled = False
-
-        if pilihan_login.value == "Pemeta Pihak Ketiga":
-            input_nik.enabled = True
-            input_password.enabled = True
+        if user_data is not None:
+            pilihan_jenis_berkas.enabled = True
+            daftar_berkas.enabled = True
             automatic_reload.enabled = True
-            penjelasan.value = (
-                "Anda akan login sebagai Pemeta Pihak Ketiga.\n"
-                "Silakan masukkan NIK dan Password yang terdaftar\n"
-                "di SIPENTA. Jika sudah login, Anda perlu menutup \n"
-                "ArcGIS Pro kemudian membuka kembali Aplikasi \n"
-                "agar dapat menggunakan fitur lengkap dari Plugin \n"
-                "Penilaian Tanah atau Anda juga bisa mencentang \n"
-                "opsi [Reload Otomatis ArcGIS Pro] jika Anda\n"
-                "ingin ArcGIS Pro otomatis restart setelah login\n"
-                "berhasil. Namun pastikan untuk menyimpan pekerjaan \n"
-                "Anda sebelum login jika memilih opsi ini.\n\n"
-                "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-                "Kementerian ATR/BPN\n"
-                "Tahun: {}".format(datetime.now().year))
-
-        elif pilihan_login.value == "Pemeta ASN ATR/BPN (SSO)":
-            input_nik.enabled = False
-            input_password.enabled = False
-            automatic_reload.enabled = True
-            penjelasan.value = (
-                "Anda akan login sebagai Pemeta ASN ATR/BPN (SSO).\n"
-                "Silakan gunakan akun SSO Anda untuk login.\n"
-                "Jika sudah login, Anda perlu menutup \n"
-                "ArcGIS Pro kemudian membuka kembali Aplikasi \n"
-                "agar dapat menggunakan fitur lengkap dari Plugin \n"
-                "Penilaian Tanah atau Anda juga bisa mencentang \n"
-                "opsi [Reload Otomatis ArcGIS Pro] jika Anda\n"
-                "ingin ArcGIS Pro otomatis restart setelah login \n"
-                "berhasil. Namun pastikan untuk menyimpan pekerjaan \n"
-                "Anda sebelum login jika memilih opsi ini.\n\n"
-                "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-                "Kementerian ATR/BPN\n"
-                "Tahun: {}".format(datetime.now().year))
-
-        # ===== Validasi NIK hanya kalau aktif =====
-        if input_nik.enabled and input_nik.value:
-            nik_str = str(input_nik.value).replace(" ", "")
-            input_nik.value = nik_str
-
-            if not nik_str.isdigit():
-                input_nik.setErrorMessage("NIK harus berisi angka saja")
-            elif len(nik_str) != 16:
-                input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
+            input_pilihan_jenis_berkas = pilihan_jenis_berkas.valueAsText
+            if input_pilihan_jenis_berkas:
+                daftar_berkas.value = ""
+                berkas_list = get_all_berkas_id(process_type=input_pilihan_jenis_berkas)
+                simplifyed_berkas_list = [f"{berkas[0]} - {'Bisa Upload' if berkas[1] else 'Tidak Bisa Upload'}" for berkas in berkas_list] if berkas_list else []
+                daftar_berkas.filter.list = simplifyed_berkas_list
+                daftar_berkas.value = simplifyed_berkas_list[0] if len(simplifyed_berkas_list) > 0 else "Tidak ada berkas yang dapat diakses"
             else:
-                input_nik.clearMessage()
+                daftar_berkas.filter.list = []
+            return
+
+
+        else:
+            pilihan_login.enabled = True
+            automatic_reload.enabled = True
+            server.enabled = True
+
+            if pilihan_login.value == "Pemeta Pihak Ketiga":
+                input_nik.enabled = True
+                input_password.enabled = True
+                
+                
+                penjelasan.value = (
+                    "Anda akan login sebagai Pemeta Pihak Ketiga.\n"
+                    "Silakan masukkan NIK dan Password yang terdaftar\n"
+                    "di SIPENTA. Jika sudah login, Anda perlu menutup \n"
+                    "ArcGIS Pro kemudian membuka kembali Aplikasi \n"
+                    "agar dapat menggunakan fitur lengkap dari Plugin \n"
+                    "Penilaian Tanah atau Anda juga bisa mencentang \n"
+                    "opsi [Reload Otomatis ArcGIS Pro] jika Anda\n"
+                    "ingin ArcGIS Pro otomatis restart setelah login\n"
+                    "berhasil. Namun pastikan untuk menyimpan pekerjaan \n"
+                    "Anda sebelum login jika memilih opsi ini.\n\n"
+                    "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                    "Kementerian ATR/BPN\n"
+                    "Tahun: {}".format(datetime.now().year))
+
+            elif pilihan_login.value == "Pemeta ASN ATR/BPN (SSO)":
+                input_nik.enabled = False
+                input_password.enabled = False
+                penjelasan.value = (
+                    "Anda akan login sebagai Pemeta ASN ATR/BPN (SSO).\n"
+                    "Silakan gunakan akun SSO Anda untuk login.\n"
+                    "Jika sudah login, Anda perlu menutup \n"
+                    "ArcGIS Pro kemudian membuka kembali Aplikasi \n"
+                    "agar dapat menggunakan fitur lengkap dari Plugin \n"
+                    "Penilaian Tanah atau Anda juga bisa mencentang \n"
+                    "opsi [Reload Otomatis ArcGIS Pro] jika Anda\n"
+                    "ingin ArcGIS Pro otomatis restart setelah login \n"
+                    "berhasil. Namun pastikan untuk menyimpan pekerjaan \n"
+                    "Anda sebelum login jika memilih opsi ini.\n\n"
+                    "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                    "Kementerian ATR/BPN\n"
+                    "Tahun: {}".format(datetime.now().year))
+
+            # ===== Validasi NIK hanya kalau aktif =====
+            if input_nik.enabled and input_nik.value:
+                nik_str = str(input_nik.value).replace(" ", "")
+                input_nik.value = nik_str
+
+                if not nik_str.isdigit():
+                    input_nik.setErrorMessage("NIK harus berisi angka saja")
+                elif len(nik_str) != 16:
+                    input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
+                else:
+                    input_nik.clearMessage()
 
         return
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        user_data = get_user_data(THIRD_PARTY_DATA_KEY)
-        sso_data = get_user_data(SSO_DATA_KEY)
-        if user_data is None and sso_data is None:
-            automatic_reload = parameters[5]
+        user_data = get_user_data(CREDENTIAL_KEY)
+        if user_data is None:
+            pilihan_login = parameters[1]
+            input_nik = parameters[2]
+            input_password = parameters[3]
+            server = parameters[4]
+            automatic_reload = parameters[7]
+
             if automatic_reload.value == True:
                 automatic_reload.clearMessage()
                 automatic_reload.setWarningMessage(
@@ -225,16 +278,25 @@ class Login_Pihak_Ketiga:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        user_data = get_user_data(THIRD_PARTY_DATA_KEY)
-        sso_data = get_user_data(SSO_DATA_KEY)
-        if user_data is None and sso_data is None:
-            nik = parameters[0].value
-            password = parameters[1].value
-            server = parameters[2].value
-            automatic_reload = parameters[3].value
-            use_production = True if server == "Produksi" or server == None else False
+        user_data = get_user_data(CREDENTIAL_KEY)
+        automatic_reload = parameters[7].value
+        if user_data is None:
+            pilihan_login = parameters[1].valueAsText
+            
+            if pilihan_login == "Pemeta ASN ATR/BPN (SSO)":
+                login_type = "SSO"
+            else:
+                nik = parameters[2].value
+                password = parameters[3].value
+                server = parameters[4].value
+                use_production = True if server == "Produksi" or server == None else False
+                arcpy.AddMessage(f"Memulai proses login dengan NIK: {nik}, Server: {server}, Automatic Reload: {automatic_reload}")
 
-            self.call_sipenta_api(nik, password, use_production, automatic_reload)
+                self.login_pihak_ketiga(nik, password, use_production, automatic_reload)
+                 
+        if user_data:
+            self.logout_pemeta_nilai_tanah(automatic_reload=automatic_reload)
+
 
 
         return
@@ -246,7 +308,7 @@ class Login_Pihak_Ketiga:
 
         return
     
-    def call_sipenta_api(self, nik, password, use_production=True, automatic_reload=False):
+    def login_pihak_ketiga(self, nik, password, use_production=True, automatic_reload=False):
         """
         Fungsi untuk memanggil API SIPENTA dan mendapatkan data survey.
         
@@ -279,9 +341,8 @@ class Login_Pihak_Ketiga:
 
             if response.status_code == 200:
                 data = response.json()
+                arcpy.AddMessage(f"Response API: {json.dumps(data, indent=4)}")  # Log response API dengan format yang lebih rapi
                 if data.get("success"):
-                    with open(os.path.join(os.path.dirname(__file__), "login_response_pk.json"), "w") as f:
-                        json.dump(data, f, indent=4)
                     renew_data = {
                         CREDENTIAL_KEY: {
                             'nama_pengguna': data['user']['nama'],
@@ -290,7 +351,7 @@ class Login_Pihak_Ketiga:
                             'berkas': data['berkas'],
                             'role': data['user']['roles'],
                             'instansi_id': data['user']['perusahaan_id'],
-                            'tipe_kredensial': 'PIHAK_KETIGA'},
+                            'tipe_kredensial': TIPE_USER_PIHAK_KETIGA},
                         PREFERRED_SERVER_KEY: "Produksi" if use_production else "Belajar",
                     }
                     renew_multiple_user_data(renew_data)
@@ -322,6 +383,17 @@ class Login_Pihak_Ketiga:
             arcpy.AddError(f"Error dalam parsing response API: {str(e)}")
             raise arcpy.ExecuteError
 
+    def logout_pemeta_nilai_tanah(self, automatic_reload=False):
+        clear_user_data()      
+        shutil.copy(r'C:\PenilaianTanah\ui\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        aprx.save()
+        if automatic_reload == True:
+            subprocess.Popen(r"C:\PenilaianTanah\ui\restart_arcgis.bat")
+            
+            os.system("taskkill /f /im ArcGISPro.exe")
+        else:
+            arcpy.AddMessage("Logout berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
 class Logout_Pengguna:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""

@@ -659,6 +659,8 @@ VERSION_ID = 'solo-bandung-padang-69e0901d-ezx'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
 UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"
+
+# NILAI KONSTANTA
 THIRD_PARTY_DATA_KEY = "data_pemeta_pihak_ketiga"
 SSO_DATA_KEY = "sipenta_sso_data"
 NIK_KEY = "nomor_induk_kependudukan"
@@ -667,3 +669,5 @@ PREFERRED_SERVER_KEY = "preferred_server"
 YEAR_KEY = "tahun"
 CREDENTIAL_KEY = "user_credential"
 PROJECT_CONFIG_FILE_NAME = 'penilaian_tanah_config.bin'
+TIPE_USER_PIHAK_KETIGA = "PIHAK_KETIGA"
+TIPE_USER_SSO = "SSO"

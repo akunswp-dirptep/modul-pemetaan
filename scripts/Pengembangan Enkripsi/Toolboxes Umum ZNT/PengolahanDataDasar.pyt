@@ -528,6 +528,11 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
         project_id = berkas_value.split(" - ")[0]
         arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
         username = get_user_data(NIK_KEY)
+        validation_error = validate_zona_layer_before_upload(feature_class)
+        if validation_error:
+            arcpy.AddError(validation_error)
+            return
+
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload(project_id, username, "pembaruan_znt_peta_hasil_survei_batas_zona_shp", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
         

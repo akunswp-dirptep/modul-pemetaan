@@ -1,6 +1,6 @@
 ﻿from datetime import datetime
 import sys
-import arcpy, os
+import arcpy, os, math
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -15,7 +15,7 @@ from zntutils.constant import PREFERRED_SERVER_KEY, NIK_KEY, YEAR_KEY, THIRD_PAR
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import upload_shapefile_to_sipenta, main_upload
 from zntutils.system_utils import get_user_data, get_all_berkas_id
-from zntutils.zona_layer import get_config_values
+from zntutils.zona_layer import get_config_values, validate_zona_layer_before_upload
 
 #Helper Functions
 def is_internal():
@@ -30,6 +30,9 @@ def current_year():
         return int(datetime.now().year)
     except Exception:
         return None
+
+
+
 
 class Toolbox:
     def __init__(self):
@@ -459,43 +462,34 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
 
         try:
             with arcpy.da.SearchCursor(znt_lama, fields) as cursor:
-                rownum = 0
-                for row in cursor:
-                    rownum += 1
+                for rownum, row in enumerate(cursor, start=1):
                     for i, val in enumerate(row):
                         field_name = fields[i]
-                        # Null atau empty string dianggap tidak valid
-                        if val is None:
-                            arcpy.AddError(f"Field '{field_name}' mengandung nilai NULL pada record {rownum}. Semua nilai harus terisi dan numeric atau dapat dikonversi ke angka.")
-                            return
-                        if val == 0 or val == '0':
-                                arcpy.AddError(f"Field '{field_name}' mengandung nilai 0 pada record {rownum}.")
-                                return
-                        if field_name == jeniszona:
-                            if val not in [1, 2, '1', '2']:
-                                arcpy.AddError(f"Field '{field_name}' pada record {rownum} memiliki nilai '{val}' yang tidak valid. Nilai harus 1 (Non-Pertanian) atau 2 (Pertanian).")
-                                return
 
-                        if isinstance(val, str):
-                            s = val.strip()
-                            if s == "":
-                                arcpy.AddError(f"Field '{field_name}' mengandung string kosong pada record {rownum}.")
-                                return
-                            try:
-                                float(s)
-                            except Exception:
-                                arcpy.AddError(f"Field '{field_name}' value '{s}' pada record {rownum} bukan angka dan tidak dapat dikonversi ke angka.")
-                                return
-                        elif isinstance(val, (int, float)):
-                            # sudah numeric, lanjut
-                            continue
-                        else:
-                            # coba konversi ke float sebagai upaya terakhir
-                            try:
-                                float(val)
-                            except Exception:
-                                arcpy.AddError(f"Field '{field_name}' value '{val}' pada record {rownum} bukan angka dan tidak dapat dikonversi ke angka.")
-                                return
+                        if val is None:
+                            arcpy.AddError(f"{field_name} NULL di baris {rownum}")
+                            return
+
+                        try:
+                            if isinstance(val, str):
+                                val = float(val.strip())
+                            elif isinstance(val, bool):
+                                raise ValueError("Boolean tidak valid")
+                            else:
+                                val = float(val)
+                        except:
+                            arcpy.AddError(f"{field_name} tidak bisa dikonversi ke angka di baris {rownum}")
+                            return
+
+                        if math.isnan(val) or val <= 0:
+                            arcpy.AddError(f"Field {field_name} memiliki nilai tidak valid (0, negatif, atau Null) di baris {rownum}")
+                            return
+
+                        if field_name == jeniszona:
+                            if int(val) not in [1, 2]:
+                                arcpy.AddError(f" Field {field_name} memiliki nilai tidak valid ({int(val)}) di baris {rownum}\nJenis Zona hanya boleh berisi angka 1 (Non-Pertanian) atau 2 (Pertanian)")
+                                return           
+
         except arcpy.ExecuteError:
             arcpy.AddError(f"Gagal membaca layer: {arcpy.GetMessages(2)}")
             return
@@ -903,6 +897,11 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
 
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
+
+        validation_error = validate_zona_layer_before_upload(feature_class)
+        if validation_error:
+            arcpy.AddError(validation_error)
+            return
         tahun = str(get_user_data(YEAR_KEY))
 
 

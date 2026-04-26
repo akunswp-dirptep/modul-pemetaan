@@ -1,5 +1,5 @@
-Version: 5.8.6 - Kotamobagu
-Published: xx April 2025
+Version: 5.8.6 - Jayawijaya
+Published: 26 April 2025
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 
 =============================

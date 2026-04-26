@@ -16,7 +16,7 @@ if parent_dir not in sys.path:
 
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import main_upload
-from zntutils.zona_layer import get_config_values, check_if_there_selected_field
+from zntutils.zona_layer import get_config_values, check_if_there_selected_field, validate_zona_layer_before_upload
 from zntutils.system_utils import get_user_data, renew_user_data
 
 # ======================
@@ -558,6 +558,11 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
         feature_class = parameters[3].valueAsText
         server = parameters[4].valueAsText if len(parameters) > 4 else None
         use_production = True if server == "Produksi" or server == None else False
+
+        validation_error = validate_zona_layer_before_upload(feature_class)
+        if validation_error:
+            arcpy.AddError(validation_error)
+            return
 
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload(project_id, username, "pembaruan_znt_peta_hasil_survei_batas_zona_shp", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)

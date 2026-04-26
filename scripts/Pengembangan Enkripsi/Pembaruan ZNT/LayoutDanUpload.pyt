@@ -464,6 +464,10 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         use_production = True if server == "Produksi" or server == None else False
 
         delete_topology_file()
+        validation_error = zonalayer.validate_zona_layer_before_upload(feature_class)
+        if validation_error:
+            arcpy.AddError(validation_error)
+            return
         validate_document_type(project_id, target='Pembaruan ZNT')
         main_upload(project_id, username, "pembaruan_znt_data_shp_zona_nilai_tanah", "Analisis dan Pengolahan Data", "Zona_Layer", tahun, "ZNT", feature_class, use_production)
         

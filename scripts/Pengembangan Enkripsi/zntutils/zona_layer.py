@@ -337,3 +337,54 @@ def delete_bad_file():
 
     arcpy.management.ClearWorkspaceCache()
     return
+
+def is_nullish_value(value):
+    return value is None or (isinstance(value, str) and not value.strip())
+
+def validate_zona_layer_before_upload(layer):
+    if not layer or not arcpy.Exists(layer):
+        return "Layer delineasi tidak ditemukan."
+
+    try:
+        desc = arcpy.Describe(layer)
+        oid_field_name = desc.OIDFieldName
+        shape_type = str(getattr(desc, "shapeType", "")).lower()
+
+        attribute_fields = []
+        for field in arcpy.ListFields(layer):
+            field_name_upper = field.name.upper()
+            if field.type in ("OID", "Geometry"):
+                continue
+            if field.name == oid_field_name or field.required:
+                continue
+            if field_name_upper in ("SHAPE_LENGTH", "SHAPE_AREA"):
+                continue
+            attribute_fields.append(field.name)
+
+        cursor_fields = ["OID@"]
+        include_shape_area = shape_type == "polygon"
+        if include_shape_area:
+            cursor_fields.append("SHAPE@AREA")
+        cursor_fields.extend(attribute_fields)
+
+        with arcpy.da.SearchCursor(layer, cursor_fields) as cursor:
+            for row in cursor:
+                object_id = row[0]
+                current_index = 1
+
+                if include_shape_area:
+                    shape_area = row[current_index]
+                    current_index += 1
+                    if shape_area is None or shape_area <= 0:
+                        return f"Terdapat baris dengan luas geometri 0 atau tidak valid pada OBJECTID {object_id}."
+
+                if attribute_fields:
+                    attribute_values = row[current_index:]
+                    if all(is_nullish_value(value) for value in attribute_values):
+                        return f"Terdapat baris yang semua nilai atributnya null/kosong pada OBJECTID {object_id}."
+    except arcpy.ExecuteError:
+        return f"Gagal memvalidasi layer delineasi: {arcpy.GetMessages(2)}"
+    except Exception as exc:
+        return f"Gagal memvalidasi layer delineasi: {exc}"
+
+    return None

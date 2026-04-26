@@ -141,7 +141,7 @@ class Periksa_Jenis_Zona(object):
 class Sesuaikan_Jenis_Zona(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Sesuaikan Jenis Zona"
+        self.label = "Sesuaikan Atribut Jenis Zona"
         self.description = ""
         self.canRunInBackground = False
 
@@ -238,7 +238,7 @@ class Sesuaikan_Jenis_Zona(object):
 class Sesuaikan_Jenis_Zona_Lanjutan(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Sesuaikan Jenis Zona Lanjutan"
+        self.label = "Sesuaikan Atribut Jenis Zona Lanjutan"
         self.description = ""
         self.canRunInBackground = False
 

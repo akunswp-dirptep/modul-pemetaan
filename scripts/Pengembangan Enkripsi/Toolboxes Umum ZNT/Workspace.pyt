@@ -153,8 +153,7 @@ class Buat_Workspace(object):
             "WADMKK": WADMKK,
             "THNNILAI": THNNILAI,
             "coord": coord,
-            "gdb_path": gdb_path,
-            'project_type': 'offline' if not login_status else login_status.get('login_type', 'offline')
+            "gdb_path": gdb_path 
         }
         setup_project_config(config_data, local_conf_path)
 
@@ -326,14 +325,6 @@ class Import_Workspace(object):
             config_data["ws_path"] = output_path
             config_data["dataset_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb", "znt_ds")
             config_data["gdb_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb")
-
-            login_status = get_login_status()
-            login_type = login_status.get('login_type', 'offline') if isinstance(login_status, dict) else 'offline'
-
-            if config_data.get("project_type") is None:
-                config_data["project_type"] = login_type
-            elif config_data["project_type"] == 'offline':
-                config_data["project_type"] = 'offline'
 
             arcpy.AddMessage(f"Data konfigurasi yang diperbarui: {config_data}")
             config_path = os.path.join(output_path, PROJECT_CONFIG_FILE_NAME)

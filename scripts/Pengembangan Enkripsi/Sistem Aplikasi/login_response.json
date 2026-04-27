@@ -2,9 +2,9 @@
     "success": true,
     "status": "ok",
     "message": "OK",
-    "token": "vjE0rNXVar3VrO18zzQ7yAKqR4xfqCapeP9ug_cTdx8VSXmAh88tpkUPg6C3zO_NjvsCnRkPYbC6gV94msxnQygtcHFS2tMxjsTvNsADZJ5jKGNF7acstaKXEu4ea-DukFKUlFrkUR6K4SPAH0TdB8lRjn19F9JzQzqIDsPtCS8sivuVkeDY2kHKoxYPH8c1IOrnrSJXPtWwvVTX-JfvYByXVP1BFZ1WEf1qZViNTizqfEOZgnLZgD0yuuLtbocNJJMyZbNQuQ",
-    "logged_in": "2026-04-25 07:12:28",
-    "end_session": "2026-04-27 07:12:28",
+    "token": "XIuv84wMJaMSVGCWQA9MSeZ0Nm0B6R9WOyQhc9jxAuAjw2Im6Xi3dXvu1bJcj0Z6AZ1dB0Jb_vMV_TetQ3obs4PCE2gf5gLlPvRYB_8XmVG2YBkWngpZRqWt_Xn4y-7nJ7wp_T3x9_s5U9gIb513QmExxznT0IYHlNmyY6EX8r57_q9POKK3n7M5CVOoQDDFa6sYpTfwOzRdoHmLIUHoU79WHPQddleLc9IYoYEApSghb4-x-NKcQ1zqtYXQEw9rsry8lXyjeg",
+    "logged_in": "2026-04-27 07:17:51",
+    "end_session": "2026-04-29 07:17:51",
     "user": {
         "user_id": "199402012022042001",
         "nama": "Adhelina Rinta Iswari",
@@ -2385,6 +2385,11 @@
         {
             "berkas_id": "1229",
             "no_berkas": "02/2026/1116",
+            "can_upload": false
+        },
+        {
+            "berkas_id": "1230",
+            "no_berkas": "02/2026/1117",
             "can_upload": false
         },
         {

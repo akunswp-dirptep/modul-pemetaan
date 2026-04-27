@@ -367,7 +367,7 @@ class Login_Pemeta_Nilai_Tanah:
                         CREDENTIAL_KEY: {
                             'nama_pengguna': data['user']['nama'],
                             'instansi': data['user']['perusahaan_nama'],
-                            'token': data['token'],
+                            AUTH_KEY: data['token'],
                             'berkas': data['berkas'],
                             'role': data['user']['roles'],
                             'instansi_id': data['user']['perusahaan_id'],
@@ -450,7 +450,7 @@ class Login_Pemeta_Nilai_Tanah:
                         CREDENTIAL_KEY: {
                                 'nama_pengguna': data['user']['nama'],
                                 'instansi': data['user']['nama_kantor'],
-                                'token': data['token'],
+                                AUTH_KEY: data['token'],
                                 'berkas': data['berkas'],
                                 'role': data['user']['roles'],
                                 'instansi_id': data['user']['kantor_id'],

@@ -8,8 +8,9 @@ Perubahan Struktur Project
 
 Penambahan Fitur
  - Menambahkan Fitur Baru, Login Pemeta, Login SSO dan Logout Pemeta
- - 
+ 
 Penyesuaian Fitur:
+ - Memindahkan Validasi Kelengkapan File Shapefile
  - Perbaikan nama pengecekan versi 
  - Menambahkan ID Unik pada saat import workspace
  - Menambahkan Pengecekan Path untuk mengecek apakah folder workspace dipindahkan tanpa mengekspor terlebih dahulu

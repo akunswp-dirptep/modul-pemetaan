@@ -62,10 +62,15 @@ class Upload_Peta_Rencana_Area_Kerja(object):
 
 
     def getParameterInfo(self):
-        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
-        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
-        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
-
+        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
+        berkas_show = []
+        if berkas_list is not None:
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+            
         shapefile = arcpy.Parameter(
             displayName="Shapefile Rencana Lokasi Kegiatan (.shp)",
             name="shapefile_path",

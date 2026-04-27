@@ -284,8 +284,6 @@ def get_config_values():
     elif arcpy.Exists(new_config_path):
         configs = get_all_config(new_config_path)  
 
-    arcpy.AddMessage(f'{configs}')     
-
     # Validasi path GDB
     if configs['ws_path'] != ws_dir:
         arcpy.AddError(f"Path Geodatabase tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki path kembali dengan cara berikut:\n1. Ekspor Geodatabase menggunakaan Tools Ekspor Geodatabase pada menu Backup dan Ekspor Hasil\n2. Import kembali Geodatabase yang sudah diekspor menggunakan Tools Import Workspace pada menu Persiapan Data")

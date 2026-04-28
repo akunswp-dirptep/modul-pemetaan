@@ -556,10 +556,15 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
     def getParameterInfo(self):
         """Mendefinisikan parameter input tool"""
-        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
-        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
-        
+        berkas_show = []
+        if berkas_list is not None:
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+
         input_metode = arcpy.Parameter(
             displayName="Metode",
             name="metode",
@@ -605,26 +610,22 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                               'Reset Seluruh Sampel']
 
         penjelasan = arcpy.Parameter(
-            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            displayName="Informasi Tools",
             name="petunjuk",
             datatype="GPString",
             parameterType="Optional",
             direction="Input")
         
         penjelasan.value = (
-                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(datetime.datetime.now().year))
+                "Tahun: {}\n".format(datetime.now().year))
         
 
-        if is_login:
-            params = [input_metode, berkas, output_ts, output_tsi]
-            return params
-        else:
-            return [penjelasan]
+        params = [input_metode, berkas, output_ts, output_tsi, penjelasan]
+        return params
+
     def isLicensed(self):
         """Validasi lisensi ArcGIS"""
         return True

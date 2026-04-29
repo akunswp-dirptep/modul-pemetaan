@@ -43,7 +43,7 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Login_Pemeta_Nilai_Tanah, Login_SSO]
+        self.tools = [Login_Pemeta_Nilai_Tanah]
 
 
 class Login_Pemeta_Nilai_Tanah:
@@ -80,7 +80,7 @@ class Login_Pemeta_Nilai_Tanah:
             displayName="NIK Pemeta Nilai Tanah (16 digit)",
             name="username",
             datatype="GPString",
-            parameterType="Optional",
+            parameterType="Required",
             direction="Input"
             )
         
@@ -90,7 +90,7 @@ class Login_Pemeta_Nilai_Tanah:
             displayName="Password",
             name="password",
             datatype="GPString",
-            parameterType="Optional",
+            parameterType="Required",
             direction="Input")
         
         input_password.enabled = False
@@ -99,7 +99,7 @@ class Login_Pemeta_Nilai_Tanah:
             displayName="Server Sipenta",
             name="link",
             datatype="GPString",
-            parameterType="Optional",
+            parameterType="Required",
             direction="Input")
 
         server.filter.type = "ValueList"
@@ -122,7 +122,7 @@ class Login_Pemeta_Nilai_Tanah:
             displayName="Pilih Jenis Kegiatan",
             name="pilihan_jenis_kegiatan",
             datatype="GPString",
-            parameterType="Optional",
+            parameterType="Required",
             direction="Input"
         )
         pilihan_jenis_kegiatan.filter.type = "ValueList"
@@ -475,159 +475,3 @@ class Login_Pemeta_Nilai_Tanah:
         except Exception as e:
             arcpy.AddError(str(e))
    
-class Login_SSO(object):
-    def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
-        self.label = "Login Single Sign-On (SSO) ATR/BPN"
-        self.description = ""
-        self.canRunInBackground = False
-
-    def getParameterInfo(self):
-        """Define parameter definitions"""
-
-        user_data = get_user_data(THIRD_PARTY_DATA_KEY)
-        sso_data = get_user_data(SSO_DATA_KEY)
-
-        penjelasan = arcpy.Parameter(
-            displayName="Penjelasan",
-            name="penjelasan",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input"
-        )
-
-        not_login_explanation = (
-            "Login menggunakan Single Sign-On (SSO) memungkinkan\n"
-            "Anda untuk masuk ke aplikasi menggunakan kredensial\n" 
-            "yang sama dengan yang Anda gunakan untuk layanan lain\n"
-            "di lingkungan Kementerian ATR/BPN.\n\n"
-            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-            "Kementerian ATR/BPN\n"
-            "Tahun: {}".format(datetime.now().year))
-        
-
-
-        server = arcpy.Parameter(
-            displayName="Server Sipenta",
-            name="server",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input",
-        )
-
-        server.filter.type = "ValueList"
-        server.filter.list = ["Belajar", "Produksi"]
-
-        automatic_reload = arcpy.Parameter(
-            displayName="Reload Otomatis ArcGIS Pro setelah login berhasil",   
-            name="automatic_reload",
-            datatype="GPBoolean",
-            parameterType="Optional",
-            direction="Input"  
-        )
-
-        if user_data:
-            already_user_login_explanation = (
-            
-                "Anda sudah login sebagai Pemeta Pihak Ketiga\n"
-                "Dengan Kredensial sebagai berikut:\n\n"
-                f"Nama Pemeta: {user_data['user']['nama']}\n"
-                f"Badan Usaha : {user_data['user']['perusahaan_nama']}\n\n"
-
-                "Untuk menggunakan SSO, Anda harus logout\n"
-                "terlebih dahulu\n\n"
-                "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-                "Kementerian ATR/BPN\n"
-                "Tahun: {}".format(datetime.now().year)
-            )
-            penjelasan.value = already_user_login_explanation
-            return [penjelasan]
-        if sso_data:
-
-            already_login_sso_explanation = (
-                "Anda sudah login sebagai Pemeta \n"
-                "ASN Kementerian ATR/BPN\n"
-                "Dengan Kredensial sebagai berikut:\n\n"
-                f"Nama Pemeta: {sso_data['user']['nama']}\n"
-                f"Badan Usaha : {sso_data['user']['nama_kantor']}\n\n"
-
-                "Untuk menggunakan SSO, Anda harus logout\n"
-                "terlebih dahulu\n\n"
-                "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-                "Kementerian ATR/BPN\n"
-                "Tahun: {}".format(datetime.now().year)
-            )
-            penjelasan.value = already_login_sso_explanation
-            return [penjelasan]
-        else:
-            penjelasan.value = not_login_explanation
-            return [penjelasan, server, automatic_reload]
-
-    def execute(self, parameters, messages):
-        """The source code of the tool."""
-        user_data = get_user_data(THIRD_PARTY_DATA_KEY)
-        if user_data:
-            arcpy.AddMessage("Anda sudah login, logout terlebih dahulu untuk login dengan SSO")
-            return
-        if get_user_data(SSO_DATA_KEY):
-            arcpy.AddMessage("Anda sudah login dengan SSO")
-            return
-        server = parameters[1].valueAsText
-        automatic_reload = parameters[2].valueAsText
-
-        mapping_server = {
-            'Belajar': 'belajar-2',
-            'Produksi': 'prod'
-        }
-
-        exe_path = os.path.join(os.path.dirname(__file__), "login.exe")
-
-        try:
-            result = subprocess.run(
-                [exe_path, mapping_server.get(server, server)],
-                capture_output=True,
-                text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW,
-            )
-
-            if not result.stdout:
-                arcpy.AddError("Login failed: no response")
-                return
-
-            data = json.loads(result.stdout.strip())
-
-            if not data.get("success", False):
-                arcpy.AddError("Login failed")
-                arcpy.AddError(data.get("message", "Unknown error"))
-                return
-
-            with open(os.path.join(os.path.dirname(__file__), "login_response.json"), "w") as f:
-                json.dump(data, f, indent=4)
-
-            renew_data = {
-                        'nama_pengguna': data['user']['nama'],
-                        'instansi': data['user']['nama_kantor'],
-                        'token': data['token'],
-                        'berkas': data['berkas'],
-                        'role': data['user']['roles'],
-                        'instansi_id': data['user']['kantor_id'],
-                        'tipe_kantor_id': data['user']['tipe_kantor_id'],
-                        'tipe_kredensial': 'SSO',
-                        PREFERRED_SERVER_KEY: server,
-                    }
-            renew_multiple_user_data(renew_data)
-            
-            arcpy.AddMessage("Login OK")
-            shutil.copy(r'C:\PenilaianTanah\ui\penjatek\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-            aprx = arcpy.mp.ArcGISProject("CURRENT")
-            aprx.save()
-
-            if automatic_reload:
-                restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
-                subprocess.Popen(restart_bat_path)
-                os.system("taskkill /f /im ArcGISPro.exe")
-            else:
-                arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
-
-        except Exception as e:
-            arcpy.AddError(str(e))

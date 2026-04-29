@@ -19,7 +19,7 @@ from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
 from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
-from zntutils.constant import THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
+from zntutils.constant import CREDENTIAL_KEY, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
 
 # ======================
 # ENVIRONMENT SETTINGS
@@ -94,13 +94,13 @@ def get_config_values():
 
     return paths
 
-def call_sipenta_api(username, project_id, use_production=True):
+def call_sipenta_api(token, nomor_berkas, use_production=True):
     """
     Fungsi untuk memanggil API SIPENTA dan mendapatkan data survey.
     
     Parameters:
-    username (str): NIK pengguna untuk autentikasi API
-    project_id (str): Nomor berkas proyek
+    token (str): Token autentikasi API
+    nomor_berkas (str): Nomor berkas proyek
     use_production (bool): True untuk production URL, False untuk testing URL
     
     Returns:
@@ -108,16 +108,18 @@ def call_sipenta_api(username, project_id, use_production=True):
     """
     
     # URL untuk testing dan produksi
-    test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/getdatasurvey?nik={username}&no_berkas={project_id}"
-    prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/apis/getdatasurvey?nik={username}&no_berkas={project_id}"
+    test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
+    prod_url = f"https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
    
-    # url = prod_url if use_production else test_url
     url = prod_url if use_production else test_url
 
     try:
         # Mengambil data dari API
         arcpy.AddMessage("Mengambil data Titik Sampel...")
-        response = requests.get(url, timeout=60)  
+        headers = {
+                "Authorization": f"Bearer {token}"
+            }
+        response = requests.get(url, headers=headers, timeout=60)  
         response.raise_for_status()  # Akan raise exception untuk HTTP error
         
         data = response.json()
@@ -620,7 +622,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(datetime.now().year))
+                "Tahun: {}\n".format(datetime.datetime.now().year))
         
 
         params = [input_metode, berkas, output_ts, output_tsi, penjelasan]
@@ -632,6 +634,25 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
     def updateParameters(self, parameters):
         """Update parameter dynamically"""
+        input_metode = parameters[0]
+        berkas = parameters[1]
+        output_ts = parameters[2]
+        output_tsi = parameters[3]
+        penjelasan = parameters[4]
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            input_metode.enabled = False
+            berkas.enabled = False
+            output_ts.enabled = False
+            output_tsi.enabled = False
+            penjelasan.enabled = True
+        else:
+            input_metode.enabled = True
+            berkas.enabled = True
+            output_ts.enabled = True
+            output_tsi.enabled = True
+            penjelasan.enabled = False
         return
 
     def updateMessages(self, parameters):
@@ -640,6 +661,8 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
     def execute(self, parameters, messages):
         """Eksekusi utama tool"""
+        user_data = get_user_data(CREDENTIAL_KEY)
+
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
 
         if berkas_list is None:
@@ -650,24 +673,11 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
-        tahun = str(get_user_data(YEAR_KEY))
-        project_id = berkas_value.split(" - ")[0]
-        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
-        username = get_user_data(NIK_KEY)
-        self.operatorGIS = bool(document.get_credentials("OperatorGISInternal", use_for_tools_validity=True))
-        username = parameters[0].valueAsText
-        project_id = parameters[1].valueAsText
-        tahun = parameters[2].valueAsText
-        metode = parameters[3].valueAsText
-
-        zonalayer.delete_bad_file()
-        
-        if self.operatorGIS:
-            link = parameters[6].valueAsText 
-            use_production = True if link == "Produksi" else False 
-            arcpy.AddMessage(f"Menggunakan Link {'Produksi' if use_production else 'Belajar'} untuk API SIPENTA")
-        else:
-            use_production = True    
+        tahun = datetime.datetime.now().year
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        token = user_data.get(AUTH_KEY, None)
+  
 
         if metode == 'Reset Seluruh Sampel':
             self.overwriteSamples(username, project_id, tahun,  use_production)
@@ -705,7 +715,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         with open(config_paths['path_json'], 'w+') as f:
             json.dump(api_data["data"], f, ensure_ascii=False)
             
-        if int(api_data["jmlh_data"]) > 0:
+        if int(api_data["jumlah_data"]) > 0:
 
             json_to_feature_class(
                 json_path=config_paths['path_json'], 

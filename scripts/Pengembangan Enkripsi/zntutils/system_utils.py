@@ -45,7 +45,6 @@ def baca_dari_bin(nama_file):
     try:
         with open(nama_file, 'rb') as file:
             data_terenkripsi = file.read()
-        print(f"Pesan berhasil dibaca dari {nama_file}")
         return data_terenkripsi
     except IOError as e:
         print(f"Terjadi kesalahan saat membaca file: {e}")

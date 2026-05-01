@@ -11,7 +11,7 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.constant import PREFERRED_SERVER_KEY, NIK_KEY, YEAR_KEY, THIRD_PARTY_DATA_KEY, CREDENTIAL_KEY, AUTH_KEY
+from zntutils.constant import PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import upload_shapefile_to_sipenta, upload_feature_layer_to_sipenta
 from zntutils.system_utils import get_user_data, get_all_berkas_id
@@ -68,6 +68,8 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
             parameterType="Required",
             direction="Input")
         
+        shapefile.filter.list = ["shp"]
+
         berkas = arcpy.Parameter(
             displayName="Berkas",
             name="link",
@@ -77,7 +79,12 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
                
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            if '02/' in preferred_berkas:
+                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
         penjelasan = arcpy.Parameter(
             displayName="Informasi Tools",
@@ -193,7 +200,7 @@ class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
             datatype="DEFile",  
             parameterType="Required",
             direction="Input")
-        
+        shapefile.filter.list = ["shp"]
         berkas = arcpy.Parameter(
             displayName="Berkas",
             name="link",
@@ -203,7 +210,12 @@ class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
                
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            if '02/' in preferred_berkas:
+                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
         penjelasan = arcpy.Parameter(
             displayName="Informasi Tools",
@@ -855,7 +867,12 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            if '02/' in preferred_berkas:
+                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
 
         penjelasan = arcpy.Parameter(

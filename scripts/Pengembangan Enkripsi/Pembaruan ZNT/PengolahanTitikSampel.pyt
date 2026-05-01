@@ -104,19 +104,12 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
     
     def get_config_values(self):
         # Konfigurasi Path Aplikasi
-        self.appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 
-        # Konfigurasi Path Project
-        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
-        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
-        config_path = os.path.join(ws_dir, "config.json")
-        configs = None
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                configs = json.load(f)
+        configs = zonalayer.get_config_values()
 
         self.gdb_path = configs['gdb_path']
         self.dataset_path = configs['dataset_path']
+        self.appdata = configs['appdata']
         zonalayer.check_if_there_selected_field()
         return
         

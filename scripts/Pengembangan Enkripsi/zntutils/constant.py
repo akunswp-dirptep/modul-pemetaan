@@ -666,6 +666,7 @@ SSO_DATA_KEY = "sipenta_sso_data"
 NIK_KEY = "nomor_induk_kependudukan"
 AUTH_KEY = "auth_key"
 PREFERRED_SERVER_KEY = "preferred_server"
+PREFERRED_BERKAS_ID = "preferred_berkas_id"
 YEAR_KEY = "tahun"
 CREDENTIAL_KEY = "user_credential"
 PROJECT_CONFIG_FILE_NAME = 'penilaian_tanah_config.bin'

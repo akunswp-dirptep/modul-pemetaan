@@ -1415,7 +1415,7 @@ class Setujui_Sampel_Individual(object):
         count = int(arcpy.management.GetCount(temp_copy)[0])
 
         if count == 0:
-            arcpy.AddWarning("Tidak ada fitur yang memenuhi kriteria untuk dipindahkan. Pastikan field Pembanding terisi pada titik sampel individual yang dipilih.")
+            arcpy.AddWarning("Tidak ada fitur yang memenuhi kriteria untuk dipindahkan.\n Pastikan field Pembanding terisi pada titik sampel individual yang dipilih.")
             arcpy.management.DeleteFeatures(temp_layer)
             arcpy.management.DeleteFeatures(temp_copy)
             sys.exit(0)

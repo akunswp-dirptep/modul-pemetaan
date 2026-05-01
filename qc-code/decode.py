@@ -73,4 +73,87 @@ def get_all_config(config_path = None):
         
     except Exception as e:
         return None
-print(get_all_config())
+def setup_user_data(key:str, value:str):
+
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+
+    try:
+        # Cek apakah file ada
+        if os.path.exists(config_path):
+            # File ada, baca isinya
+            try:
+                data = decrypt_message(generate_key(), config_path)                    
+                # Validasi format JSON
+                if key not in data or not isinstance(data.get(key), str):
+                    # Format tidak sesuai, tambahkan atau perbarui data
+                    data[key] = value
+                
+                if data[key] != value:
+                    data[key] = value
+                    
+            except json.JSONDecodeError:
+                # File rusak/tidak valid, buat struktur baru
+                arcpy.AddWarning("File config.json rusak, membuat struktur baru...")
+                data = {key: value}
+        else:
+            # File belum ada, buat struktur baru
+            # Pastikan direktori Menu ada
+            menu_dir = os.path.dirname(config_path)
+            if not os.path.exists(menu_dir):
+                os.makedirs(menu_dir)
+            
+            data = {key: value}
+        
+
+        # Simpan kembali ke file
+        encrypt_message(json.dumps(data), generate_key(), config_path)
+        
+        return True
+        
+    except Exception as e:
+        arcpy.AddError(f"Gagal menyimpan user config: {str(e)}")
+        return False
+def setup_project_config(data_dict: dict, config_path):
+    
+    for key, value in data_dict.items():
+        try:
+            # Cek apakah file ada
+            if os.path.exists(config_path):
+                # File ada, baca isinya
+                try:
+                    data = decrypt_message(generate_key(), config_path)                    
+                    # Validasi format JSON
+                    if key not in data or not isinstance(data.get(key), str):
+                        # Format tidak sesuai, tambahkan atau perbarui data
+                        data[key] = value
+                    
+                    if data[key] != value:
+                        data[key] = value
+                        
+                except json.JSONDecodeError:
+                    # File rusak/tidak valid, buat struktur baru
+                    arcpy.AddWarning("File config.json rusak, membuat struktur baru...")
+                    data = {key: value}
+            else:
+                # File belum ada, buat struktur baru
+                # Pastikan direktori Menu ada
+                menu_dir = os.path.dirname(config_path)
+                if not os.path.exists(menu_dir):
+                    os.makedirs(menu_dir)
+                
+                data = {key: value}
+
+            # Simpan kembali ke file
+            encrypt_message(json.dumps(data), generate_key(), config_path)
+            
+        except Exception as e:
+            arcpy.AddError(f"Gagal menyimpan user config: {str(e)}")
+            return False
+    return True
+project_config = r'E:\Akmal\Jobdesk\Uji Coba Plugin Penilaian Tanah\Pembaruan ZNT\Uji Coba Versi 6 2704\penilaian_tanah_config.bin'
+
+reset_last_sample = {
+    'last_sample_id': 0
+}
+setup_project_config(reset_last_sample, project_config)
+# print(get_all_config())

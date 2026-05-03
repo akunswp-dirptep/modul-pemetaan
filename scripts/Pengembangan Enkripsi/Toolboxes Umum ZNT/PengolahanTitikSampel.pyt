@@ -41,7 +41,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
     def getParameterInfo(self):
         """Mendefinisikan parameter input tool"""
-        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
+        berkas_list = get_all_berkas_id()
         berkas_show = []
         if berkas_list is not None:
             for berkas in berkas_list:
@@ -151,7 +151,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         """Eksekusi utama tool"""
         user_data = get_user_data(CREDENTIAL_KEY)
 
-        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
+        berkas_list = get_all_berkas_id()
 
         if berkas_list is None:
             arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan ZNT.")
@@ -159,8 +159,6 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         metode = parameters[0].valueAsText
         berkas_value = parameters[1].valueAsText
 
-        server = get_user_data(PREFERRED_SERVER_KEY)
-        use_production = True if server == "Produksi" or server == None else False
         tahun = datetime.datetime.now().year
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
@@ -699,14 +697,50 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         
         additional_fields = [
             ('lokasi', 'Lokasi', "STRING"),
-            ('tahun', 'Tahun', 'INTEGER')
         ]
         for field in additional_fields:
             arcpy.management.AddField(feature_class_path, field[0], field[2], field_alias=field[1])
         
         arcpy.management.CalculateField(feature_class_path, 'lokasi', f'"{lokasi}"', "PYTHON3")
-        arcpy.management.CalculateField(feature_class_path, 'tahun', tahun, "PYTHON3")
 
+        field_to_integer = [
+            ("no_sampel", "Nomor Sampel", "INTEGER"),
+            ("zoning", "Zoning/Peruntukan", "INTEGER"),
+            ("jumlah_lantai", "Jumlah Lantai", "INTEGER"),
+            ("tahun_pembuatan", "Tahun Pembuatan", "INTEGER"),
+            ("tahun_renovasi", "Tahun Renovasi", "INTEGER"),
+            ("tahun_penilaian", "Tahun Penilaian", "INTEGER"),
+        ]
+
+        for field_name, alias, field_type in field_to_integer:
+            temp_field = f"{field_name}_temp"
+
+            
+            arcpy.management.AddField(
+                feature_class_path,
+                temp_field,
+                field_type,
+                field_alias=alias
+            )
+
+            
+            arcpy.management.CalculateField(
+                feature_class_path,
+                temp_field,
+                f"int(!{field_name}!) if !{field_name}! is not None else None",
+                "PYTHON3"
+            )
+
+            # Hapus field lama
+            arcpy.management.DeleteField(feature_class_path, field_name)
+
+            # Rename temp field ke nama asli
+            arcpy.management.AlterField(
+                feature_class_path,
+                temp_field,
+                new_field_name=field_name,
+                new_field_alias=alias
+            )
 
     def get_config_values(self):
         """

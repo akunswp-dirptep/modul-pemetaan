@@ -178,7 +178,7 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
 
         # Use UpdateCursor within a 'with' statement for proper resource management
         try:
-            with arcpy.da.UpdateCursor(ts, ['Jenis_Data']) as cursor:
+            with arcpy.da.UpdateCursor(ts, ['jenis_data']) as cursor:
                 for row in cursor:
                     # Check if the row meets the criteria for deletion
                     if row[0] != 'Individual':
@@ -265,17 +265,9 @@ class Perhitungan_Indeks_Titik_Sampel_Terpilih:
     
     def get_config_values(self):
         # Konfigurasi Path Aplikasi
-        self.appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
 
-        # Konfigurasi Path Project
-        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
-        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
-        config_path = os.path.join(ws_dir, "config.json")
-        configs = None
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                configs = json.load(f)
-
+        configs = zonalayer.get_config_values()
+        self.appdata = configs['appdata']
         self.gdb_path = configs['gdb_path']
         self.dataset_path = configs['dataset_path']
         zonalayer.check_if_there_selected_field()
@@ -350,10 +342,10 @@ class Perhitungan_Indeks_Titik_Sampel_Terpilih:
             arcpy.SetParameter(2, "Titik_Sampel")
 
         def check_individual_data(source_layer, selected_ids):
-            """Check if any selected features have 'Jenis_Data' as 'Individual'."""
+            """Check if any selected features have 'jenis_data' as 'Individual'."""
             individual_found = False
             where_clause = f"OBJECTID IN ({','.join(map(str, selected_ids))})"
-            with arcpy.da.SearchCursor(source_layer, ["Jenis_Data"], where_clause) as cursor:
+            with arcpy.da.SearchCursor(source_layer, ["jenis_data"], where_clause) as cursor:
                 for row in cursor:
                     if row[0] == "Individual":
                         individual_found = True

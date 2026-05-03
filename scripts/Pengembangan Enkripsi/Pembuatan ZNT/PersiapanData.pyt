@@ -16,7 +16,6 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from zntutils.document import validate_document_type, get_credentials
-from zntutils.upload_utils import main_upload_shapefile, main_upload
 from zntutils.zona_layer import get_config_values
 from zntutils.system_utils import get_user_data, get_all_berkas_id
 from zntutils.constant import THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY

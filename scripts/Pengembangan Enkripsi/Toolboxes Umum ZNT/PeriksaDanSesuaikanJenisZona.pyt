@@ -108,10 +108,10 @@ class Periksa_Jenis_Zona(object):
                 listsampel[nozona].add(zoning)
         field_names = [f.name for f in arcpy.ListFields(zl_path)]
         if "JENISSAMPEL" in field_names:
-            arcpy.DeleteField_management(zl_path, "JENISSAMPEL")
-        arcpy.AddField_management(zl_path, "JENISSAMPEL", "TEXT")
+            arcpy.management.DeleteField(zl_path, "JENISSAMPEL")
+        arcpy.management.AddField(zl_path, "JENISSAMPEL", "TEXT")
         if "BEDA_ZONA" in field_names:
-            arcpy.DeleteField_management(zl_path, "BEDA_ZONA")
+            arcpy.management.DeleteField(zl_path, "BEDA_ZONA")
         arcpy.management.AddField(zl_path, "BEDA_ZONA", "TEXT")
 
         with arcpy.da.UpdateCursor(zl_path, ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]) as cursor:

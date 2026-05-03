@@ -192,7 +192,7 @@ class Login_Pemeta_Nilai_Tanah:
             server.enabled = False
             pilihan_jenis_kegiatan.enabled = True
             daftar_berkas.enabled = True
-            automatic_reload.enabled = True
+            automatic_reload.enabled = False
             akun_tipe = "Login berhasil sebagai Pemeta Pihak Ketiga.\n" if user_data['tipe_kredensial'] == TIPE_USER_PIHAK_KETIGA else "Login berhasil sebagai Pemeta ASN ATR/BPN.\n"
             already_user_login_explanation = (
                     akun_tipe +
@@ -223,7 +223,7 @@ class Login_Pemeta_Nilai_Tanah:
             pilihan_jenis_kegiatan.enabled = False
             daftar_berkas.enabled = False
             pilihan_login.enabled = True
-            automatic_reload.enabled = True
+            automatic_reload.enabled = False
             server.enabled = True
 
             if pilihan_login.value == "Pemeta Pihak Ketiga":
@@ -361,7 +361,6 @@ class Login_Pemeta_Nilai_Tanah:
 
             if response.status_code == 200:
                 data = response.json()
-                arcpy.AddMessage(f"Response API: {json.dumps(data, indent=4)}")  # Log response API dengan format yang lebih rapi
                 if data.get("success"):
                     renew_data = {
                         CREDENTIAL_KEY: {
@@ -375,16 +374,16 @@ class Login_Pemeta_Nilai_Tanah:
                         PREFERRED_SERVER_KEY: "Produksi" if use_production else "Belajar",
                     }
                     renew_multiple_user_data(renew_data)
-                    shutil.copy(r'C:\PenilaianTanah\ui\nik_login\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-                    aprx = arcpy.mp.ArcGISProject("CURRENT")
-                    aprx.save()
-                    if automatic_reload:
-                        restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
-                        subprocess.Popen(restart_bat_path)
-                        # Tutup ArcGIS Pro
-                        os.system("taskkill /f /im ArcGISPro.exe")
-                    else:
-                        arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
+                    # shutil.copy(r'C:\PenilaianTanah\ui\nik_login\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
+                    # aprx = arcpy.mp.ArcGISProject("CURRENT")
+                    # aprx.save()
+                    # if automatic_reload:
+                    #     restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
+                    #     subprocess.Popen(restart_bat_path)
+                    #     # Tutup ArcGIS Pro
+                    #     os.system("taskkill /f /im ArcGISPro.exe")
+                    # else:
+                    #     arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
                 else:
                     arcpy.AddError(f"Login gagal: {data.get('message', 'Tidak ada pesan error yang diberikan')}")
 
@@ -406,16 +405,16 @@ class Login_Pemeta_Nilai_Tanah:
 
     def logout_pemeta_nilai_tanah(self, automatic_reload=False):
         clear_user_data()      
-        shutil.copy(r'C:\PenilaianTanah\ui\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-        aprx.save()
-        if automatic_reload == True:
-            restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
-            subprocess.Popen(restart_bat_path)
+        # shutil.copy(r'C:\PenilaianTanah\ui\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
+        # aprx = arcpy.mp.ArcGISProject("CURRENT")
+        # aprx.save()
+        # if automatic_reload == True:
+        #     restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
+        #     subprocess.Popen(restart_bat_path)
             
-            os.system("taskkill /f /im ArcGISPro.exe")
-        else:
-            arcpy.AddMessage("Logout berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
+        #     os.system("taskkill /f /im ArcGISPro.exe")
+        # else:
+        #     arcpy.AddMessage("Logout berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
 
     def login_sso(self, server, automatic_reload=False):
         mapping_server = {
@@ -461,16 +460,16 @@ class Login_Pemeta_Nilai_Tanah:
             renew_multiple_user_data(renew_data)
             
             arcpy.AddMessage("Login OK")
-            shutil.copy(r'C:\PenilaianTanah\ui\penjatek\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-            aprx = arcpy.mp.ArcGISProject("CURRENT")
-            aprx.save()
+            # shutil.copy(r'C:\PenilaianTanah\ui\penjatek\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
+            # aprx = arcpy.mp.ArcGISProject("CURRENT")
+            # aprx.save()
 
-            if automatic_reload:
-                restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
-                subprocess.Popen(restart_bat_path)
-                os.system("taskkill /f /im ArcGISPro.exe")
-            else:
-                arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
+            # if automatic_reload:
+            #     restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
+            #     subprocess.Popen(restart_bat_path)
+            #     os.system("taskkill /f /im ArcGISPro.exe")
+            # else:
+            #     arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
 
         except Exception as e:
             arcpy.AddError(str(e))

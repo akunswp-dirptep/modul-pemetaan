@@ -9,8 +9,8 @@ if parent_dir not in sys.path:
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
-from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
-from zntutils.constant import THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
+from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id, clear_user_data
+from zntutils.constant import PREFERRED_BERKAS_ID, AUTH_KEY, PREFERRED_SERVER_KEY,CREDENTIAL_KEY
 
 
 class Toolbox(object):
@@ -32,9 +32,14 @@ class Sesuaikan_Titik_Koordinat(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
         berkas_list = get_all_berkas_id()
-        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
+        berkas_show = []
+        if berkas_list is not None:
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
         catatan = arcpy.Parameter(
             displayName="Catatan",
@@ -53,8 +58,13 @@ class Sesuaikan_Titik_Koordinat(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
-        
+
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+
         output_ts = arcpy.Parameter(
             name="Titik_Sampel",
             datatype="GPFeatureLayer",
@@ -75,27 +85,42 @@ class Sesuaikan_Titik_Koordinat(object):
             direction="Input")
         
         penjelasan.value = (
-                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
                 "Tahun: {}\n".format(datetime.now().year))
         
 
-        if is_login:
-            params = [catatan, berkas, output_ts, output_tsi]
-            return params
-        else:
-            return [penjelasan]
 
-        
-        
-
+        params = [catatan, berkas, output_ts, output_tsi, penjelasan]
+        return params
 
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
         return True
+
+    def updateParameters(self, parameters):
+            """Update parameter dynamically"""
+            catatan = parameters[0]
+            berkas = parameters[1]
+            output_ts = parameters[2]
+            output_tsi = parameters[3]
+            penjelasan = parameters[4]
+            is_login = get_user_data(CREDENTIAL_KEY)
+
+            if is_login is None:
+                catatan.enabled = False
+                berkas.enabled = False
+                output_ts.enabled = False
+                output_tsi.enabled = False
+                penjelasan.enabled = True
+            else:
+                catatan.enabled = True
+                berkas.enabled = True
+                output_ts.enabled = True
+                output_tsi.enabled = True
+                penjelasan.enabled = False
+            return
 
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
@@ -106,19 +131,18 @@ class Sesuaikan_Titik_Koordinat(object):
     def execute(self, parameters, messages):
         """The source code of the tool."""
         zonalayer.delete_bad_file()
+        user_data = get_user_data(CREDENTIAL_KEY)
         berkas_list = get_all_berkas_id()
 
         if berkas_list is None:
-            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid")
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan ZNT.")
             return
         self.catatan = parameters[0].valueAsText
         berkas_value = parameters[1].valueAsText
+
         server = get_user_data(PREFERRED_SERVER_KEY)
-        self.use_production = True if server == "Produksi" or server == None else False
-        self.tahun = str(get_user_data(YEAR_KEY))
-        self.project_id = berkas_value.split(" - ")[0]
-        arcpy.AddMessage(f"Berkas yang dipilih: {self.project_id}")
-        self.username = get_user_data(NIK_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        token = user_data.get(AUTH_KEY, None)
 
         aprx = arcpy.mp.ArcGISProject('CURRENT')
         layer_name = []
@@ -139,7 +163,10 @@ class Sesuaikan_Titik_Koordinat(object):
                 arcpy.AddError('Matikan terlebih dahulu tools editnya')
                 sys.exit(1)
                 
-        self.get_sample_coordinate_from_sipenta()
+        self.get_sample_coordinate_from_sipenta(
+            token=token,
+            no_berkas=berkas_value,
+            use_production=use_production)
         self.extract_coordinates_to_json()
         self.compare_coordinates()
 
@@ -148,21 +175,11 @@ class Sesuaikan_Titik_Koordinat(object):
             return
 
         json_untuk_dikirim = {
-            "nomor_berkas": self.project_id,
-            "nik": self.username,
+            "no_berkas": berkas_value,
             "data" :self.hasil_perbandingan['data_yang_akan_dikirim']
         }
 
-        self.upload_data_to_server(json_untuk_dikirim, self.use_production)
-        preferred_server = get_user_data('preferred_server')
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        if nik != self.username:
-            renew_user_data('nik', self.username)
-        if berkas != self.project_id:
-            renew_user_data('berkas', self.project_id)
-        if len(parameters) > 4 and server != preferred_server:
-            renew_user_data('preferred_server', server)
+        self.upload_data_to_server(json_untuk_dikirim, token = token, use_production=use_production)
         self.reload_layer()
         
         return
@@ -210,21 +227,13 @@ class Sesuaikan_Titik_Koordinat(object):
         Returns:
             dict: Dictionary berisi semua path dan parameter konfigurasi
         """
-        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)  # Validasi compliance layer zona
-        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))  # Navigasi ke root workspace
-        config_path = os.path.join(ws_dir, "config.json")  # Path ke file config
-        configs = None
-        
-        # Membaca file config.json jika ada
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                configs = json.load(f)
+        configs = zonalayer.get_config_values()
 
         # Mengekstrak nilai dari config
         dataset_path = configs['dataset_path']  # Path ke geodatabase
-        tahun = configs['THNNILAI']  # Tahun penilaian
-        lokasi = configs['WADMPR']   # Kode lokasi
-        coor = configs['coord']      # Sistem koordinat
+        tahun = configs['tahun']  # Tahun penilaian
+        lokasi = configs["provinsi"]   # Kode lokasi
+        coor = configs['coor']      # Sistem koordinat
         gdb_path = configs['gdb_path']  # Path lengkap GDB
 
         # Definisikan nama layer
@@ -235,7 +244,7 @@ class Sesuaikan_Titik_Koordinat(object):
         symbology_folder = os.path.join(ui_folder, "symbology")
         # Bangun semua path yang diperlukan
         paths = {
-            'ws_dir': ws_dir,
+            'ws_dir': configs['ws_dir'],
             'gdb_path': gdb_path,
             'dataset_path': dataset_path,
             'tahun': tahun,
@@ -253,13 +262,13 @@ class Sesuaikan_Titik_Koordinat(object):
 
         return paths
 
-    def call_sipenta_api(self):
+    def call_sipenta_api(self, token, nomor_berkas, use_production=True):
         """
         Fungsi untuk memanggil API SIPENTA dan mendapatkan data survey.
         
         Parameters:
-        username (str): NIK pengguna untuk autentikasi API
-        project_id (str): Nomor berkas proyek
+        token (str): Token autentikasi API
+        nomor_berkas (str): Nomor berkas proyek
         use_production (bool): True untuk production URL, False untuk testing URL
         
         Returns:
@@ -267,57 +276,55 @@ class Sesuaikan_Titik_Koordinat(object):
         """
         
         # URL untuk testing dan produksi
-        test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/getdatasurvey?nik={self.username}&no_berkas={self.project_id}"
-        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/apis/getdatasurvey?nik={self.username}&no_berkas={self.project_id}"
+        test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
     
-        url = prod_url if self.use_production else test_url
+        url = prod_url if use_production else test_url
 
         try:
             # Mengambil data dari API
-
-            response = requests.get(url, timeout=60)  # Timeout 60 detik
+            arcpy.AddMessage("Mengambil data Titik Sampel...")
+            headers = {
+                    "Authorization": f"Bearer {token}"
+                }
+            response = requests.get(url, headers=headers, timeout=60)  
             response.raise_for_status()  # Akan raise exception untuk HTTP error
             
             data = response.json()
+            
+            if not data:
+                arcpy.AddError('Server Tidak mengirimkan Apapun')
 
-            
-            self.data = data
-            
+            return data
+        except requests.exceptions.HTTPError as e:
+        # Ambil response dari exception
+            response = e.response
+
+            try:
+                error_json = response.json()
+                message = error_json.get("message", "")
+            except Exception:
+                message = ""
+
+            # Handle khusus token expired
+            if response.status_code == 403 and "expired" in message.lower():
+                clear_user_data()
+                raise Exception("Token Anda kadaluarsa, silakan login ulang.")
+
+            # Handle forbidden biasa
+            elif response.status_code == 403:
+                raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
+
+            else:
+                raise Exception(f"HTTP Error: {e}")
         except requests.exceptions.RequestException as e:
             arcpy.AddError(f"Error dalam pemanggilan API: {str(e)}")
             raise arcpy.ExecuteError
         except json.JSONDecodeError as e:
-            arcpy.AddError(f"Error dalam parsing response API: {str(e)}")
+            arcpy.AddError(f"Error ketika mengubah respon API ke JSON: {str(e)}")
             raise arcpy.ExecuteError
 
-    def validate_api_response(self):
-        """
-        Validasi response dari API SIPENTA.
-        
-        Parameters:
-        api_data (dict): Data response dari API
-        
-        Returns:
-        bool: True jika data valid, False jika tidak
-        """
-        
-        if not self.data:
-            arcpy.AddError("Data API kosong")
-            sys.exit(1)
-            return False
-            
-        status = self.data.get("status")
-        
-        if status == 'not found':
-            arcpy.AddError("ERROR: Data Tidak Ditemukan di server SIPENTA")
-            sys.exit(1)
-            return False
-        elif status == 'gagal':
-            arcpy.AddError("ERROR: Gagal mendapatkan data dari server SIPENTA")
-            sys.exit(1)
-            return False
-            
-        return True
+
 
     def extract_coordinates_to_json(self):
         """
@@ -327,14 +334,14 @@ class Sesuaikan_Titik_Koordinat(object):
         1. Membaca semua feature dari feature class
         2. Mengekstrak koordinat (X, Y)
         3. Mengonversi ke sistem referensi spasial WGS84 (EPSG:4326)
-        4. Menggunakan nilai Nomor_Entry sebagai key JSON
+        4. Menggunakan nilai no_sampel sebagai key JSON
         
         Returns:
         dict: Dictionary berisi data koordinat dalam WGS84
         """
         
         coordinates_data = {}
-        nomor_entry_field = "Nomor_Entry"
+        nomor_sampel_field = "no_sampel"
 
         def get_data_from_feature_class(feature_class_path):            
             try:
@@ -347,19 +354,19 @@ class Sesuaikan_Titik_Koordinat(object):
                 source_sr = arcpy.Describe(feature_class_path).spatialReference
                 target_sr = arcpy.SpatialReference(4326)  # WGS 84
 
-                with arcpy.da.SearchCursor(feature_class_path, ["SHAPE@XY", nomor_entry_field]) as cursor:
+                with arcpy.da.SearchCursor(feature_class_path, ["SHAPE@XY", nomor_sampel_field]) as cursor:
                     feature_count = 0
                     for row in cursor:
                         try:
                             xy = row[0]
-                            nomor_entry = row[1]
+                            nomor_sampel = row[1]
 
                             # Validasi data
-                            if nomor_entry is None:
-                                arcpy.AddWarning("Nomor_Entry kosong untuk feature")
+                            if nomor_sampel is None:
+                                arcpy.AddWarning("nomor_sampel kosong untuk feature")
                                 continue
                             if xy is None:
-                                arcpy.AddWarning(f"Geometry kosong untuk Nomor_Entry: {nomor_entry}")
+                                arcpy.AddWarning(f"Geometry kosong untuk nomor_sampel: {nomor_sampel}")
                                 continue
 
                             # Buat Point dan transformasi ke WGS84
@@ -370,7 +377,7 @@ class Sesuaikan_Titik_Koordinat(object):
                             coord_y = round(point_wgs84.centroid.Y, 8)
 
                             # Simpan ke dictionary
-                            key = str(nomor_entry)
+                            key = str(nomor_sampel)
                             coordinates_data[key] = [coord_x, coord_y]
                             feature_count += 1
 
@@ -389,7 +396,7 @@ class Sesuaikan_Titik_Koordinat(object):
 
         self.koordinat_data_lokal =  coordinates_data
 
-    def get_sample_coordinate_from_sipenta(self):
+    def get_sample_coordinate_from_sipenta(self, token, no_berkas, use_production):
 
         """
         FUNGSI UTAMA UNTUK MEMPROSES DATA TITIK SAMPEL
@@ -397,26 +404,25 @@ class Sesuaikan_Titik_Koordinat(object):
         semua_data_koordinat = {}
                 
         # Backup geodatabase
-        tools_label = 'Pembuatan_ZNT-Pengolahan_Titik_Sampel'
+        tools_label = 'Sesuaikan-Titik-Koordinat'
         zonalayer.save_gdb(self.config_paths['ws_dir'], self.config_paths['gdb_path'], label=tools_label)
 
         # Pemanggilan API menggunakan fungsi baru
-        self.call_sipenta_api()
+        api_data = self.call_sipenta_api(
+            token=token,
+            nomor_berkas=no_berkas,
+            use_production=use_production
+        )
         
-        # Validasi response API
-        if not self.validate_api_response():
-            return
-
-
         # ========================
         # PROSES TITIK_SAMPEL
         # ========================
-        if int(self.data["jmlh_data"]) > 0:
-            for data_sampel in self.data['data']['features']:
-                nomor_entry = str(data_sampel['properties']['Nomor_Entry'])
+        if int(api_data['data']["jumlah_data"]) > 0:
+            for data_sampel in api_data['data']['geojson']['features']:
+                no_sampel = str(data_sampel['properties']['no_sampel'])
                 x = round(data_sampel['geometry']['coordinates'][0], 8)
                 y = round(data_sampel['geometry']['coordinates'][1], 8)
-                semua_data_koordinat[nomor_entry] = [x, y]
+                semua_data_koordinat[no_sampel] = [x, y]
         else: 
             arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan.")
 
@@ -424,12 +430,12 @@ class Sesuaikan_Titik_Koordinat(object):
         # ========================
         # PROSES TITIK_SAMPEL_INDIVIDUAL
         # ========================
-        if int(self.data["jmlh_individual"]) > 0:
-            for data_sampel in self.data['data_individual']['features']:
-                nomor_entry = str(data_sampel['properties']['Nomor_Entry'])
+        if int(api_data['data']["jumlah_data_individual"]) > 0:
+            for data_sampel in api_data['data']['geojson_individual']['features']:
+                no_sampel = str(data_sampel['properties']['no_sampel'])
                 x = round(data_sampel['geometry']['coordinates'][0], 8)
                 y = round(data_sampel['geometry']['coordinates'][1], 8)
-                semua_data_koordinat[nomor_entry] = [x, y]
+                semua_data_koordinat[no_sampel] = [x, y]
         else:
             arcpy.AddMessage("Tidak ada data Titik_Sampel_Individual ditemukan.")
         
@@ -467,11 +473,11 @@ class Sesuaikan_Titik_Koordinat(object):
         data_yang_akan_dikirim = []
 
         # Cek semua data dari SIPENTA
-        for nomor_entry, sipenta_xy in sipenta_coord.items():
-            if nomor_entry not in titik_sampel_coord.keys():
+        for nomor_sampel, sipenta_xy in sipenta_coord.items():
+            if nomor_sampel not in titik_sampel_coord.keys():
                 continue
 
-            titik_xy = titik_sampel_coord[nomor_entry]
+            titik_xy = titik_sampel_coord[nomor_sampel]
             dx = abs(sipenta_xy[0] - titik_xy[0])
             dy = abs(sipenta_xy[1] - titik_xy[1])
 
@@ -479,11 +485,11 @@ class Sesuaikan_Titik_Koordinat(object):
             if dx > tolerance or dy > tolerance:
                 jarak= haversine(sipenta_xy[0], sipenta_xy[1], titik_xy[0], titik_xy[1])
 
-                perbedaan_koordinat[nomor_entry] = {
+                perbedaan_koordinat[nomor_sampel] = {
                     "jarak_meter": round(jarak, 2)
                 }
                 data = {
-                    "no_sampel" :  nomor_entry,
+                    "no_sampel" :  nomor_sampel,
                     "koordinat" : [
                         titik_xy[0],
                         titik_xy[1]
@@ -512,7 +518,7 @@ class Sesuaikan_Titik_Koordinat(object):
         sipenta_coord (dict): Data koordinat dari SIPENTA (dalam EPSG 4326)
         titik_sampel_path (str): Path ke feature class Titik Sampel
         """
-        nomor_entry_data_tertolak = [s['no_sampel'] for s in data_tertolak]
+        no_sampel_data_tertolak = [s['no_sampel'] for s in data_tertolak]
 
         def reset_data_to_original(layer_path):                                  
             try:
@@ -520,12 +526,12 @@ class Sesuaikan_Titik_Koordinat(object):
                 sr_target = arcpy.Describe(layer_path).spatialReference
                 sr_sipenta = arcpy.SpatialReference(4326)  # Asumsi SIPENTA menggunakan WGS84
 
-                with arcpy.da.UpdateCursor(layer_path, ["Nomor_Entry", "SHAPE@XY", "X", "Y"]) as cursor:
+                with arcpy.da.UpdateCursor(layer_path, ["no_sampel", "SHAPE@XY", "X", "Y"]) as cursor:
                     for row in cursor:
-                        nomor_entry = str(row[0])
-                        if nomor_entry in nomor_entry_data_tertolak:
+                        no_sampel = str(row[0])
+                        if no_sampel in no_sampel_data_tertolak:
                             # Ambil koordinat dari SIPENTA
-                            new_coord = sipenta_coord.get(nomor_entry)
+                            new_coord = sipenta_coord.get(no_sampel)
                             if new_coord:
                                 try:
                                     # Buat point geometry dari koordinat SIPENTA
@@ -540,9 +546,9 @@ class Sesuaikan_Titik_Koordinat(object):
                                     row[3] = projected_xy[1]  # Y
                                     cursor.updateRow(row)
 
-                                    arcpy.AddWarning(f"Koordinat Nomor Sampel {nomor_entry} dikembalikan koordinatnya, seperti semula")
+                                    arcpy.AddWarning(f"Koordinat Nomor Sampel {no_sampel} dikembalikan koordinatnya, seperti semula")
                                 except Exception as conv_err:
-                                    arcpy.AddWarning(f"Gagal memproyeksikan Nomor Sampel {nomor_entry}: {conv_err}")
+                                    arcpy.AddWarning(f"Gagal memproyeksikan Nomor Sampel {no_sampel}: {conv_err}")
 
             except Exception as e:
                 arcpy.AddError(f"Error dalam menulis ulang koordinat: {str(e)}")
@@ -552,7 +558,7 @@ class Sesuaikan_Titik_Koordinat(object):
         if arcpy.Exists(self.config_paths['path_titik_sampel_individual']):
             reset_data_to_original(self.config_paths['path_titik_sampel_individual'])
 
-    def upload_data_to_server(self, json_data, use_production=True):
+    def upload_data_to_server(self, json_data, token, use_production=True):
         """
         Fungsi untuk mengunggah data koordinat yang telah diperbarui ke server SIPENTA.
         
@@ -563,16 +569,15 @@ class Sesuaikan_Titik_Koordinat(object):
         Returns:
         dict: Response dari server setelah upload
         """
-        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/sync/geser-titik"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/apis/sync/geser-titik"
+        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/sync/geser-titik"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/sync/geser-titik"
         
         url = prod_url if use_production else test_url
-        titik_sampel_path = self.config_paths['path_titik_sampel']
+
         try:
             arcpy.AddMessage("Mengunggah data ke server SIPENTA...")
-            headers = {'Content-Type': 'application/json'}
+            headers = {"Authorization": f"Bearer {token}",'Content-Type': 'application/json'}
             response = requests.post(url, json=json_data, headers=headers, timeout=60)
-
 
             # ---- Penanganan untuk response code ----
             if response.status_code == 400:
@@ -587,12 +592,10 @@ class Sesuaikan_Titik_Koordinat(object):
                 self.reload_layer()
                 # Jika berhasil (OK)
                 try:
-                    data = response.json()
-                    message = data['message']
-                    match = re.findall(r"nomor sampel:\s*([\d,\s]+)", message)
-                    if match:
+                    api_response = response.json()
+                    if api_response['data']:
                         # Nomor sampel yang BERHASIL diperbarui di server
-                        nomor_sampel_berhasil = [n.strip() for n in match[0].split(",") if n.strip()]
+                        nomor_sampel_berhasil = api_response['data']
                         arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {', '.join(nomor_sampel_berhasil)}, Segera lakukan sync data di tahap 5")
 
                         # Semua nomor dari JSON data
@@ -614,7 +617,7 @@ class Sesuaikan_Titik_Koordinat(object):
                 except json.JSONDecodeError:
                     message = "Upload berhasil, namun server tidak mengirimkan pesan yang valid."
                     arcpy.AddMessage(f"Response server: {message}")
-                return data
+                return api_response
 
             else:
                 # Untuk status code lainnya

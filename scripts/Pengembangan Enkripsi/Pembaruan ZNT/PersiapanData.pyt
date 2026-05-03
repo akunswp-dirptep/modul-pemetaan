@@ -943,9 +943,8 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
         validation_error = validate_zona_layer_before_upload(feature_layer)
         if validation_error:
             arcpy.AddError(validation_error)
+            sys.exit(1)
             return
-
-
 
         validate_document_type(berkas_value, target='Pembaruan ZNT')
         upload_feature_layer_to_sipenta(
@@ -955,4 +954,5 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
             in_feature="Zona_Layer",
             feature_layer=feature_layer,
             use_production=use_production)
+        
         return        

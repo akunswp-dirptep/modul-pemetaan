@@ -9,8 +9,8 @@ if parent_dir not in sys.path:
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
 from zntutils import document
-from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
-from zntutils.constant import THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY
+from zntutils.system_utils import get_user_data, setup_user_data, get_all_berkas_id, clear_user_data
+from zntutils.constant import PREFERRED_BERKAS_ID, AUTH_KEY, CREDENTIAL_KEY, PREFERRED_SERVER_KEY
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -35,10 +35,15 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
-        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
-        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
- 
+
+        berkas_list = get_all_berkas_id()
+        berkas_show = []
+        if berkas_list is not None:
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
 
         catatan = arcpy.Parameter(
@@ -61,7 +66,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         berkas = arcpy.Parameter(
             displayName="Berkas",
-            name="link",
+            name="berkas",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
@@ -69,14 +74,13 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
-        penjelasan_metode = arcpy.Parameter(
-            displayName="Penjelasan",
-            name="penjelasan",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
+
         
         penjelasan = arcpy.Parameter(
             displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
@@ -86,19 +90,15 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             direction="Input")
         
         penjelasan.value = (
-                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
                 "Tahun: {}\n".format(datetime.datetime.now().year))
 
-        # Periksa ulang status saat membuka parameter agar mengikuti login terbaru
-        if is_login:
-            params = [catatan, data_yang_disinkronisasi,  penjelasan_metode, berkas]
-            return params
-        else:
-            return [penjelasan]
+ 
+
+        params = [catatan, data_yang_disinkronisasi, berkas, penjelasan]
+        return params
 
 
     def isLicensed(self):
@@ -106,44 +106,64 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         return True
 
     def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
-        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
-        if is_login == False:
+        """
+        Modify parameter values/properties before internal validation.
+        Called whenever a parameter has been changed.
+        """
+
+        # PARAMS:
+        # [catatan, berkas, output_ts, output_tsi, penjelasan]
+
+        catatan, data_yang_disinkronisasi, berkas, penjelasan = parameters
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        # Jika belum login
+        if not is_login:
+            for param in [catatan, data_yang_disinkronisasi, berkas, penjelasan]:
+                param.enabled = False
+            penjelasan.enabled = True
             return
-        data_yang_disinkronisasi = parameters[1].valueAsText  # parameter Data yang disinkronisasi
-        penjelasan = parameters[2] # parameter Penjelasan
-        exp_dict ={
-            "Data Pembanding Individual": 
-            ("Fitur ini menyiapkan daftar data pembanding yang\n"
-            "siap diunggah dengan mengambil hanya titik yang\n"
-            "memiliki informasi pembanding. Sistem membaca\n"
-            "data dari layer titik sampel individual serta\n"
-            "layer titik sampel lainnya, lalu menyertakan\n"
-            "hanya record yang kolom pembandingnya terisi."),
-            "Penggunaan Titik Sampel Untuk Perhitungan": 
-            ("Data titik sampel yang dipilih untuk digunakan dalam\n"
-            "fitur ini bekerja dengan kondisi data sebagai berikut:\n"
-            "1. Titik yang ada di layer Titik_Sampel tercatat digunakan,\n"
-            "2. Titik pada layer Titik_Sampel_Individual tercatat tidak digunakan,\n"
-            "3. Titik yang hanya ada di sipenta, tidak dipemataan juga\n"
-            "   tercatat tidak digunakan\n"
-            "4. Dalam pembaruan ZNT, titik pada layer Titik_Zona tercatat digunakan."),
-            "Jenis Zona Titik Sampel": 
-            ("Data jenis zona titik sampel akan dikirim ke server SIPENTA\n"
-            "dan digunakan untuk memperbaharui data jenis zona titik\n"
-            "sampel di server SIPENTA.")
+
+        # Jika sudah login
+        for param in [catatan, data_yang_disinkronisasi, berkas, penjelasan]:
+            param.enabled = True
+
+        data_yang_disinkronisasi = berkas.valueAsText
+
+        exp_dict = {
+            "Data Pembanding Individual": (
+                "Fitur ini menyiapkan daftar data pembanding yang\n"
+                "siap diunggah dengan mengambil hanya titik yang\n"
+                "memiliki informasi pembanding. Sistem membaca\n"
+                "data dari layer Titik_Sampel_Individual serta\n"
+                "layer titik sampel lainnya, lalu menyertakan\n"
+                "hanya record yang kolom pembandingnya terisi."
+            ),
+
+            "Penggunaan Titik Sampel Untuk Perhitungan": (
+                "Data titik sampel yang dipilih untuk digunakan dalam\n"
+                "fitur ini bekerja dengan kondisi data sebagai berikut:\n"
+                "1. Titik yang ada di layer Titik_Sampel tercatat digunakan\n"
+                "2. Titik pada layer Titik_Sampel_Individual tercatat tidak digunakan\n"
+                "3. Titik yang hanya ada di SIPENTA dan tidak dipemetaan\n"
+                "   juga tercatat tidak digunakan\n"
+                "4. Dalam pembaruan ZNT, titik pada layer Titik_Zona\n"
+                "   tercatat digunakan."
+            ),
+
+            "Jenis Zona Titik Sampel": (
+                "Data jenis zona titik sampel akan dikirim ke server SIPENTA\n"
+                "dan digunakan untuk memperbarui data jenis zona titik\n"
+                "sampel di server SIPENTA."
+            )
         }
 
-        if data_yang_disinkronisasi:
-            penjelasan.value = exp_dict.get(data_yang_disinkronisasi, 
-                                            ("Silakan pilih jenis data yang ingin disinkronisasi\n"
-                                            "untuk melihat penjelasan terkait."))
-        else:
-            penjelasan.value = ("Silakan pilih jenis data yang ingin disinkronisasi\n"
-                                "untuk melihat penjelasan terkait.")
-        return
+        default_msg = (
+            "Silakan pilih jenis data yang ingin disinkronisasi\n"
+            "untuk melihat penjelasan terkait."
+        )
+
+        penjelasan.value = exp_dict.get(data_yang_disinkronisasi, default_msg)
 
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
@@ -153,23 +173,24 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        # PARAMS:
+        # [catatan, data_yang_disinkronisasi, berkas, penjelasan]
         zonalayer.delete_bad_file()
-
-        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
+        user_data = get_user_data(CREDENTIAL_KEY)
+        berkas_list = get_all_berkas_id()
 
         if berkas_list is None:
-            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid.")
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan ZNT.")
             return
-        self.username = get_user_data(NIK_KEY)
-        berkas_value = parameters[3].valueAsText
-        self.project_id = berkas_value.split(" - ")[0]
-        arcpy.AddMessage(f"Berkas yang dipilih: {self.project_id}")
+
 
         self.catatan = parameters[0].valueAsText
         self.data_type = parameters[1].valueAsText
+        self.project_id = parameters[2].valueAsText
         server = get_user_data(PREFERRED_SERVER_KEY)
         self.use_production = True if server == "Produksi" or server == None else False
-
+        token = user_data.get(AUTH_KEY, None)
+        headers = {"Authorization": f"Bearer {token}", 'Content-Type': 'application/json' }
         self.config_paths = self.get_config_values()
 
         titik_sampel = os.path.join(self.config_paths['dataset_path'], "Titik_Sampel")  # Path layer titik sampel
@@ -197,15 +218,15 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             data = self.build_pembanding_data(titik_sampel_individual, titik_sampel)
 
             json_yang_dikirim = {
-                "nomor_berkas": self.project_id,
-                "nik": self.username,
+                "no_berkas": self.project_id,
                 "data": data
             }
             
-            self.upload_data_pembanding_to_server(json_yang_dikirim)
+            
+            self.upload_data_pembanding_to_server(json_yang_dikirim, headers=headers)
         
         elif self.data_type == 'Penggunaan Titik Sampel Untuk Perhitungan':
-            self.get_all_samples()
+            self.get_all_samples(self.project_id, token)
             titik_sampel_sementara = self.config_paths['path_titik_sampel_sementara']
             titik_sampel_individual_sementara = self.config_paths['path_titik_sampel_individual_sementara']
             if arcpy.Exists(titik_zona):
@@ -214,8 +235,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 data = self.build_valid_data(titik_sampel, titik_sampel_individual, titik_sampel_sementara, titik_sampel_individual_sementara)
             
             json_yang_dikirim = {
-                "nomor_berkas": self.project_id,
-                "nik": self.username,
+                "no_berkas": self.project_id,
                 "data": data
             }
         
@@ -223,10 +243,10 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             if len(data) == 0:
                 arcpy.AddWarning("Tidak ada data titik sampel yang berbeda untuk dikirim ke server SIPENTA.")
                 return
-            self.upload_data_valid_to_server(json_yang_dikirim)
+            self.upload_data_valid_to_server(json_yang_dikirim, headers)
         
         elif self.data_type == 'Jenis Zona Titik Sampel':
-            self.get_all_samples()
+            self.get_all_samples(self.project_id, token)
             titik_sampel_sementara = self.config_paths['path_titik_sampel_sementara']
             titik_sampel_individual_sementara = self.config_paths['path_titik_sampel_individual_sementara']
             if arcpy.Exists(titik_zona):
@@ -235,25 +255,16 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 data = self.build_zoning_data(titik_sampel, titik_sampel_sementara, titik_sampel_individual_sementara)
 
             json_yang_dikirim = {
-                "nomor_berkas": self.project_id,
-                "nik": self.username,
+                "no_berkas": self.project_id,
                 "data": data
             }
-
+            
             if len(data) == 0:
                 arcpy.AddWarning("Tidak ada data jenis zona yang berbeda untuk dikirim ke server SIPENTA.")
                 return
 
-            self.upload_data_zoning_to_server(json_yang_dikirim)
-        preferred_server = get_user_data('preferred_server')
-        nik = get_user_data('nik')
-        berkas = get_user_data('berkas')
-        if nik != self.username:
-            renew_user_data('nik', self.username)
-        if berkas != self.project_id:
-            renew_user_data('berkas', self.project_id)
-        if len(parameters) > 4 and server != preferred_server:
-            renew_user_data('preferred_server', server)
+            self.upload_data_zoning_to_server(json_yang_dikirim, headers)
+        setup_user_data(PREFERRED_SERVER_KEY, server)
         return
     
     # Kode Helper
@@ -271,22 +282,8 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Returns:
             dict: Dictionary berisi semua path dan parameter konfigurasi
         """
-        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)  # Validasi compliance layer zona
-        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))  # Navigasi ke root workspace
-        config_path = os.path.join(ws_dir, "config.json")  # Path ke file config
-        configs = None
-        
-        # Membaca file config.json jika ada
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                configs = json.load(f)
 
-        # Mengekstrak nilai dari config
-        dataset_path = configs['dataset_path']  # Path ke geodatabase
-        tahun = configs['THNNILAI']  # Tahun penilaian
-        lokasi = configs['WADMPR']   # Kode lokasi
-        coor = configs['coord']      # Sistem koordinat
-        gdb_path = configs['gdb_path']  # Path lengkap GDB
+        configs = zonalayer.get_config_values()
 
         # Definisikan nama layer
         titiksampelindividualsementara = "Titik_Sampel_Individual_Sementara"
@@ -294,32 +291,32 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         # Bangun semua path yang diperlukan
         paths = {
-            'ws_dir': ws_dir,
-            'gdb_path': gdb_path,
-            'dataset_path': dataset_path,
-            'tahun': tahun,
-            'lokasi': lokasi,
-            'coor': coor,
-            'path_titik_sampel_sementara': os.path.join(dataset_path, titiksampelsementara),
-            'path_titik_sampel_individual_sementara': os.path.join(dataset_path, titiksampelindividualsementara),
-            'path_sementara_json' : os.path.join(ws_dir, 'titik_sampel_sementara.geojson'),
-            'path_individual_sementara_json': os.path.join(ws_dir, 'titik_sampel_individual_sementara.geojson'),
+            'ws_dir': configs['ws_dir'] ,
+            'gdb_path': configs['gdb_path'],
+            'dataset_path': configs['dataset_path'] ,
+            'tahun': configs['tahun'],
+            'lokasi': configs['provinsi'] ,
+            'coor': configs['coor'] ,
+            'path_titik_sampel_sementara': os.path.join(configs['dataset_path'], titiksampelsementara),
+            'path_titik_sampel_individual_sementara': os.path.join(configs['dataset_path'], titiksampelindividualsementara),
+            'path_sementara_json' : os.path.join(configs['ws_dir'], 'titik_sampel_sementara.json'),
+            'path_individual_sementara_json': os.path.join(configs['ws_dir'], 'titik_sampel_individual_sementara.json'),
         }
 
         # Validasi path GDB
-        if not arcpy.Exists(dataset_path):
-            arcpy.AddError(f"Path GDB tidak valid: {dataset_path}")
-            raise ValueError(f"Path GDB tidak valid: {dataset_path}")
+        if not arcpy.Exists(configs['dataset_path']):
+            arcpy.AddError(f"Path GDB tidak valid: {configs['dataset_path']}")
+            raise ValueError(f"Path GDB tidak valid: {configs['dataset_path']}")
 
         return paths
 
-    def call_sipenta_api(self):
+    def call_sipenta_api(self, token, nomor_berkas):
         """
         Fungsi untuk memanggil API SIPENTA dan mendapatkan data survey.
         
         Parameters:
-        username (str): NIK pengguna untuk autentikasi API
-        project_id (str): Nomor berkas proyek
+        token (str): Token autentikasi API
+        nomor_berkas (str): Nomor berkas proyek
         use_production (bool): True untuk production URL, False untuk testing URL
         
         Returns:
@@ -327,25 +324,54 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         """
         
         # URL untuk testing dan produksi
-        test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/getdatasurvey?nik={self.username}&no_berkas={self.project_id}"
-        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/apis/getdatasurvey?nik={self.username}&no_berkas={self.project_id}"
+        test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
     
-        # url = prod_url if use_production else test_url
         url = prod_url if self.use_production else test_url
+
         try:
             # Mengambil data dari API
-            response = requests.get(url, timeout=1200)  
+            arcpy.AddMessage("Mengambil data Titik Sampel...")
+            headers = {
+                    "Authorization": f"Bearer {token}"
+                }
+            response = requests.get(url, headers=headers, timeout=60)  
             response.raise_for_status()  # Akan raise exception untuk HTTP error
             
-            data = response.json()            
-            self.api_data = data
+            data = response.json()
             
+            if not data:
+                arcpy.AddError('Server Tidak mengirimkan Apapun')
+
+            return data
+        except requests.exceptions.HTTPError as e:
+        # Ambil response dari exception
+            response = e.response
+
+            try:
+                error_json = response.json()
+                message = error_json.get("message", "")
+            except Exception:
+                message = ""
+
+            # Handle khusus token expired
+            if response.status_code == 403 and "expired" in message.lower():
+                clear_user_data()
+                raise Exception("Token Anda kadaluarsa, silakan login ulang.")
+
+            # Handle forbidden biasa
+            elif response.status_code == 403:
+                raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
+
+            else:
+                raise Exception(f"HTTP Error: {e}")
         except requests.exceptions.RequestException as e:
             arcpy.AddError(f"Error dalam pemanggilan API: {str(e)}")
             raise arcpy.ExecuteError
         except json.JSONDecodeError as e:
-            arcpy.AddError(f"Error dalam parsing response API: {str(e)}")
+            arcpy.AddError(f"Error ketika mengubah respon API ke JSON: {str(e)}")
             raise arcpy.ExecuteError
+
 
     def delete_temporary_files(self,paths):
         """
@@ -368,33 +394,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 except Exception as e:
                     arcpy.AddWarning(f"Gagal menghapus file sementara {file_path}: {str(e)}")
 
-    def validate_api_response(self):
-        """
-        Validasi response dari API SIPENTA.
-        
-        Parameters:
-        api_data (dict): Data response dari API
-        
-        Returns:
-        bool: True jika data valid, False jika tidak
-        """
-        
-        if not self.api_data:
-            arcpy.AddError("Data API kosong")
-            return False
-            
-        status = self.api_data.get("status")
-        
-        if status == 'not found':
-            arcpy.AddError("ERROR: Data Tidak Ditemukan di server SIPENTA")
-            return False
-        elif status == 'gagal':
-            arcpy.AddError("ERROR: Gagal mendapatkan data dari server SIPENTA")
-            return False
-            
-        return True
-
-    def get_all_samples(self):
+    def get_all_samples(self, berkas, token):
         """
         FUNGSI UTAMA UNTUK MEMPROSES DATA TITIK SAMPEL
         """
@@ -403,22 +403,20 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         zonalayer.check_if_there_selected_field()
         
         # Pemanggilan API menggunakan fungsi baru
-        self.call_sipenta_api()
-
-        
-        # Validasi response API
-        if not self.validate_api_response():
-            return
+        self.api_data = self.call_sipenta_api(
+            token = token,
+            nomor_berkas=berkas
+        )
 
         # ========================
         # PROSES TITIK_SAMPEL
         # ========================
 
         with open(self.config_paths['path_sementara_json'], 'w+') as f:
-            json.dump(self.api_data["data"], f, ensure_ascii=False)
+            json.dump(self.api_data['data']['geojson'], f, ensure_ascii=False)
             
 
-        if int(self.api_data["jmlh_data"]) > 0:
+        if int(self.api_data['data']["jumlah_data"]) > 0:
             # Konversi JSON ke Feature Class
             arcpy.conversion.JSONToFeatures(self.config_paths['path_sementara_json'], self.config_paths['path_titik_sampel_sementara'], 'POINT')
     
@@ -429,9 +427,9 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         # PROSES TITIK_SAMPEL_INDIVIDUAL
         # ========================
         with open(self.config_paths['path_individual_sementara_json'], 'w') as f:
-            json.dump(self.api_data["data_individual"], f, ensure_ascii=False)
+            json.dump(self.api_data['data']['geojson_individual'], f, ensure_ascii=False)
 
-        if int(self.api_data["jmlh_individual"]) > 0:
+        if int(self.api_data['data']["jumlah_data_individual"]) > 0:
             # Konversi JSON ke Feature Class
             arcpy.conversion.JSONToFeatures(self.config_paths['path_individual_sementara_json'], self.config_paths['path_titik_sampel_individual_sementara'], 'POINT')
         else:
@@ -443,14 +441,14 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Bangun list data untuk upload berdasarkan aturan:
         - Hanya sertakan record dimana field 'Pembanding' tidak kosong (bukan None dan bukan string kosong)
         - Mapping field:
-            no_sampel -> Nomor_Entry
+            no_sampel -> no_sampel
             pembanding -> Pembanding
-            harga_jualbeli -> Harga_Penawaran_Transaksi
+            harga_jualbeli -> harga_penawaran_transaksi
             catatan -> catatan (parameter fungsi)
         Returns list of dicts ready for JSON upload.
         """
         data_list = []
-        fields = ["Nomor_Entry", "Pembanding", "Harga_Penawaran_Transaksi", 'Jenis_Data']
+        fields = ["no_sampel", "pembanding", "harga_penawaran_transaksi", 'jenis_data']
 
         try:
             if not arcpy.Exists(titik_sampel_individual_fc):
@@ -459,7 +457,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
             with arcpy.da.SearchCursor(titik_sampel_individual_fc, fields) as cursor:
                 for row in cursor:
-                    nomor_entry = row[0]
+                    no_sampel = row[0]
                     pembanding = row[1]
                     harga_jualbeli = row[2]
 
@@ -472,7 +470,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
                     # Siapkan item sesuai format yang diharapkan server
                     item = {
-                        "no_sampel": int(nomor_entry) ,
+                        "no_sampel": int(no_sampel) ,
                         "pembanding": pembanding_str,
                         "harga_jualbeli": float(harga_jualbeli),
                         "catatan": self.catatan or ""
@@ -483,7 +481,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 for row in cursor:
 
                     if row[3] == 'Individual':
-                        nomor_entry = row[0]
+                        no_sampel = row[0]
                         pembanding = row[1]
                         harga_jualbeli = row[2]
 
@@ -496,7 +494,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
                         # Siapkan item sesuai format yang diharapkan server
                         item = {
-                            "no_sampel": int(nomor_entry) ,
+                            "no_sampel": int(no_sampel) ,
                             "pembanding": pembanding_str,
                             "harga_jualbeli": float(harga_jualbeli),
                             "catatan": self.catatan or ""
@@ -509,7 +507,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         
         return data_list
         
-    def upload_data_pembanding_to_server(self, json_data ):
+    def upload_data_pembanding_to_server(self, json_data, headers):
         """
         Fungsi untuk mengunggah data koordinat yang telah diperbarui ke server SIPENTA.
         
@@ -520,14 +518,14 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Returns:
         dict: Response dari server setelah upload
         """
-        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/sync/pembanding"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/apis/sync/pembanding"
+        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/sync/pembanding"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/sync/pembanding"
         
         url = prod_url if self.use_production else test_url
 
         try:
             arcpy.AddMessage("Mengunggah data ke server SIPENTA...")
-            headers = {'Content-Type': 'application/json'}
+            
             response = requests.post(url, json=json_data, headers=headers, timeout=1200)
 
 
@@ -539,17 +537,16 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             elif response.status_code == 200:
                 # Jika berhasil (OK)
                 try:
-                    data = response.json()
-                    message = data['message']
-                    match = re.findall(r"nomor sampel:\s*([\d,\s]+)", message)
-                    if match:
+                    api_response = response.json()
+                    nomor_sampel_berhasil = api_response['data']
+                    
+                    if nomor_sampel_berhasil:
+                        str_nsb = [str(i) for i in nomor_sampel_berhasil]
                         # Nomor sampel yang BERHASIL diperbarui di server
-                        nomor_sampel_berhasil = [n.strip() for n in match[0].split(",") if n.strip()]
-                        arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {', '.join(nomor_sampel_berhasil)}, Segera cek dan lakukan refresh data di tahap 5")
+                        arcpy.AddWarning(f"Sampel yang diperbarui di Sipenta: {', '.join(str_nsb)}, Segera cek dan lakukan refresh data di tahap 5")
 
                         # Semua nomor dari JSON data
-                        semua_nomor_json = [str(item["no_sampel"]) for item in json_data["data"]]
-
+                        semua_nomor_json = [item["no_sampel"] for item in json_data["data"]]
                         # Tentukan mana yang TIDAK diperbarui
                         nomor_tidak_diperbarui = [n for n in semua_nomor_json if n not in nomor_sampel_berhasil]
 
@@ -562,7 +559,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 except json.JSONDecodeError:
                     message = "Upload berhasil, namun server tidak mengirimkan pesan yang valid."
                     arcpy.AddMessage(f"Response server: {message}")
-                return data
+                return api_response
 
             else:
                 # Untuk status code lainnya
@@ -581,7 +578,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         """
         Bangun list data untuk upload berdasarkan aturan:
         - Mapping field:
-            no_sampel -> Nomor_Entry
+            no_sampel -> no_sampel
             catatan -> catatan (parameter fungsi)
         - Titik yang ada di titik_sampel_fc -> tidak_digunakan: False
         - Titik yang ada di titik_sampel_individual_fc -> tidak_digunakan: True
@@ -590,7 +587,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Returns list of dicts ready for JSON upload.
         """
         data_list = []
-        check_fields = ["Nomor_Entry","Tidak_Digunakan"]
+        check_fields = ["no_sampel","tidak_digunakan"]
         # Set untuk tracking nomor entry yang sudah diproses
         processed_entries = set()
 
@@ -607,9 +604,9 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             if arcpy.Exists(titik_sampel_sementara_fc):
                 with arcpy.da.SearchCursor(titik_sampel_sementara_fc, check_fields) as cursor:
                     for row in cursor:
-                        nomor_entry = int(row[0])
+                        no_sampel = int(row[0])
                         digunakan_atau_tidak = row[1]
-                        valid_sementara[nomor_entry] = digunakan_atau_tidak
+                        valid_sementara[no_sampel] = digunakan_atau_tidak
             else:
                 self.delete_temporary_files(self.config_paths)
                 arcpy.AddWarning(f"Feature class sementara tidak ditemukan: {titik_sampel_sementara_fc}.")
@@ -618,22 +615,22 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             if arcpy.Exists(titik_sampel_individual_sementara_fc):
                 with arcpy.da.SearchCursor(titik_sampel_individual_sementara_fc, check_fields) as cursor:
                     for row in cursor:
-                        nomor_entry = int(row[0])
+                        no_sampel = int(row[0])
                         digunakan_atau_tidak = row[1]
-                        valid_sementara[nomor_entry] = digunakan_atau_tidak
-            fields = ["Nomor_Entry"]
+                        valid_sementara[no_sampel] = digunakan_atau_tidak
+            fields = ["no_sampel"]
 
             # Proses titik_sampel_fc (tidak_digunakan: False)
             with arcpy.da.SearchCursor(titik_sampel_fc, fields) as cursor:
                 for row in cursor:
-                    nomor_entry = int(row[0])
-                    processed_entries.add(nomor_entry)
-                    if nomor_entry in valid_sementara:
-                        use_or_not = valid_sementara[nomor_entry]
-                        del valid_sementara[nomor_entry]
+                    no_sampel = int(row[0])
+                    processed_entries.add(no_sampel)
+                    if no_sampel in valid_sementara:
+                        use_or_not = valid_sementara[no_sampel]
+                        del valid_sementara[no_sampel]
                         if use_or_not == '-1':
                             item = {
-                                "no_sampel": nomor_entry,
+                                "no_sampel": no_sampel,
                                 "tidak_digunakan": False,
                                 "catatan": self.catatan or ""
                             }
@@ -644,14 +641,14 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             if arcpy.Exists(titik_sampel_individual_fc):
                 with arcpy.da.SearchCursor(titik_sampel_individual_fc, fields) as cursor:
                     for row in cursor:
-                        nomor_entry = int(row[0])
-                        processed_entries.add(nomor_entry)
-                        if nomor_entry in valid_sementara:
-                            use_or_not = valid_sementara[nomor_entry]
-                            del valid_sementara[nomor_entry]
+                        no_sampel = int(row[0])
+                        processed_entries.add(no_sampel)
+                        if no_sampel in valid_sementara:
+                            use_or_not = valid_sementara[no_sampel]
+                            del valid_sementara[no_sampel]
                             if use_or_not == '0':
                                 item = {
-                                    "no_sampel": nomor_entry,
+                                    "no_sampel": no_sampel,
                                     "tidak_digunakan": True,
                                     "catatan": self.catatan or ""
                                 }
@@ -660,22 +657,22 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             if titik_zona_path and arcpy.Exists(titik_zona_path):
                 with arcpy.da.SearchCursor(titik_zona_path, fields) as cursor:
                     for row in cursor:
-                        nomor_entry = int(row[0])
-                        if nomor_entry in valid_sementara:
-                            use_or_not = valid_sementara[nomor_entry]
-                            del valid_sementara[nomor_entry]
+                        no_sampel = int(row[0])
+                        if no_sampel in valid_sementara:
+                            use_or_not = valid_sementara[no_sampel]
+                            del valid_sementara[no_sampel]
                             if use_or_not == '-1':
                                 item = {
-                                    "no_sampel": nomor_entry,
+                                    "no_sampel": no_sampel,
                                     "tidak_digunakan": False,
                                     "catatan": self.catatan or ""
                                     }
                                 data_list.append(item)
 
-            for nomor_entry, use_or_not in valid_sementara.items():
+            for no_sampel, use_or_not in valid_sementara.items():
                 if use_or_not == '0':
                     item = {
-                        "no_sampel": nomor_entry,
+                        "no_sampel": no_sampel,
                         "tidak_digunakan": True,
                         "catatan": self.catatan or ""
                     }
@@ -690,7 +687,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         self.delete_temporary_files(self.config_paths)
         return data_list
 
-    def upload_data_valid_to_server(self,json_data):
+    def upload_data_valid_to_server(self,json_data, headers):
         """
         Fungsi untuk mengunggah data koordinat yang telah diperbarui ke server SIPENTA.
         
@@ -701,14 +698,13 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Returns:
         dict: Response dari server setelah upload
         """
-        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/sync/tidak-digunakan"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/apis/sync/tidak-digunakan"
+        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/sync/tidak-digunakan"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/sync/tidak-digunakan"
         
         url = prod_url if self.use_production else test_url
 
         try:
             arcpy.AddMessage("Mengunggah data ke server SIPENTA...")
-            headers = {'Content-Type': 'application/json'}
             response = requests.post(url, json=json_data, headers=headers, timeout=12000)
 
 
@@ -736,15 +732,15 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         """
         Bangun list data untuk upload berdasarkan aturan:
         - Mapping field:
-            no_sampel -> Nomor_Entry
+            no_sampel -> no_sampel
             new_zoning -> zoning
             catatan -> catatan (parameter fungsi)
         - Bandingkan zoning antara titik_sampel_fc dengan titik_sampel_sementara_fc dan titik_zona_path
-        - Hanya masukkan ke data_list jika nilai zoning berbeda untuk Nomor_Entry yang sama
+        - Hanya masukkan ke data_list jika nilai zoning berbeda untuk no_sampel yang sama
         Returns list of dicts ready for JSON upload.
         """
         data_list = []
-        fields = ["Nomor_Entry", "zoning"]
+        fields = ["no_sampel", "zoning"]
 
         try:
             if not arcpy.Exists(titik_sampel_fc):
@@ -756,9 +752,9 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             if arcpy.Exists(titik_sampel_sementara_fc):
                 with arcpy.da.SearchCursor(titik_sampel_sementara_fc, fields) as cursor:
                     for row in cursor:
-                        nomor_entry = int(row[0])
+                        no_sampel = int(row[0])
                         zoning_value = row[1]
-                        zoning_sementara[nomor_entry] = zoning_value
+                        zoning_sementara[no_sampel] = zoning_value
             else:
                 self.delete_temporary_files(self.config_paths)
                 arcpy.AddWarning(f"Feature class sementara tidak ditemukan: {titik_sampel_sementara_fc}.")
@@ -767,9 +763,9 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             if arcpy.Exists(titik_sampel_individual_sementara_fc):
                 with arcpy.da.SearchCursor(titik_sampel_individual_sementara_fc, fields) as cursor:
                     for row in cursor:
-                        nomor_entry = int(row[0])
+                        no_sampel = int(row[0])
                         zoning_value = row[1]
-                        zoning_sementara[nomor_entry] = zoning_value
+                        zoning_sementara[no_sampel] = zoning_value
             else:
                 arcpy.AddWarning(f"Feature class sementara tidak ditemukan: {titik_sampel_individual_sementara_fc}.")
         
@@ -777,16 +773,16 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             # Baca data dari titik_sampel_fc dan bandingkan
             with arcpy.da.SearchCursor(titik_sampel_fc, fields) as cursor:
                 for row in cursor:
-                    nomor_entry = int(row[0])
+                    no_sampel = int(row[0])
                     new_zone = row[1]
                     
-                    # Cek apakah nomor_entry ada di zoning_sementara
-                    if nomor_entry in zoning_sementara:
-                        old_zone = zoning_sementara[nomor_entry]
+                    # Cek apakah no_sampel ada di zoning_sementara
+                    if no_sampel in zoning_sementara:
+                        old_zone = zoning_sementara[no_sampel]
                         # Hanya masukkan jika zoning berbeda
                         if new_zone != old_zone:
                             item = {
-                                "no_sampel": nomor_entry,
+                                "no_sampel": no_sampel,
                                 "new_zoning": new_zone,
                                 "catatan": self.catatan or ""
                             }
@@ -796,16 +792,16 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
                 # Baca data dari titik_zona dan bandingkan
                 with arcpy.da.SearchCursor(titik_zona_path, fields) as cursor:
                     for row in cursor:
-                        nomor_entry = int(row[0])
+                        no_sampel = int(row[0])
                         new_zone = row[1]
                         
-                        # Cek apakah nomor_entry ada di zoning_sementara
-                        if nomor_entry in zoning_sementara:
-                            old_zone = zoning_sementara[nomor_entry]
+                        # Cek apakah no_sampel ada di zoning_sementara
+                        if no_sampel in zoning_sementara:
+                            old_zone = zoning_sementara[no_sampel]
                             # Hanya masukkan jika zoning berbeda
                             if new_zone != old_zone:
                                 item = {
-                                    "no_sampel": nomor_entry,
+                                    "no_sampel": no_sampel,
                                     "new_zoning": new_zone,
                                     "catatan": self.catatan or ""
                                 }
@@ -823,7 +819,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         return data_list
 
-    def upload_data_zoning_to_server(self,json_data):
+    def upload_data_zoning_to_server(self,json_data, headers):
         """
         Fungsi untuk mengunggah data koordinat yang telah diperbarui ke server SIPENTA.
         
@@ -834,16 +830,16 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Returns:
         dict: Response dari server setelah upload
         """
-        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/sync/ganti-zoning"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/apis/sync/ganti-zoning"
+        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/sync/ganti-zoning"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/sync/ganti-zoning"
         
         url = prod_url if self.use_production else test_url
 
         self.delete_temporary_files(self.config_paths)
 
+
         try:
             arcpy.AddMessage("Mengunggah data ke server SIPENTA...")
-            headers = {'Content-Type': 'application/json'}
             response = requests.post(url, json=json_data, headers=headers, timeout=1200)
 
 

@@ -113,22 +113,25 @@ class Rekomendasi_Titik_Pembanding(object):
                 arcpy.AddError("Tidak ada titik sampel yang dipilih pada layer 'Titik_Sampel_Individual'. Silakan pilih titik sampel terlebih dahulu.")
                 sys.exit(1)
 
-        elif len(feature_dipilih) > 1:
-            arcpy.AddError("Hanya satu titik sampel yang boleh dipilih pada layer 'Titik_Sampel_Individual'. Silakan pilih satu titik sampel saja.")
+            elif len(feature_dipilih) > 1:
+                arcpy.AddError("Hanya satu titik sampel yang boleh dipilih pada layer 'Titik_Sampel_Individual'. Silakan pilih satu titik sampel saja.")
+                sys.exit(1)
+        else:
+            arcpy.AddError('Tidak ditemukan Layer Titik_Sampel_Individual')
             sys.exit(1)
-        
-        nomor_entry = None
-        with arcpy.da.SearchCursor(self.titik_sampel_individu_path, ["Nomor_Entry"], f"OBJECTID = {feature_dipilih[0]}") as cursor:
+
+        nomor_sampel = None
+        with arcpy.da.SearchCursor(self.titik_sampel_individu_path, ["no_sampel"], f"OBJECTID = {feature_dipilih[0]}") as cursor:
             for row in cursor:
-                nomor_entry = row[0]
+                nomor_sampel = int(row[0])
                 break
         
-        if nomor_entry:
-            arcpy.AddMessage(f"Nomor Sampel yang dipilih: {nomor_entry}")
+        if nomor_sampel:
+            arcpy.AddMessage(f"Nomor Sampel yang dipilih: {(nomor_sampel)}")
             
             # Dapatkan data sampel
-            data_individual = self.dapatkan_data_sampel(nomor_entry, self.titik_sampel_individu_path)
-            zoning_individual = self.normalisasi_zoning(data_individual['kategorikal']['Zoning'])
+            data_individual = self.dapatkan_data_sampel(nomor_sampel, self.titik_sampel_individu_path)
+            zoning_individual = self.normalisasi_zoning(data_individual['kategorikal']['zoning'])
 
             if zoning_individual is None:
                 arcpy.AddError("Nilai field Zoning pada titik sampel individual tidak valid. Nilai yang didukung hanya 1 (Non-Pertanian) atau 2 (Pertanian).")
@@ -156,7 +159,7 @@ class Rekomendasi_Titik_Pembanding(object):
                 arcpy.AddWarning("Tidak ditemukan titik pembanding untuk Zoning 1 maupun Zoning 2.")
                 return
 
-            nomor_entry_list = []
+            nomor_sampel_list = []
             for zoning in ("1", "2"):
                 hasil_zoning = top_per_zoning[zoning]
                 if hasil_zoning:
@@ -165,13 +168,13 @@ class Rekomendasi_Titik_Pembanding(object):
                     )
                     for entry, score in hasil_zoning:
                         arcpy.AddMessage(f"  Kemiripan {entry}: {(score*100):.4f}%")
-                        nomor_entry_list.append(str(entry))
+                        nomor_sampel_list.append(str(entry))
                 else:
                     arcpy.AddMessage(
                         f"Tidak ada titik pembanding untuk Zoning {self.get_label_zoning(zoning)} ({zoning})."
                     )
 
-            where_clause = f"Nomor_Entry IN ({','.join(nomor_entry_list)})"
+            where_clause = f"no_sampel IN ({','.join(nomor_sampel_list)})"
             
             # Buat layer selection
             
@@ -194,7 +197,7 @@ class Rekomendasi_Titik_Pembanding(object):
                     "NEW_SELECTION",
                     where_clause
                 )
-                arcpy.AddMessage(f"\n {len(nomor_entry_list)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
+                arcpy.AddMessage(f"\n {len(nomor_sampel_list)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
         
     
     def cek_zona_beda(self, ts_path, zl_path):
@@ -208,23 +211,17 @@ class Rekomendasi_Titik_Pembanding(object):
             for nozona, jenis, zoning in cursor:
                 if jenis != zoning:
                     zona_beda.append(f"NOZN {nozona} (Zoning Titik Sampel: {zoning}, Jenis Zona: {jenis})")
+        arcpy.management.Delete(identity_fc)
 
         return zona_beda
     def setup_path_and_config(self):
         # Konfigurasi Path Project
-        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
-        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
-        config_path = os.path.join(ws_dir, "config.json")
-        configs = None
-
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                configs = json.load(f)
-
+        configs = zonalayer.get_config_values()
+        self.appdata = configs['appdata']
         self.gdb_path = configs['gdb_path']
         self.dataset_path = configs['dataset_path']
-        self.coordinate_system = configs['coord']
-        self.ws_dir = ws_dir
+        self.coordinate_system = configs['coor']
+        self.ws_dir = configs['ws_dir']
         self.titik_zona_path = os.path.join(self.dataset_path, "Titik_Zona")
         self.titik_sampel_path = os.path.join(self.dataset_path, "Titik_Sampel")
         if arcpy.Exists(self.titik_zona_path):
@@ -237,7 +234,7 @@ class Rekomendasi_Titik_Pembanding(object):
         if zoning is None:
             return None
 
-        zoning = str(zoning).strip()
+        zoning = str(int(zoning)).strip()
         return zoning if zoning in ("1", "2") else None
 
     def get_label_zoning(self, zoning):
@@ -246,30 +243,29 @@ class Rekomendasi_Titik_Pembanding(object):
             "2": "Pertanian"
         }.get(self.normalisasi_zoning(zoning), "Tidak Dikenal")
 
-    def dapatkan_data_sampel(self, nomor_entry, layer_sumber):
+    def dapatkan_data_sampel(self, nomor_sampel, layer_sumber):
 
         data_format = {
             'id': 0,
             'kategorikal': {
-                'kd_jenis_bangunan' : '',
-                'Alamat': '',
-                'Kelurahan': '',
-                'Kecamatan': '',
-                'Zoning': ''
+                'kode_jenis_bangunan': '',
+                'alamat': '',
+                'kel_desa': '',
+                'kecamatan': '',
+                'zoning': ''
             },
-
             'ordinal': {
                 'status_kepemilikan': None,
                 'drainase': '',
                 'aksesibilitas': '',
                 'kelas_jalan': '',
                 'letak_tanah': '',
-                'elevasi_tanah': '',
+                'elevasi_dari_jalan': '',
                 'bentuk_tanah': ''
             },
             "numerikal": {
                 'luas_bangunan': 0,
-                'luas_tanah': 0,
+                'luas_tanah_m2': 0,
                 'lebar_depan': 0,
                 'panjang_kebelakang': 0,
 
@@ -278,22 +274,36 @@ class Rekomendasi_Titik_Pembanding(object):
 
         # Daftar field yang ingin diambil dari attribute table
         self.field_list = [
-            'Nomor_Entry','Kd_Jenis_Bangunan', 'Alamat','Kelurahan','Kecamatan', 'Zoning',
-            'Status_Kepemilikan', 'Drainase','Aksebilitas','Kelas_Jalan', 'Letak_Tanah', 'Elevasi_Dari_Jalan',  'Bentuk_Tanah',
-            'Luas_Bangunan', 'Luas_Tanah_m2','Lebar_Depan', 'Panjang_Kebelakang'
+            'no_sampel',
+            'kode_jenis_bangunan',
+            'alamat',
+            'kel_desa',
+            'kecamatan',
+            'zoning',
+            'status_kepemilikan',
+            'drainase',
+            'aksesibilitas',
+            'kelas_jalan',
+            'letak_tanah',
+            'elevasi_dari_jalan',
+            'bentuk_tanah',
+            'luas_bangunan',
+            'luas_tanah_m2',
+            'lebar_depan',
+            'panjang_kebelakang'
         ]
 
     # Buka cursor untuk membaca data dari layer
-        with arcpy.da.SearchCursor(layer_sumber, self.field_list, f"Nomor_Entry = {nomor_entry}") as cursor:
+        with arcpy.da.SearchCursor(layer_sumber, self.field_list, f"no_sampel = {nomor_sampel}") as cursor:
             for row in cursor:
-                data_format['id'] = row[0]
+                data_format['id'] = int(row[0])
                 
                 # Kategorikal
-                data_format['kategorikal']['kd_jenis_bangunan'] = row[1]
-                data_format['kategorikal']['Alamat'] = row[2]
-                data_format['kategorikal']['Kelurahan'] = row[3]
-                data_format['kategorikal']['Kecamatan'] = row[4]
-                data_format['kategorikal']['Zoning'] = row[5]
+                data_format['kategorikal']['kode_jenis_bangunan'] = row[1]
+                data_format['kategorikal']['alamat'] = row[2]
+                data_format['kategorikal']['kel_desa'] = row[3]
+                data_format['kategorikal']['kecamatan'] = row[4]
+                data_format['kategorikal']['zoning'] = row[5]
 
                 # Ordinal
                 data_format['ordinal']['status_kepemilikan'] = self.penyesuaian_status_kepemilikan(row[6])
@@ -301,12 +311,12 @@ class Rekomendasi_Titik_Pembanding(object):
                 data_format['ordinal']['aksesibilitas'] = self.penyesuaian_kcbs(row[8])
                 data_format['ordinal']['kelas_jalan'] = self.penyesuaian_kelas_jalan(row[9])
                 data_format['ordinal']['letak_tanah'] = self.penyesuaian_letak_tanah(row[10])
-                data_format['ordinal']['elevasi_tanah'] = self.penyesuaian_elevasi_tanah(row[11])
+                data_format['ordinal']['elevasi_dari_jalan'] = self.penyesuaian_elevasi_tanah(row[11])
                 data_format['ordinal']['bentuk_tanah'] = self.penyesuaian_bentuk_tanah(row[12])
 
                 # Numerikal
                 data_format['numerikal']['luas_bangunan'] = row[13]
-                data_format['numerikal']['luas_tanah'] = row[14]
+                data_format['numerikal']['luas_tanah_m2'] = row[14]
                 data_format['numerikal']['lebar_depan'] = row[15]
                 data_format['numerikal']['panjang_kebelakang'] = row[16]
 
@@ -452,17 +462,31 @@ class Rekomendasi_Titik_Pembanding(object):
 
 
         field_list = [
-            'Nomor_Entry','Kd_Jenis_Bangunan', 'Alamat','Kelurahan','Kecamatan','Zoning',
-            'Status_Kepemilikan', 'Drainase','Aksebilitas','Kelas_Jalan',
-            'Letak_Tanah', 'Elevasi_Dari_Jalan', 'Bentuk_Tanah',
-            'Luas_Bangunan', 'Luas_Tanah_m2','Lebar_Depan',
-            'Panjang_Kebelakang', 'Jenis_Data', 'SHAPE@'
+            'no_sampel',
+            'kode_jenis_bangunan',
+            'alamat',
+            'kel_desa',
+            'kecamatan',
+            'zoning',
+            'status_kepemilikan',
+            'drainase',
+            'aksesibilitas',
+            'kelas_jalan',
+            'letak_tanah',
+            'elevasi_dari_jalan',
+            'bentuk_tanah',
+            'luas_bangunan',
+            'luas_tanah_m2',
+            'lebar_depan',
+            'panjang_kebelakang',
+            'jenis_data',
+            'SHAPE@'
         ]
 
 
         all_numeric = {
             'luas_bangunan': [],
-            'luas_tanah': [],
+            'luas_tanah_m2': [],
             'lebar_depan': [],
             'panjang_kebelakang': []
         }
@@ -474,7 +498,7 @@ class Rekomendasi_Titik_Pembanding(object):
                         continue
 
                     all_numeric['luas_bangunan'].append(r[13])
-                    all_numeric['luas_tanah'].append(r[14])
+                    all_numeric['luas_tanah_m2'].append(r[14])
                     all_numeric['lebar_depan'].append(r[15])
                     all_numeric['panjang_kebelakang'].append(r[16])
 
@@ -507,7 +531,7 @@ class Rekomendasi_Titik_Pembanding(object):
 
 
         geom_individual = data_individual.get('geometry', None)
-        luas_individual = data_individual['numerikal']['luas_tanah']
+        luas_individual = data_individual['numerikal']['luas_tanah_m2']
 
         layers = [self.titik_sampel_path]
         if arcpy.Exists(self.titik_zona_path):
@@ -534,11 +558,11 @@ class Rekomendasi_Titik_Pembanding(object):
                     data_pembanding = {
                         'id': row[0],
                         'kategorikal': {
-                            'kd_jenis_bangunan': row[1],
-                            'Alamat': row[2],
-                            'Kelurahan': row[3],
-                            'Kecamatan': row[4],
-                            'Zoning': row[5]
+                            'kode_jenis_bangunan': row[1],
+                            'alamat': row[2],
+                            'kel_desa': row[3],
+                            'kecamatan': row[4],
+                            'zoning': row[5]
                         },
                         'ordinal': {
                             'status_kepemilikan': self.penyesuaian_status_kepemilikan(row[6]),
@@ -546,12 +570,12 @@ class Rekomendasi_Titik_Pembanding(object):
                             'aksesibilitas': self.penyesuaian_kcbs(row[8]),
                             'kelas_jalan': self.penyesuaian_kelas_jalan(row[9]),
                             'letak_tanah': self.penyesuaian_letak_tanah(row[10]),
-                            'elevasi_tanah': self.penyesuaian_elevasi_tanah(row[11]),
+                            'elevasi_dari_jalan': self.penyesuaian_elevasi_tanah(row[11]),
                             'bentuk_tanah': self.penyesuaian_bentuk_tanah(row[12])
                         },
                         'numerikal': {
                             'luas_bangunan': row[13],
-                            'luas_tanah': row[14],
+                            'luas_tanah_m2': row[14],
                             'lebar_depan': row[15],
                             'panjang_kebelakang': row[16]
                         }
@@ -577,7 +601,7 @@ class Rekomendasi_Titik_Pembanding(object):
                         count += 1
 
                     for k in data_individual['numerikal']:
-                        if k == 'luas_tanah':
+                        if k == 'luas_tanah_m2':
                             continue  # Luas tanah akan dihitung terpisah sebagai skor luas
                         total += self.gower_numeric(
                             data_individual['numerikal'][k],
@@ -591,7 +615,7 @@ class Rekomendasi_Titik_Pembanding(object):
 
                     d = hitung_jarak(self, geom_individual, geom_pembanding)
                     skor_nilai_jarak = skor_jarak_dan_luas(self, d)
-                    skor_luas_tanah = skor_jarak_dan_luas(self, data_pembanding['numerikal']['luas_tanah'] - luas_individual)
+                    skor_luas_tanah = skor_jarak_dan_luas(self, data_pembanding['numerikal']['luas_tanah_m2'] - luas_individual)
                     skor_final = (W_ATTR * skor_attr) + (W_JARAK * skor_nilai_jarak) + (W_LUAS * skor_luas_tanah)
                     hasil_skor.append((data_pembanding['id'], skor_final, zoning_pembanding))
 
@@ -620,12 +644,13 @@ class Rekomendasi_Titik_Pembanding(object):
         return 1.0 if x == y else 0.0
     
     def gower_numeric(self, x, y, xmin, xmax):
-        """
-        Gower similarity for numeric attributes.
-        """
+        if x is None or y is None:
+            return 0.0
+
         R = xmax - xmin
         if R == 0:
             return 1.0
+
         return 1.0 - abs(x - y) / R
     
 class Perhitungan_Nilai_Data_Individual(object):
@@ -744,27 +769,27 @@ class Perhitungan_Nilai_Data_Individual(object):
         # VALIDASI KESEDIAAN DATA
         # ======================
 
-        # 1️⃣ Ambil semua Nomor_Entry dari layer Titik_Sampel_Individual
-        nomor_entry_individual = set()
-        with arcpy.da.SearchCursor(titik_sampel_individual_path, ["Nomor_Entry"]) as cursor:
+        # 1️⃣ Ambil semua no_sampel dari layer Titik_Sampel_Individual
+        nomor_sampel_individual = set()
+        with arcpy.da.SearchCursor(titik_sampel_individual_path, ["no_sampel"]) as cursor:
             for row in cursor:
-                nomor_entry_individual.add(str(row[0]))
+                nomor_sampel_individual.add(str(int(row[0])))
 
         # 2️⃣ Ambil semua Nomor_Entry dari layer pembanding
-        nomor_entry_sampel = {}
+        nomor_sampel_pembanding = {}
         for layer_path in titik_pembanding_path:
-            with arcpy.da.SearchCursor(layer_path, ["Nomor_Entry"]) as cursor:
+            with arcpy.da.SearchCursor(layer_path, ["no_sampel"]) as cursor:
                 for row in cursor:
-                    nomor_entry_sampel[str(row[0])] = layer_path  # Simpan juga layer asal untuk referensi jika diperlukan
+                    nomor_sampel_pembanding[str(int(row[0]))] = layer_path  # Simpan juga layer asal untuk referensi jika diperlukan
 
         # 3️⃣ Cek apakah nomor_entry_titik_sampel_individual ada di layer Titik_Sampel_Individual
-        if ns_individual not in nomor_entry_individual:
+        if ns_individual not in nomor_sampel_individual:
             arcpy.AddError(f"Titik individual '{ns_individual}' tidak ditemukan di layer Titik_Sampel_Individual.")
             sys.exit(1)
 
         # 4️⃣ Cek apakah pembanding-pembanding ada di layer pembanding
         for idx, pembanding in enumerate([ns_pembanding_1, ns_pembanding_2, ns_pembanding_3], start=1):
-            if pembanding not in nomor_entry_sampel.keys():
+            if pembanding not in nomor_sampel_pembanding.keys():
                 arcpy.AddError(f"Pembanding {idx} ('{pembanding}') tidak ditemukan di layer Pembanding.")
                 sys.exit(1)
 
@@ -772,9 +797,9 @@ class Perhitungan_Nilai_Data_Individual(object):
 
         data_individual = self.dapatkan_data_sampel(ns_individual, titik_sampel_individual_path)
 
-        data_pembanding_pertama = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_1, nomor_entry_sampel[ns_pembanding_1])
-        data_pembanding_kedua = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_2, nomor_entry_sampel[ns_pembanding_2])
-        data_pembanding_ketiga = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_3, nomor_entry_sampel[ns_pembanding_3])
+        data_pembanding_pertama = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_1, nomor_sampel_pembanding[ns_pembanding_1])
+        data_pembanding_kedua = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_2, nomor_sampel_pembanding[ns_pembanding_2])
+        data_pembanding_ketiga = self.ambil_dan_hitung_kesesuaian(data_individual, ns_pembanding_3, nomor_sampel_pembanding[ns_pembanding_3])
 
         jumlah_keseluruhan_nol_absolut = data_pembanding_pertama['total_absolute_nol'] + data_pembanding_kedua['total_absolute_nol'] + data_pembanding_ketiga['total_absolute_nol']
 
@@ -793,13 +818,15 @@ class Perhitungan_Nilai_Data_Individual(object):
 
         data_individual['nilai_pasar'] = nilai_pasar_per_m2
 
-        fields_to_update = ["Nomor_Entry", 
-                            "Harga_Penawaran_Transaksi", 
-                            "Harga_Penyesuaian",
-                            "Harga_Tanah_Rp",
-                            "nilluas",
-                            "nilai",
-                            "Pembanding"]  # ganti dengan kolom yang ingin diupdate
+        fields_to_update = [
+            "no_sampel",
+            "harga_penawaran_transaksi",
+            "harga_penyesuaian",
+            "harga_tanah_rp",
+            "nil_luas",
+            "nilai",
+            "pembanding"
+        ]  #
 
         pembanding = f"{data_pembanding_pertama['id']},{data_pembanding_kedua['id']},{data_pembanding_ketiga['id']}"
         harga_tanah = data_individual['nilai_pasar'] - data_individual['nilai_bangunan']
@@ -1176,7 +1203,7 @@ class Perhitungan_Nilai_Data_Individual(object):
         persentase_penyesuaian = (bobot_individu - bobot_pembanding) * persentase
         return persentase_penyesuaian
     
-    def dapatkan_data_sampel(self,nomor_entry, layer_sumber):
+    def dapatkan_data_sampel(self,no_sampel, layer_sumber):
         # Struktur data awal
         data_format = {
             'id': 0,
@@ -1206,18 +1233,33 @@ class Perhitungan_Nilai_Data_Individual(object):
 
         # Daftar field yang ingin diambil dari attribute table
         field_list = [
-            'Nomor_Entry', 'Alamat', 'Luas_Bangunan', 'Tgl_Penawaran_Transaksi',
-            'Status_Kepemilikan', 'Luas_Tanah_m2', 'Lebar_Depan', 'Bentuk_Tanah',
-            'Elevasi_Dari_Jalan', 'Letak_Tanah', 'Kelas_Jalan', 'Drainase',
-            'Aksebilitas', 'Fasilitas', 'Utilitas', 'akses',
-            'Jenis_Data', 'Harga_Penawaran_Transaksi', 'Nilai_Bangunan',
-            'Penyesuaian_Waktu', 'Penyesuaian_Status_Kepemilikan'
+            'no_sampel',
+            'alamat',
+            'luas_bangunan',
+            'tgl_penawaran_transaksi',
+            'status_kepemilikan',
+            'luas_tanah_m2',
+            'lebar_depan',
+            'bentuk_tanah',
+            'elevasi_dari_jalan',
+            'letak_tanah',
+            'kelas_jalan',
+            'drainase',
+            'aksesibilitas',
+            'fasilitas',
+            'utilitas',
+            'akses',
+            'jenis_data',
+            'harga_penawaran_transaksi',
+            'nilai_bangunan',
+            'penyesuaian_waktu',
+            'penyesuaian_status_kepemilikan'
         ]
 
         # Buka cursor untuk membaca data dari layer
-        with arcpy.da.SearchCursor(layer_sumber, field_list, f"Nomor_Entry = {nomor_entry}") as cursor:
+        with arcpy.da.SearchCursor(layer_sumber, field_list, f"no_sampel= {no_sampel}") as cursor:
             for row in cursor:
-                data_format['id'] = row[0]
+                data_format['id'] = int(row[0])
                 data_format['alamat'] = row[1]
                 data_format['luas_bangunan'] = row[2]
                 data_format['waktu_transaksi_penjualan'] = datetime.strptime(row[3], "%Y-%m-%d")

@@ -17,9 +17,29 @@
       "description" : "Titik_Zona",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
-        "elevationSurfaceLayerURI" : "CIMPATH=Map/619d2b51d4104dcd8e1613953f45a134.json"
+        "elevationSurfaceLayerURI" : "CIMPATH=Map/1f74d5c5539143559c0f31c125c5f51e.json"
       },
       "expanded" : true,
+      "layer3DProperties" : {
+        "type" : "CIM3DLayerProperties",
+        "castShadows" : true,
+        "isLayerLit" : true,
+        "layerFaceCulling" : "None",
+        "maxDistance" : -1,
+        "minDistance" : -1,
+        "preloadTextureCutoffHigh" : 0,
+        "preloadTextureCutoffLow" : 0.25,
+        "textureCutoffHigh" : 0.25,
+        "textureCutoffLow" : 1,
+        "useCompressedTextures" : true,
+        "verticalExaggeration" : 1,
+        "exaggerationMode" : "ScaleZ",
+        "verticalUnit" : {
+          "uwkid" : 9001
+        },
+        "lighting" : "OneSideDataNormal",
+        "optimizeMarkerTransparency" : true
+      },
       "layerType" : "Operational",
       "showLegends" : true,
       "visibility" : true,
@@ -35,7 +55,7 @@
       "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "Surveyor",
+        "displayField" : "no_identifikasi",
         "editable" : true,
         "fieldDescriptions" : [
           {
@@ -76,13 +96,13 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Nomor Sampel",
-            "fieldName" : "Nomor_Entry",
+            "fieldName" : "no_sampel",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
@@ -90,63 +110,56 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Nomor Identifikasi",
-            "fieldName" : "No_Identifikasi",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
-            },
+            "fieldName" : "no_identifikasi",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Nama Surveyor",
-            "fieldName" : "Surveyor",
+            "fieldName" : "nama_surveyor",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Tanggal Pelaksanaan",
-            "fieldName" : "Tanggal_Pelaksanaan",
+            "fieldName" : "tgl_pelaksanaan",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Bangunan (B)/Ruko(R)/ Tanah Kosong (TK)",
-            "fieldName" : "Kd_Jenis_Bangunan",
+            "fieldName" : "kode_jenis_bangunan",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Alamat",
-            "fieldName" : "Alamat",
+            "fieldName" : "alamat",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Kelurahan",
-            "fieldName" : "Kelurahan",
+            "fieldName" : "kel_desa",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Kecamatan",
-            "fieldName" : "Kecamatan",
+            "fieldName" : "kecamatan",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "X",
-            "fieldName" : "X",
+            "fieldName" : "x",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -160,7 +173,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Y",
-            "fieldName" : "Y",
+            "fieldName" : "y",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -174,28 +187,28 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Status Kepemilikan",
-            "fieldName" : "Status_Kepemilikan",
+            "fieldName" : "status_kepemilikan",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Jenis Data",
-            "fieldName" : "Jenis_Data",
+            "fieldName" : "jenis_data",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Tanggal Penawaran/Transaksi",
-            "fieldName" : "Tgl_Penawaran_Transaksi",
+            "fieldName" : "tgl_penawaran_transaksi",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Harga Penawaran/Transaksi",
-            "fieldName" : "Harga_Penawaran_Transaksi",
+            "fieldName" : "harga_penawaran_transaksi",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -209,7 +222,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Luas Tanah (m2)",
-            "fieldName" : "Luas_Tanah_m2",
+            "fieldName" : "luas_tanah_m2",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -223,7 +236,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Lebar Depan",
-            "fieldName" : "Lebar_Depan",
+            "fieldName" : "lebar_depan",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -237,7 +250,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Panjang Kebelakang",
-            "fieldName" : "Panjang_Kebelakang",
+            "fieldName" : "panjang_kebelakang",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -251,35 +264,35 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Bentuk Tanah",
-            "fieldName" : "Bentuk_Tanah",
+            "fieldName" : "bentuk_tanah",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Elevasi Dari Jalan",
-            "fieldName" : "Elevasi_Dari_Jalan",
+            "fieldName" : "elevasi_dari_jalan",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Letak Tanah",
-            "fieldName" : "Letak_Tanah",
+            "fieldName" : "letak_tanah",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Kelas Jalan",
-            "fieldName" : "Kelas_Jalan",
+            "fieldName" : "kelas_jalan",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Lebar Jalan",
-            "fieldName" : "Lebar_Jalan",
+            "fieldName" : "lebar_jalan",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -292,42 +305,42 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "Aksebilitas",
-            "fieldName" : "Aksebilitas",
+            "alias" : "Aksesibilitas",
+            "fieldName" : "aksesibilitas",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Drainase",
-            "fieldName" : "Drainase",
+            "fieldName" : "drainase",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Utilitas",
-            "fieldName" : "Utilitas",
+            "fieldName" : "utilitas",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Fasilitas",
-            "fieldName" : "Fasilitas",
+            "fieldName" : "fasilitas",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Zoning/Peruntukan",
-            "fieldName" : "Zoning",
+            "fieldName" : "zoning",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
@@ -335,7 +348,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Luas Bangunan",
-            "fieldName" : "Luas_Bangunan",
+            "fieldName" : "luas_bangunan",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -349,20 +362,20 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Jenis",
-            "fieldName" : "Jenis",
+            "fieldName" : "jenis",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Jumlah Lantai",
-            "fieldName" : "Jumlah_Lantai",
+            "fieldName" : "jumlah_lantai",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
@@ -370,13 +383,13 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Tahun Pembuatan",
-            "fieldName" : "Tahun_Pembuatan",
+            "fieldName" : "tahun_pembuatan",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
@@ -384,70 +397,70 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Tahun Renovasi",
-            "fieldName" : "Tahun_Renovasi",
+            "fieldName" : "tahun_renovasi",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "Kontruksi Atas",
-            "fieldName" : "Kontruksi_Atas",
+            "alias" : "Konstruksi Atas",
+            "fieldName" : "konstruksi_atas",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "Kontruksi Bawah",
-            "fieldName" : "Kontruksi_bawah",
+            "alias" : "Konstruksi Bawah",
+            "fieldName" : "konstruksi_bawah",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Atap",
-            "fieldName" : "Atap",
+            "fieldName" : "atap",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Dinding",
-            "fieldName" : "Dinding",
+            "fieldName" : "dinding",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Langit Langit",
-            "fieldName" : "LangitLangit",
+            "fieldName" : "langit_langit",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Lantai",
-            "fieldName" : "Lantai",
+            "fieldName" : "lantai",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Pagar",
-            "fieldName" : "Pagar",
+            "fieldName" : "pagar",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Panjang Pagar",
-            "fieldName" : "Panjang_Pagar",
+            "fieldName" : "panjang_pagar",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -461,7 +474,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Luas Carport",
-            "fieldName" : "Luas_Carport",
+            "fieldName" : "luas_carport",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -475,14 +488,14 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Pintu/Jendela",
-            "fieldName" : "Pintu_Jendela",
+            "fieldName" : "pintu_jendela",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Jumlah Fasilitas",
-            "fieldName" : "Jumlah_Fasilitas",
+            "fieldName" : "jumlah_fasilitas",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -496,7 +509,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Keadaan Fisik",
-            "fieldName" : "Keadaan_Fisik",
+            "fieldName" : "keadaan_fisik",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -510,7 +523,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Biaya Bangunan (m2)",
-            "fieldName" : "Biaya_Bangunan_m2",
+            "fieldName" : "biaya_bangunan_m2",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -524,7 +537,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "RCN",
-            "fieldName" : "RCN",
+            "fieldName" : "rcn",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -538,13 +551,13 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Tahun Penilaian",
-            "fieldName" : "Tahun_Penilaian",
+            "fieldName" : "tahun_penilaian",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
@@ -552,7 +565,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Umur Efektif",
-            "fieldName" : "Umur_Efektif",
+            "fieldName" : "umur_efektif",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -566,7 +579,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyusutan",
-            "fieldName" : "Penyusutan",
+            "fieldName" : "penyusutan",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -580,7 +593,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Nilai Bangunan",
-            "fieldName" : "Nilai_Bangunan",
+            "fieldName" : "nilai_bangunan",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -594,7 +607,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Harga Penyesuaian",
-            "fieldName" : "Harga_Penyesuaian",
+            "fieldName" : "harga_penyesuaian",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -608,7 +621,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Nilai Bangunan (Rp)",
-            "fieldName" : "Nilai_Bangunan_Rp",
+            "fieldName" : "nilai_bangunan_rp",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -622,14 +635,14 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Harga Tanah (Rp)",
-            "fieldName" : "Harga_Tanah_Rp",
+            "fieldName" : "harga_tanah_rp",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyesuaian Waktu",
-            "fieldName" : "Penyesuaian_Waktu",
+            "fieldName" : "penyesuaian_waktu",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -643,7 +656,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyesuaian Status Kepemilikan",
-            "fieldName" : "Penyesuaian_Status_Kepemilikan",
+            "fieldName" : "penyesuaian_status_kepemilikan",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -657,7 +670,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Nilai Tanah",
-            "fieldName" : "nilluas",
+            "fieldName" : "nil_luas",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -692,7 +705,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyusutan Rumah (%)",
-            "fieldName" : "Penyusutan_Rumah",
+            "fieldName" : "penyusutan_rumah",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -706,7 +719,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyusutan Ruko (%)",
-            "fieldName" : "Penyusutan_Ruko",
+            "fieldName" : "penyusutan_ruko",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -720,21 +733,21 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Keterangan",
-            "fieldName" : "Keterangan",
+            "fieldName" : "keterangan",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Pembanding",
-            "fieldName" : "Pembanding",
+            "fieldName" : "pembanding",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyusutan Rumah 1 (%)",
-            "fieldName" : "Penyusutan_Rumah_1",
+            "fieldName" : "penyusutan_rumah_1",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -748,7 +761,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyusutan Rumah 2 (%)",
-            "fieldName" : "Penyusutan_Rumah_2",
+            "fieldName" : "penyusutan_rumah_2",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -762,7 +775,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyusutan Ruko 1 (%)",
-            "fieldName" : "Penyusutan_Ruko_1",
+            "fieldName" : "penyusutan_ruko_1",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -776,7 +789,7 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "Penyusutan Ruko 2 (%)",
-            "fieldName" : "Penyusutan_Ruko_2",
+            "fieldName" : "penyusutan_ruko_2",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -790,35 +803,56 @@
           {
             "type" : "CIMFieldDescription",
             "alias" : "N Sementara",
-            "fieldName" : "N_Sementara",
+            "fieldName" : "n_sementara",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Responden",
-            "fieldName" : "Responden",
+            "fieldName" : "responden",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Catatan",
-            "fieldName" : "Catatan",
+            "fieldName" : "catatan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Tidak Digunakan",
+            "fieldName" : "tidak_digunakan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Zoning Asal",
+            "fieldName" : "zoning_asal",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Lokasi",
-            "fieldName" : "Lokasi",
+            "fieldName" : "lokasi",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Tahun",
-            "fieldName" : "Tahun",
+            "fieldName" : "tahun",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
             "visible" : true,
             "searchMode" : "Exact"
           },
@@ -852,7 +886,7 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "cluster",
+            "alias" : "KLASTER",
             "fieldName" : "cluster",
             "visible" : true,
             "searchMode" : "Exact"
@@ -936,7 +970,7 @@
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
@@ -1027,20 +1061,6 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "Luas_M2",
-            "fieldName" : "Luas_M2",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
             "alias" : "JENISSAMPEL",
             "fieldName" : "JENISSAMPEL",
             "visible" : true,
@@ -1071,7 +1091,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "znt_ds",
-          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Folder Uji Coba\\Uji Coba Perbaikan Bug0402\\ZoneNilaiTanah.gdb",
+          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembaruan ZNT\\Uji Coba Versi 6 2704\\ZoneNilaiTanah.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "Titik_Zona",
           "datasetType" : "esriDTFeatureClass"
@@ -1089,7 +1109,7 @@
         {
           "type" : "CIMLabelClass",
           "expressionTitle" : "Custom",
-          "expression" : "def FindLabel([indeks_sampel], [Nomor_Entry], [nilai]):\n    angka = float(str([nilai]).replace(',', '.'))\n    rupiah = f\"{int(round(angka)):,}\".replace(\",\", \".\")\n\n    return (\n        \"<FNT size='7'>\"\n        \"Indeks: \" + str([indeks_sampel]) + \"\\n\"\n        \"No Sampel: \" + str([Nomor_Entry]) + \"\\n\"\n        \"Rp \" + rupiah +\n        \"</FNT>\"\n    )\n    ",
+          "expression" : "def FindLabel([indeks_sampel], [no_sampel], [nilai]):\r\n    angka = float(str([nilai]).replace(',', '.'))\r\n    rupiah = f\"{int(round(angka)):,}\".replace(\",\", \".\")\r\n\r\n    return (\r\n        \"<FNT size='7'>\"\r\n        \"Indeks: \" + str([indeks_sampel]) + \"\\n\"\r\n        \"No Sampel: \" + str([no_sampel]) +\"\\n\" +\r\n        \"Rp \" + rupiah +\r\n        \"</FNT>\"\r\n    )",
           "expressionEngine" : "Python",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
@@ -1439,7 +1459,10 @@
     {
       "type" : "CIMElevationSurfaceLayer",
       "name" : "Ground",
-      "uRI" : "CIMPATH=Map/619d2b51d4104dcd8e1613953f45a134.json",
+      "uRI" : "CIMPATH=Map/1f74d5c5539143559c0f31c125c5f51e.json",
+      "sourceModifiedTime" : {
+        "type" : "TimeInstant"
+      },
       "useSourceMetadata" : true,
       "description" : "Ground",
       "expanded" : true,

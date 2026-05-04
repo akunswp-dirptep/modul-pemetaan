@@ -15,7 +15,7 @@ if parent_dir not in sys.path:
 
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import main_upload_shapefile, main_upload
-from zntutils.zona_layer import get_config_values
+from zntutils.zona_layer import get_config_values, check_if_there_selected_field
 from zntutils.system_utils import get_user_data, renew_user_data
 
 arcpy.env.outputZFlag = "Disabled"
@@ -98,6 +98,8 @@ class Upload_Peta_Rencana_Area_Kerja(object):
             datatype="DEFile",  
             parameterType="Required",
             direction="Input")
+        
+        param3.filter.list =['shp']
         
         param4 = arcpy.Parameter(
             displayName="Server Sipenta",
@@ -224,9 +226,10 @@ class Upload_Peta_Area_Kerja_Disepakati(object):
         param3 = arcpy.Parameter(
             displayName="Shapefile Lokasi Kegiatan (.shp)",
             name="shapefile_path",
-            datatype="DEFile",  # Expect a shapefile (.shp)
+            datatype="DEFile",  
             parameterType="Required",
             direction="Input")
+        param3.filter.list =['shp']
         
         param4 = arcpy.Parameter(
             displayName="Server Sipenta",
@@ -349,10 +352,12 @@ class Upload_Peta_Area_Kerja_Pembuatan_ZNT_AOI(object):
         param3 = arcpy.Parameter(
             displayName="Shapefile Area Kerja (.shp)",
             name="shapefile_path",
-            datatype="DEFile",  # Expect a shapefile (.shp)
+            datatype="DEFile",  
             parameterType="Required",
             direction="Input")
         
+        param3.filter.list =['shp']
+
         param4 = arcpy.Parameter(
             displayName="Server Sipenta",
             name="link",
@@ -648,7 +653,7 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
             direction="Input")
 
         param3 = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+            displayName="Zona Layer (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",  
             parameterType="Required",
@@ -724,6 +729,7 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        check_if_there_selected_field()
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText

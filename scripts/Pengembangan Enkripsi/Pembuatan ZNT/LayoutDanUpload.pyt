@@ -93,7 +93,7 @@ class Upload_Peta_Sebaran_Sampel:
             direction="Input")
         
         param3 = arcpy.Parameter(
-            displayName="Titik Sampel (Feature Class)",
+            displayName="Titik Sampel (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",
             direction="Input")
@@ -169,6 +169,7 @@ class Upload_Peta_Sebaran_Sampel:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field('Titik_Sampel')
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText
@@ -238,7 +239,7 @@ class Upload_Peta_Simpangan_Baku_Relatif:
             direction="Input")
         
         param3 = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+            displayName="Zona Layer (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",
             direction="Input")
@@ -314,6 +315,7 @@ class Upload_Peta_Simpangan_Baku_Relatif:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field()
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText
@@ -383,7 +385,7 @@ class Upload_Peta_Zona_Nilai_Tanah:
             direction="Input")
         
         param3 = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+            displayName="Zona Layer (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",
             direction="Input")
@@ -459,6 +461,7 @@ class Upload_Peta_Zona_Nilai_Tanah:
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field()
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText

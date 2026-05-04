@@ -14,7 +14,7 @@ if parent_dir not in sys.path:
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import main_upload_shapefile, main_upload
 from zntutils.system_utils import get_user_data, renew_user_data
-from zntutils.zona_layer import get_config_values, validate_zona_layer_before_upload
+from zntutils.zona_layer import get_config_values, validate_zona_layer_before_upload, check_if_there_selected_field
 
 #Helper Functions
 def is_internal():
@@ -90,6 +90,8 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
             datatype="DEFile",  
             parameterType="Required",
             direction="Input")
+        
+        param3.filter.list =['shp']
         
         param4 = arcpy.Parameter(
             displayName="Server Sipenta",
@@ -215,6 +217,8 @@ class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
             datatype="DEFile",  
             parameterType="Required",
             direction="Input")
+        
+        param3.filter.list =['shp']
         
         param4 = arcpy.Parameter(
             displayName="Server Sipenta",
@@ -856,7 +860,7 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
             direction="Input")
 
         param3 = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+            displayName="Zona Layer (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",  
             parameterType="Required",
@@ -929,17 +933,12 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
             else:
                 input_project.clearMessage()
 
-        # input_feature_layer = parameters[3]
-        # if input_feature_layer.valueAsText:
-        #     validation_error = validate_zona_layer_before_upload(input_feature_layer.valueAsText)
-        #     if validation_error:
-        #         input_feature_layer.setWarningMessage(validation_error)
-        #     else:
-        #         input_feature_layer.clearMessage()
+
         return   
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        check_if_there_selected_field()
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText

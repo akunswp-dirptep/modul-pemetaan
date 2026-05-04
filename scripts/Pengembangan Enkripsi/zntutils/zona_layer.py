@@ -174,7 +174,7 @@ def save_gdb(ws_path: str, gdb_path: str, label: str):
     except Exception as e:
         arcpy.AddWarning(f"Terjadi masalah saat menerapkan retensi backup: {str(e)}")
 
-def check_if_there_selected_field():
+def check_if_there_selected_field(feature_layer = "Zona_Layer"):
     """
     Memeriksa apakah masih ada fitur yang sedang dipilih (selected features)
     pada layer bernama 'Zona_Layer' sebelum menjalankan proses utama.
@@ -205,7 +205,7 @@ def check_if_there_selected_field():
     """
 
     # Nama layer yang akan diperiksa
-    layer_name = "Zona_Layer"
+    layer_name = feature_layer
 
     # Hitung jumlah fitur yang sedang terseleksi menggunakan FIDSet
     selected_features = len(arcpy.Describe(layer_name).FIDSet)
@@ -214,6 +214,7 @@ def check_if_there_selected_field():
     if selected_features > 0:
         arcpy.AddError(f"ERROR: Fitur Editing masih menyala pada {layer_name}. Matikan terlebih dahulu sebelum melanjutkan proses.")
         sys.exit(1)
+
 
 def unselect_field():
     try:

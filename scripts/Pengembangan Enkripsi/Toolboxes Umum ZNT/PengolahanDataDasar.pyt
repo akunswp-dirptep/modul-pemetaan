@@ -334,7 +334,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
             direction="Input")
 
         param3 = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+            displayName="Zona Layer (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",  
             parameterType="Required",
@@ -413,6 +413,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        check_if_there_selected_field()
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText
@@ -552,6 +553,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        check_if_there_selected_field()
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText

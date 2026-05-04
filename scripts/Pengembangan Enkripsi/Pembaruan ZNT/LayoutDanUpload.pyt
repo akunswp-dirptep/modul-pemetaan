@@ -98,8 +98,9 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
             datatype="GPLong",
             parameterType="Required",
             direction="Input")
+        
         param3 = arcpy.Parameter(
-            displayName="Titik Sampel (Feature Class)",
+            displayName="Titik Sampel (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",
             direction="Input")
@@ -137,7 +138,6 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
         validation is performed.  This method is called whenever a parameter
         has been changed."""
         return
-
         
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
@@ -175,6 +175,7 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field('Titik_Sampel')
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText
@@ -237,7 +238,7 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
             parameterType="Required",
             direction="Input")
         param3 = arcpy.Parameter(
-            displayName="Titik Zona (Feature Class)",
+            displayName="Titik Zona (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",
             parameterType="Required",
@@ -275,6 +276,7 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
+ 
         return
 
         
@@ -314,6 +316,7 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field('Titik_Zona')
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText
@@ -379,7 +382,7 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
             parameterType="Required",
             direction="Input")
         param3 = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+            displayName="Zona Layer (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",
             parameterType="Required",
@@ -456,6 +459,7 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field()
         username = str(parameters[0].valueAsText).replace(" ", "")
         project_id = str(parameters[1].valueAsText).replace(" ", "")
         tahun = parameters[2].valueAsText

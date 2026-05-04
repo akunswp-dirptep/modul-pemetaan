@@ -16,7 +16,7 @@ from zntutils.constant import PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID, CREDENT
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import upload_shapefile_to_sipenta, upload_feature_layer_to_sipenta
 from zntutils.system_utils import get_user_data, get_all_berkas_id
-from zntutils.zona_layer import get_config_values, validate_zona_layer_before_upload
+from zntutils.zona_layer import get_config_values, validate_zona_layer_before_upload, check_if_there_selected_field
 
 #Helper Functions
 def is_internal():

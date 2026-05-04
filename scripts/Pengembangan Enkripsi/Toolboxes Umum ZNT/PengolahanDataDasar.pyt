@@ -390,6 +390,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        check_if_there_selected_field()
         user_data = get_user_data(CREDENTIAL_KEY)
 
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
@@ -518,6 +519,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        check_if_there_selected_field()
         user_data = get_user_data(CREDENTIAL_KEY)
 
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')

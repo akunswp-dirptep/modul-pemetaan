@@ -141,7 +141,6 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
             berkas.enabled = True
             penjelasan.enabled = False
         return
-
         
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
@@ -151,6 +150,7 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field('Titik_Sampel')
 
         delete_topology_file()
         user_data = get_user_data(CREDENTIAL_KEY)
@@ -282,6 +282,7 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field('Titik_Zona')
         delete_topology_file()
         user_data = get_user_data(CREDENTIAL_KEY)
 
@@ -407,6 +408,7 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        zonalayer.check_if_there_selected_field()
         user_data = get_user_data(CREDENTIAL_KEY)
 
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')

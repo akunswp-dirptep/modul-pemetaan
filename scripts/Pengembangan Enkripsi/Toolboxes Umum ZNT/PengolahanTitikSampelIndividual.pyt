@@ -181,14 +181,14 @@ class Rekomendasi_Titik_Pembanding(object):
                 arcpy.AddWarning("Tidak ditemukan titik pembanding.")
                 return
 
-            nomor_entry_list = []
+            nomor_sampel_list = []
 
             arcpy.AddMessage("\nTop 10 Titik Pembanding:")
             for entry, score in hasil_terpilih:
                 arcpy.AddMessage(
                     f"  Kemiripan {entry}: {(score * 100):.2f}%"
                 )
-                nomor_entry_list.append(str(entry))
+                nomor_sampel_list.append(str(entry))
 
             where_clause = f"no_sampel IN ({','.join(nomor_sampel_list)})"
             

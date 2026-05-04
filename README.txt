@@ -15,3 +15,5 @@ PERUBAHAN & PENYESUAIAN FITUR
  - memastikan tidak ada data yang terpilih saat upload
  - Mengubah Fungsi Periksa Jenis Zona juga mengecek Titik Zona
  - Mengubah Fungsi Sesuaikan Jenis Zona Lanjutan untuk mengubah titik zona juga
+ - Menambahkan Validasi Baru Untuk Periksa Jenis Titik dan Zona
+ 

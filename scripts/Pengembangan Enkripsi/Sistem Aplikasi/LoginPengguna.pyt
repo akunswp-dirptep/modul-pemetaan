@@ -80,7 +80,7 @@ class Login_Pemeta_Nilai_Tanah:
             displayName="NIK Pemeta Nilai Tanah (16 digit)",
             name="username",
             datatype="GPString",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input"
             )
         
@@ -90,7 +90,7 @@ class Login_Pemeta_Nilai_Tanah:
             displayName="Password",
             name="password",
             datatype="GPString",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
         
         input_password.enabled = False
@@ -218,13 +218,21 @@ class Login_Pemeta_Nilai_Tanah:
                 daftar_berkas.filter.list = []
             return
 
-
         else:
             pilihan_jenis_kegiatan.enabled = False
             daftar_berkas.enabled = False
             pilihan_login.enabled = True
             automatic_reload.enabled = False
             server.enabled = True
+            penjelasan.value = (
+                "Silahkan Login untuk dapat mengakses Fitur\n"
+                "lengkap Plugin Penilaian Tanah. Pilih jenis\n"
+                "Pemeta Nilai Tanah pada kolom dibawah.\n\n"
+
+                "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                "Kementerian ATR/BPN\n"
+                "Tahun: {}".format(datetime.now().year) 
+            )
 
             if pilihan_login.value == "Pemeta Pihak Ketiga":
                 input_nik.enabled = True
@@ -234,14 +242,7 @@ class Login_Pemeta_Nilai_Tanah:
                 penjelasan.value = (
                     "Anda akan login sebagai Pemeta Pihak Ketiga.\n"
                     "Silakan masukkan NIK dan Password yang terdaftar\n"
-                    "di SIPENTA. Jika sudah login, Anda perlu menutup \n"
-                    "ArcGIS Pro kemudian membuka kembali Aplikasi \n"
-                    "agar dapat menggunakan fitur lengkap dari Plugin \n"
-                    "Penilaian Tanah atau Anda juga bisa mencentang \n"
-                    "opsi [Reload Otomatis ArcGIS Pro] jika Anda\n"
-                    "ingin ArcGIS Pro otomatis restart setelah login\n"
-                    "berhasil. Namun pastikan untuk menyimpan pekerjaan \n"
-                    "Anda sebelum login jika memilih opsi ini.\n\n"
+                    "di Sipenta.\n\n"
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
                     "Kementerian ATR/BPN\n"
                     "Tahun: {}".format(datetime.now().year))
@@ -251,48 +252,28 @@ class Login_Pemeta_Nilai_Tanah:
                 input_password.enabled = False
                 penjelasan.value = (
                     "Anda akan login sebagai Pemeta ASN ATR/BPN (SSO).\n"
-                    "Silakan gunakan akun SSO Anda untuk login.\n"
-                    "Jika sudah login, Anda perlu menutup \n"
-                    "ArcGIS Pro kemudian membuka kembali Aplikasi \n"
-                    "agar dapat menggunakan fitur lengkap dari Plugin \n"
-                    "Penilaian Tanah atau Anda juga bisa mencentang \n"
-                    "opsi [Reload Otomatis ArcGIS Pro] jika Anda\n"
-                    "ingin ArcGIS Pro otomatis restart setelah login \n"
-                    "berhasil. Namun pastikan untuk menyimpan pekerjaan \n"
-                    "Anda sebelum login jika memilih opsi ini.\n\n"
+                    "Silakan gunakan akun SSO Anda untuk login.\n\n"
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
                     "Kementerian ATR/BPN\n"
                     "Tahun: {}".format(datetime.now().year))
 
-            # ===== Validasi NIK hanya kalau aktif =====
-            if input_nik.enabled and input_nik.value:
-                nik_str = str(input_nik.value).replace(" ", "")
-                input_nik.value = nik_str
+                # ===== Validasi NIK hanya kalau aktif =====
+                if input_nik.enabled and input_nik.value:
+                    nik_str = str(input_nik.value).replace(" ", "")
 
-                if not nik_str.isdigit():
-                    input_nik.setErrorMessage("NIK harus berisi angka saja")
-                elif len(nik_str) != 16:
-                    input_nik.setErrorMessage(f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)")
-                else:
-                    input_nik.clearMessage()
+                    if not nik_str.isdigit():
+                        input_nik.setErrorMessage("NIK harus berisi angka saja")
+                    elif len(nik_str) != 16:
+                        input_nik.setErrorMessage(
+                            f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)"
+                        )
+                    else:
+                        input_nik.clearMessage()
 
         return
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter. This method is called after internal validation."""
-        user_data = get_user_data(CREDENTIAL_KEY)
-        if user_data is None:
-            pilihan_login = parameters[1]
-            input_nik = parameters[2]
-            input_password = parameters[3]
-            server = parameters[4]
-            automatic_reload = parameters[7]
-
-            if automatic_reload.value == True:
-                automatic_reload.clearMessage()
-                automatic_reload.setWarningMessage(
-                    "Setelah login berhasil, ArcGIS Pro akan otomatis restart. Simpan pekerjaan Anda terlebih dahulu untuk mencegah kehilangan data."
-                )
 
         return
 
@@ -310,6 +291,13 @@ class Login_Pemeta_Nilai_Tanah:
             else:
                 nik = parameters[2].value
                 password = parameters[3].value
+                if not nik:
+                    arcpy.AddError("NIK wajib diisi")
+                    sys.exit(1)
+
+                if not password:
+                    arcpy.AddError("Password wajib diisi")
+                    sys.exit(1)
                 use_production = True if server == "Produksi" or server == None else False
 
                 self.login_pihak_ketiga(nik, password, use_production, automatic_reload)
@@ -374,16 +362,6 @@ class Login_Pemeta_Nilai_Tanah:
                         PREFERRED_SERVER_KEY: "Produksi" if use_production else "Belajar",
                     }
                     renew_multiple_user_data(renew_data)
-                    # shutil.copy(r'C:\PenilaianTanah\ui\nik_login\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-                    # aprx = arcpy.mp.ArcGISProject("CURRENT")
-                    # aprx.save()
-                    # if automatic_reload:
-                    #     restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
-                    #     subprocess.Popen(restart_bat_path)
-                    #     # Tutup ArcGIS Pro
-                    #     os.system("taskkill /f /im ArcGISPro.exe")
-                    # else:
-                    #     arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
                 else:
                     arcpy.AddError(f"Login gagal: {data.get('message', 'Tidak ada pesan error yang diberikan')}")
 
@@ -405,16 +383,6 @@ class Login_Pemeta_Nilai_Tanah:
 
     def logout_pemeta_nilai_tanah(self, automatic_reload=False):
         clear_user_data()      
-        # shutil.copy(r'C:\PenilaianTanah\ui\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-        # aprx = arcpy.mp.ArcGISProject("CURRENT")
-        # aprx.save()
-        # if automatic_reload == True:
-        #     restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
-        #     subprocess.Popen(restart_bat_path)
-            
-        #     os.system("taskkill /f /im ArcGISPro.exe")
-        # else:
-        #     arcpy.AddMessage("Logout berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
 
     def login_sso(self, server, automatic_reload=False):
         mapping_server = {
@@ -442,9 +410,6 @@ class Login_Pemeta_Nilai_Tanah:
                 arcpy.AddError(data.get("message", "Unknown error"))
                 return
 
-            with open(os.path.join(os.path.dirname(__file__), "login_response.json"), "w") as f:
-                json.dump(data, f, indent=4)
-
             renew_data = {
                         CREDENTIAL_KEY: {
                                 'nama_pengguna': data['user']['nama'],
@@ -460,16 +425,6 @@ class Login_Pemeta_Nilai_Tanah:
             renew_multiple_user_data(renew_data)
             
             arcpy.AddMessage("Login OK")
-            # shutil.copy(r'C:\PenilaianTanah\ui\penjatek\Arcgis.Desktop.Config.daml', os.path.join(os.environ['USERPROFILE'], 'AppData', 'Local', 'ESRI', 'Arcgis.Desktop.Config.daml'))
-            # aprx = arcpy.mp.ArcGISProject("CURRENT")
-            # aprx.save()
-
-            # if automatic_reload:
-            #     restart_bat_path = prepare_restart_arcgis_bat(aprx.filePath)
-            #     subprocess.Popen(restart_bat_path)
-            #     os.system("taskkill /f /im ArcGISPro.exe")
-            # else:
-            #     arcpy.AddMessage("Login berhasil. Silakan restart ArcGIS Pro untuk menerapkan perubahan.")
 
         except Exception as e:
             arcpy.AddError(str(e))

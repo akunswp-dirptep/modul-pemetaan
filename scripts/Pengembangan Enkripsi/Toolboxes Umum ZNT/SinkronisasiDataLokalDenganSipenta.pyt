@@ -111,9 +111,6 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Called whenever a parameter has been changed.
         """
 
-        # PARAMS:
-        # [catatan, berkas, output_ts, output_tsi, penjelasan]
-
         catatan, data_yang_disinkronisasi, berkas, penjelasan = parameters
         is_login = get_user_data(CREDENTIAL_KEY)
 
@@ -128,7 +125,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         for param in [catatan, data_yang_disinkronisasi, berkas, penjelasan]:
             param.enabled = True
 
-        data_yang_disinkronisasi = berkas.valueAsText
+        data_yang_disinkronisasi = data_yang_disinkronisasi.valueAsText
 
         exp_dict = {
             "Data Pembanding Individual": (

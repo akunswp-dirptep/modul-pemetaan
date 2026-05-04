@@ -407,7 +407,7 @@
 					<button refID="ButtonP_EditJarakPersilKeJalanUtama"/>
 				</menu>
 				<menu id="menu5_4" caption="Zonasi" >
-					<button refID="ButtonTambahkanCitra"/>
+					<button refID="menu_tambah_citra"/>
 					<button refID="ButtonP_TampilkanPersili5"/>
 					<button refID="ButtonP_UpdateZonasi"/>
 					<button refID="ButtonP_EditInformasiZonasiPadaPersil"/>
@@ -486,7 +486,7 @@
 					<button refID="ButtonUploadPetaAreaKerja" size="Medium"/>
 					<button refID='menu_persiapan_workspace'/>
 					<button refID="ButtonMasukkanDataDasar" size="Medium"/>	
-					<button refID="ButtonTambahkanCitra"/>
+					<button refID="menu_tambah_citra"/>
 					<toolPalette refID="ToolPalette13"/>
 					<button refID="ButtonSesuaikanAtributJenisZonaPadaZonaLayer" size="Medium"/>	
 					<button refID="ButtonUploadDelineasiZonaAwalNilaiTanah" size="Medium"/>		
@@ -551,6 +551,10 @@
 					<button refID="ButtonBuatLayerZonaAwal" />
 					<button refID="ButtonImportWorkspace" />
 				</menu>
+				<menu id="menu_tambah_citra" caption="Tambahkan Citra">
+					<button refID="ButtonTambahkanCitra" />
+					<button refID="ButtonTambahkanCitraOnline" />
+				</menu>
 
 			<!-- Pembaruan ZNT -->
 				<!-- Menu-Menu Utama -->
@@ -562,7 +566,7 @@
 					<button refID="ButtonUploadPetaAreaKerjaPembaruan" size="Medium"/>
 					<button refID="menu_persiapan_workspace_pembaruan_znt" />	
 					<button refID="buttonMasukkanDataZNTSebelumnya" size="Medium"/>
-					<button refID="ButtonTambahkanCitra" size="Medium"/>
+					<button refID="menu_tambah_citra" size="Medium"/>
 					<button refID="ButtonSesuaikanAtributJenisZonaPadaZonaLayer" size="Medium"/>
 					<button refID="ButtonUploadDelineasiZonaAwalNilaiTanahPembaruan" size="Medium"/>
 				</menu>
@@ -1816,14 +1820,44 @@
 
 		
 		<!-- Digunakan keduanya (Pembaruan dan Pembuatan ZNT)-->
-			<!-- Menu Persiapan Data -->
-				<button id="ButtonTambahkanCitra" caption="Tambah Citra" smallImage="C:\PenilaianTanah\icons\basemap.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<!-- Menu Persiapan Data -->
+				<button id="ButtonTambahkanCitra"
+						caption="Basemap Lokal"
+						smallImage="C:\PenilaianTanah\icons\layer.png"
+						largeImage="C:\PenilaianTanah\icons\layer.png"
+						isCustomCommand="true"
+						assembly=""
+						className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+						extendedCaption=""
+						helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\TambahCitra.pyt\Tambah_Citra_Basemap" name="Tambah Citra" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\TambahCitra.pyt\Tambah_Citra_Basemap"
+								name="Tambah Basemap Lokal"
+								xmlns=""/>
 					</args>
-					<tooltip heading="Tambah Citra">Menu untuk menambahkan layer citra satelit.</tooltip>
+					<tooltip heading="Tambah Basemap Lokal">
+						Menambahkan layer citra atau basemap dari file yang tersimpan pada komputer.
+					</tooltip>
 				</button>
 
+				<button id="ButtonTambahkanCitraOnline"
+						caption="Basemap Online"
+						smallImage="C:\PenilaianTanah\icons\online.png"
+						largeImage="C:\PenilaianTanah\icons\online.png"
+						isCustomCommand="true"
+						assembly=""
+						className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+						extendedCaption=""
+						helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\TambahCitra.pyt\Tambah_Citra_Online"
+								name="Tambah Basemap Online"
+								xmlns=""/>
+					</args>
+					<tooltip heading="Tambah Basemap Online">
+						Menambahkan layer citra dari layanan peta online seperti Google Maps atau Google Satellite.
+					</tooltip>
+				</button>
 				<button id="ButtonSesuaikanAtributJenisZonaPadaZonaLayer" caption="Sesuaikan Atribut Jenis Zona" smallImage="C:\PenilaianTanah\icons\editattribute.png" largeImage="C:\PenilaianTanah\icons\editattribute.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PeriksaDanSesuaikanJenisZona.pyt\Sesuaikan_Jenis_Zona" name="Sesuaikan Atribut Jenis Zona" xmlns=""/>

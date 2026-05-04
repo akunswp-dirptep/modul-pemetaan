@@ -653,9 +653,9 @@ KAB_KOTA = {
     ],
 }
 
-VERSION_NUMBER = '5.8.5'
+VERSION_NUMBER = '5.8.6'
 VERSION_NAME = 'Jayawijaya'
-VERSION_ID = 'solo-bandung-padang-69e0901d-ezx'
+VERSION_ID = 'rabu-router-scanner-69edbf0d-32b'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
 UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"

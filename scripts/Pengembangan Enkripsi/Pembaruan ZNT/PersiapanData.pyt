@@ -484,7 +484,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
 
         try:
             with arcpy.da.SearchCursor(znt_lama, fields) as cursor:
-                for rownum, row in enumerate(cursor, start=1):
+
                 for rownum, row in enumerate(cursor, start=1):
                     for i, val in enumerate(row):
                         field_name = fields[i]
@@ -493,8 +493,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                         if val is None:
                             arcpy.AddError(f"{field_name} NULL di baris {rownum}")
                             return
-                            arcpy.AddError(f"{field_name} NULL di baris {rownum}")
-                            return
+
 
                         try:
                             if isinstance(val, str):

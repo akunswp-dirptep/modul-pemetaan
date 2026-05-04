@@ -99,8 +99,9 @@ class Rekomendasi_Titik_Pembanding(object):
 
         self.setup_path_and_config()
         zl_path  = os.path.join(self.dataset_path, "Zona_Layer")
+        titik_zona = os.path.join(self.dataset_path, 'Titik_Zona')
 
-        check_if_there_zona_beda = self.cek_zona_beda(self.titik_sampel_path, zl_path)
+        check_if_there_zona_beda = self.cek_zona_beda(self.titik_sampel_path, zl_path, titik_zona)
 
 
         if len(check_if_there_zona_beda) > 0:
@@ -138,38 +139,53 @@ class Rekomendasi_Titik_Pembanding(object):
                 f"Zoning sampel individual: {self.get_label_zoning(zoning_individual)} ({zoning_individual})"
             )
             skor = self.hitung_skor(data_individual)
-            hasil_per_zoning = {
-                "1": [],
-                "2": []
-            }
+            # Pisahkan berdasarkan zoning
+            skor_zoning_sama = []
+            skor_zoning_berbeda = []
 
             for entry, score, zoning in skor:
-                if zoning in hasil_per_zoning:
-                    hasil_per_zoning[zoning].append((entry, score))
+                if zoning == zoning_individual:
+                    skor_zoning_sama.append((entry, score))
+                else:
+                    skor_zoning_berbeda.append((entry, score))
 
-            top_per_zoning = {
-                zoning: sorted(hasil, key=lambda x: x[1], reverse=True)[:5]
-                for zoning, hasil in hasil_per_zoning.items()
-            }
+            # Prioritas zoning sama
+            if skor_zoning_sama:
+                hasil_terpilih = sorted(
+                    skor_zoning_sama,
+                    key=lambda x: x[1],
+                    reverse=True
+                )[:10]
 
-            if not any(top_per_zoning.values()):
-                arcpy.AddWarning("Tidak ditemukan titik pembanding untuk Zoning 1 maupun Zoning 2.")
+                arcpy.AddMessage(
+                    f"Menampilkan 10 titik pembanding dengan zoning yang sama "
+                    f"({self.get_label_zoning(zoning_individual)})"
+                )
+            else:
+                hasil_terpilih = sorted(
+                    skor_zoning_berbeda,
+                    key=lambda x: x[1],
+                    reverse=True
+                )[:10]
+
+                arcpy.AddWarning(
+                    f"Tidak ditemukan titik pembanding dengan zoning "
+                    f"{self.get_label_zoning(zoning_individual)}.\n"
+                    f"Menampilkan 10 titik terbaik dari zoning berbeda."
+                )
+
+            if not hasil_terpilih:
+                arcpy.AddWarning("Tidak ditemukan titik pembanding.")
                 return
 
             nomor_entry_list = []
-            for zoning in ("1", "2"):
-                hasil_zoning = top_per_zoning[zoning]
-                if hasil_zoning:
-                    arcpy.AddMessage(
-                        f"Top 5 Titik Pembanding untuk Zoning {self.get_label_zoning(zoning)} ({zoning}):"
-                    )
-                    for entry, score in hasil_zoning:
-                        arcpy.AddMessage(f"  Kemiripan {entry}: {(score*100):.4f}%")
-                        nomor_entry_list.append(str(entry))
-                else:
-                    arcpy.AddMessage(
-                        f"Tidak ada titik pembanding untuk Zoning {self.get_label_zoning(zoning)} ({zoning})."
-                    )
+
+            arcpy.AddMessage("\nTop 10 Titik Pembanding:")
+            for entry, score in hasil_terpilih:
+                arcpy.AddMessage(
+                    f"  Kemiripan {entry}: {(score * 100):.2f}%"
+                )
+                nomor_entry_list.append(str(entry))
 
             where_clause = f"Nomor_Entry IN ({','.join(nomor_entry_list)})"
             
@@ -197,17 +213,42 @@ class Rekomendasi_Titik_Pembanding(object):
                 arcpy.AddMessage(f"\n {len(nomor_entry_list)} titik pembanding teratas telah dipilih di layer 'Titik_Sampel'")
         
     
-    def cek_zona_beda(self, ts_path, zl_path):
-        identity_fc = r"in_memory\identity"
-        arcpy.analysis.Identity(ts_path, zl_path, identity_fc)
-
+    def cek_zona_beda(self, ts_path, zl_path, tz_path):
         zona_beda = []
 
-        # Ambil semua field dalam satu cursor
-        with arcpy.da.SearchCursor(identity_fc, ["NOZN", "JNSZN", "Zoning"]) as cursor:
-            for nozona, jenis, zoning in cursor:
-                if jenis != zoning:
-                    zona_beda.append(f"NOZN {nozona} (Zoning Titik Sampel: {zoning}, Jenis Zona: {jenis})")
+        layers_to_check = [
+            (ts_path, "Titik_Sampel", r"in_memory\identity_ts")
+        ]
+
+        if arcpy.Exists(tz_path):
+            layers_to_check.append(
+                (tz_path, "Titik_Zona", r"in_memory\identity_tz")
+            )
+
+        for layer_path, layer_name, identity_fc in layers_to_check:
+
+            if arcpy.Exists(identity_fc):
+                arcpy.management.Delete(identity_fc)
+
+            arcpy.analysis.Identity(
+                layer_path,
+                zl_path,
+                identity_fc
+            )
+
+            with arcpy.da.SearchCursor(
+                identity_fc,
+                ["NOZN", "JNSZN", "Zoning"]
+            ) as cursor:
+
+                for nozona, jenis, zoning in cursor:
+                    if str(jenis) != str(zoning):
+                        zona_beda.append(
+                            f"{layer_name} - NOZN {nozona} "
+                            f"(Zoning: {zoning}, Jenis Zona: {jenis})"
+                        )
+
+            arcpy.management.Delete(identity_fc)
 
         return zona_beda
     def setup_path_and_config(self):

@@ -78,61 +78,133 @@ class Periksa_Jenis_Zona(object):
         """The source code of the tool."""
         delete_bad_file()
         self.config_dan_paths = get_config_values()
-        ts_path = os.path.join(self.config_dan_paths['dataset_path'], "Titik_Sampel")  # Path layer titik sampel
-        zl_path = os.path.join(self.config_dan_paths['dataset_path'], "Zona_Layer")  # Path zona layer
-        sim_path = os.path.join(self.config_dan_paths['symbology_folder'], "Simbologi_Periksa_Jenis_Zona.lyrx")  # Path file simbologi
-        zl_topology_path = os.path.join(self.config_dan_paths['dataset_path'], "Zona_Layer_Topology")  # Path zona layer topology
+
+        ts_path = os.path.join(
+            self.config_dan_paths['dataset_path'],
+            "Titik_Sampel"
+        )
+
+        tz_path = os.path.join(
+            self.config_dan_paths['dataset_path'],
+            "Titik_Zona"
+        )
+
+        zl_path = os.path.join(
+            self.config_dan_paths['dataset_path'],
+            "Zona_Layer"
+        )
+
+        sim_path = os.path.join(
+            self.config_dan_paths['symbology_folder'],
+            "Simbologi_Periksa_Jenis_Zona.lyrx"
+        )
+
+        zl_topology_path = os.path.join(
+            self.config_dan_paths['dataset_path'],
+            "Zona_Layer_Topology"
+        )
 
         if arcpy.Exists(zl_topology_path):
-            arcpy.management.Delete(zl_topology_path) 
+            arcpy.management.Delete(zl_topology_path)
 
-        # Melakukan analisis Identity antara titik sampel dan zona layer
-        arcpy.analysis.Identity(ts_path, zl_path, 'identity')
+        identity_layers = []
 
-        # Membuat dictionary untuk menyimpan jenis zona per nomor zona
+        # Identity Titik Sampel
+        arcpy.analysis.Identity(ts_path, zl_path, "identity_ts")
+        identity_layers.append("identity_ts")
+
+        # Identity Titik Zona (jika ada)
+        if arcpy.Exists(tz_path):
+            arcpy.analysis.Identity(tz_path, zl_path, "identity_tz")
+            identity_layers.append("identity_tz")
+
+        # Dictionary penyimpanan
         listzona = {}
-        listsampel= {}
-        with arcpy.da.SearchCursor('identity', ["NOZN", "JNSZN"]) as cursor:
-            for row in cursor:
-                nozona = row[0]
-                jenis = row[1]
-                if nozona not in listzona:
-                    listzona[nozona] = set()  # Menggunakan set untuk nilai unik
-                listzona[nozona].add(jenis)
-        with arcpy.da.SearchCursor('identity', ["NOZN", "Zoning"]) as cursor:
-            for row in cursor:
-                nozona = row[0]
-                zoning = row[1]
-                if nozona not in listsampel:
-                    listsampel[nozona] = set()  # Menggunakan set untuk nilai unik
-                listsampel[nozona].add(zoning)
+        listsampel = {}
+
+        for identity_fc in identity_layers:
+            with arcpy.da.SearchCursor(
+                identity_fc,
+                ["NOZN", "JNSZN", "Zoning"]
+            ) as cursor:
+
+                for nozona, jenis, zoning in cursor:
+
+                    if nozona not in listzona:
+                        listzona[nozona] = set()
+                    listzona[nozona].add(jenis)
+
+                    if nozona not in listsampel:
+                        listsampel[nozona] = set()
+
+                    if zoning is not None:
+                        listsampel[nozona].add(zoning)
+
+        # Hapus field lama jika ada
         field_names = [f.name for f in arcpy.ListFields(zl_path)]
+
         if "JENISSAMPEL" in field_names:
-            arcpy.DeleteField_management(zl_path, "JENISSAMPEL")
-        arcpy.AddField_management(zl_path, "JENISSAMPEL", "TEXT")
+            arcpy.management.DeleteField(zl_path, "JENISSAMPEL")
+
         if "BEDA_ZONA" in field_names:
-            arcpy.DeleteField_management(zl_path, "BEDA_ZONA")
-        arcpy.management.AddField(zl_path, "BEDA_ZONA", "TEXT")
+            arcpy.management.DeleteField(zl_path, "BEDA_ZONA")
 
-        with arcpy.da.UpdateCursor(zl_path, ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]) as cursor:
+        # Tambah field baru
+        arcpy.management.AddField(
+            zl_path,
+            "JENISSAMPEL",
+            "TEXT"
+        )
+
+        arcpy.management.AddField(
+            zl_path,
+            "BEDA_ZONA",
+            "TEXT"
+        )
+
+        # Update hasil pemeriksaan
+        with arcpy.da.UpdateCursor(
+            zl_path,
+            ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]
+        ) as cursor:
+
             for row in cursor:
-                nozona = row[0] 
-                zl_type = set(listzona.get(nozona, []))  # Jenis zona dari zona layer
-                titiksampel = set(listsampel.get(nozona, []))  # Zoning dari titik sampel
-                if zl_type == titiksampel:
-                    row[1] = 'Zona Sama'  # Menandai jika zona sama
-                else:
-                    row[1] = 'Zona Beda'  # Menandai jika zona berbeda
-                if titiksampel:  
-                    row[2] = ", ".join(map(str, titiksampel))  # Menggabungkan nilai zoning
-                else:
-                    row[2] = "Tidak ada Jenis Zona Titik Sampel"  # Default value jika kosong
-                cursor.updateRow(row)
-        arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
-        arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
-        arcpy.SetParameter(1, "Zona_Layer")  # Mengatur parameter output
-        return
+                nozona = row[0]
 
+                zl_type = set(listzona.get(nozona, []))
+                titiksampel = set(listsampel.get(nozona, []))
+
+                if zl_type == titiksampel:
+                    row[1] = "Zona Sama"
+                else:
+                    row[1] = "Zona Beda"
+
+                if titiksampel:
+                    row[2] = ", ".join(map(str, sorted(titiksampel)))
+                else:
+                    row[2] = "Tidak ada Jenis Zona Titik Sampel"
+
+                cursor.updateRow(row)
+
+        # Tampilkan layer hasil
+        arcpy.management.MakeFeatureLayer(
+            zl_path,
+            "Zona_Layer"
+        )
+
+        arcpy.management.ApplySymbologyFromLayer(
+            "Zona_Layer",
+            sim_path
+        )
+
+        arcpy.SetParameter(1, "Zona_Layer")
+
+        # Cleanup temporary identity
+        for fc in identity_layers:
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)
+
+        return
     def postExecute(self, parameters):
         """This method takes place after outputs are processed and
         added to the display."""
@@ -286,8 +358,8 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
         jenis_zona = parameters[0].valueAsText
 
         config_dan_paths = get_config_values()
-        sampel = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")  # Path layer titik sampel
-        out_temp = r"in_memory\Titik_Sampel_temp"
+        sampel = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")
+        titik_zona = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
         zl= "Zona_Layer"
         JNSZN = 1  # Default value untuk Non-Pertanian
         if jenis_zona == "Non-Pertanian":
@@ -350,26 +422,51 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
                 cursor.updateRow(row)
             del row, cursor
 
-            arcpy.analysis.SpatialJoin(sampel, zl, out_temp, "JOIN_ONE_TO_MANY", "KEEP_ALL", "sync_id \"sync_id\" true true false 100 Text 0 0,First,#,sampel,sync_id,0,100; JNSZN \"JNSZN\" true true false 2 Short 0 0,First,#,zl,JNSZN,-1,-1", "INTERSECT")
-            
-            # Join field JNSZN dari temporary layer ke Titik_Sampel
-            arcpy.management.JoinField(sampel, "OBJECTID", out_temp, "TARGET_FID", ["JNSZN"])
-            
-            # Update field Zoning di Titik_Sampel berdasarkan nilai JNSZN yang baru
-            with arcpy.da.UpdateCursor(sampel, ["JNSZN", "Zoning"]) as cursor:
-                for row in cursor:
-                    if row[1] != row[0] and row[0] is not None:
-                        row[1] = row[0]  # Update Zoning dengan nilai JNSZN
-                    cursor.updateRow(row)
-            
-            # Membersihkan field JNSZN yang telah di-join
-            arcpy.management.DeleteField(sampel, "JNSZN")
+            # Sinkronisasi ke Titik_Sampel
+            self.sinkronisasi_zoning(sampel, "Titik_Sampel_temp")
+
+            # Sinkronisasi ke Titik_Zona (jika ada)
+            self.sinkronisasi_zoning(titik_zona, "Titik_Zona_temp")
             sim_path = os.path.join(config_dan_paths['symbology_folder'], "Simbologi_Sesuaikan_Jenis_Zona.lyrx")
                 
             arcpy.management.MakeFeatureLayer(config_dan_paths['zl_path'], "Zona_Layer")
             arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
-            arcpy.management.Delete(out_temp)
             arcpy.SetParameter(1, "Zona_Layer")
         return
+    
+    def sinkronisasi_zoning(self, layer_path, temp_name):
+        if not arcpy.Exists(layer_path):
+            return
+        zl= "Zona_Layer"
+        out_temp_fc = fr"in_memory\{temp_name}"
+
+        arcpy.analysis.SpatialJoin(
+            layer_path,
+            zl,
+            out_temp_fc,
+            "JOIN_ONE_TO_MANY",
+            "KEEP_ALL",
+            'sync_id "sync_id" true true false 100 Text 0 0,First,#,'
+            f'{layer_path},sync_id,0,100;'
+            'JNSZN "JNSZN" true true false 2 Short 0 0,First,#,zl,JNSZN,-1,-1',
+            "INTERSECT"
+        )
+
+        arcpy.management.JoinField(
+            layer_path,
+            "OBJECTID",
+            out_temp_fc,
+            "TARGET_FID",
+            ["JNSZN"]
+        )
+
+        with arcpy.da.UpdateCursor(layer_path, ["JNSZN", "Zoning"]) as cursor:
+            for row in cursor:
+                if row[0] is not None and row[1] != row[0]:
+                    row[1] = row[0]
+                cursor.updateRow(row)
+
+        arcpy.management.DeleteField(layer_path, "JNSZN")
+        arcpy.management.Delete(out_temp_fc)
 
  

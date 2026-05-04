@@ -602,6 +602,7 @@
 					<button refID="menu_penyesuaian_titik_dan_zona_pembaruan_znt" />
 					<button refID="menu_zona_parsial_pembaruan_znt" />
 					<button refID="ButtonPeriksaKesesuaianTitikdanZona"/>
+					<button refID="ButtonHitungIndeksNilaiTanah" />
 					<button refID="ButtonSinkronisasiDataTitikSampelKeSipenta" />
 				</menu>
 
@@ -610,7 +611,6 @@
 					largeImage="C:\PenilaianTanah\icons\calculate.png"
 					smallImage="C:\PenilaianTanah\icons\calculate.png">
 					<tooltip heading="Pengolahan ZNT">Pengolahan Peta Pembaruan Zona Nilai Tanah.</tooltip>
-					<button refID="ButtonHitungIndeksNilaiTanah" />
 					<button refID="ButtonHitungZonaDariDataOutlier"/>
 					<button refID="ButtonHitungZNTUpdate"/>
 				</menu>

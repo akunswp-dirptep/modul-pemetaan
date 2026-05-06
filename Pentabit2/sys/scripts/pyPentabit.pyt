@@ -9,7 +9,9 @@ class Toolbox(object):
         self.alias = ""
 
         # List of tool classes associated with this toolbox
-        self.tools = [DeklarasiZonasi, DeklarasiZonasiUpdate, DeklarasiVariabel, TransformasiVariabel, EditAnalisisModel_Jalan, EditKelasJalan, UpdateZonasi, EditZonasi, EditZonasiUpdate, EditZonasiKonsol, EditZonasiTaru, TampilkanPersil, EditCluster, EditZonasiSetelahPrediksi]
+        self.tools = [DeklarasiZonasi, DeklarasiZonasiUpdate, DeklarasiVariabel, TransformasiVariabel, 
+                      EditAnalisisModel_Jalan, EditKelasJalan, UpdateZonasi, 
+                      EditZonasi, EditZonasiUpdate, EditZonasiKonsol, EditZonasiTaru, TampilkanPersil, EditCluster, EditZonasiSetelahPrediksi]
 
 class DeklarasiZonasi(object):
     firstRun = "0"
@@ -140,7 +142,6 @@ class DeklarasiZonasi(object):
         messages.AddMessage(appdata)
         messages.AddMessage("== Proses Selesai ==")
         return
-
 
 class DeklarasiZonasiUpdate(object):
     firstRun = "0"

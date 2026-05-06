@@ -12,8 +12,9 @@ arcpy.env.outputMFlag = "Disabled"
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+gp_dir = os.path.dirname(parent_dir)
+if gp_dir not in sys.path:
+    sys.path.insert(0, gp_dir)
 
 from nbtutils.constant import PROJECT_CONFIG_FILE_NAME
 from nbtutils.persil import get_config_values
@@ -846,4 +847,272 @@ class Set_Bentuk_Persil(object):
 
         messages.addMessage(
             "Bentuk persil berhasil diperbarui."
+        )
+class Simbologi_Elevasi_Persil(object):
+
+    def __init__(self):
+        self.label = "Simbologi Elevasi Persil"
+        self.description = "Menerapkan simbologi elevasi pada layer persil"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+
+        out_layer = arcpy.Parameter(
+            displayName="Output Layer Persil",
+            name="out_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [out_layer]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+
+        import arcpy
+
+        messages.addMessage("== Proses dimulai ==")
+
+        # =========================
+        # CONFIG
+        # =========================
+        configs = get_config_values()
+
+        persil = configs["persil"]["persil"]["nama"]
+        persil_path = configs["persil"]["persil"]["path"]
+
+        simbologi_path = configs["persil"]["simbologielevasipersil"]["path"]
+
+        # =========================
+        # DELETE OLD LAYER
+        # =========================
+        if arcpy.Exists(persil):
+
+            messages.addMessage(
+                "Menghapus layer persil lama..."
+            )
+
+            arcpy.management.Delete(persil)
+
+        # =========================
+        # CHECK FIELD
+        # =========================
+        field_names = [
+            field.name
+            for field in arcpy.ListFields(persil_path)
+        ]
+
+        if 'elvasi' not in field_names:
+
+            messages.addMessage(
+                "Menambahkan field elvasi..."
+            )
+
+            arcpy.management.AddField(
+                persil_path,
+                'elvasi',
+                'TEXT'
+            )
+
+        if 's_elvasi' not in field_names:
+
+            messages.addMessage(
+                "Menambahkan field s_elvasi..."
+            )
+
+            arcpy.management.AddField(
+                persil_path,
+                's_elvasi',
+                'DOUBLE'
+            )
+
+        # =========================
+        # MAKE FEATURE LAYER
+        # =========================
+        messages.addMessage(
+            "Membuat layer persil..."
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            persil_path,
+            persil
+        )
+
+        # =========================
+        # APPLY SYMBOLOGY
+        # =========================
+        messages.addMessage(
+            "Menerapkan simbologi elevasi persil..."
+        )
+
+        arcpy.management.ApplySymbologyFromLayer(
+            persil,
+            simbologi_path
+        )
+
+        # =========================
+        # ADD TO CURRENT MAP
+        # =========================
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        current_map = aprx.activeMap
+
+        current_map.addDataFromPath(persil_path)
+
+        # =========================
+        # SET OUTPUT
+        # =========================
+        parameters[0].value = persil
+
+        messages.addMessage("== Proses selesai ==")
+
+class Set_Elevasi_Persil(object):
+
+    def __init__(self):
+        self.label = "Set Elevasi Persil"
+        self.description = "Mengatur elevasi persil"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+
+        elevasi = arcpy.Parameter(
+            displayName="Elevasi Persil",
+            name="elevasi",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        elevasi.filter.list = [
+            "Lebih Rendah",
+            "Sama",
+            "Lebih Tinggi"
+        ]
+
+        return [elevasi]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+
+        elevasi = parameters[0].valueAsText
+
+        mapping_elevasi = {
+            "Lebih Rendah": 3,
+            "Sama": 2,
+            "Lebih Tinggi": 1
+        }
+
+        if elevasi not in mapping_elevasi:
+
+            messages.addErrorMessage(
+                "Elevasi tidak valid."
+            )
+            return
+
+        skor_elevasi = mapping_elevasi[elevasi]
+
+        configs = get_config_values()
+
+        persil = configs["persil"]["persil"]["nama"]
+        persil_path = configs["persil"]["persil"]["path"]
+
+        appdata = os.path.dirname(
+            os.path.dirname(
+                os.path.realpath(__file__)
+            )
+        )
+
+        simbologi_path = os.path.join(
+            appdata,
+            "SimbologiElevasiPersil.lyr"
+        )
+
+        # =========================
+        # ADD REQUIRED FIELD
+        # =========================
+        field_names = [
+            field.name.lower()
+            for field in arcpy.ListFields(persil_path)
+        ]
+
+        if "elvasi" not in field_names:
+
+            arcpy.management.AddField(
+                persil_path,
+                "elvasi",
+                "TEXT",
+                field_length=50
+            )
+
+        if "s_elvasi" not in field_names:
+
+            arcpy.management.AddField(
+                persil_path,
+                "s_elvasi",
+                "DOUBLE"
+            )
+
+        # =========================
+        # CHECK SELECTION
+        # =========================
+        ada_seleksi = len(
+            arcpy.Describe(persil).FIDSet
+        )
+
+        if ada_seleksi <= 0:
+
+            messages.addWarningMessage(
+                "Tidak ada persil yang dipilih."
+            )
+            return
+
+        messages.addMessage(
+            "Jumlah fitur terseleksi: {}".format(
+                ada_seleksi
+            )
+        )
+
+        # =========================
+        # UPDATE
+        # =========================
+        with arcpy.da.UpdateCursor(
+            persil,
+            ["elvasi", "s_elvasi"]
+        ) as cursor:
+
+            for row in cursor:
+
+                row[0] = elevasi
+                row[1] = skor_elevasi
+
+                cursor.updateRow(row)
+
+        # =========================
+        # APPLY SYMBOLOGY
+        # =========================
+        if arcpy.Exists(simbologi_path):
+
+            arcpy.management.ApplySymbologyFromLayer(
+                persil,
+                simbologi_path
+            )
+
+        messages.addMessage(
+            "Elevasi persil berhasil diperbarui."
         )

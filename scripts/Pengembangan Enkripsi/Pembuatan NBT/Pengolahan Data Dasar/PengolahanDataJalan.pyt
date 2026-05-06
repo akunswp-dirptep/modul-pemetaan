@@ -12,8 +12,9 @@ arcpy.env.outputMFlag = "Disabled"
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+gp_dir = os.path.dirname(parent_dir)
+if gp_dir not in sys.path:
+    sys.path.insert(0, gp_dir)
 
 from nbtutils.constant import PROJECT_CONFIG_FILE_NAME
 from nbtutils.persil import get_config_values

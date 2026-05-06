@@ -694,7 +694,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         arcpy.management.AlterField(
             in_table=zona_layer_temp_path,
             field="cluster",
-            new_field_name="cluster",        # boleh sama (tidak ganti nama)
+            new_field_name="cluster",        
             new_field_alias="KLASTER"
         )
                 # Set nilai default

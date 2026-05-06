@@ -1,0 +1,175 @@
+{
+    "main": {
+        "ws": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal",
+        "conf": "C:\\PenilaianTanah\\scripts\\Pengembangan Enkripsi\\config.json",
+        "gdb": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb",
+        "dataset": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds"
+    },
+    "jalan": {
+        "dataset": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds",
+        "sisijalan": {
+            "nama": "SisiJalan",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\SisiJalan"
+        },
+        "jaringanjalan": {
+            "nama": "Jaringan_Jalan",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\Jaringan_Jalan"
+        },
+        "midpointjaringanjalan": {
+            "nama": "MidpointJaringanJalan",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\MidpointJaringanJalan"
+        },
+        "simbologikelasjalan": {
+            "nama": "SimbologiKelasJalan",
+            "path": "C:\\PenilaianTanah\\scripts\\Pengembangan Enkripsi\\SimbologiKelasJalan.lyr"
+        },
+        "simbologilebarjalan": {
+            "nama": "SimbologiLebarJalan",
+            "path": "C:\\PenilaianTanah\\scripts\\Pengembangan Enkripsi\\SimbologiLebarJalan.lyr"
+        },
+        "kelasjalan": [
+            {
+                "label": "Lokal Setapak",
+                "value": 1
+            },
+            {
+                "label": "Lokal Sekunder",
+                "value": 2
+            },
+            {
+                "label": "Lokal Primer",
+                "value": 3
+            },
+            {
+                "label": "Kolektor Sekunder",
+                "value": 4
+            },
+            {
+                "label": "Kolektor Primer",
+                "value": 5
+            },
+            {
+                "label": "Arteri Sekunder",
+                "value": 6
+            },
+            {
+                "label": "Arteri Primer",
+                "value": 7
+            }
+        ],
+        "topologi_sisijalan": {
+            "nama": "TopologiSisiJalan",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\TopologiSisiJalan"
+        },
+        "topologi_jaringanjalan": {
+            "nama": "TopologiJaringanJalan",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\TopologiJaringanJalan"
+        },
+        "template": "C:\\PenilaianTanah\\scripts\\Pengembangan Enkripsi\\nbtutils\\template.gdb\\ds_znt_template",
+        "table_template": "C:\\PenilaianTanah\\scripts\\Pengembangan Enkripsi\\nbtutils\\template.gdb\\template_var",
+        "temporary": "C:\\PenilaianTanah\\scripts\\Pengembangan Enkripsi\\nbtutils\\temporary.gdb",
+        "nd": {
+            "nama": "JaringanJalan_ND",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\ds_znt_template\\JaringanJalan_ND"
+        },
+        "jaringanjalannd": {
+            "nama": "JaringanJalanForND",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\ds_znt_template\\JaringanJalanForND"
+        }
+    },
+    "persil": {
+        "dataset": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds",
+        "persil": {
+            "nama": "Persil",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\Persil"
+        },
+        "persilline": {
+            "nama": "PersilLine",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\PersilLine"
+        },
+        "persilsplit": {
+            "nama": "PersilSplit",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\PersilSplit"
+        },
+        "persilcentroid": {
+            "nama": "PersilCentroid",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\PersilCentroid"
+        },
+        "persilmidpoint": {
+            "nama": "PersilMidpoint",
+            "path": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\nbt_ds\\PersilMidpoint"
+        },
+        "zonasi": [
+            {
+                "label": "Pertanian",
+                "value": 1
+            },
+            {
+                "label": "Industri",
+                "value": 2
+            },
+            {
+                "label": "Perkampungan",
+                "value": 3
+            },
+            {
+                "label": "Perumahan Sederhana",
+                "value": 4
+            },
+            {
+                "label": "Perumahan Menengah",
+                "value": 5
+            },
+            {
+                "label": "Perumahan Mewah",
+                "value": 6
+            },
+            {
+                "label": "Komersil",
+                "value": 7
+            }
+        ],
+        "bentuk": [
+            {
+                "label": "Segi Banyak Tidak Beraturan",
+                "value": 1
+            },
+            {
+                "label": "Segitiga",
+                "value": 2
+            },
+            {
+                "label": "Segi Empat Tidak Beraturan",
+                "value": 3
+            },
+            {
+                "label": "Segi Empat Beraturan",
+                "value": 4
+            }
+        ],
+        "letak": [
+            {
+                "label": "Lain-lain",
+                "value": 1
+            },
+            {
+                "label": "Normal",
+                "value": 2
+            },
+            {
+                "label": "Tusuk sate",
+                "value": 3
+            },
+            {
+                "label": "Hook",
+                "value": 4
+            }
+        ]
+    },
+    "fasilitas": {
+        "datasetfasilitas": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\fasilitas"
+    },
+    "resiko": {
+        "datasetresiko": "E:\\Akmal\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembuatan NBT\\Penyesuaian Awal\\NilaiBidangTanah.gdb\\resiko"
+    }
+}

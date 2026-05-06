@@ -218,7 +218,6 @@ def check_if_there_selected_field(feature_layer = "Zona_Layer"):
         arcpy.AddError(f"ERROR: Fitur Editing masih menyala pada {layer_name}. Matikan terlebih dahulu sebelum melanjutkan proses.")
         sys.exit(1)
 
-
 def unselect_field():
     try:
     # Nonaktifkan field selection terlebih dahulu

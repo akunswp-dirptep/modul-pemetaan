@@ -645,11 +645,15 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         
 
         if jeniszona:
-            if jeniszona != "JNSZN":
+            if jeniszona != "JNSZN":  
                 arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
                 arcpy.management.CalculateField(zona_layer_temp_path, 'JNSZN', f"!{jeniszona}!", "PYTHON3")
                 arcpy.management.CalculateField(zona_layer_temp_path, 'PENGGUNAAN', f"get_jenis_zona(!{jeniszona}!)", "PYTHON3", kode_jenis_zona)
                 arcpy.management.DeleteField(zona_layer_temp_path, jeniszona)
+            else:
+                if "PENGGUNAAN" not in [f.name for f in arcpy.ListFields(zona_layer_temp_path)]:
+                    arcpy.management.AddField(zona_layer_temp_path, "PENGGUNAAN", "TEXT")
+                    arcpy.management.CalculateField(zona_layer_temp_path, 'PENGGUNAAN', f"get_jenis_zona(!{jeniszona}!)", "PYTHON3", kode_jenis_zona)
         else:
                 arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
                 arcpy.management.CalculateField(zona_layer_temp_path, "JNSZN", "1", "PYTHON3")  # Set default ke 1

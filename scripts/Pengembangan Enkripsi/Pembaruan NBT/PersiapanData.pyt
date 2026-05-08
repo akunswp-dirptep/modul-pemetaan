@@ -794,8 +794,16 @@ class Deklarasi_Variabel(object):
 
     def getParameterInfo(self):
 
+        nbt_awal = arcpy.Parameter(
+            displayName="Pilih Data NBT",
+            name="old_nbt_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
         daftar_variabel = arcpy.Parameter(
-            displayName='Daftar Variabel Prediksi',
+            displayName='Mapping Variabel Prediksi',
             name='define_variable',
             datatype='GPValueTable',
             parameterType='Required',
@@ -803,11 +811,14 @@ class Deklarasi_Variabel(object):
         )
 
         daftar_variabel.columns = [
+            
             ['GPString', 'Nama Variabel'],
-            ['GPString', 'ID']
+            ['Field', 'Field Dataset']
         ]
+        daftar_variabel.parameterDependencies = [nbt_awal.name]
+        daftar_variabel.filters[1].list = []
 
-        return [daftar_variabel]
+        return [nbt_awal, daftar_variabel]
 
     def isLicensed(self):
         return True

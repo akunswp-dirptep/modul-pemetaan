@@ -150,10 +150,24 @@ def setup_project_config(data_dict: dict, config_path):
             arcpy.AddError(f"Gagal menyimpan user config: {str(e)}")
             return False
     return True
+def get_user_data(key:str):
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+
+    try:
+        if os.path.exists(config_path):
+            data = decrypt_message(generate_key(), config_path) 
+            value = data.get(key, None)
+            return value
+        else:
+            return None
+        
+    except Exception as e:
+        return None
 project_config = r'E:\Akmal\Jobdesk\Uji Coba Plugin Penilaian Tanah\Pembaruan ZNT\Uji Coba Versi 6 2704\penilaian_tanah_config.bin'
 
 reset_last_sample = {
     'last_sample_id': 0
 }
-setup_project_config(reset_last_sample, project_config)
+# setup_project_config(reset_last_sample, project_config)
 # print(get_all_config())
+print(get_user_data('preferred_berkas_id'))

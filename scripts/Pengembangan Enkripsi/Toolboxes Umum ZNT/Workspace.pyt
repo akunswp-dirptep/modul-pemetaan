@@ -142,7 +142,6 @@ class Buat_Workspace(object):
             arcpy.AddError( "Proyeksi Sistem Koordinat harus DGN_1995_Indonesia_TM-3 ")
             sys.exit(1)
         
-        login_status = get_login_status()
 
         # Membuat data konfigurasi dalam format dictionary
         config_data = {

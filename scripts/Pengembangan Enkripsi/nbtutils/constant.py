@@ -17,3 +17,6 @@ LAYER_PERSIL_LINE = 'Garis_Persil'
 LAYER_CENTROID_PERSIL = 'Titik_Centroid_Persil'
 LAYER_BELAHAN_PERSIL = 'Belahan_Persil'
 LAYER_TITIK_TENGAH_BELAHAN_PERSIL = 'Titik_Tengah_Belahan_Persil'
+
+# Daftar Variabel
+KONFIG_DAFTAR_VARIABEL = 'konfigurasi_variabel.json'

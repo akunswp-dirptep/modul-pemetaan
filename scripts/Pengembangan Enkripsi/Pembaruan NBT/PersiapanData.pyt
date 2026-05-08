@@ -824,33 +824,57 @@ class Deklarasi_Variabel(object):
         return True
 
     def updateParameters(self, parameters):
+        """
+        Kondisi yang harus terpebuhi agar parameter field muncul:
+        1. T
+        """
+        def cari_field(field_names, kandidat):
+            for nama in kandidat:
+                if nama.upper() in field_names:
+                    return nama
 
-        configs = persil.get_config_values()
+            return None
+        
+        nbt_layer = parameters[0].valueAsText
+        daftar_variable = parameters[1]
+        
+        if nbt_layer:
+            if daftar_variable.value is None:
+                field_names = [f.name.upper() for f in arcpy.ListFields(nbt_layer)]
+            
+                default_variabel = [
+                    ['Tipe Hak', cari_field(field_names, ['TIPEHAK', 'STATUS_PER'])],
+                    ["Lebar Depan", cari_field(field_names, ['LBRDPN', 'LB_DPN'])],         
+                    ["Luas Tanah", cari_field(field_names, ['LUASM2', 'LS_TNH'])],
+                    ["Zonasi", cari_field(field_names, ['ZONASI'])],
+                    ["Letak", cari_field(field_names, ['LETAK'])],
+                    ["Elevasi", cari_field(field_names, ['ELEVASI'])],
+                    ["Lebar Jalan", cari_field(field_names, ['LBRJLN', 'LB_JLN'])],         
+                    ["Kelas Jalan", cari_field(field_names, ['KLSJLN', 'KLS_JLN'])],        
+                    ["Jarak Arteri Primer", cari_field(field_names, ['JKATRP', 'JK_ATRP'])],        
+                    ["Jarak Arteri Sekunder", cari_field(field_names, ['JKATRS', 'JK_ATRS'])],        
+                    ["Jarak Kolektor Primer", cari_field(field_names, ['JKKOLP', 'JK_KOLP'])],         
+                    ["Jarak Kolektor Sekunder", cari_field(field_names, ['JKKOLS', 'JK_KOLS'])],         
+                    ["Jarak CBD", cari_field(field_names, ['JKCBD', 'JK_CBD'])],          # 
+                    ["Jarak Fasilitas Kesehatan", cari_field(field_names, ['JKKES', 'JK_KES'])],           
+                    ["Jarak Fasilitas Pendidikan", cari_field(field_names, ['JKPDDKN', 'JK_EDU'])],      
+                    ["Jarak Fasilitas Transportasi", cari_field(field_names, ['JKTRANSP', 'JK_TRAN'])],    
+                    ["Jarak Fasilitas Pemerintahan", cari_field(field_names, ['JKPMRNTH', 'JK_PEM'])],    
+                    ["Banjir", cari_field(field_names, ['BANJIR'])],
+                    ["Longsor", cari_field(field_names, ['LONGSOR'])],
+                    ["Nilai Bidang Tanah", cari_field(field_names, ['NILAIBD'])]
+                ]
 
-        konfigurasi_variabel_path = (
-            configs["project_config"]["daftar_variabel_path"]
-        )
 
-        default_variabel = [
-            ["LBRDPN", "LBRDPN"],
-            ["Bentuk", "bentuk"],
-            ["Lebar jalan", "lb_jln"],
-            ["Kelas Jalan", "kls_jln"],
-            ["Jarak ke Arteri Primer", "jk_atrp"],
-            ["Jarak ke Arteri Sekunder", "jk_atrs"],
-            ["Jarak ke Kolektor Primer", "jk_kolp"],
-            ["Jarak ke Kolektor Sekunder", "jk_kols"],
-            ["Letak Tanah", "letak"],
-            ["Zonasi", "zonasi"],
-            ["Luas Tanah", "ls_tnh"],
-            ["Minimal Lebar Jalan", "min_lb_jln"]
-        ]
+                daftar_variable.value = default_variabel
+            spatial_ref = arcpy.Describe(nbt_layer).spatialReference
+            if 'DGN_1995_Indonesia_TM-3_Zone' not in spatial_ref.name:
+                nbt_layer.setErrorMessage("Koordinat Persil harus DGN_1995_Indonesia_TM-3")
 
-        # hanya load sekali saat kosong
-        if not parameters[0].value:
-            parameters[0].value = default_variabel
+                return
 
         return
+
 
     def updateMessages(self, parameters):
         return
@@ -859,7 +883,7 @@ class Deklarasi_Variabel(object):
 
         messages.addMessage("== Proses dimulai ==")
 
-        daftar_variabel = parameters[0].values
+        daftar_variabel = parameters[1].value
 
         if not daftar_variabel:
             messages.addErrorMessage(
@@ -898,7 +922,7 @@ class Deklarasi_Variabel(object):
 
             if akronim.lower() in nama_akronim:
                 messages.addErrorMessage(
-                    "== Akronim '{}' duplikat ==".format(akronim)
+                    "== Field dataset '{}' duplikat ==".format(akronim)
                 )
                 raise arcpy.ExecuteError
 

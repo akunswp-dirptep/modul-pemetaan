@@ -7,10 +7,11 @@
 			<!-- DAML DI TEMPAT LAIN -->
 			<tabs>
 				<tab id="PentabitMenu" caption="Nilai Bidang Tanah">
-					<group refID="nbt_1"/>
-					<group refID="nbt_qc"/>
+					<!-- <group refID="nbt_1"/> -->
+					<!-- <group refID="nbt_qc"/> -->
 					<group refID="nbt_2"/>
-					<group refID="backup_gdb_nbt"/>
+					<group refID="pembaruan_nbt"/>
+					<!-- <group refID="backup_gdb_nbt"/> -->
 					<!-- <group refID="nbt_layout"/> -->
 				</tab>
 				<tab id="ZNTMenu" caption="Zona Nilai Tanah">
@@ -44,6 +45,12 @@
 					<menu refID="HitungIndeksNBT" size="Medium"/>
 					<menu refID="ExportHasilPembaruan" size="Medium"/>
 					<button refID="ButtonUploadNilaiBidangTanahAnalisisPembaruanNBT" size="large"/>
+				</group>
+
+				<group id="pembaruan_nbt" caption="Pembaruan Nilai Bidang Tanah">
+					<menu refID="persiapan_data_pembaruan_nbt" size="Medium"/>
+					<menu refID="pengolahan_data_dasar_pembaruan_nbt" size="Medium" />
+
 				</group>
 				
 				<!-- <group id="nbt_qc" caption="Kontrol Kualitas Prediksi Penilaian Pertama">
@@ -335,8 +342,34 @@
 					<button refID="esri_geoprocessing__SetLokalSekunderPersil"/>
 					<button refID="esri_geoprocessing__SetLokalSetapakPersil"/>
 				</menu>
+			<!-- Menu Pembaruan NBT (Restorasi) -->
+				<menu id="persiapan_data_pembaruan_nbt" caption="Persiapan Data" extendedCaption="Persiapan Data" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\persiapan.png"
+					smallImage="C:\PenilaianTanah\icons\persiapan.png">
+					<button refID="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" size="Medium"/>
+					<button refID="ButtonUploadPetaLokasiKegiatanPembaruanNBT" size="Medium"/>
+					<button refID="ButtonUploadPetaAreaKerjaPembaruanNBT" size="Medium"/>
+					<button refID="ButtonBuatWorkspacePembaruanNBT" size="Medium"/>
 
-								<menu id="menu4_1" caption="Persiapan" extendedCaption="Persiapan" keytip="TA"         
+				</menu>
+				<menu id="pengolahan_data_dasar_pembaruan_nbt" caption="Pengolahan Data Dasar" extendedCaption="Pengolahan Data Dasar" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\persiapan.png"
+					smallImage="C:\PenilaianTanah\icons\persiapan.png">
+					<menu refID="pengolahan_data_dasar_persil_pembaruan_nbt" />
+
+				</menu>
+				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Pengolahan Persil"         
+					largeImage="C:\PenilaianTanah\icons\persiapan.png"
+					smallImage="C:\PenilaianTanah\icons\persiapan.png">
+					<button refID="ButtonIdentifikasiPerubahanPersil" size="Medium"/>
+					<button refID="ButtonHapusIndikatorPerubahanPersil" size="Medium"/>
+					<button refID="ButtonUpdateIndikatorPerubahanPersil" size="Medium"/>
+					<button refID="ButtonSetStatusPerubahanPersil" size="Medium"/>
+
+				</menu>
+
+			<!--  -->
+				<menu id="menu4_1" caption="Persiapan" extendedCaption="Persiapan" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\persiapan.png"
 					smallImage="C:\PenilaianTanah\icons\persiapan.png">
 					<button refID="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" size="Medium"/>
@@ -353,6 +386,7 @@
 					<button refID="ButtonUploadBasisDataPembaruanNBT" size="Medium"/>
 					<button refID="ButtonUploadPetaSebaranSampelPembaruanNBT" size="Medium"/>
 				</menu>
+
 				
 				<menu id="menu5_11" caption="Identifikasi Perubahan Persil" >
 					<button refID="ButtonP_IdentifikasiPerubahanPersil"/>
@@ -2029,6 +2063,64 @@
 					</args>
 					<tooltip heading="Informasi Pembaruan"></tooltip>
 				</button>
+		<!-- Button Pembaruan NBT (Restorasi) -->
+			<!-- Menu Persiapan Data -->
+				<button id="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" caption="Upload  Peta Rencana Lokasi Kegiatan (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Rencana_Lokasi_Kegiatan_AOI" name="Upload  Peta Rencana Lokasi Kegiatan (AOI)" xmlns=""/>
+					</args>
+					<tooltip heading="Upload Pembaruan NBT">Menu untuk melakukan upload Peta Rencana Lokasi Pembaruan NBT.</tooltip>
+				</button>
+
+				<button id="ButtonUploadPetaLokasiKegiatanPembaruanNBT" caption="Upload Peta Lokasi Kegiatan Disepakati (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI" name="Upload Peta Lokasi Kegiatan Disepakati (AOI)" xmlns=""/>
+					</args>
+					<tooltip heading="Upload Pembaruan NBT">Menu untuk melakukan upload Peta Lokasi Kegiatan Pembaruan NBT.</tooltip>
+				</button>
+
+				<button id="ButtonUploadPetaAreaKerjaPembaruanNBT" caption="Upload Peta Area Kerja (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Peta_Area_Kerja_AOI" name="Upload Peta Area Kerja (AOI)" xmlns=""/>
+					</args>
+					<tooltip heading="Upload Pembaruan NBT">Menu untuk melakukan upload peta area kerja yang disepakati Pembaruan NBT.</tooltip>
+				</button>
+				<button id="ButtonBuatWorkspacePembaruanNBT" caption="Buat Workspace" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Buat_Workspace_Pembaruan_NBT" name="Buat Workspace" xmlns=""/>
+					</args>
+					<tooltip heading="Buat Workspace">Menu untuk mMembuat Workspace Pembaruan NBT.</tooltip>
+				</button>
+			<!-- Menu Pengolahan Data Dasar -->
+			<!-- Pengolahan Persil -->
+				<button id="ButtonIdentifikasiPerubahanPersil" caption="Identifikasi Perubahan Persil" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Identifikasi_Perubahan_Persil" name="Identifikasi Perubahan Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Identifikasi Perubahan Persil">Menu untuk mengidentifikasi perubahan persil lama dengan persil baru.</tooltip>
+				</button>
+
+				<button id="ButtonHapusIndikatorPerubahanPersil" caption="Hapus Indikator Perubahan Persil" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Hapus_Indikator_Perubahan_Persil" name="Hapus Indikator Perubahan Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Hapus Indikator Perubahan Persil">Menu untuk menghapus feature terpilih pada layer indikator perubahan persil.</tooltip>
+				</button>
+
+				<button id="ButtonUpdateIndikatorPerubahanPersil" caption="Update Indikator Perubahan Persil" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Update_Indikator_Perubahan_Persil" name="Update Indikator Perubahan Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Update Indikator Perubahan Persil">Menu untuk memperbarui status perubahan persil berdasarkan toleransi luas.</tooltip>
+				</button>
+
+				<button id="ButtonSetStatusPerubahanPersil" caption="Set Status Perubahan Persil" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Set_Status_Perubahan_Persil" name="Set Status Perubahan Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Set Status Perubahan Persil">Menu untuk mengubah status perubahan persil menjadi tetap atau update.</tooltip>
+				</button>
+
 		<!--  -->
 
 				<!-- BUTTON UPLOAD PEMBUATAN NBT SIPENTA - START -->
@@ -2079,26 +2171,7 @@
 
 				<!-- BUTTON UPLOAD PEMBARUAN NBT SIPENTA - START -->
 
-				<button id="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" caption="Upload  Peta Rencana Lokasi Kegiatan (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Rencana_Lokasi_Kegiatan_AOI" name="Upload  Peta Rencana Lokasi Kegiatan (AOI)" xmlns=""/>
-					</args>
-					<tooltip heading="Upload ZNT">Menu untuk melakukan upload Peta Rencana Lokasi Pembaruan NBT.</tooltip>
-				</button>
-
-				<button id="ButtonUploadPetaLokasiKegiatanPembaruanNBT" caption="Upload Peta Lokasi Kegiatan Disepakati (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI" name="Upload Peta Lokasi Kegiatan Disepakati (AOI)" xmlns=""/>
-					</args>
-					<tooltip heading="Upload ZNT">Menu untuk melakukan upload Peta Lokasi Kegiatan Pembaruan NBT.</tooltip>
-				</button>
-
-				<button id="ButtonUploadPetaAreaKerjaPembaruanNBT" caption="Upload Peta Area Kerja (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Upload_Peta_Peta_Area_Kerja_AOI" name="Upload Peta Area Kerja (AOI)" xmlns=""/>
-					</args>
-					<tooltip heading="Upload ZNT">Menu untuk melakukan upload peta area kerja yang disepakati Pembaruan NBT.</tooltip>
-				</button>
+				
 
 				<button id="ButtonUploadBasisDataPembaruanNBT" caption="Upload Basis Data Penilaian Bidang Tanah Pembaruan NBT" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>

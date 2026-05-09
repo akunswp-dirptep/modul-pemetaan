@@ -25,7 +25,10 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Identifikasi_Perubahan_Persil]
+        self.tools = [Identifikasi_Perubahan_Persil, 
+                      Hapus_Indikator_Perubahan_Persil,
+                      Update_Indikator_Perubahan_Persil,
+                      Set_Status_Perubahan_Persil]
 
 
 class Identifikasi_Perubahan_Persil(object):

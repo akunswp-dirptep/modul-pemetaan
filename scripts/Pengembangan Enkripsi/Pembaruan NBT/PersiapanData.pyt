@@ -784,8 +784,7 @@ class Buat_Workspace_Pembaruan_NBT(object):
             arcpy.AddMessage("Workspace sudah terhubung di ArcGIS Pro")
         return
     
-
-class Deklarasi_Variabel(object):
+class Masukkan_Data_NBT_Sebelumnya(object):
 
     def __init__(self):
         self.label = "Deklarasi Variabel"
@@ -818,7 +817,31 @@ class Deklarasi_Variabel(object):
         daftar_variabel.parameterDependencies = [nbt_awal.name]
         daftar_variabel.filters[1].list = []
 
-        return [nbt_awal, daftar_variabel]
+        output_lama = arcpy.Parameter(
+            displayName="Output Peta Lama",
+            name="output_lama",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        output_baru = arcpy.Parameter(
+            displayName="Output Peta Baru",
+            name="output_baru",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        output_indikator = arcpy.Parameter(
+            displayName="Output Indikator",
+            name="output_indikator",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [nbt_awal, daftar_variabel, output_lama, output_baru, output_indikator]
 
     def isLicensed(self):
         return True
@@ -862,7 +885,9 @@ class Deklarasi_Variabel(object):
                     ["Jarak Fasilitas Pemerintahan", cari_field(field_names, ['JKPMRNTH', 'JK_PEM'])],    
                     ["Banjir", cari_field(field_names, ['BANJIR'])],
                     ["Longsor", cari_field(field_names, ['LONGSOR'])],
-                    ["Nilai Bidang Tanah", cari_field(field_names, ['NILAIBD'])]
+                    ["Nilai Bidang Tanah", cari_field(field_names, ['NILAIBD'])],
+                    ['NIB', cari_field(field_names, ['NIB'])],   
+                    ['IdBidang', cari_field(field_names, ['IDBIDANG'])]
                 ]
 
 
@@ -881,8 +906,6 @@ class Deklarasi_Variabel(object):
 
     def execute(self, parameters, messages):
 
-        messages.addMessage("== Proses dimulai ==")
-
         daftar_variabel = parameters[1].value
 
         if not daftar_variabel:
@@ -890,10 +913,6 @@ class Deklarasi_Variabel(object):
                 "== Daftar variabel tidak boleh kosong =="
             )
             raise arcpy.ExecuteError
-
-        # ==========================================
-        # VALIDASI DUPLIKAT
-        # ==========================================
 
         nama_variabel = []
         nama_akronim = []
@@ -934,10 +953,6 @@ class Deklarasi_Variabel(object):
                 akronim
             ])
 
-        # ==========================================
-        # SIMPAN JSON
-        # ==========================================
-
         configs = persil.get_config_values()
 
         konfigurasi_variabel_path = (
@@ -961,9 +976,247 @@ class Deklarasi_Variabel(object):
         messages.addMessage(
             "== Konfigurasi variabel berhasil disimpan =="
         )
+        
+        messages.addMessage("== Proses dimulai ==")
+
+        configs = persil.get_config_values()
+
+        dataset_path = (
+            configs["project_config"]["dataset_path"]
+        )
+
+        persil_path = (
+            configs["persil_config"]["path"]["Persil"]
+        )
+
+        konfigurasi_variabel_path = (
+            configs["project_config"]["daftar_variabel_path"]
+        )
+
+        appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.dirname(
+                os.path.realpath(__file__)
+            )))))
+
+        peta_lama_input = parameters[0].valueAsText
+        fields_dont_delete = []
+
+        if os.path.exists(konfigurasi_variabel_path):
+
+            with open(konfigurasi_variabel_path, "r" ) as conf_file:
+                json_variabel = json.load(conf_file)
+
+            daftar_variabel = json_variabel.get("daftar_variabel", [])
+
+            for row in daftar_variabel:
+                if len(row) < 2:
+                    continue
+                akronim = row[1]
+                fields_dont_delete.append(akronim)
+                fields_dont_delete.append("s_" + akronim)
+
+        # =====================================================
+        # MEMORY WORKSPACE
+        # =====================================================
+
+        dest_lama_path = r"in_memory\PersilPetaLama"
+        dest_baru_path = r"in_memory\PersilPetaBaru"
+
+        temp_lama_path = r"in_memory\Peta_Temp_Lama"
+        temp_baru_path = r"in_memory\Peta_Temp_Baru"
+
+        peta_indikator_temp = r"in_memory\Indikator_Perubahan"
+        peta_indikator = r"Indikator_Perubahan_Persil"
+
+        peta_indikator_path = os.path.join(
+            dataset_path,
+            peta_indikator
+        )
+
+        memory_layers = [
+            dest_lama_path,
+            dest_baru_path,
+            temp_lama_path,
+            temp_baru_path,
+            peta_indikator_temp
+        ]
+
+        for lyr in memory_layers:
+            if arcpy.Exists(lyr):
+                try:
+                    arcpy.management.Delete(lyr)
+                except Exception as e:
+                    arcpy.AddWarning(str(e))
+
+        arcpy.management.CopyFeatures(
+            peta_lama_input,
+            dest_lama_path
+        )
+
+        arcpy.management.CopyFeatures(
+            persil_path,
+            dest_baru_path
+        )
+
+        def bersihkan_field(fc):
+            fields = arcpy.ListFields(fc)
+            for f in fields:
+                if not (
+                    f.type == "Geometry"
+                    or f.type == "OID"
+                    or "shape" in f.name.lower()
+                    or f.name in fields_dont_delete
+                    or f.name == "FID"
+                ):
+                    try:
+                        arcpy.management.DeleteField(fc, f.name)
+                    except Exception as e:
+                        arcpy.AddWarning(str(e))
+
+        bersihkan_field(dest_lama_path)
+        bersihkan_field(dest_baru_path)
+
+        for fc in [ dest_lama_path, dest_baru_path ]:
+
+            field_names = [
+                f.name
+                for f in arcpy.ListFields(fc)
+            ]
+
+            if "ls_asal" not in field_names:
+
+                arcpy.management.AddField(
+                    fc,
+                    "ls_asal",
+                    "DOUBLE"
+                )
+
+            arcpy.management.CalculateField(
+                fc,
+                "ls_asal",
+                "!shape.area!",
+                "PYTHON3"
+            )
+
+        arcpy.management.MakeFeatureLayer(
+            dest_lama_path,
+            "PetaLamaLayer_Temp"
+        )
+
+        arcpy.management.SelectLayerByLocation(
+            "PetaLamaLayer_Temp",
+            "CONTAINS",
+            dest_baru_path,
+            selection_type="NEW_SELECTION",
+            invert_spatial_relationship="INVERT"
+        )
+
+        arcpy.management.CopyFeatures(
+            "PetaLamaLayer_Temp",
+            temp_lama_path
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            dest_baru_path,
+            "PetaBaruLayer_Temp"
+        )
+
+        arcpy.management.SelectLayerByLocation(
+            "PetaBaruLayer_Temp",
+            "CONTAINS",
+            dest_lama_path,
+            selection_type="NEW_SELECTION",
+            invert_spatial_relationship="INVERT"
+        )
+
+        arcpy.management.CopyFeatures(
+            "PetaBaruLayer_Temp",
+            temp_baru_path
+        )
+
+        arcpy.management.Merge([temp_baru_path, temp_lama_path], peta_indikator_temp)
+
+        field_names = [f.name  for f in arcpy.ListFields(peta_indikator_temp)]
+
+        if "indikator_perubahan" not in field_names:
+            arcpy.management.AddField(
+                peta_indikator_temp,
+                "indikator_perubahan",
+                "TEXT"
+            )
+
+        with arcpy.da.UpdateCursor( peta_indikator_temp, ["indikator_perubahan"] ) as cursor:
+            for row in cursor:
+                row[0] = "Indikator Periksa"
+                cursor.updateRow(row)
+
+        if arcpy.Exists(peta_indikator_path):
+            try:
+                arcpy.management.Delete(peta_indikator_path)
+            except:
+                pass
+
+        arcpy.management.CopyFeatures(
+            peta_indikator_temp,
+            peta_indikator_path
+        )
+
+        messages.addMessage("== Menerapkan Simbologi ==")
+        
+        simbology_folder = os.path.join(
+            appdata,
+            'ui',
+            'symbology',
+            'Nilai Bidang Tanah'
+        )
+
+
+        # 1. Peta Indikator
+        lyr_indikator = arcpy.management.MakeFeatureLayer(
+            peta_indikator_path,
+            "Indikator_Perubahan_Persil"
+        )[0] # Ambil objek layer dari Result object
+
+
+
+        # 2. Peta Lama
+
+        saved_old_layer = os.path.join(dataset_path, "Persil_Lama")
+        arcpy.management.CopyFeatures(
+            dest_lama_path,
+            saved_old_layer
+        )
+
+        lyr_lama = arcpy.management.MakeFeatureLayer(
+            saved_old_layer,
+            "Persil_Lama"
+        )[0]
+
+
+
+        # 3. Peta Baru
+        saved_new_layer = os.path.join(dataset_path, "Persil_Baru")
+        arcpy.management.CopyFeatures(
+            dest_baru_path,
+            saved_new_layer
+        )
+        lyr_baru = arcpy.management.MakeFeatureLayer(
+            saved_new_layer,
+            "Persil_Baru"
+        )[0]
+
+
+        # =====================================================
+        # OUTPUT PARAMETER
+        # =====================================================
+        # Gunakan objek layer secara langsung agar simbologi yang sudah di-apply terbawa
+        
+        parameters[1].value = lyr_lama
+        parameters[2].value = lyr_baru
+        parameters[3].value = lyr_indikator
 
         messages.addMessage(
-            konfigurasi_variabel_path
+            "== Proses selesai =="
         )
 
         messages.addMessage("== Proses selesai ==")

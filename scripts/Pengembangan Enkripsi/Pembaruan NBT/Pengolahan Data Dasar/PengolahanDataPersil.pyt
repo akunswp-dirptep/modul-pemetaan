@@ -28,7 +28,9 @@ class Toolbox:
         self.tools = [Identifikasi_Perubahan_Persil, 
                       Hapus_Indikator_Perubahan_Persil,
                       Update_Indikator_Perubahan_Persil,
-                      Set_Status_Perubahan_Persil]
+                      Set_Status_Perubahan_Persil,
+                      Persil_Cluster,
+                      Reset_Persil_Cluster]
 
 
 class Identifikasi_Perubahan_Persil(object):
@@ -1224,6 +1226,557 @@ class Set_Status_Perubahan_Persil(object):
         messages.addMessage(
             "== Status berhasil diperbarui =="
         )
+
+        messages.addMessage(
+            "== Proses selesai =="
+        )
+
+        return
+
+class Persil_Cluster(object):
+
+    def __init__(self):
+
+        self.label = "Persil Cluster"
+        self.description = ""
+        self.canRunInBackground = False
+
+    # =====================================================
+    # PARAMETER
+    # =====================================================
+
+    def getParameterInfo(self):
+
+        param_cluster = arcpy.Parameter(
+            displayName="Nomor Cluster",
+            name="cluster_update",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        output_layer = arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [
+            param_cluster,
+            output_layer
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(
+        self,
+        parameters
+    ):
+        return
+
+    def updateMessages(
+        self,
+        parameters
+    ):
+        return
+
+    # =====================================================
+    # HELPER
+    # =====================================================
+
+    def delete_if_exists(
+        self,
+        path
+    ):
+
+        if arcpy.Exists(path):
+
+            try:
+
+                arcpy.management.Delete(
+                    path
+                )
+
+            except Exception:
+
+                pass
+
+    def add_field_if_not_exists(
+        self,
+        feature_class,
+        field_name,
+        field_type
+    ):
+
+        field_names = [
+            field.name
+            for field in arcpy.ListFields(
+                feature_class
+            )
+        ]
+
+        if field_name not in field_names:
+
+            arcpy.management.AddField(
+                feature_class,
+                field_name,
+                field_type
+            )
+
+    # =====================================================
+    # EXECUTE
+    # =====================================================
+
+    def execute(
+        self,
+        parameters,
+        messages
+    ):
+
+        import os
+        import arcpy
+
+        arcpy.env.overwriteOutput = True
+
+        messages.addMessage(
+            "== Proses dimulai =="
+        )
+
+        # =================================================
+        # PARAMETER
+        # =================================================
+
+        cluster_update = int(
+            parameters[0].value
+        )
+
+        # =================================================
+        # CONFIG
+        # =================================================
+
+        configs = (
+            persil.get_config_values()
+        )
+
+        dataset_path = (
+            configs["project_config"]["dataset_path"]
+        )
+
+        # =================================================
+        # APPDATA
+        # =================================================
+
+        appdata = os.path.dirname(
+            os.path.dirname(
+                os.path.realpath(__file__)
+            )
+        )
+
+        # =================================================
+        # DATASET
+        # =================================================
+
+        persil_name = (
+            "Indikator_Perubahan_Persil"
+        )
+
+        persil_path = os.path.join(
+            dataset_path,
+            persil_name
+        )
+
+        # =================================================
+        # VALIDASI
+        # =================================================
+
+        if not arcpy.Exists(
+            persil_path
+        ):
+
+            messages.addErrorMessage(
+                (
+                    "Feature class "
+                    "Indikator_Perubahan_Persil "
+                    "tidak ditemukan"
+                )
+            )
+
+            raise arcpy.ExecuteError
+
+        # =================================================
+        # VALIDASI SELEKSI
+        # =================================================
+
+        selected_count = len(
+            arcpy.Describe(
+                persil_name
+            ).FIDSet
+        )
+
+        if selected_count <= 0:
+
+            messages.addWarningMessage(
+                (
+                    "Tidak ada "
+                    "fitur yang dipilih"
+                )
+            )
+
+            return
+
+        # =================================================
+        # FIELD CLUSTER
+        # =================================================
+
+        self.add_field_if_not_exists(
+            persil_path,
+            "clusternew",
+            "SHORT"
+        )
+
+        # =================================================
+        # UPDATE CLUSTER
+        # =================================================
+
+        messages.addMessage(
+            (
+                f"== Update cluster "
+                f"{cluster_update} =="
+            )
+        )
+
+        updated_count = 0
+
+        with arcpy.da.UpdateCursor(
+            persil_name,
+            ["clusternew"]
+        ) as cursor:
+
+            for row in cursor:
+
+                row[0] = (
+                    cluster_update
+                )
+
+                cursor.updateRow(
+                    row
+                )
+
+                updated_count += 1
+
+        messages.addMessage(
+            (
+                f"{updated_count} "
+                f"fitur berhasil "
+                f"diupdate"
+            )
+        )
+
+        # =================================================
+        # REFRESH LAYER
+        # =================================================
+
+        self.delete_if_exists(
+            persil_name
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            persil_path,
+            persil_name
+        )
+
+        # =================================================
+        # APPLY SYMBOLOGY
+        # =================================================
+
+        simbologi_path = os.path.join(
+            appdata,
+            "Indikator_Perubahan_Persil.lyrx"
+        )
+
+        if os.path.exists(
+            simbologi_path
+        ):
+
+            arcpy.management.ApplySymbologyFromLayer(
+                persil_name,
+                simbologi_path
+            )
+
+        # =================================================
+        # OUTPUT
+        # =================================================
+
+        parameters[1].value = (
+            persil_name
+        )
+
+        # =================================================
+        # FINISH
+        # =================================================
+
+        messages.addMessage(
+            "== Proses selesai =="
+        )
+
+        return
+
+class Reset_Persil_Cluster(object):
+
+    def __init__(self):
+
+        self.label = (
+            "Reset Persil Cluster"
+        )
+
+        self.description = ""
+        self.canRunInBackground = False
+
+    # =====================================================
+    # PARAMETER
+    # =====================================================
+
+    def getParameterInfo(self):
+
+        output_layer = arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [output_layer]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(
+        self,
+        parameters
+    ):
+        return
+
+    def updateMessages(
+        self,
+        parameters
+    ):
+        return
+
+    # =====================================================
+    # HELPER
+    # =====================================================
+
+    def delete_if_exists(
+        self,
+        path
+    ):
+
+        if arcpy.Exists(path):
+
+            try:
+
+                arcpy.management.Delete(
+                    path
+                )
+
+            except Exception:
+
+                pass
+
+    # =====================================================
+    # EXECUTE
+    # =====================================================
+
+    def execute(
+        self,
+        parameters,
+        messages
+    ):
+
+        import os
+        import arcpy
+
+        arcpy.env.overwriteOutput = True
+
+        messages.addMessage(
+            "== Proses dimulai =="
+        )
+
+        # =================================================
+        # CONFIG
+        # =================================================
+
+        configs = (
+            persil.get_config_values()
+        )
+
+        dataset_path = (
+            configs["project_config"]["dataset_path"]
+        )
+
+        # =================================================
+        # APPDATA
+        # =================================================
+
+        appdata = os.path.dirname(
+            os.path.dirname(
+                os.path.realpath(__file__)
+            )
+        )
+
+        # =================================================
+        # DATASET
+        # =================================================
+
+        persil_name = (
+            "Indikator_Perubahan_Persil"
+        )
+
+        persil_path = os.path.join(
+            dataset_path,
+            persil_name
+        )
+
+        # =================================================
+        # VALIDASI
+        # =================================================
+
+        if not arcpy.Exists(
+            persil_path
+        ):
+
+            messages.addErrorMessage(
+                (
+                    "Feature class "
+                    "Indikator_Perubahan_Persil "
+                    "tidak ditemukan"
+                )
+            )
+
+            raise arcpy.ExecuteError
+
+        # =================================================
+        # VALIDASI SELEKSI
+        # =================================================
+
+        selected_count = len(
+            arcpy.Describe(
+                persil_name
+            ).FIDSet
+        )
+
+        if selected_count <= 0:
+
+            messages.addWarningMessage(
+                (
+                    "Tidak ada "
+                    "fitur yang dipilih"
+                )
+            )
+
+            return
+
+        # =================================================
+        # VALIDASI FIELD
+        # =================================================
+
+        field_names = [
+            field.name
+            for field in arcpy.ListFields(
+                persil_path
+            )
+        ]
+
+        if "clusternew" not in field_names:
+
+            messages.addWarningMessage(
+                (
+                    "Field clusternew "
+                    "tidak ditemukan"
+                )
+            )
+
+            return
+
+        # =================================================
+        # RESET CLUSTER
+        # =================================================
+
+        messages.addMessage(
+            "== Reset cluster =="
+        )
+
+        updated_count = 0
+
+        with arcpy.da.UpdateCursor(
+            persil_name,
+            ["clusternew"]
+        ) as cursor:
+
+            for row in cursor:
+
+                row[0] = None
+
+                cursor.updateRow(
+                    row
+                )
+
+                updated_count += 1
+
+        messages.addMessage(
+            (
+                f"{updated_count} "
+                f"fitur berhasil "
+                f"direset"
+            )
+        )
+
+        # =================================================
+        # REFRESH LAYER
+        # =================================================
+
+        self.delete_if_exists(
+            persil_name
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            persil_path,
+            persil_name
+        )
+
+        # =================================================
+        # APPLY SYMBOLOGY
+        # =================================================
+
+        simbologi_path = os.path.join(
+            appdata,
+            "Indikator_Perubahan_Persil.lyrx"
+        )
+
+        if os.path.exists(
+            simbologi_path
+        ):
+
+            arcpy.management.ApplySymbologyFromLayer(
+                persil_name,
+                simbologi_path
+            )
+
+        # =================================================
+        # OUTPUT
+        # =================================================
+
+        parameters[0].value = (
+            persil_name
+        )
+
+        # =================================================
+        # FINISH
+        # =================================================
 
         messages.addMessage(
             "== Proses selesai =="

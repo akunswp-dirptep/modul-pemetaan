@@ -89,10 +89,6 @@ class Identifikasi_Perubahan_Persil(object):
 
     def execute(self, parameters, messages):
 
-        import arcpy
-        import os
-        import json
-
         arcpy.env.overwriteOutput = True
 
         messages.addMessage("== Proses dimulai ==")
@@ -118,8 +114,7 @@ class Identifikasi_Perubahan_Persil(object):
         appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
             os.path.dirname(
                 os.path.realpath(__file__)
-            ))))
-        )
+            )))))
 
         # =====================================================
         # PARAMETER
@@ -170,14 +165,14 @@ class Identifikasi_Perubahan_Persil(object):
         # MEMORY WORKSPACE
         # =====================================================
 
-        dest_lama_path = r"memory\PersilPetaLama"
-        dest_baru_path = r"memory\PersilPetaBaru"
+        dest_lama_path = r"in_memory\PersilPetaLama"
+        dest_baru_path = r"in_memory\PersilPetaBaru"
 
-        temp_lama_path = r"memory\Peta_Temp_Lama"
-        temp_baru_path = r"memory\Peta_Temp_Baru"
+        temp_lama_path = r"in_memory\Peta_Temp_Lama"
+        temp_baru_path = r"in_memory\Peta_Temp_Baru"
 
         peta_indikator_temp = (
-            r"memory\Indikator_Perubahan"
+            r"in_memory\Indikator_Perubahan"
         )
 
         # =====================================================
@@ -320,11 +315,11 @@ class Identifikasi_Perubahan_Persil(object):
 
         arcpy.management.MakeFeatureLayer(
             dest_lama_path,
-            "PetaLamaLayer"
+            "PetaLamaLayer_Temp"
         )
 
         arcpy.management.SelectLayerByLocation(
-            "PetaLamaLayer",
+            "PetaLamaLayer_Temp",
             "CONTAINS",
             dest_baru_path,
             selection_type="NEW_SELECTION",
@@ -332,17 +327,17 @@ class Identifikasi_Perubahan_Persil(object):
         )
 
         arcpy.management.CopyFeatures(
-            "PetaLamaLayer",
+            "PetaLamaLayer_Temp",
             temp_lama_path
         )
 
         arcpy.management.MakeFeatureLayer(
             dest_baru_path,
-            "PetaBaruLayer"
+            "PetaBaruLayer_Temp"
         )
 
         arcpy.management.SelectLayerByLocation(
-            "PetaBaruLayer",
+            "PetaBaruLayer_Temp",
             "CONTAINS",
             dest_lama_path,
             selection_type="NEW_SELECTION",
@@ -350,7 +345,7 @@ class Identifikasi_Perubahan_Persil(object):
         )
 
         arcpy.management.CopyFeatures(
-            "PetaBaruLayer",
+            "PetaBaruLayer_Temp",
             temp_baru_path
         )
 
@@ -459,6 +454,8 @@ class Identifikasi_Perubahan_Persil(object):
         # =====================================================
         # SYMBOLOGY
         # =====================================================
+        messages.addMessage("== Menerapkan Simbologi ==")
+        
         simbology_folder = os.path.join(
             appdata,
             'ui',
@@ -466,81 +463,65 @@ class Identifikasi_Perubahan_Persil(object):
             'Nilai Bidang Tanah'
         )
 
-        arcpy.AddMessage(simbology_folder)
-
+        # Path file layer (.lyrx)
         sim_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Layer_2B.lyrx"
+        sim_pathbaru = os.path.join(simbology_folder, "SimbologiPetaUpdate.lyrx")
+        sim_pathlama = os.path.join(simbology_folder, "SimbologiPetaLama.lyrx")
 
-        sim_pathbaru = os.path.join(
-            simbology_folder,
-            "SimbologiPetaUpdate.lyrx"
-        )
-
-        sim_pathlama = os.path.join(
-            simbology_folder,
-            "SimbologiPetaLama.lyrx"
-        )
-
-        if arcpy.Exists(
-            "Indikator_Perubahan_Persil"
-        ):
-
-            arcpy.management.Delete(
-                "Indikator_Perubahan_Persil"
-            )
-
-        arcpy.management.MakeFeatureLayer(
+        # 1. Peta Indikator
+        lyr_indikator = arcpy.management.MakeFeatureLayer(
             peta_indikator_path,
             "Indikator_Perubahan_Persil"
-        )
+        )[0] # Ambil objek layer dari Result object
 
-        arcpy.management.ApplySymbologyFromLayer(
-                "Indikator_Perubahan_Persil",
-                sim_path
-            )
+        if os.path.exists(sim_path):
+            arcpy.management.ApplySymbologyFromLayer(lyr_indikator, sim_path)
+        else:
+            messages.addWarningMessage(f"File simbologi tidak ditemukan: {sim_path}")
 
-        if arcpy.Exists("Peta_Lama"):
+        # 2. Peta Lama
 
-            arcpy.management.Delete(
-                "Peta_Lama"
-            )
-
-        arcpy.management.MakeFeatureLayer(
+        saved_old_layer = os.path.join(dataset_path, "Persil_Lama")
+        arcpy.management.CopyFeatures(
             dest_lama_path,
-            "Peta_Lama"
+            saved_old_layer
         )
+
+        lyr_lama = arcpy.management.MakeFeatureLayer(
+            saved_old_layer,
+            "Persil_Lama"
+        )[0]
+
 
         if os.path.exists(sim_pathlama):
+            arcpy.management.ApplySymbologyFromLayer(lyr_lama, sim_pathlama)
+        else:
+            messages.addWarningMessage(f"File simbologi tidak ditemukan: {sim_pathlama}")
 
-            arcpy.management.ApplySymbologyFromLayer(
-                "Peta_Lama",
-                sim_pathlama
-            )
-
-        if arcpy.Exists("Peta_Baru"):
-
-            arcpy.management.Delete(
-                "Peta_Baru"
-            )
-
-        arcpy.management.MakeFeatureLayer(
+        # 3. Peta Baru
+        saved_new_layer = os.path.join(dataset_path, "Persil_Baru")
+        arcpy.management.CopyFeatures(
             dest_baru_path,
-            "Peta_Baru"
+            saved_new_layer
         )
+        lyr_baru = arcpy.management.MakeFeatureLayer(
+            saved_new_layer,
+            "Persil_Baru"
+        )[0]
 
         if os.path.exists(sim_pathbaru):
-
-            arcpy.management.ApplySymbologyFromLayer(
-                "Peta_Baru",
-                sim_pathbaru
-            )
+            arcpy.management.ApplySymbologyFromLayer(lyr_baru, sim_pathbaru)
+        else:
+            messages.addWarningMessage(f"File simbologi tidak ditemukan: {sim_pathbaru}")
 
         # =====================================================
         # OUTPUT PARAMETER
         # =====================================================
-
-        parameters[1].value = "Peta_Lama"
-        parameters[2].value = "Peta_Baru"
-        arcpy.SetParameter(3, "Indikator_Perubahan_Persil")
+        # Gunakan objek layer secara langsung agar simbologi yang sudah di-apply terbawa
+        
+        parameters[1].value = lyr_lama
+        parameters[2].value = lyr_baru
+        parameters[3].value = lyr_indikator
 
         messages.addMessage(
             "== Proses selesai =="
@@ -577,9 +558,6 @@ class Hapus_Indikator_Perubahan_Persil(object):
         return
 
     def execute(self, parameters, messages):
-
-        import arcpy
-        import os
 
         messages.addMessage(
             "== Proses dimulai =="
@@ -743,8 +721,8 @@ class Update_Indikator_Perubahan_Persil(object):
         # DATASET
         # =====================================================
 
-        peta_baru = "PersilPetaBaru"
-        peta_lama = "PersilPetaLama"
+        peta_baru = "Persil_Baru"
+        peta_lama = "Persil_Lama"
         peta_indikator = (
             "Indikator_Perubahan_Persil"
         )
@@ -759,15 +737,15 @@ class Update_Indikator_Perubahan_Persil(object):
         # =====================================================
 
         peta_indikator_update_path = (
-            r"memory\Peta_Indikator_Update"
+            r"in_memory\Peta_Indikator_Update"
         )
 
         peta_indikator_lama_path = (
-            r"memory\Peta_Indikator_Lama"
+            r"in_memory\Peta_Indikator_Lama"
         )
 
         peta_indikator_akhir_path = (
-            r"memory\Indikator_Akhir"
+            r"in_memory\Indikator_Akhir"
         )
 
         peta_update_path = os.path.join(
@@ -810,13 +788,22 @@ class Update_Indikator_Perubahan_Persil(object):
         )
 
         arcpy.analysis.SpatialJoin(
-            peta_indikator_path,
-            peta_update_path,
-            peta_indikator_update_path,
-            "JOIN_ONE_TO_ONE",
-            "KEEP_ALL",
-            match_option="INTERSECT"
-        )
+            peta_indikator_path, 
+            peta_update_path, 
+            peta_indikator_update_path, 
+                           "JOIN_ONE_TO_ONE", "KEEP_ALL", 
+                           "OBJECTID \"OBJECTID\" true true false 9 Long 0 9 ,First,#," + 
+                           peta_indikator_path + ",OBJECTID,-1,-1;NIB \"NIB\" true true false 5 Long 0 0 ,First,#," + 
+                           peta_indikator_path + ",NIB,-1,-1;IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#," + 
+                           peta_indikator_path + ",IdBidang,-1,-1;Predicted \"Predicted\" true true false 19 Double 0 0 ,First,#," + 
+                           peta_indikator_path + ",Predicted,-1,-1;Shape_Area \"Shape_Area\" true true false 19 Double 0 0 ,First,#," + 
+                           peta_indikator_path + ",Shape_Area,-1,-1;ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#," + 
+                           peta_indikator_path + ",ls_asal,-1,-1;ls_tnh \"ls_tnh\" true true false 19 Double 0 0 ,First,#," + 
+                           peta_indikator_path + ",ls_tnh,-1,-1;sim_sts_2b \"sim_sts_2b\" true true false 254 Text 0 0 ,First,#," + 
+                           peta_indikator_path + ",sim_sts_2b,-1,-1;ls_dr_baru \"ls_dr_baru\" true true false 50 Double 0 0 ,First,#," + 
+                           peta_update_path + ",ls_asal,-1,-1; cluster \"cluster\" true true false 2 Short 0 0,First,#," + 
+                           #peta_indikator_update_path + ",cluster,-1,-1", "WITHIN", "", "")
+                           peta_indikator_update_path + ",cluster,-1,-1", "INTERSECT", "", "")
 
         list_field_update = [
             f.name
@@ -897,13 +884,20 @@ def get(b, toleransi):
         )
 
         arcpy.analysis.SpatialJoin(
-            peta_indikator_path,
-            peta_lama_path,
+            peta_indikator_path, 
+            peta_lama_path, 
             peta_indikator_lama_path,
-            "JOIN_ONE_TO_ONE",
-            "KEEP_ALL",
-            match_option="INTERSECT"
-        )
+                           "JOIN_ONE_TO_ONE", "KEEP_ALL", "OBJECTID \"OBJECTID\" true true false 9 Long 0 9 ,First,#," +
+                           peta_indikator_path + ",OBJECTID,-1,-1;NIB \"NIB\" true true false 5 Long 0 0 ,First,#," +
+                           peta_indikator_path + ",NIB,-1,-1;IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#," +
+                           peta_indikator_path + ",IdBidang,-1,-1;Predicted \"Predicted\" true true false 19 Double 0 0 ,First,#," +
+                           peta_indikator_path + ",Predicted,-1,-1;Shape_Area \"Shape_Area\" true true false 19 Double 0 0 ,First,#," +
+                           peta_indikator_path + ",Shape_Area,-1,-1;ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#," +
+                           peta_indikator_path + ",ls_asal,-1,-1;ls_tnh \"ls_tnh\" true true false 19 Double 0 0 ,First,#," +
+                           peta_indikator_path + ",ls_tnh,-1,-1;sim_sts_2b \"sim_sts_2b\" true true false 254 Text 0 0 ,First,#," +
+                           peta_indikator_path + ",sim_sts_2b,-1,-1;ls_dr_lama \"ls_dr_lama\" true true false 50 Double 0 0 ,First,#," +
+                           #peta_lama_path + ",ls_asal,-1,-1", "WITHIN", "", "")
+                           peta_lama_path + ",ls_asal,-1,-1", "INTERSECT", "", "")
 
         list_field_lama = [
             f.name
@@ -997,14 +991,23 @@ def get(b, toleransi):
                 "SHORT"
             )
 
-        arcpy.analysis.SpatialJoin(
-            peta_indikator_lama_path,
-            peta_indikator_update_path,
-            peta_indikator_akhir_path,
-            "JOIN_ONE_TO_ONE",
-            "KEEP_COMMON",
-            match_option="WITHIN"
-        )
+        arcpy.analysis.SpatialJoin(peta_indikator_lama_path, 
+                                   peta_indikator_update_path, 
+                           peta_indikator_akhir_path, "JOIN_ONE_TO_ONE", "KEEP_COMMON", 
+                           "NIB \"NIB\" true true false 5 Long 0 0 ,First,#," + 
+                           peta_indikator_lama_path + ",NIB,-1,-1;IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#," + 
+                           peta_indikator_lama_path + ",IdBidang,-1,-1;ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#," + 
+                           peta_indikator_lama_path + ",ls_asal,-1,-1;sim_sts_2b \"sim_sts_2b\" true true false 254 Text 0 0 ,First,#," + 
+                           peta_indikator_lama_path + ",sim_sts_2b,-1,-1;ls_dr_lama \"ls_dr_lama\" true true false 19 Double 0 0 ,First,#," + 
+                           peta_lama_path + ",ls_asal,-1,-1;sts_per_la \"sts_per_la\" true true false 254 Text 0 0 ,First,#," + 
+                           peta_indikator_lama_path + ",sts_persil,-1,-1;selisih_la \"selisih_la\" true true false 19 Double 0 0 ,First,#," + 
+                           peta_indikator_lama_path + ",selisih_ba,-1,-1;ls_dr_baru \"ls_dr_baru\" true true false 50 Double 0 0 ,First,#," + 
+                           peta_indikator_update_path + ",ls_dr_baru,-1,-1;sts_per_ba \"sts_per_ba\" true true false 50 Text 0 0 ,First,#," + 
+                           peta_indikator_update_path + ",sts_persil,-1,-1;selisih_up \"selisih_up\" true true false 50 Double 0 0 ,First,#," + 
+                           peta_indikator_update_path + ",selisih_ba,-1,-1;cluster \"cluster\" true true false 2 Short 0 0,First,#," + 
+                           peta_indikator_update_path + ",cluster,-1,-1", "WITHIN", "", "")
+                           #peta_indikator_update_path + ",cluster,-1,-1", "INTERSECT", "", "")
+
 
         list_field_akhir = [
             f.name
@@ -1162,24 +1165,13 @@ class Set_Status_Perubahan_Persil(object):
 
     def execute(self, parameters, messages):
 
-        import arcpy
-        import os
-
         arcpy.env.overwriteOutput = True
 
         messages.addMessage(
             "== Proses dimulai =="
         )
 
-        # =====================================================
-        # PARAMETER
-        # =====================================================
-
         val = parameters[0].valueAsText
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
 
         configs = persil.get_config_values()
 
@@ -1187,18 +1179,10 @@ class Set_Status_Perubahan_Persil(object):
             configs["project_config"]["dataset_path"]
         )
 
-        # =====================================================
-        # DATASET
-        # =====================================================
-
         status_per = os.path.join(
             dataset_path,
             "Indikator_Perubahan_Persil"
         )
-
-        # =====================================================
-        # VALIDASI DATASET
-        # =====================================================
 
         if not arcpy.Exists(
             status_per
@@ -1210,9 +1194,6 @@ class Set_Status_Perubahan_Persil(object):
 
             raise arcpy.ExecuteError
 
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
 
         sampel_fields = [
             f.name
@@ -1228,10 +1209,6 @@ class Set_Status_Perubahan_Persil(object):
             )
 
             raise arcpy.ExecuteError
-
-        # =====================================================
-        # UPDATE FIELD
-        # =====================================================
 
         messages.addMessage(
             "== Mengupdate status perubahan persil =="

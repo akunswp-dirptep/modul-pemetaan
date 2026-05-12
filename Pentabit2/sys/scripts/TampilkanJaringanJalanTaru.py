@@ -74,12 +74,7 @@ if "status_jal" not in list_names:
 
 arcpy.CalculateField_management(jaringan_jalan_path, "status_jal", "'Tetap'", "PYTHON")
 
-# with arcpy.da.UpdateCursor(jaringan_jalan_path, "status_jal") as cur:
-#     for row in cur:
-#         if row[0] != "Update":
-#             row[0] = "Tetap"
-#             cur.updateRow(row)
-
+# t
 arcpy.AddMessage("== Pindahkan shapefile ==")
 
 # if arcpy.Exists(out_path):

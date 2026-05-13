@@ -87,131 +87,26 @@ class Persiapan_Jaringan_Jalan_Update(object):
     def updateMessages(self, parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
+        in_jaringan_jalan=parameters[0].valueAsText
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
+        jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        jaringan_jalan="Jaringan_Jalan"
+        peta_baru="Persil_Baru"
+        peta_baru_path=os.path.join(dataset_path,peta_baru)
+        JaringanJalanTopoUpdate="Topo_Jaringan_Jalan_Update"
+        JaringanJalanTopoAwal="TopologiJaringanJalan"
+        JaringanJalanTopoTaru="Topo_Jaringan_Jalan_Taru"
+        JaringanJalanTopoKonsol="Topo_Jaringan_Jalan_Konsolidasi"
 
-        import arcpy
-        import os
+        jarjaltop_update_path=os.path.join(dataset_path,JaringanJalanTopoUpdate)
+        jarjaltop_awal_path=os.path.join(dataset_path,JaringanJalanTopoAwal)
+        jarjaltop_taru_path=os.path.join(dataset_path,JaringanJalanTopoTaru)
+        jarjaltop_konsol_path=os.path.join(dataset_path,JaringanJalanTopoKonsol)
 
-        arcpy.env.overwriteOutput = True
-
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =====================================================
-        # PARAMETER
-        # =====================================================
-
-        in_jaringan_jalan = (
-            parameters[0].valueAsText
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        jaringan_jalan_path = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
-
-        # =====================================================
-        # DATASET
-        # =====================================================
-
-        jaringan_jalan = (
-            "Jaringan_Jalan"
-        )
-
-        peta_baru = (
-            "Persil_Baru"
-        )
-
-        peta_baru_path = os.path.join(
-            dataset_path,
-            peta_baru
-        )
-
-        JaringanJalanTopoUpdate = (
-            "Topo_Jaringan_Jalan_Update"
-        )
-
-        JaringanJalanTopoAwal = (
-            "TopologiJaringanJalan"
-        )
-
-        JaringanJalanTopoTaru = (
-            "Topo_Jaringan_Jalan_Taru"
-        )
-
-        JaringanJalanTopoKonsol = (
-            "Topo_Jaringan_Jalan_Konsolidasi"
-        )
-
-        jarjaltop_update_path = os.path.join(
-            dataset_path,
-            JaringanJalanTopoUpdate
-        )
-
-        jarjaltop_awal_path = os.path.join(
-            dataset_path,
-            JaringanJalanTopoAwal
-        )
-
-        jarjaltop_taru_path = os.path.join(
-            dataset_path,
-            JaringanJalanTopoTaru
-        )
-
-        jarjaltop_konsol_path = os.path.join(
-            dataset_path,
-            JaringanJalanTopoKonsol
-        )
-
-        # =====================================================
-        # SYMBOLOGY
-        # =====================================================
-
-        sim_jaringan_jalan = os.path.join(
-            appdata,
-            "SimbologiJaringanJalanUpdate.lyr"
-        )
-
-        sim_persil = os.path.join(
-            appdata,
-            "SimbologiPetaPersil.lyr"
-        )
-
-        # =====================================================
-        # SIMPAN KE GDB
-        # =====================================================
-
-        messages.addMessage(
-            "== Simpan input jaringan jalan ke geodatabase =="
-        )
-
-        if (
-            os.path.normpath(
-                jaringan_jalan_path
-            )
-            !=
-            os.path.normpath(
-                in_jaringan_jalan
-            )
-        ):
-
-            delete_list = [
+        if os.path.normpath(jaringan_jalan_path)!=os.path.normpath(in_jaringan_jalan):
+            delete_list=[
                 jarjaltop_update_path,
                 jarjaltop_awal_path,
                 jarjaltop_taru_path,
@@ -220,13 +115,9 @@ class Persiapan_Jaringan_Jalan_Update(object):
             ]
 
             for item in delete_list:
-
                 if arcpy.Exists(item):
-
                     try:
-                        arcpy.management.Delete(
-                            item
-                        )
+                        arcpy.management.Delete(item)
                     except:
                         pass
 
@@ -236,23 +127,11 @@ class Persiapan_Jaringan_Jalan_Update(object):
                 jaringan_jalan
             )
 
-        # =====================================================
-        # TAMBAH FIELD STATUS
-        # =====================================================
+        messages.addMessage("== Tambah field status_jal ==")
 
-        messages.addMessage(
-            "== Tambah field status_jal =="
-        )
-
-        list_names = [
-            f.name
-            for f in arcpy.ListFields(
-                jaringan_jalan_path
-            )
-        ]
+        list_names=[f.name for f in arcpy.ListFields(jaringan_jalan_path)]
 
         if "status_jal" not in list_names:
-
             arcpy.management.AddField(
                 jaringan_jalan_path,
                 "status_jal",
@@ -266,18 +145,9 @@ class Persiapan_Jaringan_Jalan_Update(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # LAYER JARINGAN JALAN
-        # =====================================================
-
-        if arcpy.Exists(
-            jaringan_jalan
-        ):
-
+        if arcpy.Exists(jaringan_jalan):
             try:
-                arcpy.management.Delete(
-                    jaringan_jalan
-                )
+                arcpy.management.Delete(jaringan_jalan)
             except:
                 pass
 
@@ -286,27 +156,9 @@ class Persiapan_Jaringan_Jalan_Update(object):
             jaringan_jalan
         )
 
-        if os.path.exists(
-            sim_jaringan_jalan
-        ):
-
-            arcpy.management.ApplySymbologyFromLayer(
-                jaringan_jalan,
-                sim_jaringan_jalan
-            )
-
-        # =====================================================
-        # LAYER PERSIL BARU
-        # =====================================================
-
-        if arcpy.Exists(
-            peta_baru
-        ):
-
+        if arcpy.Exists(peta_baru):
             try:
-                arcpy.management.Delete(
-                    peta_baru
-                )
+                arcpy.management.Delete(peta_baru)
             except:
                 pass
 
@@ -315,33 +167,12 @@ class Persiapan_Jaringan_Jalan_Update(object):
             peta_baru
         )
 
-        if os.path.exists(
-            sim_persil
-        ):
+        parameters[1].value=jaringan_jalan
+        parameters[2].value=peta_baru
 
-            arcpy.management.ApplySymbologyFromLayer(
-                peta_baru,
-                sim_persil
-            )
-
-        # =====================================================
-        # OUTPUT PARAMETER
-        # =====================================================
-
-        parameters[1].value = (
-            jaringan_jalan
-        )
-
-        parameters[2].value = (
-            peta_baru
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
+        messages.addMessage("== Proses selesai ==")
         return
-
+    
 class Set_Atribut_Jaringan_Jalan(object):
 
     def __init__(self):
@@ -406,161 +237,73 @@ class Set_Atribut_Jaringan_Jalan(object):
     def updateMessages(self, parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import arcpy
-        import os
+        kls_jln=parameters[0].valueAsText
+        lb_jalan=parameters[1].value
+        sts_jalan=parameters[2].valueAsText
 
-        arcpy.env.overwriteOutput = True
+        configs=persil.get_config_values()
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        jaringan_jalan=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        jaringan_jalan_layer = 'Jaringan_Jalan'
+        arcpy.AddMessage(f'Jaringan Jalan: {jaringan_jalan}')
+        kelas_jalan_config=configs["jaringan_jalan_config"]["skoring"]["kelas_jalan"]
 
-        # =====================================================
-        # PARAMETER
-        # =====================================================
+        s_kls_jln=kelas_jalan_config.get(kls_jln,0)
 
-        kls_jln = (
-            parameters[0].valueAsText
-        )
-
-        lb_jalan = (
-            parameters[1].value
-        )
-
-        sts_jalan = (
-            parameters[2].valueAsText
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        jaringan_jalan = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        kelas_jalan_config = (
-            configs["jaringan_jalan_config"]["skoring"]["kelas_jalan"]
-        )
-
-        # =====================================================
-        # SKOR KELAS JALAN
-        # =====================================================
-
-        s_kls_jln = kelas_jalan_config.get(
-            kls_jln,
-            0
-        )
-
-        # =====================================================
-        # KATEGORI LEBAR JALAN
-        # =====================================================
-
-        if lb_jalan == 0:
-
-            SimLJln2 = "0"
-
-        elif lb_jalan > 0 and lb_jalan <= 1.5:
-
-            SimLJln2 = "1.5"
-
-        elif lb_jalan > 1.5 and lb_jalan <= 3:
-
-            SimLJln2 = "3"
-
-        elif lb_jalan > 3 and lb_jalan <= 5:
-
-            SimLJln2 = "5"
-
-        elif lb_jalan > 5 and lb_jalan <= 8:
-
-            SimLJln2 = "8"
-
+        if lb_jalan==0:
+            SimLJln2="0"
+        elif lb_jalan<=1.5:
+            SimLJln2="1.5"
+        elif lb_jalan<=3:
+            SimLJln2="3"
+        elif lb_jalan<=5:
+            SimLJln2="5"
+        elif lb_jalan<=8:
+            SimLJln2="8"
         else:
+            SimLJln2="8+"
 
-            SimLJln2 = "8+"
+        ada_seleksi=len(arcpy.Describe(jaringan_jalan_layer).FIDSet)
 
-        # =====================================================
-        # VALIDASI SELEKSI
-        # =====================================================
-
-        ada_seleksi = len(
-            arcpy.Describe(
-                jaringan_jalan
-            ).FIDSet
-        )
-
-        if ada_seleksi == 0:
-
-            messages.addWarningMessage(
-                "== Tidak ada fitur jaringan jalan yang dipilih =="
-            )
-
+        if ada_seleksi==0:
+            messages.addWarningMessage("== Tidak ada fitur jaringan jalan yang dipilih ==")
             return
 
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
+        sampel_fields=[f.name for f in arcpy.ListFields(jaringan_jalan_layer)]
 
-        sampel_fields = [
-            f.name
-            for f in arcpy.ListFields(
-                jaringan_jalan
-            )
-        ]
-
-        required_fields = [
+        required_fields=[
             "status_jal",
             "kls_jln",
             "lb_jln",
             "s_kls_jln"
         ]
 
-        missing_fields = []
+        missing_fields=[]
 
         for field_name in required_fields:
-
             if field_name not in sampel_fields:
+                missing_fields.append(field_name)
 
-                missing_fields.append(
-                    field_name
-                )
-
-        if len(missing_fields) > 0:
-
+        if len(missing_fields)>0:
             messages.addErrorMessage(
                 "== Field berikut tidak ditemukan: {} ==".format(
                     ", ".join(missing_fields)
                 )
             )
-
             raise arcpy.ExecuteError
 
-        # =====================================================
-        # ADD FIELD SIMLJLN2
-        # =====================================================
-
         if "SimLJln2" not in sampel_fields:
-
             arcpy.management.AddField(
                 jaringan_jalan,
                 "SimLJln2",
                 "TEXT"
             )
 
-        # =====================================================
-        # UPDATE ATRIBUT
-        # =====================================================
+        messages.addMessage("== Mengupdate atribut jaringan jalan ==")
 
-        messages.addMessage(
-            "== Mengupdate atribut jaringan jalan =="
-        )
-
-        fields = [
+        fields=[
             "kls_jln",
             "lb_jln",
             "SimLJln2",
@@ -568,31 +311,20 @@ class Set_Atribut_Jaringan_Jalan(object):
             "status_jal"
         ]
 
-        with arcpy.da.UpdateCursor(
-            jaringan_jalan,
-            fields
-        ) as cursor:
-
+        with arcpy.da.UpdateCursor(jaringan_jalan,fields) as cursor:
             for row in cursor:
-
-                row[0] = kls_jln
-                row[1] = lb_jalan
-                row[2] = SimLJln2
-                row[3] = s_kls_jln
-                row[4] = sts_jalan
-
+                row[0]=kls_jln
+                row[1]=lb_jalan
+                row[2]=SimLJln2
+                row[3]=s_kls_jln
+                row[4]=sts_jalan
                 cursor.updateRow(row)
 
-        messages.addMessage(
-            "== Atribut jaringan jalan berhasil diperbarui =="
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Atribut jaringan jalan berhasil diperbarui ==")
+        messages.addMessage("== Proses selesai ==")
 
         return
-    
+
 class Hapus_Jaringan_Jalan_Terpilih(object):
 
     def __init__(self):
@@ -742,76 +474,24 @@ class Validasi_Topologi_Jaringan_Jalan(object):
     def updateMessages(self, parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import arcpy
-        import os
+        configs=persil.get_config_values()
 
-        arcpy.env.overwriteOutput = True
+        dataset_path=configs["project_config"]["dataset_path"]
+        jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        JaringanJalanTopo="Topo_Jaringan_Jalan_Update"
+        JaringanJalanTopoAwal="TopologiJaringanJalan"
+        JaringanJalanTopoTaru="Topo_Jaringan_Jalan_Taru"
+        JaringanJalanTopoKonsol="Topo_Jaringan_Jalan_Konsolidasi"
 
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
+        jarjaltop_path=os.path.join(dataset_path,JaringanJalanTopo)
+        jarjaltop_awal_path=os.path.join(dataset_path,JaringanJalanTopoAwal)
+        jarjaltop_taru_path=os.path.join(dataset_path,JaringanJalanTopoTaru)
+        jarjaltop_konsol_path=os.path.join(dataset_path,JaringanJalanTopoKonsol)
 
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        jaringan_jalan_path = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        # =====================================================
-        # DATASET
-        # =====================================================
-
-        JaringanJalanTopo = (
-            "Topo_Jaringan_Jalan_Update"
-        )
-
-        JaringanJalanTopoAwal = (
-            "TopologiJaringanJalan"
-        )
-
-        JaringanJalanTopoTaru = (
-            "Topo_Jaringan_Jalan_Taru"
-        )
-
-        JaringanJalanTopoKonsol = (
-            "Topo_Jaringan_Jalan_Konsolidasi"
-        )
-
-        jarjaltop_path = os.path.join(
-            dataset_path,
-            JaringanJalanTopo
-        )
-
-        jarjaltop_awal_path = os.path.join(
-            dataset_path,
-            JaringanJalanTopoAwal
-        )
-
-        jarjaltop_taru_path = os.path.join(
-            dataset_path,
-            JaringanJalanTopoTaru
-        )
-
-        jarjaltop_konsol_path = os.path.join(
-            dataset_path,
-            JaringanJalanTopoKonsol
-        )
-
-        # =====================================================
-        # DELETE EXISTING TOPOLOGY
-        # =====================================================
-
-        delete_list = [
+        delete_list=[
             jarjaltop_path,
             jarjaltop_awal_path,
             jarjaltop_taru_path,
@@ -823,35 +503,15 @@ class Validasi_Topologi_Jaringan_Jalan(object):
         ]
 
         for item in delete_list:
-
             if arcpy.Exists(item):
-
                 try:
-                    arcpy.management.Delete(
-                        item
-                    )
+                    arcpy.management.Delete(item)
                 except:
                     pass
-
-        # =====================================================
-        # CREATE TOPOLOGY
-        # =====================================================
-
-        messages.addMessage(
-            "== Membuat topologi jaringan jalan =="
-        )
 
         arcpy.management.CreateTopology(
             dataset_path,
             JaringanJalanTopo
-        )
-
-        # =====================================================
-        # ADD FEATURE CLASS
-        # =====================================================
-
-        messages.addMessage(
-            "== Menambahkan feature class ke topologi =="
         )
 
         arcpy.management.AddFeatureClassToTopology(
@@ -861,55 +521,22 @@ class Validasi_Topologi_Jaringan_Jalan(object):
             1
         )
 
-        # =====================================================
-        # ADD TOPOLOGY RULE
-        # =====================================================
-
-        messages.addMessage(
-            "== Menambahkan rule topologi =="
-        )
-
-        arcpy.management.AddRuleToTopology(
-            jarjaltop_path,
+        rules=[
             "Must Not Overlap (Line)",
-            jaringan_jalan_path
-        )
-
-        arcpy.management.AddRuleToTopology(
-            jarjaltop_path,
             "Must Not Have Dangles (Line)",
-            jaringan_jalan_path
-        )
+            "Must Not Have Pseudo-Nodes (Line)"
+        ]
 
-        arcpy.management.AddRuleToTopology(
-            jarjaltop_path,
-            "Must Not Have Pseudo-Nodes (Line)",
-            jaringan_jalan_path
-        )
+        for rule in rules:
+            arcpy.management.AddRuleToTopology(
+                jarjaltop_path,
+                rule,
+                jaringan_jalan_path
+            )
 
-        # =====================================================
-        # VALIDATE TOPOLOGY
-        # =====================================================
+        arcpy.management.ValidateTopology(jarjaltop_path)
 
-        messages.addMessage(
-            "== Validasi topologi =="
-        )
-
-        arcpy.management.ValidateTopology(
-            jarjaltop_path
-        )
-
-        # =====================================================
-        # OUTPUT PARAMETER
-        # =====================================================
-
-        parameters[0].value = (
-            jarjaltop_path
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        parameters[0].value=jarjaltop_path
 
         return
     
@@ -941,173 +568,71 @@ class Update_Simbologi_Lebar_Jalan(object):
     def updateMessages(self, parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import os
-        import arcpy
-
-        arcpy.env.overwriteOutput = True
-
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        jaringanjalan = (
-            "Jaringan_Jalan"
-        )
-
-        jaringanjalan_path = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        # =====================================================
-        # APPDATA
-        # =====================================================
-
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
-
-        simbologi_path = os.path.join(
-            appdata,
-            "SimbologiLebarJalanUpdate.lyr"
-        )
-
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
-
-        sampel_fields = [
-            f.name
-            for f in arcpy.ListFields(
-                jaringanjalan_path
-            )
-        ]
+        messages.addMessage("== Proses dimulai ==")
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
+        jaringanjalan="Jaringan_Jalan"
+        jaringanjalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        sampel_fields=[f.name for f in arcpy.ListFields(jaringanjalan_path)]
 
         if "SimLJln2" not in sampel_fields:
-
             arcpy.management.AddField(
                 jaringanjalan_path,
                 "SimLJln2",
                 "TEXT"
             )
 
-        # =====================================================
-        # START EDIT SESSION
-        # =====================================================
+        messages.addMessage("== Update kategori lebar jalan ==")
+        edit=arcpy.da.Editor(os.path.dirname(dataset_path))
 
-        messages.addMessage(
-            "== Update kategori lebar jalan =="
-        )
-
-        edit = arcpy.da.Editor(
-            os.path.dirname(
-                dataset_path
-            )
-        )
-
-        edit.startEditing(
-            False,
-            False
-        )
-
+        edit.startEditing(False,False)
         edit.startOperation()
-
-        # =====================================================
-        # UPDATE FIELD
-        # =====================================================
 
         with arcpy.da.UpdateCursor(
             jaringanjalan_path,
-            ["lb_jln", "SimLJln2"]
+            ["lb_jln","SimLJln2"]
         ) as rows:
 
             for row in rows:
 
                 if not row[0]:
-
-                    row[0] = 0
-                    row[1] = "0"
+                    row[0]=0
+                    row[1]="0"
 
                 else:
 
-                    if row[0] > 30:
+                    if row[0]>30:
+                        row[0]=30
+                        row[1]="8+"
 
-                        row[0] = 30
-                        row[1] = "8+"
+                    elif row[0]==0:
+                        row[1]="0"
+
+                    elif row[0]<=1.5:
+                        row[1]="1.5"
+
+                    elif row[0]<=3:
+                        row[1]="3"
+
+                    elif row[0]<=5:
+                        row[1]="5"
+
+                    elif row[0]<=8:
+                        row[1]="8"
 
                     else:
-
-                        if row[0] == 0:
-
-                            row[1] = "0"
-
-                        elif (
-                            row[0] > 0
-                            and row[0] <= 1.5
-                        ):
-
-                            row[1] = "1.5"
-
-                        elif (
-                            row[0] > 1.5
-                            and row[0] <= 3
-                        ):
-
-                            row[1] = "3"
-
-                        elif (
-                            row[0] > 3
-                            and row[0] <= 5
-                        ):
-
-                            row[1] = "5"
-
-                        elif (
-                            row[0] > 5
-                            and row[0] <= 8
-                        ):
-
-                            row[1] = "8"
-
-                        elif row[0] > 8:
-
-                            row[1] = "8+"
+                        row[1]="8+"
 
                 rows.updateRow(row)
 
-        # =====================================================
-        # STOP EDIT SESSION
-        # =====================================================
-
         edit.stopOperation()
-
         edit.stopEditing(True)
 
-        # =====================================================
-        # REFRESH LAYER
-        # =====================================================
-
-        if arcpy.Exists(
-            jaringanjalan
-        ):
-
+        if arcpy.Exists(jaringanjalan):
             try:
-                arcpy.management.Delete(
-                    jaringanjalan
-                )
+                arcpy.management.Delete(jaringanjalan)
             except:
                 pass
 
@@ -1116,33 +641,11 @@ class Update_Simbologi_Lebar_Jalan(object):
             jaringanjalan
         )
 
-        # =====================================================
-        # APPLY SYMBOLOGY
-        # =====================================================
+        parameters[0].value=jaringanjalan
 
-        if os.path.exists(
-            simbologi_path
-        ):
-
-            arcpy.management.ApplySymbologyFromLayer(
-                jaringanjalan,
-                simbologi_path
-            )
-
-        # =====================================================
-        # OUTPUT PARAMETER
-        # =====================================================
-
-        parameters[0].value = (
-            jaringanjalan
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
-
 class Set_Lebar_Jalan(object):
 
     def __init__(self):
@@ -1171,160 +674,85 @@ class Set_Lebar_Jalan(object):
     def updateMessages(self, parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import os
-        import arcpy
 
-        arcpy.env.overwriteOutput = True
+        messages.addMessage("== Proses dimulai ==")
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        lb_jalan=parameters[0].value
 
-        # =====================================================
-        # PARAMETER
-        # =====================================================
+        configs=persil.get_config_values()
 
-        lb_jalan = (
-            parameters[0].value
-        )
+        jaringanjalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
+        layer_jalan="Jaringan_Jalan"
 
-        configs = persil.get_config_values()
-
-        jaringanjalan = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                jaringanjalan
-            )
-        ]
+        field_names=[field.name for field in arcpy.ListFields(jaringanjalan_path)]
 
         if "lb_jln" not in field_names:
-
             arcpy.management.AddField(
-                jaringanjalan,
+                jaringanjalan_path,
                 "lb_jln",
                 "DOUBLE"
             )
 
         if "SimLJln2" not in field_names:
-
             arcpy.management.AddField(
-                jaringanjalan,
+                jaringanjalan_path,
                 "SimLJln2",
                 "TEXT"
             )
 
-        # =====================================================
-        # VALIDASI SELEKSI
-        # =====================================================
+        ada_seleksi=len(arcpy.Describe(layer_jalan).FIDSet)
 
-        ada_seleksi = len(
-            arcpy.Describe(
-                jaringanjalan
-            ).FIDSet
-        )
-
-        if ada_seleksi == 0:
-
+        if ada_seleksi==0:
             messages.addWarningMessage(
                 "== Tidak ada jaringan jalan yang dipilih =="
             )
-
             return
 
-        # =====================================================
-        # KATEGORI LEBAR JALAN
-        # =====================================================
+        if lb_jalan==0:
+            SimLJln2="0"
 
-        if lb_jalan == 0:
+        elif lb_jalan<=1.5:
+            SimLJln2="1.5"
 
-            SimLJln2 = "0"
+        elif lb_jalan<=3:
+            SimLJln2="3"
 
-        elif (
-            lb_jalan > 0
-            and lb_jalan <= 1.5
-        ):
+        elif lb_jalan<=5:
+            SimLJln2="5"
 
-            SimLJln2 = "1.5"
-
-        elif (
-            lb_jalan > 1.5
-            and lb_jalan <= 3
-        ):
-
-            SimLJln2 = "3"
-
-        elif (
-            lb_jalan > 3
-            and lb_jalan <= 5
-        ):
-
-            SimLJln2 = "5"
-
-        elif (
-            lb_jalan > 5
-            and lb_jalan <= 8
-        ):
-
-            SimLJln2 = "8"
+        elif lb_jalan<=8:
+            SimLJln2="8"
 
         else:
+            SimLJln2="8+"
 
-            SimLJln2 = "8+"
+        messages.addMessage("== Mengupdate lebar jalan ==")
 
-        # =====================================================
-        # UPDATE FIELD
-        # =====================================================
+        edit=arcpy.da.Editor(os.path.dirname(dataset_path))
 
-        messages.addMessage(
-            "== Mengupdate lebar jalan =="
-        )
+        edit.startEditing(False,False)
+        edit.startOperation()
 
         with arcpy.da.UpdateCursor(
-            jaringanjalan,
-            [
-                "lb_jln",
-                "SimLJln2"
-            ]
+            layer_jalan,
+            ["lb_jln","SimLJln2"]
         ) as rows:
 
             for row in rows:
-
-                row[0] = lb_jalan
-                row[1] = SimLJln2
-
+                row[0]=lb_jalan
+                row[1]=SimLJln2
                 rows.updateRow(row)
 
-        # =====================================================
-        # UPDATE FINAL
-        # =====================================================
+        edit.stopOperation()
+        edit.stopEditing(True)
 
-        arcpy.management.CalculateField(
-            jaringanjalan,
-            "SimLJln2",
-            f'"{SimLJln2}"',
-            "PYTHON3"
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
-
 class Deteksi_Outlier_Jaringan_Jalan(object):
 
     def __init__(self):
@@ -1418,129 +846,72 @@ class Deteksi_Outlier_Jaringan_Jalan(object):
     def updateMessages(self, parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
+        messages.addMessage("== Proses dimulai ==")
 
-        import os
-        import arcpy
+        configs=persil.get_config_values()
 
-        arcpy.env.overwriteOutput = True
+        dataset_path=configs["project_config"]["dataset_path"]
+        jaringanjalan="Jaringan_Jalan"
+        jaringanjalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        jaringanjalan = (
-            "Jaringan_Jalan"
-        )
-
-        jaringanjalan_path = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        # =====================================================
-        # APPDATA
-        # =====================================================
-
-        appdata = os.path.dirname(
+        appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
             os.path.dirname(
                 os.path.realpath(__file__)
-            )
-        )
+            )))))
+        
+        temp_gdb_path= arcpy.env.scratchGDB
 
-        temp_gdb_path = os.path.join(
-            appdata,
-            "temporary.gdb"
-        )
-
-        sim_path = os.path.join(
+        sim_path=os.path.join(
             appdata,
             "SimbologiOutlierKelasJalan.lyr"
         )
 
-        no_sim_path = os.path.join(
+        no_sim_path=os.path.join(
             appdata,
             "NoSimbologiJalan.lyr"
         )
 
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
-
-        field_names = [
+        field_names=[
             field.name
-            for field in arcpy.ListFields(
-                jaringanjalan_path
-            )
+            for field in arcpy.ListFields(jaringanjalan_path)
         ]
 
-        messages.addMessage(
-            str(field_names)
-        )
+        messages.addMessage(str(field_names))
 
-        if (
-            "s_kls_jln" not in field_names
-            or
-            "lb_jln" not in field_names
-        ):
-
+        if "s_kls_jln" not in field_names or "lb_jln" not in field_names:
             messages.addWarningMessage(
                 "== Field s_kls_jln atau lb_jln tidak ditemukan =="
             )
-
             return
 
-        # =====================================================
-        # PROSES LOCAL MORAN
-        # =====================================================
+        def delete_if_exists(item):
+            if arcpy.Exists(item):
+                try:
+                    arcpy.management.Delete(item)
+                except:
+                    pass
 
-        list_err = []
+        list_err=[]
 
-        for i in range(1, 8):
+        for i in range(1,8):
 
-            out_name = (
-                "outlier_u_klsjln_" + str(i)
-            )
+            out_name="outlier_u_klsjln_"+str(i)
 
-            out_path = os.path.join(
+            out_path=os.path.join(
                 temp_gdb_path,
                 out_name
             )
 
             messages.addMessage(
-                "== Anselin Local Moran's I: {} ==".format(
-                    out_path
-                )
+                "== Anselin Local Moran's I: {} ==".format(out_path)
             )
 
-            if arcpy.Exists(out_path):
+            delete_if_exists(out_path)
 
-                try:
-                    arcpy.management.Delete(
-                        out_path
-                    )
-                except:
-                    pass
+            temp_lyr="temp_lyr"
 
-            temp_lyr = "temp_lyr"
-
-            if arcpy.Exists(temp_lyr):
-
-                try:
-                    arcpy.management.Delete(
-                        temp_lyr
-                    )
-                except:
-                    pass
+            delete_if_exists(temp_lyr)
 
             arcpy.management.MakeFeatureLayer(
                 jaringanjalan_path,
@@ -1548,47 +919,15 @@ class Deteksi_Outlier_Jaringan_Jalan(object):
                 "s_kls_jln = {}".format(i)
             )
 
-            row_count = int(
-                arcpy.management.GetCount(
-                    temp_lyr
-                )[0]
+            row_count=int(
+                arcpy.management.GetCount(temp_lyr)[0]
             )
 
             messages.addMessage(
-                "jumlah record: {}".format(
-                    row_count
-                )
+                "jumlah record: {}".format(row_count)
             )
 
-            if row_count > 2:
-
-                try:
-
-                    arcpy.stats.ClustersOutliers(
-                        temp_lyr,
-                        "lb_jln",
-                        out_path,
-                        "INVERSE_DISTANCE_SQUARED",
-                        "EUCLIDEAN_DISTANCE",
-                        "NONE"
-                    )
-
-                except arcpy.ExecuteError:
-
-                    messages.addWarningMessage(
-                        "Error: {}".format(
-                            out_name
-                        )
-                    )
-
-                    list_err.append(
-                        out_name
-                        + ","
-                        + arcpy.GetMessages()
-                    )
-
-            else:
-
+            if row_count<=2:
                 messages.addMessage(
                     "Kelas Jalan {} tidak diproses. "
                     "Jumlah record {}, kurang dari 3.".format(
@@ -1597,98 +936,63 @@ class Deteksi_Outlier_Jaringan_Jalan(object):
                     )
                 )
 
-            if arcpy.Exists(temp_lyr):
+                delete_if_exists(temp_lyr)
 
-                try:
-                    arcpy.management.Delete(
-                        temp_lyr
-                    )
-                except:
-                    pass
+                continue
 
-            messages.addMessage(
-                "== Ok =="
-            )
+            try:
 
-        # =====================================================
-        # SAVE ERROR LOG
-        # =====================================================
+                arcpy.stats.ClustersOutliers(
+                    temp_lyr,
+                    "lb_jln",
+                    out_path,
+                    "INVERSE_DISTANCE_SQUARED",
+                    "EUCLIDEAN_DISTANCE",
+                    "NONE"
+                )
 
-        err_outlier_path = os.path.join(
+            except arcpy.ExecuteError:
+
+                messages.addWarningMessage(
+                    "Error: {}".format(out_name)
+                )
+
+                list_err.append(
+                    out_name+","+arcpy.GetMessages()
+                )
+
+            delete_if_exists(temp_lyr)
+
+            messages.addMessage("== Ok ==")
+
+        err_outlier_path=os.path.join(
             appdata,
             "err_outlier.err"
         )
 
-        with open(
-            err_outlier_path,
-            "w"
-        ) as conf_file:
-
+        with open(err_outlier_path,"w") as conf_file:
             conf_file.write(
-                "\n".join(list_err) + "\n"
+                "\n".join(list_err)+"\n"
             )
 
-        # =====================================================
-        # DATASET OUTLIER
-        # =====================================================
-
-        outlier_layers = [
-            (
-                "outlier_u_klsjln_1",
-                "Jalan_Lokal_Setapak",
-                1
-            ),
-            (
-                "outlier_u_klsjln_2",
-                "Jalan_Lokal_Sekunder",
-                2
-            ),
-            (
-                "outlier_u_klsjln_3",
-                "Jalan_Lokal_Primer",
-                3
-            ),
-            (
-                "outlier_u_klsjln_4",
-                "Jalan_Kolektor_Sekunder",
-                4
-            ),
-            (
-                "outlier_u_klsjln_5",
-                "Jalan_Kolektor_Primer",
-                5
-            ),
-            (
-                "outlier_u_klsjln_6",
-                "Jalan_Arteri_Sekunder",
-                6
-            ),
-            (
-                "outlier_u_klsjln_7",
-                "Jalan_Arteri_Primer",
-                7
-            )
+        outlier_layers=[
+            ("outlier_u_klsjln_1","Jalan_Lokal_Setapak",1),
+            ("outlier_u_klsjln_2","Jalan_Lokal_Sekunder",2),
+            ("outlier_u_klsjln_3","Jalan_Lokal_Primer",3),
+            ("outlier_u_klsjln_4","Jalan_Kolektor_Sekunder",4),
+            ("outlier_u_klsjln_5","Jalan_Kolektor_Primer",5),
+            ("outlier_u_klsjln_6","Jalan_Arteri_Sekunder",6),
+            ("outlier_u_klsjln_7","Jalan_Arteri_Primer",7)
         ]
 
-        # =====================================================
-        # LOAD OUTLIER LAYER
-        # =====================================================
+        for fc_name,lyr_name,param_idx in outlier_layers:
 
-        for fc_name, lyr_name, param_idx in outlier_layers:
-
-            fc_path = os.path.join(
+            fc_path=os.path.join(
                 temp_gdb_path,
                 fc_name
             )
 
-            if arcpy.Exists(lyr_name):
-
-                try:
-                    arcpy.management.Delete(
-                        lyr_name
-                    )
-                except:
-                    pass
+            delete_if_exists(lyr_name)
 
             if arcpy.Exists(fc_path):
 
@@ -1704,22 +1008,9 @@ class Deteksi_Outlier_Jaringan_Jalan(object):
                         sim_path
                     )
 
-                parameters[param_idx].value = (
-                    lyr_name
-                )
+                parameters[param_idx].value=lyr_name
 
-        # =====================================================
-        # REFRESH JARINGAN JALAN
-        # =====================================================
-
-        if arcpy.Exists(jaringanjalan):
-
-            try:
-                arcpy.management.Delete(
-                    jaringanjalan
-                )
-            except:
-                pass
+        delete_if_exists(jaringanjalan)
 
         arcpy.management.MakeFeatureLayer(
             jaringanjalan_path,
@@ -1733,9 +1024,7 @@ class Deteksi_Outlier_Jaringan_Jalan(object):
                 no_sim_path
             )
 
-        parameters[0].value = (
-            jaringanjalan
-        )
+        parameters[0].value=jaringanjalan
 
         messages.addMessage(
             "== Menjalankan proses berhasil dilakukan. "
@@ -1772,37 +1061,15 @@ class Set_Outlier_Lebar_Jalan(object):
     def updateMessages(self, parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
+        messages.addMessage("== Proses dimulai ==")
 
-        import os
-        import arcpy
+        val=parameters[0].value
 
-        arcpy.env.overwriteOutput = True
+        field="lb_jln"
+        field2="COType"
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =====================================================
-        # PARAMETER
-        # =====================================================
-
-        val = (
-            parameters[0].value
-        )
-
-        # =====================================================
-        # FIELD
-        # =====================================================
-
-        field = "lb_jln"
-        field2 = "COType"
-
-        # =====================================================
-        # DAFTAR LAYER
-        # =====================================================
-
-        daftar_layer = [
+        daftar_layer=[
             "Jalan_Lokal_Setapak",
             "Jalan_Lokal_Sekunder",
             "Jalan_Lokal_Primer",
@@ -1812,93 +1079,54 @@ class Set_Outlier_Lebar_Jalan(object):
             "Jalan_Arteri_Primer"
         ]
 
-        # =====================================================
-        # UPDATE OUTLIER LAYER
-        # =====================================================
-
         for layer_name in daftar_layer:
 
-            if not arcpy.Exists(
-                layer_name
-            ):
-
+            if not arcpy.Exists(layer_name):
                 continue
 
-            ada_seleksi = len(
-                arcpy.Describe(
-                    layer_name
-                ).FIDSet
+            ada_seleksi=len(
+                arcpy.Describe(layer_name).FIDSet
             )
 
-            if ada_seleksi == 0:
-
+            if ada_seleksi==0:
                 continue
 
             messages.addMessage(
-                "== Update layer {} ==".format(
-                    layer_name
-                )
+                "== Update layer {} ==".format(layer_name)
             )
-
-            fields = [
-                field,
-                field2
-            ]
 
             with arcpy.da.UpdateCursor(
                 layer_name,
-                fields
+                [field,field2]
             ) as rows:
 
                 for row in rows:
 
-                    row[0] = val
+                    row[0]=val
 
-                    val_temp = row[1]
+                    val_temp=row[1]
 
                     if val_temp is None:
-
-                        val_temp = ""
-
+                        val_temp=""
                     else:
+                        val_temp=str(val_temp)
 
-                        val_temp = str(
-                            val_temp
-                        )
+                        if len(val_temp)>0:
+                            val_temp=val_temp[0]
 
-                        if len(val_temp) > 0:
-
-                            val_temp = (
-                                val_temp[0]
-                            )
-
-                    val_temp = (
-                        val_temp + "E"
-                    )
-
-                    row[1] = val_temp
+                    row[1]=val_temp+"E"
 
                     rows.updateRow(row)
 
-        # =====================================================
-        # UPDATE JARINGAN JALAN
-        # =====================================================
+        jaringanjalan="Jaringan_Jalan"
 
-        jaringanjalan = (
-            "Jaringan_Jalan"
-        )
+        if arcpy.Exists(jaringanjalan):
 
-        if arcpy.Exists(
-            jaringanjalan
-        ):
-
-            ada_seleksi = len(
-                arcpy.Describe(
-                    jaringanjalan
-                ).FIDSet
+            ada_seleksi=len(
+                arcpy.Describe(jaringanjalan).FIDSet
             )
 
-            if ada_seleksi > 0:
+            if ada_seleksi>0:
 
                 messages.addMessage(
                     "== Update layer Jaringan_Jalan =="
@@ -1910,14 +1138,10 @@ class Set_Outlier_Lebar_Jalan(object):
                 ) as rows:
 
                     for row in rows:
-
-                        row[0] = val
-
+                        row[0]=val
                         rows.updateRow(row)
 
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
 
@@ -1948,77 +1172,44 @@ class Update_Simbologi_Kelas_Jalan(object):
 
     def updateMessages(self, parameters):
         return
+    
+    def execute(self,parameters,messages):
+        messages.addMessage("== Proses dimulai ==")
 
-    def execute(self, parameters, messages):
+        configs=persil.get_config_values()
 
-        import os
-        import arcpy
+        jaringanjalan="Jaringan_Jalan"
 
-        arcpy.env.overwriteOutput = True
+        jaringanjalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        jaringanjalan = (
-            "Jaringan_Jalan"
-        )
-
-        jaringanjalan_path = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        # =====================================================
-        # APPDATA
-        # =====================================================
-
-        appdata = os.path.dirname(
+        appdata=os.path.dirname(
             os.path.dirname(
                 os.path.realpath(__file__)
             )
         )
 
-        simbologi_path = os.path.join(
+        simbologi_path=os.path.join(
             appdata,
             "SimbologiKelasJalan.lyr"
         )
 
-        # =====================================================
-        # TEMP LAYER
-        # =====================================================
+        temp_layer="temp"
 
-        temp_layer = "temp"
+        def delete_if_exists(item):
+            if arcpy.Exists(item):
+                try:
+                    arcpy.management.Delete(item)
+                except:
+                    pass
 
-        if arcpy.Exists(
-            temp_layer
-        ):
+        delete_if_exists(temp_layer)
 
-            try:
-                arcpy.management.Delete(
-                    temp_layer
-                )
-            except:
-                pass
-
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
-
-        field_names = [
+        field_names=[
             field.name
-            for field in arcpy.ListFields(
-                jaringanjalan_path
-            )
+            for field in arcpy.ListFields(jaringanjalan_path)
         ]
 
         if "kls_jln" not in field_names:
-
             arcpy.management.AddField(
                 jaringanjalan_path,
                 "kls_jln",
@@ -2026,20 +1217,13 @@ class Update_Simbologi_Kelas_Jalan(object):
             )
 
         if "s_kls_jln" not in field_names:
-
             arcpy.management.AddField(
                 jaringanjalan_path,
                 "s_kls_jln",
                 "SHORT"
             )
 
-        # =====================================================
-        # UPDATE NULL VALUE
-        # =====================================================
-
-        messages.addMessage(
-            "== Update kelas jalan kosong =="
-        )
+        messages.addMessage("== Update kelas jalan kosong ==")
 
         arcpy.management.MakeFeatureLayer(
             jaringanjalan_path,
@@ -2066,68 +1250,27 @@ class Update_Simbologi_Kelas_Jalan(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # DELETE TEMP
-        # =====================================================
+        delete_if_exists(temp_layer)
 
-        if arcpy.Exists(
-            temp_layer
-        ):
-
-            try:
-                arcpy.management.Delete(
-                    temp_layer
-                )
-            except:
-                pass
-
-        # =====================================================
-        # REFRESH LAYER
-        # =====================================================
-
-        if arcpy.Exists(
-            jaringanjalan
-        ):
-
-            try:
-                arcpy.management.Delete(
-                    jaringanjalan
-                )
-            except:
-                pass
+        delete_if_exists(jaringanjalan)
 
         arcpy.management.MakeFeatureLayer(
             jaringanjalan_path,
             jaringanjalan
         )
 
-        # =====================================================
-        # APPLY SYMBOLOGY
-        # =====================================================
-
-        if os.path.exists(
-            simbologi_path
-        ):
+        if os.path.exists(simbologi_path):
 
             arcpy.management.ApplySymbologyFromLayer(
                 jaringanjalan,
                 simbologi_path
             )
 
-        # =====================================================
-        # OUTPUT PARAMETER
-        # =====================================================
+        parameters[0].value=jaringanjalan
 
-        parameters[0].value = (
-            jaringanjalan
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
-
 class Set_Kelas_Jalan(object):
 
     def __init__(self):
@@ -2165,76 +1308,42 @@ class Set_Kelas_Jalan(object):
 
     def updateMessages(self, parameters):
         return
+    
+    def execute(self,parameters,messages):
 
-    def execute(self, parameters, messages):
+        messages.addMessage("== Proses dimulai ==")
 
-        import os
-        import arcpy
+        kls_jln=parameters[0].valueAsText
 
-        arcpy.env.overwriteOutput = True
+        configs=persil.get_config_values()
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
 
-        # =====================================================
-        # PARAMETER
-        # =====================================================
+        kelas_jalan_config=configs[
+            "jaringan_jalan_config"
+        ]["skoring"]["kelas_jalan"]
 
-        kls_jln = (
-            parameters[0].valueAsText
-        )
+        s_kls_jln=kelas_jalan_config.get(kls_jln,1)
 
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
+        layer_jalan="Jaringan_Jalan"
 
-        configs = persil.get_config_values()
-
-        jaringan_jalan = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        kelas_jalan_config = (
-            configs["jaringan_jalan_config"]["skoring"]["kelas_jalan"]
-        )
-
-        # =====================================================
-        # SKOR KELAS JALAN
-        # =====================================================
-
-        s_kls_jln = kelas_jalan_config.get(
-            kls_jln,
-            1
-        )
-
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
-
-        jalan_fields = [
+        jalan_fields=[
             f.name
-            for f in arcpy.ListFields(
-                jaringan_jalan
-            )
+            for f in arcpy.ListFields(jaringan_jalan_path)
         ]
 
-        required_fields = [
+        required_fields=[
             "kls_jln",
             "s_kls_jln"
         ]
 
-        missing_fields = []
+        missing_fields=[]
 
         for field_name in required_fields:
-
             if field_name not in jalan_fields:
+                missing_fields.append(field_name)
 
-                missing_fields.append(
-                    field_name
-                )
-
-        if len(missing_fields) > 0:
+        if len(missing_fields)>0:
 
             messages.addErrorMessage(
                 "== Field berikut tidak ditemukan: {} ==".format(
@@ -2244,17 +1353,11 @@ class Set_Kelas_Jalan(object):
 
             raise arcpy.ExecuteError
 
-        # =====================================================
-        # VALIDASI SELEKSI
-        # =====================================================
-
-        ada_seleksi = len(
-            arcpy.Describe(
-                jaringan_jalan
-            ).FIDSet
+        ada_seleksi=len(
+            arcpy.Describe(layer_jalan).FIDSet
         )
 
-        if ada_seleksi == 0:
+        if ada_seleksi==0:
 
             messages.addWarningMessage(
                 "== Tidak ada jaringan jalan yang dipilih =="
@@ -2262,42 +1365,19 @@ class Set_Kelas_Jalan(object):
 
             return
 
-        # =====================================================
-        # UPDATE FIELD
-        # =====================================================
-
-        messages.addMessage(
-            "== Mengupdate kelas jalan =="
-        )
+        messages.addMessage("== Mengupdate kelas jalan ==")
 
         with arcpy.da.UpdateCursor(
-            jaringan_jalan,
-            [
-                "kls_jln",
-                "s_kls_jln"
-            ]
+            layer_jalan,
+            ["kls_jln","s_kls_jln"]
         ) as rows:
 
             for row in rows:
-
-                row[0] = kls_jln
-                row[1] = s_kls_jln
-
+                row[0]=kls_jln
+                row[1]=s_kls_jln
                 rows.updateRow(row)
 
-        # =====================================================
-        # UPDATE FINAL
-        # =====================================================
-
-        arcpy.management.CalculateField(
-            jaringan_jalan,
-            "kls_jln",
-            f'"{kls_jln}"',
-            "PYTHON3"
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
+

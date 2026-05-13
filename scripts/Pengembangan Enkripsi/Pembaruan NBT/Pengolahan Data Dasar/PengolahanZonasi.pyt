@@ -59,142 +59,71 @@ class Generate_Konfigurasi_Zonasi(object):
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
     def delete_if_exists(self, path):
-
         if arcpy.Exists(path):
-
             try:
                 arcpy.management.Delete(path)
-
             except:
                 pass
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import os
-        import json
-        import arcpy
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
+        configs=persil.get_config_values()
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =================================================
-        # APPDATA
-        # =================================================
-
-        appdata = os.path.dirname(
+        appdata=os.path.dirname(
             os.path.dirname(
                 os.path.realpath(__file__)
             )
         )
 
-        # =================================================
-        # DATASET
-        # =================================================
+        persil="Persil_Baru"
 
-        persil = (
-            "Persil_Baru"
-        )
-
-        persil_path = os.path.join(
+        persil_path=os.path.join(
             dataset_path,
             persil
         )
 
-        # =================================================
-        # REFRESH LAYER
-        # =================================================
-
-        self.delete_if_exists(
-            persil
-        )
+        self.delete_if_exists(persil)
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
             persil
         )
 
-        parameters[0].value = (
-            persil
-        )
-
-        # =================================================
-        # GENERATE KONFIGURASI
-        # =================================================
+        parameters[0].value=persil
 
         messages.addMessage(
             "== Generate konfigurasi zonasi =="
         )
 
-        listzona = {}
+        listzona={}
 
         with arcpy.da.SearchCursor(
             persil,
-            [
-                "zonasi",
-                "s_zonasi",
-                "min_lb_jln"
-            ]
+            ["zonasi","s_zonasi","min_lb_jln"]
         ) as rows:
-
             for row in rows:
-
-                zonasi = row[0]
-
+                zonasi=row[0]
                 if zonasi:
-
-                    listzona[zonasi] = {
-                        "s_zonasi": int(
-                            row[1] or 0
-                        ),
-                        "min_lb_jln": int(
-                            row[2] or 0
-                        )
+                    listzona[zonasi]={
+                        "s_zonasi":int(row[1] or 0),
+                        "min_lb_jln":int(row[2] or 0)
                     }
 
-        # =================================================
-        # SAVE JSON
-        # =================================================
-
-        zonasi_config_path = os.path.join(
+        zonasi_config_path=os.path.join(
             appdata,
             "zonasiupdate.json"
         )
 
-        if os.path.exists(
-            zonasi_config_path
-        ):
+        if os.path.exists(zonasi_config_path):
+            os.remove(zonasi_config_path)
 
-            os.remove(
-                zonasi_config_path
-            )
-
-        with open(
-            zonasi_config_path,
-            "w",
-            encoding="utf-8"
-        ) as f:
+        with open(zonasi_config_path, "w",  encoding="utf-8" ) as f:
 
             json.dump(
                 listzona,
@@ -203,17 +132,11 @@ class Generate_Konfigurasi_Zonasi(object):
                 ensure_ascii=False
             )
 
-        # =================================================
-        # SELESAI
-        # =================================================
-
         messages.addMessage(
             f"== Konfigurasi tersimpan: {zonasi_config_path} =="
         )
 
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
 

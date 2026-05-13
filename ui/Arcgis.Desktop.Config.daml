@@ -2091,9 +2091,9 @@
 					</args>
 					<tooltip heading="Buat Workspace">Menu untuk mMembuat Workspace Pembaruan NBT.</tooltip>
 				</button>
-				<button id="ButtonDeklarasiVariabelPembaruanNBT" caption="Deklarasi Variabel" smallImage="C:\PenilaianTanah\icons\deklarasi_variabel.png" largeImage="C:\PenilaianTanah\icons\deklarasi_variabel.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonDeklarasiVariabelPembaruanNBT" caption="Deklarasi Variabel" smallImage="C:\PenilaianTanah\icons\location.png" largeImage="C:\PenilaianTanah\icons\location.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Deklarasi_Variabel" name="Deklarasi Variabel" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Masukkan_Data_NBT_Sebelumnya" name="Masukkan Data NBT Sebelumnya" xmlns=""/>
 					</args>
 					<tooltip heading="Deklarasi Variabel">Menu untuk mendeklarasikan variabel-variabel yang diperlukan dalam proses Pembaruan NBT.</tooltip>
 				</button>

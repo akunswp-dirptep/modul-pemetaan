@@ -10,12 +10,8 @@ gp_dir = os.path.dirname(parent_dir)
 if gp_dir not in sys.path:
     sys.path.insert(0, gp_dir)
 
-from nbtutils import constant, persil
-from zntutils.document import validate_document_type, get_credentials
-from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id, setup_user_data
-from zntutils.constant import PREFERRED_BERKAS_ID, CREDENTIAL_KEY, PREFERRED_SERVER_KEY, AUTH_KEY, NAMA_PROVINSI, KAB_KOTA
-from zntutils.upload_utils import upload_shapefile_to_sipenta
-from zntutils import zona_layer
+from nbtutils import persil
+
 
 class Toolbox:
     def __init__(self):
@@ -31,7 +27,6 @@ class Toolbox:
 
 
 class Generate_Konfigurasi_Zonasi(object):
-
     def __init__(self):
 
         self.label = "Generate Konfigurasi Zonasi"
@@ -70,41 +65,26 @@ class Generate_Konfigurasi_Zonasi(object):
     def execute(self,parameters,messages):
 
         messages.addMessage("== Proses dimulai ==")
-
-        configs=persil.get_config_values()
+        configs = persil.get_config_values()
 
         dataset_path=configs["project_config"]["dataset_path"]
-
-        appdata=os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
-
-        persil="Persil_Baru"
-
+        persil_nama="Persil_Baru"
         persil_path=os.path.join(
             dataset_path,
-            persil
+            persil_nama
         )
-
         self.delete_if_exists(persil)
-
         arcpy.management.MakeFeatureLayer(
             persil_path,
-            persil
+            persil_nama
         )
-
-        parameters[0].value=persil
-
+        parameters[0].value= persil_nama
         messages.addMessage(
             "== Generate konfigurasi zonasi =="
         )
-
         listzona={}
-
         with arcpy.da.SearchCursor(
-            persil,
+            persil_nama,
             ["zonasi","s_zonasi","min_lb_jln"]
         ) as rows:
             for row in rows:
@@ -116,22 +96,19 @@ class Generate_Konfigurasi_Zonasi(object):
                     }
 
         zonasi_config_path=os.path.join(
-            appdata,
+            configs["project_config"]["ws_path"],
             "zonasiupdate.json"
         )
 
         if os.path.exists(zonasi_config_path):
             os.remove(zonasi_config_path)
-
-        with open(zonasi_config_path, "w",  encoding="utf-8" ) as f:
-
+        with open(zonasi_config_path, "w+",  encoding="utf-8" ) as f:
             json.dump(
                 listzona,
                 f,
                 indent=4,
                 ensure_ascii=False
             )
-
         messages.addMessage(
             f"== Konfigurasi tersimpan: {zonasi_config_path} =="
         )
@@ -147,10 +124,6 @@ class Deklarasi_Zonasi_Update(object):
         self.label = "Deklarasi Zonasi Update"
         self.description = ""
         self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
 
     def getParameterInfo(self):
 
@@ -177,33 +150,21 @@ class Deklarasi_Zonasi_Update(object):
     # UPDATE PARAMETER
     # =====================================================
 
-    def updateParameters(self, parameters):
-
-        import os
-        import json
-        import arcpy
+    def updateParameters(self,parameters):
 
         if parameters[0].altered:
-
             return
 
         try:
 
-            appdata = os.path.dirname(
-                os.path.dirname(
-                    os.path.realpath(__file__)
-                )
-            )
+            configs=persil.get_config_values()
 
-            zonasi_config_path = os.path.join(
-                appdata,
+            zonasi_config_path=os.path.join(
+                configs["project_config"]["ws_path"],
                 "zonasiupdate.json"
             )
 
-            if not os.path.exists(
-                zonasi_config_path
-            ):
-
+            if not os.path.exists(zonasi_config_path):
                 return
 
             with open(
@@ -212,98 +173,54 @@ class Deklarasi_Zonasi_Update(object):
                 encoding="utf-8"
             ) as f:
 
-                zonasi_json = json.load(
-                    f
-                )
+                zonasi_json=json.load(f)
 
-            value_table = []
-
-            for key, value in zonasi_json.items():
-
+            value_table=[]
+            for key,value in zonasi_json.items():
                 value_table.append([
                     key,
-                    value.get(
-                        "s_zonasi",
-                        0
-                    ),
-                    value.get(
-                        "min_lb_jln",
-                        0
-                    )
+                    value.get("s_zonasi",0),
+                    value.get("min_lb_jln",0)
                 ])
 
-            parameters[0].value = (
-                value_table
-            )
+            parameters[0].value=value_table
 
         except:
-
             pass
 
         return
-
+    
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
+    def execute(self,parameters,messages):
+        
+        configs = persil.get_config_values()
 
-    def execute(self, parameters, messages):
+        messages.addMessage("== Proses dimulai ==")
 
-        import os
-        import json
-        import arcpy
+        zonasi_values=parameters[0].values
 
-        arcpy.env.overwriteOutput = True
+        jumlah_zonasi=len(zonasi_values)
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =================================================
-        # PARAMETER
-        # =================================================
-
-        zonasi_values = (
-            parameters[0].values
-        )
-
-        # =================================================
-        # VALIDASI JUMLAH
-        # =================================================
-
-        jumlah_zonasi = len(
-            zonasi_values
-        )
-
-        if (
-            jumlah_zonasi < 3
-            or jumlah_zonasi > 30
-        ):
+        if jumlah_zonasi<3 or jumlah_zonasi>30:
 
             messages.addErrorMessage(
-                (
-                    "== Jenis Zonasi tidak boleh "
-                    "kurang dari 3 dan "
-                    "tidak boleh lebih dari 30 =="
-                )
+                "== Jenis Zonasi tidak boleh "
+                "kurang dari 3 dan "
+                "tidak boleh lebih dari 30 =="
             )
 
             raise arcpy.ExecuteError
 
-        # =================================================
-        # VALIDASI DUPLIKAT
-        # =================================================
-
-        zonasi_names = []
-        zonasi_scores = []
+        zonasi_names=[]
+        zonasi_scores=[]
 
         for row in zonasi_values:
 
-            nama_zonasi = row[0]
-            skor_zonasi = row[1]
-            min_lb_jln = row[2]
+            nama_zonasi=row[0]
+            skor_zonasi=row[1]
+            min_lb_jln=row[2]
 
             if (
                 nama_zonasi is None
@@ -312,11 +229,9 @@ class Deklarasi_Zonasi_Update(object):
             ):
 
                 messages.addErrorMessage(
-                    (
-                        "== Nilai zonasi, skor, "
-                        "dan minimum lebar jalan "
-                        "tidak boleh kosong =="
-                    )
+                    "== Nilai zonasi, skor, "
+                    "dan minimum lebar jalan "
+                    "tidak boleh kosong =="
                 )
 
                 raise arcpy.ExecuteError
@@ -337,45 +252,24 @@ class Deklarasi_Zonasi_Update(object):
 
                 raise arcpy.ExecuteError
 
-            zonasi_names.append(
-                nama_zonasi
-            )
+            zonasi_names.append(nama_zonasi)
+            zonasi_scores.append(skor_zonasi)
 
-            zonasi_scores.append(
-                skor_zonasi
-            )
-
-        # =================================================
-        # BUILD JSON
-        # =================================================
-
-        zonasi_json = {}
+        zonasi_json={}
 
         for row in zonasi_values:
 
-            nama_zonasi = row[0]
+            nama_zonasi=row[0]
 
-            zonasi_json[nama_zonasi] = {
-                "s_zonasi": int(
-                    row[1]
-                ),
-                "min_lb_jln": float(
-                    row[2]
-                )
+            zonasi_json[nama_zonasi]={
+                "s_zonasi":int(row[1]),
+                "min_lb_jln":float(row[2])
             }
 
-        # =================================================
-        # SAVE JSON
-        # =================================================
 
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
 
-        zonasi_config_path = os.path.join(
-            appdata,
+        zonasi_config_path=os.path.join(
+            configs["project_config"]["ws_path"],
             "zonasiupdate.json"
         )
 
@@ -392,24 +286,12 @@ class Deklarasi_Zonasi_Update(object):
                 ensure_ascii=False
             )
 
-        # =================================================
-        # SELESAI
-        # =================================================
-
         messages.addMessage(
-            (
-                "== Konfigurasi zonasi "
-                "berhasil disimpan =="
-            )
+            "== Konfigurasi zonasi berhasil disimpan =="
         )
 
-        messages.addMessage(
-            zonasi_config_path
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage(zonasi_config_path)
+        messages.addMessage("== Proses selesai ==")
 
         return
 
@@ -421,9 +303,6 @@ class Edit_Zonasi_Update(object):
         self.description = ""
         self.canRunInBackground = False
 
-    # =====================================================
-    # PARAMETER
-    # =====================================================
 
     def getParameterInfo(self):
 
@@ -445,28 +324,15 @@ class Edit_Zonasi_Update(object):
     # =====================================================
 
     def updateParameters(self, parameters):
-
-        import os
-        import json
-        import arcpy
-
         if parameters[0].altered:
-
             return
 
         try:
-
-            appdata = os.path.dirname(
-                os.path.dirname(
-                    os.path.realpath(__file__)
-                )
-            )
-
-            zonasi_config_path = os.path.join(
-                appdata,
-                "zonasiupdate.json"
-            )
-
+            configs = persil.get_config_values()
+            zonasi_config_path=os.path.join(
+                        configs["project_config"]["ws_path"],
+                        "zonasiupdate.json"
+                    )
             if not os.path.exists(
                 zonasi_config_path
             ):
@@ -482,7 +348,8 @@ class Edit_Zonasi_Update(object):
                 zonasi_json = json.load(
                     f
                 )
-
+            
+            parameters[0].filter.type = "ValueList"
             parameters[0].filter.list = list(
                 zonasi_json.keys()
             )
@@ -496,9 +363,6 @@ class Edit_Zonasi_Update(object):
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
 
     def add_field_if_not_exists(
         self,
@@ -522,48 +386,21 @@ class Edit_Zonasi_Update(object):
                 field_type
             )
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
+    def execute(self,parameters,messages):
 
-    def execute(self, parameters, messages):
 
-        import os
-        import json
-        import arcpy
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
+        zonasi=parameters[0].valueAsText
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        configs=persil.get_config_values()
 
-        # =================================================
-        # PARAMETER
-        # =================================================
-
-        zonasi = (
-            parameters[0].valueAsText
-        )
-
-        # =================================================
-        # LOAD CONFIG JSON
-        # =================================================
-
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
-
-        zonasi_config_path = os.path.join(
-            appdata,
+        zonasi_config_path=os.path.join(
+            configs["project_config"]["ws_path"],
             "zonasiupdate.json"
         )
 
-        if not os.path.exists(
-            zonasi_config_path
-        ):
+        if not os.path.exists(zonasi_config_path):
 
             messages.addErrorMessage(
                 "== File konfigurasi zonasi tidak ditemukan =="
@@ -577,13 +414,7 @@ class Edit_Zonasi_Update(object):
             encoding="utf-8"
         ) as f:
 
-            zonasi_json = json.load(
-                f
-            )
-
-        # =================================================
-        # VALIDASI ZONASI
-        # =================================================
+            zonasi_json=json.load(f)
 
         if zonasi not in zonasi_json:
 
@@ -593,42 +424,24 @@ class Edit_Zonasi_Update(object):
 
             raise arcpy.ExecuteError
 
-        s_zonasi = (
-            zonasi_json[zonasi]
-            .get("s_zonasi", 0)
+        s_zonasi=zonasi_json[zonasi].get(
+            "s_zonasi",
+            0
         )
 
-        min_lb_jln = (
-            zonasi_json[zonasi]
-            .get("min_lb_jln", 1.5)
+        min_lb_jln=zonasi_json[zonasi].get(
+            "min_lb_jln",
+            1.5
         )
 
-        # =================================================
-        # LOAD CONFIG PROJECT
-        # =================================================
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        configs = persil.get_config_values()
+        persil_edit="Persil_Baru"
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =================================================
-        # DATASET
-        # =================================================
-
-        persil_edit = (
-            "Persil_Baru"
-        )
-
-        persil_edit_path = os.path.join(
+        persil_edit_path=os.path.join(
             dataset_path,
             persil_edit
         )
-
-        # =================================================
-        # VALIDASI FIELD
-        # =================================================
 
         self.add_field_if_not_exists(
             persil_edit_path,
@@ -636,63 +449,45 @@ class Edit_Zonasi_Update(object):
             "DOUBLE"
         )
 
-        required_fields = [
+        required_fields=[
             "zonasi",
             "s_zonasi",
             "min_lb_jln",
             "status_per"
         ]
 
-        persil_fields = [
+        persil_fields=[
             f.name
-            for f in arcpy.ListFields(
-                persil_edit_path
-            )
+            for f in arcpy.ListFields(persil_edit_path)
         ]
 
-        missing_fields = []
+        missing_fields=[]
 
         for field_name in required_fields:
-
             if field_name not in persil_fields:
+                missing_fields.append(field_name)
 
-                missing_fields.append(
-                    field_name
-                )
-
-        if len(missing_fields) > 0:
+        if len(missing_fields)>0:
 
             messages.addErrorMessage(
-                (
-                    "== Field berikut tidak ditemukan: {} =="
-                ).format(
+                "== Field berikut tidak ditemukan: {} ==".format(
                     ", ".join(missing_fields)
                 )
             )
 
             raise arcpy.ExecuteError
 
-        # =================================================
-        # VALIDASI SELEKSI
-        # =================================================
-
-        ada_seleksi = len(
-            arcpy.Describe(
-                persil_edit
-            ).FIDSet
+        ada_seleksi=len(
+            arcpy.Describe(persil_edit).FIDSet
         )
 
-        if ada_seleksi == 0:
+        if ada_seleksi==0:
 
             messages.addWarningMessage(
                 "== Tidak ada persil yang dipilih =="
             )
 
             return
-
-        # =================================================
-        # UPDATE DATA
-        # =================================================
 
         messages.addMessage(
             "== Update informasi zonasi =="
@@ -709,20 +504,12 @@ class Edit_Zonasi_Update(object):
         ) as rows:
 
             for row in rows:
-
-                row[0] = zonasi
-                row[1] = s_zonasi
-                row[2] = min_lb_jln
-                row[3] = "update"
-
+                row[0]=zonasi
+                row[1]=s_zonasi
+                row[2]=min_lb_jln
+                row[3]="update"
                 rows.updateRow(row)
 
-        # =================================================
-        # SELESAI
-        # =================================================
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return

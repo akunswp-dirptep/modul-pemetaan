@@ -3,21 +3,21 @@
   "version" : "3.4.0",
   "build" : 55405,
   "layers" : [
-    "CIMPATH=Map1/Jaringan_Jalan.json"
+    "CIMPATH=Map/Persil_Baru_Layer.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
-      "name" : "Jaringan_Jalan",
-      "uRI" : "CIMPATH=Map1/Jaringan_Jalan.json",
+      "name" : "Persil_Baru_Layer",
+      "uRI" : "CIMPATH=Map/Persil_Baru_Layer.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
       "useSourceMetadata" : true,
-      "description" : "Jaringan_Jalan",
+      "description" : "Persil_Baru_Layer",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
-        "elevationSurfaceLayerURI" : "CIMPATH=Map1/10e33a64d5a84a2eb3f1bd6644990d6c.json"
+        "elevationSurfaceLayerURI" : "CIMPATH=Map/b1d685acfa394bcdaba1ff710245c091.json"
       },
       "expanded" : true,
       "layerType" : "Operational",
@@ -32,9 +32,10 @@
       "blendingMode" : "Alpha",
       "allowDrapingOnIntegratedMesh" : true,
       "autoGenerateFeatureTemplates" : true,
+      "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "Sim_LJln",
+        "displayField" : "status_per",
         "editable" : true,
         "fieldDescriptions" : [
           {
@@ -60,8 +61,8 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "helper_id",
-            "fieldName" : "helper_id",
+            "alias" : "NIB",
+            "fieldName" : "NIB",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -74,8 +75,29 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "SHAPE_Leng",
-            "fieldName" : "SHAPE_Leng",
+            "alias" : "IdBidang",
+            "fieldName" : "IdBidang",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "status_per",
+            "fieldName" : "status_per",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "ls_tnh",
+            "fieldName" : "ls_tnh",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -88,8 +110,64 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "P_Jalan",
-            "fieldName" : "P_Jalan",
+            "alias" : "lb_dpn",
+            "fieldName" : "lb_dpn",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "zonasi",
+            "fieldName" : "zonasi",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "s_zonasi",
+            "fieldName" : "s_zonasi",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "letak",
+            "fieldName" : "letak",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "s_letak",
+            "fieldName" : "s_letak",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "s_kls_jln",
+            "fieldName" : "s_kls_jln",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -116,13 +194,6 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "Sim_LJln",
-            "fieldName" : "Sim_LJln",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
             "alias" : "kls_jln",
             "fieldName" : "kls_jln",
             "visible" : true,
@@ -130,8 +201,204 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "s_kls_jln",
-            "fieldName" : "s_kls_jln",
+            "alias" : "Shape_Le_1",
+            "fieldName" : "Shape_Le_1",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_atrp",
+            "fieldName" : "jk_atrp",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_atrs",
+            "fieldName" : "jk_atrs",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_kolp",
+            "fieldName" : "jk_kolp",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_kols",
+            "fieldName" : "jk_kols",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_cbd",
+            "fieldName" : "jk_cbd",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_pem",
+            "fieldName" : "jk_pem",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_kes",
+            "fieldName" : "jk_kes",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_tran",
+            "fieldName" : "jk_tran",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "jk_edu",
+            "fieldName" : "jk_edu",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "banjir",
+            "fieldName" : "banjir",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "NILAI_LAMA",
+            "fieldName" : "NILAI_LAMA",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Shape_Leng",
+            "fieldName" : "Shape_Leng",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "Shape_Le_2",
+            "fieldName" : "Shape_Le_2",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 6
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "ls_asal",
+            "fieldName" : "ls_asal",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -158,57 +425,31 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "SimLJln2",
-            "fieldName" : "SimLJln2",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "IdJalan",
-            "fieldName" : "IdJalan",
+            "alias" : "Shape_Area",
+            "fieldName" : "Shape_Area",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
           }
         ],
-        "timeFields" : {
-          "type" : "CIMTimeTableDefinition"
-        },
-        "timeDefinition" : {
-          "type" : "CIMTimeDataDefinition",
-          "hasLiveData" : true
-        },
-        "timeDisplayDefinition" : {
-          "type" : "CIMTimeDisplayDefinition",
-          "timeInterval" : 0,
-          "timeIntervalUnits" : "esriTimeUnitsHours",
-          "timeOffsetUnits" : "esriTimeUnitsYears"
-        },
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
-          "featureDataset" : "znt_ds",
-          "workspaceConnectionString" : "DATABASE=D:\\Percobaan Pembuatan NBT\\Percobaan Penyesuaian Jaringan Jalan\\znt_fgdb.gdb",
+          "featureDataset" : "nbt_ds",
+          "workspaceConnectionString" : "DATABASE=.\\Jobdesk\\Uji Coba Plugin Penilaian Tanah\\Pembaruan NBT\\Penyesuaian Proses Persil 1605\\NilaiBidangTanah.gdb",
           "workspaceFactory" : "FileGDB",
-          "dataset" : "Jaringan_Jalan",
+          "dataset" : "Persil_Baru",
           "datasetType" : "esriDTFeatureClass"
         },
         "studyAreaSpatialRel" : "esriSpatialRelUndefined",
         "searchOrder" : "esriSearchOrderSpatial"
       },
       "htmlPopupEnabled" : true,
-      "htmlPopupFormat" : {
-        "type" : "CIMHtmlPopupFormat",
-        "htmlUseCodedDomainValues" : true,
-        "htmlPresentationStyle" : "TwoColumnTable"
-      },
-      "isFlattened" : true,
       "selectable" : true,
       "featureCacheType" : "Session",
       "displayFiltersType" : "ByScale",
@@ -217,12 +458,13 @@
       "labelClasses" : [
         {
           "type" : "CIMLabelClass",
-          "expression" : "[SimLebarJa]",
-          "expressionEngine" : "VBScript",
+          "expressionTitle" : "Custom",
+          "expression" : "$feature['status_per']",
+          "expressionEngine" : "Arcade",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
             "type" : "CIMMaplexLabelPlacementProperties",
-            "featureType" : "Line",
+            "featureType" : "Polygon",
             "avoidPolygonHoles" : true,
             "canOverrunFeature" : true,
             "canPlaceLabelOutsidePolygon" : true,
@@ -235,12 +477,13 @@
             "contourLadderType" : "Straight",
             "contourMaximumAngle" : 90,
             "enableConnection" : true,
-            "featureWeight" : 100,
+            "featureWeight" : 0,
             "fontHeightReductionLimit" : 4,
             "fontHeightReductionStep" : 0.5,
             "fontWidthReductionLimit" : 90,
             "fontWidthReductionStep" : 5,
             "graticuleAlignmentType" : "Straight",
+            "keyNumberGroupName" : "Default",
             "labelBuffer" : 15,
             "labelLargestPolygon" : true,
             "labelPriority" : -1,
@@ -250,12 +493,26 @@
               "maximumNumberOfLines" : 3,
               "minimumNumberOfCharsPerLine" : 3,
               "maximumNumberOfCharsPerLine" : 24,
+              "separators" : [
+                {
+                  "type" : "CIMMaplexStackingSeparator",
+                  "separator" : " ",
+                  "splitAfter" : true
+                },
+                {
+                  "type" : "CIMMaplexStackingSeparator",
+                  "separator" : ",",
+                  "visible" : true,
+                  "splitAfter" : true
+                }
+              ],
               "trimStackingSeparators" : true
             },
             "lineFeatureType" : "General",
             "linePlacementMethod" : "OffsetCurvedFromLine",
-            "maximumLabelOverrun" : 36,
+            "maximumLabelOverrun" : 80,
             "maximumLabelOverrunUnit" : "Point",
+            "measureFromClippedFeatureGeometry" : true,
             "minimumFeatureSizeUnit" : "Map",
             "multiPartOption" : "OneLabelPerPart",
             "offsetAlongLineProperties" : {
@@ -278,7 +535,7 @@
             },
             "pointPlacementMethod" : "AroundPoint",
             "polygonAnchorPointType" : "GeometricCenter",
-            "polygonBoundaryWeight" : 200,
+            "polygonBoundaryWeight" : 0,
             "polygonExternalZones" : {
               "type" : "CIMMaplexExternalZonePriorities",
               "aboveLeft" : 4,
@@ -295,12 +552,12 @@
               "type" : "CIMMaplexInternalZonePriorities",
               "center" : 1
             },
-            "polygonPlacementMethod" : "CurvedInPolygon",
+            "polygonPlacementMethod" : "HorizontalInPolygon",
             "primaryOffset" : 1,
             "primaryOffsetUnit" : "Point",
             "removeAmbiguousLabels" : "All",
             "removeExtraWhiteSpace" : true,
-            "repetitionIntervalUnit" : "Map",
+            "repetitionIntervalUnit" : "Point",
             "rotationProperties" : {
               "type" : "CIMMaplexRotationProperties",
               "rotationType" : "Arithmetic",
@@ -316,14 +573,15 @@
               "fontReduction" : 4,
               "abbreviation" : 5
             },
-            "thinningDistanceUnit" : "Map",
+            "thinningDistanceUnit" : "Point",
             "truncationMarkerCharacter" : ".",
             "truncationMinimumLength" : 1,
             "truncationPreferredCharacters" : "aeiou",
+            "truncationExcludedCharacters" : "0123456789",
             "polygonAnchorPointPerimeterInsetUnit" : "Point"
           },
-          "name" : "Default",
-          "priority" : 2,
+          "name" : "Class 1",
+          "priority" : -1,
           "standardLabelPlacementProperties" : {
             "type" : "CIMStandardLabelPlacementProperties",
             "featureType" : "Line",
@@ -368,33 +626,21 @@
             "symbol" : {
               "type" : "CIMTextSymbol",
               "blockProgression" : "TTB",
-              "compatibilityMode" : true,
               "depth3D" : 1,
-              "drawSoftHyphen" : true,
               "extrapolateBaselines" : true,
-              "flipAngle" : 90,
               "fontEffects" : "Normal",
               "fontEncoding" : "Unicode",
-              "fontFamilyName" : "Arial",
+              "fontFamilyName" : "Tahoma",
               "fontStyleName" : "Regular",
               "fontType" : "Unspecified",
               "haloSize" : 1,
-              "height" : 8,
+              "height" : 10,
               "hinting" : "Default",
-              "horizontalAlignment" : "Center",
+              "horizontalAlignment" : "Left",
               "kerning" : true,
               "letterWidth" : 100,
               "ligatures" : true,
               "lineGapType" : "ExtraLeading",
-              "shadowColor" : {
-                "type" : "CIMRGBColor",
-                "values" : [
-                  0,
-                  0,
-                  0,
-                  100
-                ]
-              },
               "symbol" : {
                 "type" : "CIMPolygonSymbol",
                 "symbolLayers" : [
@@ -428,27 +674,13 @@
         }
       ],
       "renderer" : {
-        "type" : "CIMUniqueValueRenderer",
+        "type" : "CIMSimpleRenderer",
         "sampleSize" : 10000,
-        "colorRamp" : {
-          "type" : "CIMRandomHSVColorRamp",
-          "colorSpace" : {
-            "type" : "CIMICCColorSpace",
-            "url" : "Default RGB"
-          },
-          "maxH" : 360,
-          "minS" : 15,
-          "maxS" : 30,
-          "minV" : 99,
-          "maxV" : 100,
-          "minAlpha" : 100,
-          "maxAlpha" : 100
-        },
-        "defaultLabel" : "<all other values>",
-        "defaultSymbol" : {
+        "patch" : "Default",
+        "symbol" : {
           "type" : "CIMSymbolReference",
           "symbol" : {
-            "type" : "CIMLineSymbol",
+            "type" : "CIMPolygonSymbol",
             "symbolLayers" : [
               {
                 "type" : "CIMSolidStroke",
@@ -463,283 +695,30 @@
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    138,
                     0,
-                    76,
+                    0,
+                    0,
+                    100
+                  ]
+                }
+              },
+              {
+                "type" : "CIMSolidFill",
+                "enable" : true,
+                "color" : {
+                  "type" : "CIMRGBColor",
+                  "values" : [
+                    0,
+                    255,
+                    197,
                     100
                   ]
                 }
               }
-            ]
-          }
-        },
-        "defaultSymbolPatch" : "Default",
-        "fields" : [
-          "SimLJln2"
-        ],
-        "groups" : [
-          {
-            "type" : "CIMUniqueValueGroup",
-            "classes" : [
-              {
-                "type" : "CIMUniqueValueClass",
-                "label" : "Lebar Jalan = 0",
-                "patch" : "Default",
-                "symbol" : {
-                  "type" : "CIMSymbolReference",
-                  "symbol" : {
-                    "type" : "CIMLineSymbol",
-                    "symbolLayers" : [
-                      {
-                        "type" : "CIMSolidStroke",
-                        "enable" : true,
-                        "capStyle" : "Butt",
-                        "joinStyle" : "Round",
-                        "lineStyle3D" : "Strip",
-                        "miterLimit" : 10,
-                        "width" : 3,
-                        "height3D" : 1,
-                        "anchor3D" : "Center",
-                        "color" : {
-                          "type" : "CIMRGBColor",
-                          "values" : [
-                            250,
-                            52,
-                            17,
-                            100
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "values" : [
-                  {
-                    "type" : "CIMUniqueValue",
-                    "fieldValues" : [
-                      "0"
-                    ]
-                  }
-                ],
-                "visible" : true
-              },
-              {
-                "type" : "CIMUniqueValueClass",
-                "label" : "0 < Lebar Jalan <= 1.5",
-                "patch" : "Default",
-                "symbol" : {
-                  "type" : "CIMSymbolReference",
-                  "symbol" : {
-                    "type" : "CIMLineSymbol",
-                    "symbolLayers" : [
-                      {
-                        "type" : "CIMSolidStroke",
-                        "enable" : true,
-                        "capStyle" : "Round",
-                        "joinStyle" : "Round",
-                        "lineStyle3D" : "Strip",
-                        "miterLimit" : 10,
-                        "width" : 1,
-                        "height3D" : 1,
-                        "anchor3D" : "Center",
-                        "color" : {
-                          "type" : "CIMRGBColor",
-                          "values" : [
-                            255,
-                            167,
-                            127,
-                            100
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "values" : [
-                  {
-                    "type" : "CIMUniqueValue",
-                    "fieldValues" : [
-                      "1.5"
-                    ]
-                  }
-                ],
-                "visible" : true
-              },
-              {
-                "type" : "CIMUniqueValueClass",
-                "label" : "1.5 < Lebar Jalan  <= 3",
-                "patch" : "Default",
-                "symbol" : {
-                  "type" : "CIMSymbolReference",
-                  "symbol" : {
-                    "type" : "CIMLineSymbol",
-                    "symbolLayers" : [
-                      {
-                        "type" : "CIMSolidStroke",
-                        "enable" : true,
-                        "capStyle" : "Round",
-                        "joinStyle" : "Round",
-                        "lineStyle3D" : "Strip",
-                        "miterLimit" : 10,
-                        "width" : 1,
-                        "height3D" : 1,
-                        "anchor3D" : "Center",
-                        "color" : {
-                          "type" : "CIMRGBColor",
-                          "values" : [
-                            255,
-                            255,
-                            115,
-                            100
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "values" : [
-                  {
-                    "type" : "CIMUniqueValue",
-                    "fieldValues" : [
-                      "3"
-                    ]
-                  }
-                ],
-                "visible" : true
-              },
-              {
-                "type" : "CIMUniqueValueClass",
-                "label" : "3 < Lebar Jalan <= 5",
-                "patch" : "Default",
-                "symbol" : {
-                  "type" : "CIMSymbolReference",
-                  "symbol" : {
-                    "type" : "CIMLineSymbol",
-                    "symbolLayers" : [
-                      {
-                        "type" : "CIMSolidStroke",
-                        "enable" : true,
-                        "capStyle" : "Round",
-                        "joinStyle" : "Round",
-                        "lineStyle3D" : "Strip",
-                        "miterLimit" : 10,
-                        "width" : 1,
-                        "height3D" : 1,
-                        "anchor3D" : "Center",
-                        "color" : {
-                          "type" : "CIMRGBColor",
-                          "values" : [
-                            76,
-                            230,
-                            0,
-                            100
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "values" : [
-                  {
-                    "type" : "CIMUniqueValue",
-                    "fieldValues" : [
-                      "5"
-                    ]
-                  }
-                ],
-                "visible" : true
-              },
-              {
-                "type" : "CIMUniqueValueClass",
-                "label" : "5 < Lebar Jalan <= 8",
-                "patch" : "Default",
-                "symbol" : {
-                  "type" : "CIMSymbolReference",
-                  "symbol" : {
-                    "type" : "CIMLineSymbol",
-                    "symbolLayers" : [
-                      {
-                        "type" : "CIMSolidStroke",
-                        "enable" : true,
-                        "capStyle" : "Round",
-                        "joinStyle" : "Round",
-                        "lineStyle3D" : "Strip",
-                        "miterLimit" : 10,
-                        "width" : 1,
-                        "height3D" : 1,
-                        "anchor3D" : "Center",
-                        "color" : {
-                          "type" : "CIMRGBColor",
-                          "values" : [
-                            0,
-                            92,
-                            230,
-                            100
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "values" : [
-                  {
-                    "type" : "CIMUniqueValue",
-                    "fieldValues" : [
-                      "8"
-                    ]
-                  }
-                ],
-                "visible" : true
-              },
-              {
-                "type" : "CIMUniqueValueClass",
-                "label" : "Lebar Jalan > 8",
-                "patch" : "Default",
-                "symbol" : {
-                  "type" : "CIMSymbolReference",
-                  "symbol" : {
-                    "type" : "CIMLineSymbol",
-                    "symbolLayers" : [
-                      {
-                        "type" : "CIMSolidStroke",
-                        "enable" : true,
-                        "capStyle" : "Round",
-                        "joinStyle" : "Round",
-                        "lineStyle3D" : "Strip",
-                        "miterLimit" : 10,
-                        "width" : 0.40000000000000002,
-                        "height3D" : 1,
-                        "anchor3D" : "Center",
-                        "color" : {
-                          "type" : "CIMRGBColor",
-                          "values" : [
-                            204,
-                            204,
-                            204,
-                            100
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "values" : [
-                  {
-                    "type" : "CIMUniqueValue",
-                    "fieldValues" : [
-                      "8+"
-                    ]
-                  }
-                ],
-                "visible" : true
-              }
             ],
-            "heading" : "Lebar Jalan"
+            "angleAlignment" : "Map"
           }
-        ],
-        "useDefaultSymbol" : true,
-        "isDefaultSymbolVisible" : true,
-        "polygonSymbolColorTarget" : "Fill"
+        }
       },
       "scaleSymbols" : true,
       "snappable" : true
@@ -751,7 +730,7 @@
     {
       "type" : "CIMElevationSurfaceLayer",
       "name" : "Ground",
-      "uRI" : "CIMPATH=Map1/10e33a64d5a84a2eb3f1bd6644990d6c.json",
+      "uRI" : "CIMPATH=Map/b1d685acfa394bcdaba1ff710245c091.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },

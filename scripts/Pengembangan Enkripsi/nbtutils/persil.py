@@ -2,7 +2,7 @@ import json
 import arcpy, arcgisscripting
 import sys
 import os
-import datetime
+from .constant import LAYER_PERSIL
 
 
 def is_persil_layer_comply(show_path_message = True):
@@ -31,7 +31,7 @@ def is_persil_layer_comply(show_path_message = True):
     # Mencari semua layer dengan nama 'Persil'
     layer_persil = []
     for layer in active_map.listLayers():
-        if layer.name == 'Persil':
+        if layer.name == LAYER_PERSIL:
             layer_persil.append(layer)
     
     # Memeriksa jumlah Persil yang ditemukan

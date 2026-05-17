@@ -362,14 +362,15 @@
 					<menu refID="pengolahan_zonasi_pembaruan_nbt" />
 
 				</menu>
-				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Pengolahan Persil" >
+				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Poligon Persil" >
 					<button refID="ButtonIdentifikasiPerubahanPersil" size="Medium"/>
-					<button refID="ButtonHapusIndikatorPerubahanPersil" size="Medium"/>
+					<button refID="ButtonTampilkanSimbologiPersil" size="Medium"/>
 					<button refID="ButtonUpdateIndikatorPerubahanPersil" size="Medium"/>
 					<button refID="ButtonSetStatusPerubahanPersil" size="Medium"/>
+					<separator/>
 				</menu>
 				
-				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Pengolahan Jaringan Jalan">
+				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Jaringan Jalan">
 					<button refID="ButtonPersiapanJaringanJalanPembaruan" size="Medium"/>
 					<button refID="ButtonSetAtributJaringanJalan" size="Medium"/>
 					<button refID="ButtonHapusJaringanJalanTerpilih" size="Medium"/>
@@ -381,7 +382,7 @@
 					<button refID="ButtonUpdateSimbologiKelasJalan" size="Medium"/>
 					<button refID="ButtonSetKelasJalan" size="Medium"/>
 				</menu>
-				<menu id="pengolahan_zonasi_pembaruan_nbt" caption="Pengolahan Zonasi">
+				<menu id="pengolahan_zonasi_pembaruan_nbt" caption="Zonasi">
 					<button refID="ButtonGenerateKonfigurasiZonasi" size="Medium"/>
 					<button refID="ButtonDeklarasiZonasiUpdate" size="Medium"/>
 					<button refID="ButtonEditZonasiUpdate" size="Medium"/>
@@ -2109,11 +2110,11 @@
 					</args>
 					<tooltip heading="Buat Workspace">Menu untuk mMembuat Workspace Pembaruan NBT.</tooltip>
 				</button>
-				<button id="ButtonDeklarasiVariabelPembaruanNBT" caption="Deklarasi Variabel" smallImage="C:\PenilaianTanah\icons\location.png" largeImage="C:\PenilaianTanah\icons\location.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonDeklarasiVariabelPembaruanNBT" caption="Masukkan Data NBT Sebelumnya" smallImage="C:\PenilaianTanah\icons\location.png" largeImage="C:\PenilaianTanah\icons\location.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Masukkan_Data_NBT_Sebelumnya" name="Masukkan Data NBT Sebelumnya" xmlns=""/>
 					</args>
-					<tooltip heading="Deklarasi Variabel">Menu untuk mendeklarasikan variabel-variabel yang diperlukan dalam proses Pembaruan NBT.</tooltip>
+					<tooltip heading="Masukkan Data NBT Sebelumnya">Menu untuk mendeklarasikan variabel-variabel yang diperlukan dalam proses Pembaruan NBT.</tooltip>
 				</button>
 			<!-- Menu Pengolahan Data Dasar -->
 			<!-- Pengolahan Persil -->
@@ -2124,11 +2125,11 @@
 					<tooltip heading="Identifikasi Perubahan Persil">Menu untuk mengidentifikasi perubahan persil lama dengan persil baru.</tooltip>
 				</button>
 
-				<button id="ButtonHapusIndikatorPerubahanPersil" caption="Hapus Indikator Perubahan Persil" smallImage="C:\PenilaianTanah\icons\hpusindikator.png" largeImage="C:\PenilaianTanah\icons\hpusindikator.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonTampilkanSimbologiPersil" caption="Tampilkan Simbologi Persil" smallImage="C:\PenilaianTanah\icons\hpusindikator.png" largeImage="C:\PenilaianTanah\icons\hpusindikator.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Hapus_Indikator_Perubahan_Persil" name="Hapus Indikator Perubahan Persil" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Tampilkan_Simbologi_Persil" name="Tampilkan Simbologi Persil" xmlns=""/>
 					</args>
-					<tooltip heading="Hapus Indikator Perubahan Persil">Menu untuk menghapus feature terpilih pada layer indikator perubahan persil.</tooltip>
+					<tooltip heading="Tampilkan Simbologi Persil">Menu untuk menampilkan simbologi persil.</tooltip>
 				</button>
 
 				<button id="ButtonUpdateIndikatorPerubahanPersil" caption="Update Indikator Perubahan Persil" smallImage="C:\PenilaianTanah\icons\updte.png" largeImage="C:\PenilaianTanah\icons\updte.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

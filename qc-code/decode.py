@@ -155,5 +155,5 @@ project_config = r'E:\Akmal\Jobdesk\Uji Coba Plugin Penilaian Tanah\Pembaruan ZN
 reset_last_sample = {
     'last_sample_id': 0
 }
-setup_project_config(reset_last_sample, project_config)
-# print(get_all_config())
+# setup_project_config(reset_last_sample, project_config)
+print(get_all_config())

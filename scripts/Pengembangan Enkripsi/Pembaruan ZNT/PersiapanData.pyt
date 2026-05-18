@@ -127,6 +127,7 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
             penjelasan.enabled = False
         
         return
+    
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
         return True

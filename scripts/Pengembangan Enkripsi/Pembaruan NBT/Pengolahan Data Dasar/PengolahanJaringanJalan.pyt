@@ -93,7 +93,7 @@ class Persiapan_Jaringan_Jalan_Update(object):
         dataset_path=configs["project_config"]["dataset_path"]
         jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
         jaringan_jalan="Jaringan_Jalan"
-        peta_baru="Persil_Baru"
+        peta_baru="Persil_Layer"
         peta_baru_path=os.path.join(dataset_path,peta_baru)
         JaringanJalanTopoUpdate="Topo_Jaringan_Jalan_Update"
         JaringanJalanTopoAwal="TopologiJaringanJalan"

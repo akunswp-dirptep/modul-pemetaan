@@ -2106,6 +2106,7 @@ class Analisis_Bentuk_Persil(object):
         messages.addMessage("== Proses selesai ==")
 
         return
+
 class Edit_Bentuk_Persil(object):
 
     def __init__(self):

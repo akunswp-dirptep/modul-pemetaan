@@ -362,12 +362,28 @@
 					<menu refID="pengolahan_zonasi_pembaruan_nbt" />
 
 				</menu>
-				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Poligon Persil" >
+				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Poligon Persil">
 					<button refID="ButtonIdentifikasiPerubahanPersil" size="Medium"/>
 					<button refID="ButtonTampilkanSimbologiPersil" size="Medium"/>
 					<button refID="ButtonUpdateIndikatorPerubahanPersil" size="Medium"/>
 					<button refID="ButtonSetStatusPerubahanPersil" size="Medium"/>
+
 					<separator/>
+
+					<button refID="ButtonPersilCluster" size="Medium"/>
+					<button refID="ButtonResetPersilCluster" size="Medium"/>
+					<button refID="ButtonGeneratePetaPersilCluster" size="Medium"/>
+
+					<separator/>
+
+					<button refID="ButtonGeneratePetaAkhir" size="Medium"/>
+					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
+
+					<separator/>
+
+					<button refID="ButtonAnalisisBentukPersil" size="Medium"/>
+					<button refID="ButtonEditBentukPersil" size="Medium"/>
+					<button refID="ButtonSimpanBentukPersil" size="Medium"/>
 				</menu>
 				
 				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Jaringan Jalan">
@@ -2114,7 +2130,7 @@
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Masukkan_Data_NBT_Sebelumnya" name="Masukkan Data NBT Sebelumnya" xmlns=""/>
 					</args>
-					<tooltip heading="Masukkan Data NBT Sebelumnya">Menu untuk mendeklarasikan variabel-variabel yang diperlukan dalam proses Pembaruan NBT.</tooltip>
+					<tooltip heading="Masukkan Data NBT Sebelumnya">Menu untuk memasukkan variabel-variabel yang diperlukan dalam proses Pembaruan NBT.</tooltip>
 				</button>
 			<!-- Menu Pengolahan Data Dasar -->
 			<!-- Pengolahan Persil -->
@@ -2144,6 +2160,61 @@
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Set_Status_Perubahan_Persil" name="Set Status Perubahan Persil" xmlns=""/>
 					</args>
 					<tooltip heading="Set Status Perubahan Persil">Menu untuk mengubah status perubahan persil menjadi tetap atau update.</tooltip>
+				</button>
+				<button id="ButtonPersilCluster" caption="Persil Cluster" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Persil_Cluster" name="Persil Cluster" xmlns=""/>
+					</args>
+					<tooltip heading="Persil Cluster">Menu untuk mengelompokkan persil perubahan ke dalam cluster tertentu.</tooltip>
+				</button>
+
+				<button id="ButtonResetPersilCluster" caption="Reset Persil Cluster" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Reset_Persil_Cluster" name="Reset Persil Cluster" xmlns=""/>
+					</args>
+					<tooltip heading="Reset Persil Cluster">Menu untuk menghapus cluster pada persil yang dipilih.</tooltip>
+				</button>
+
+				<button id="ButtonGeneratePetaPersilCluster" caption="Generate Peta Persil Cluster" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Generate_Peta_Persil_Cluster" name="Generate Peta Persil Cluster" xmlns=""/>
+					</args>
+					<tooltip heading="Generate Peta Persil Cluster">Menu untuk membuat peta persil berdasarkan cluster dan status perubahan persil.</tooltip>
+				</button>
+
+				<button id="ButtonGeneratePetaAkhir" caption="Generate Peta Akhir" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Generate_Peta_Akhir" name="Generate Peta Akhir" xmlns=""/>
+					</args>
+					<tooltip heading="Generate Peta Akhir">Menu untuk menghasilkan peta akhir berdasarkan hasil analisis persil.</tooltip>
+				</button>
+
+				<button id="ButtonUpdateLuasTanah" caption="Update Luas Tanah" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Update_Luas_Tanah" name="Update Luas Tanah" xmlns=""/>
+					</args>
+					<tooltip heading="Update Luas Tanah">Menu untuk menghitung ulang luas tanah pada peta akhir.</tooltip>
+				</button>
+
+				<button id="ButtonAnalisisBentukPersil" caption="Analisis Bentuk Persil" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Analisis_Bentuk_Persil" name="Analisis Bentuk Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Analisis Bentuk Persil">Menu untuk menganalisis bentuk geometris persil perubahan.</tooltip>
+				</button>
+
+				<button id="ButtonEditBentukPersil" caption="Edit Bentuk Persil" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Edit_Bentuk_Persil" name="Edit Bentuk Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Edit Bentuk Persil">Menu untuk mengubah bentuk persil secara manual.</tooltip>
+				</button>
+
+				<button id="ButtonSimpanBentukPersil" caption="Simpan Bentuk Persil" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Simpan_Bentuk_Persil" name="Simpan Bentuk Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Simpan Bentuk Persil">Menu untuk menyimpan hasil analisis bentuk persil ke layer persil baru.</tooltip>
 				</button>
 			<!-- Pengolahan Jaringan Jalan -->
 				<button id="ButtonPersiapanJaringanJalanPembaruan" caption="Masukkan Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

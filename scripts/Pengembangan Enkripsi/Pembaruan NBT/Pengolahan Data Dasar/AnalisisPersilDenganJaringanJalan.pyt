@@ -11,11 +11,7 @@ if gp_dir not in sys.path:
     sys.path.insert(0, gp_dir)
 
 from nbtutils import constant, persil
-from zntutils.document import validate_document_type, get_credentials
-from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id, setup_user_data
-from zntutils.constant import PREFERRED_BERKAS_ID, CREDENTIAL_KEY, PREFERRED_SERVER_KEY, AUTH_KEY, NAMA_PROVINSI, KAB_KOTA
-from zntutils.upload_utils import upload_shapefile_to_sipenta
-from zntutils import zona_layer
+
 
 
 class Toolbox:
@@ -338,45 +334,35 @@ class Update_Kelas_dan_Lebar_Jalan_Persil(object):
         if "lb_jln" not in field_names:
             arcpy.management.AddField(persil_path,"lb_jln","DOUBLE")
 
-        arcpy.management.JoinField(
-            persil_path,
-            "IdBidang",
+        join_dict={}
+
+        # Ambil data dari diss_2_path
+        with arcpy.da.SearchCursor(
             diss_2_path,
-            "IdBidang",
-            ["MAX_MAX_s_kls_jln","MAX_MAX_lb_jln"]
-        )
-
-        arcpy.management.CalculateField(persil_path,"s_kls_jln","!MAX_MAX_s_kls_jln!","PYTHON3")
-        arcpy.management.CalculateField(persil_path,"lb_jln","!MAX_MAX_lb_jln!","PYTHON3")
-
-        if arcpy.Exists(persil_sumber):
-            try: arcpy.management.Delete(persil_sumber)
-            except: pass
-
-        arcpy.management.MakeFeatureLayer(persil_path, persil_sumber)
-
-        joinfields=["IdBidang","s_kls_jln","lb_jln"]
-        joindict={}
-
-        with arcpy.da.SearchCursor(src_path,joinfields) as rows:
+            ["IdBidang","MAX_MAX_s_kls_jln","MAX_MAX_lb_jln"]
+        ) as rows:
             for row in rows:
-                joindict[row[0]]=[row[1],row[2]]
+                join_dict[row[0]]=[
+                    row[1],
+                    row[2]
+                ]
 
-        with arcpy.da.UpdateCursor(trg_path,joinfields) as rows:
+        # Update persil_path
+        with arcpy.da.UpdateCursor(
+            trg_path,
+            ["IdBidang","s_kls_jln","lb_jln"]
+        ) as rows:
+
             for row in rows:
-                if row[0] in joindict:
-                    row[1]=joindict[row[0]][0]
-                    row[2]=joindict[row[0]][1]
+
+                idbidang=row[0]
+
+                if idbidang in join_dict:
+
+                    row[1]=join_dict[idbidang][0]
+                    row[2]=join_dict[idbidang][1]
+
                     rows.updateRow(row)
-
-        if arcpy.Exists(trg):
-            try: arcpy.management.Delete(trg)
-            except: pass
-
-        field_names=[field.name for field in arcpy.ListFields(trg_path)]
-
-        if "kls_jln" not in field_names:
-            arcpy.management.AddField(trg_path,"kls_jln","TEXT")
 
         kelas_jalan={
             7:"Arteri Primer",
@@ -396,13 +382,6 @@ class Update_Kelas_dan_Lebar_Jalan_Persil(object):
 
         arcpy.management.MakeFeatureLayer(trg_path,trg)
 
-        arcpy.management.SelectLayerByAttribute(
-            trg,
-            "NEW_SELECTION",
-            '"s_kls_jln" IS NULL'
-        )
-
-        arcpy.management.CalculateField(trg,"s_kls_jln","1","PYTHON3")
 
         parameters[0].value=trg
 
@@ -459,10 +438,6 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
 
     def execute(self, parameters, messages):
 
-        import os
-        import arcpy
-
-        arcpy.env.overwriteOutput = True
 
         messages.addMessage(
             "== Proses dimulai =="
@@ -946,13 +921,13 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
 class Update_Simbologi_Lebar_Jalan_Persil(object):
 
     def __init__(self):
-        self.label = "Update Simbologi Lebar Jalan Persil"
-        self.description = ""
-        self.canRunInBackground = False
+        self.label="Update Simbologi Lebar Jalan Persil"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        output_persil = arcpy.Parameter(
+        output_persil=arcpy.Parameter(
             displayName="Output Persil Baru",
             name="output_persil",
             datatype="GPFeatureLayer",
@@ -960,7 +935,7 @@ class Update_Simbologi_Lebar_Jalan_Persil(object):
             direction="Output"
         )
 
-        output_jalan = arcpy.Parameter(
+        output_jalan=arcpy.Parameter(
             displayName="Output Jaringan Jalan",
             name="output_jalan",
             datatype="GPFeatureLayer",
@@ -976,322 +951,116 @@ class Update_Simbologi_Lebar_Jalan_Persil(object):
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import os
-        import arcpy
-        import arcpy.mp
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
+        configs= persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        appdata=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
+        persil_name="Persil_Layer"
+        persil_path=os.path.join(dataset_path,persil_name)
 
-        configs = persil.get_config_values()
+        jaringanjalan="Jaringan_Jalan"
+        jaringanjalan_path=os.path.join(dataset_path,jaringanjalan)
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =====================================================
-        # APPDATA
-        # =====================================================
-
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
-
-        # =====================================================
-        # PATH
-        # =====================================================
-
-        persil = "Persil_Baru"
-
-        persil_path = os.path.join(
-            dataset_path,
-            persil
-        )
-
-        jaringanjalan = "Jaringan_Jalan"
-
-        jaringanjalan_path = os.path.join(
-            dataset_path,
-            jaringanjalan
-        )
-
-        sim_persil_path = os.path.join(
-            appdata,
-            "SimbologiLebarJalanUpdate2_i3.lyr"
-        )
-
-        sim_jalan_path = os.path.join(
-            appdata,
-            "SimbologiLebarJalanUpdate.lyr"
-        )
-
-        # =====================================================
-        # FUNCTION KATEGORI LEBAR JALAN
-        # =====================================================
+        sim_persil_path=os.path.join(appdata,"SimbologiLebarJalanUpdate2_i3.lyr")
+        sim_jalan_path=os.path.join(appdata,"SimbologiLebarJalanUpdate.lyr")
 
         def get_simbol_lebar_jalan(lb_jln):
 
-            if not lb_jln:
+            if not lb_jln:return (0,"0")
+            if lb_jln>30:return (30,"8+")
+            if lb_jln==0:return (lb_jln,"0")
 
-                return (
-                    0,
-                    "0"
-                )
+            elif lb_jln>0 and lb_jln<=1.5:return (lb_jln,"1.5")
+            elif lb_jln>1.5 and lb_jln<=3:return (lb_jln,"3")
+            elif lb_jln>3 and lb_jln<=5:return (lb_jln,"5")
+            elif lb_jln>5 and lb_jln<=8:return (lb_jln,"8")
 
-            if lb_jln > 30:
-
-                return (
-                    30,
-                    "8+"
-                )
-
-            if lb_jln == 0:
-
-                return (
-                    lb_jln,
-                    "0"
-                )
-
-            elif (
-                lb_jln > 0
-                and lb_jln <= 1.5
-            ):
-
-                return (
-                    lb_jln,
-                    "1.5"
-                )
-
-            elif (
-                lb_jln > 1.5
-                and lb_jln <= 3
-            ):
-
-                return (
-                    lb_jln,
-                    "3"
-                )
-
-            elif (
-                lb_jln > 3
-                and lb_jln <= 5
-            ):
-
-                return (
-                    lb_jln,
-                    "5"
-                )
-
-            elif (
-                lb_jln > 5
-                and lb_jln <= 8
-            ):
-
-                return (
-                    lb_jln,
-                    "8"
-                )
-
-            else:
-
-                return (
-                    lb_jln,
-                    "8+"
-                )
-
-        # =====================================================
-        # UPDATE FIELD FUNCTION
-        # =====================================================
+            else:return (lb_jln,"8+")
 
         def update_simbol_layer(feature_class):
 
-            field_names = [
-                field.name
-                for field in arcpy.ListFields(
-                    feature_class
-                )
-            ]
+            field_names=[field.name for field in arcpy.ListFields(feature_class)]
 
             if "SimLJln2" not in field_names:
+                arcpy.management.AddField(feature_class,"SimLJln2","TEXT")
 
-                arcpy.management.AddField(
-                    feature_class,
-                    "SimLJln2",
-                    "TEXT"
-                )
-
-            with arcpy.da.UpdateCursor(
-                feature_class,
-                [
-                    "lb_jln",
-                    "SimLJln2"
-                ]
-            ) as rows:
+            with arcpy.da.UpdateCursor(feature_class,["lb_jln","SimLJln2"]) as rows:
 
                 for row in rows:
 
-                    lb_jln = row[0]
+                    hasil=get_simbol_lebar_jalan(row[0])
 
-                    hasil = get_simbol_lebar_jalan(
-                        lb_jln
-                    )
-
-                    row[0] = hasil[0]
-                    row[1] = hasil[1]
+                    row[0]=hasil[0]
+                    row[1]=hasil[1]
 
                     rows.updateRow(row)
 
-        # =====================================================
-        # UPDATE PERSIL
-        # =====================================================
+        messages.addMessage("== Update simbologi lebar jalan persil ==")
+        update_simbol_layer(persil_path)
 
-        messages.addMessage(
-            "== Update simbologi lebar jalan persil =="
-        )
+        messages.addMessage("== Update simbologi lebar jalan jaringan jalan ==")
+        update_simbol_layer(jaringanjalan_path)
 
-        update_simbol_layer(
-            persil_path
-        )
+        if arcpy.Exists(persil_name):
+            try: arcpy.management.Delete(persil_name)
+            except: pass
 
-        # =====================================================
-        # UPDATE JARINGAN JALAN
-        # =====================================================
+        arcpy.management.MakeFeatureLayer(persil_path,persil_name)
 
-        messages.addMessage(
-            "== Update simbologi lebar jalan jaringan jalan =="
-        )
+        if os.path.exists(sim_persil_path):
+            arcpy.management.ApplySymbologyFromLayer(persil_name,sim_persil_path)
 
-        update_simbol_layer(
-            jaringanjalan_path
-        )
+        if arcpy.Exists(jaringanjalan):
+            try: arcpy.management.Delete(jaringanjalan)
+            except: pass
 
-        # =====================================================
-        # REFRESH PERSIL
-        # =====================================================
+        arcpy.management.MakeFeatureLayer(jaringanjalan_path,jaringanjalan)
 
-        if arcpy.Exists(
-            persil
-        ):
-
-            try:
-                arcpy.management.Delete(
-                    persil
-                )
-            except:
-                pass
-
-        arcpy.management.MakeFeatureLayer(
-            persil_path,
-            persil
-        )
-
-        if os.path.exists(
-            sim_persil_path
-        ):
-
-            arcpy.management.ApplySymbologyFromLayer(
-                persil,
-                sim_persil_path
-            )
-
-        # =====================================================
-        # REFRESH JARINGAN JALAN
-        # =====================================================
-
-        if arcpy.Exists(
-            jaringanjalan
-        ):
-
-            try:
-                arcpy.management.Delete(
-                    jaringanjalan
-                )
-            except:
-                pass
-
-        arcpy.management.MakeFeatureLayer(
-            jaringanjalan_path,
-            jaringanjalan
-        )
-
-        if os.path.exists(
-            sim_jalan_path
-        ):
-
-            arcpy.management.ApplySymbologyFromLayer(
-                jaringanjalan,
-                sim_jalan_path
-            )
-
-        # =====================================================
-        # HIDE ND LAYER
-        # =====================================================
+        if os.path.exists(sim_jalan_path):
+            arcpy.management.ApplySymbologyFromLayer(jaringanjalan,sim_jalan_path)
 
         try:
 
-            aprx = arcpy.mp.ArcGISProject(
-                "CURRENT"
-            )
-
-            current_map = aprx.activeMap
-
-            layers = current_map.listLayers()
+            aprx=arcpy.mp.ArcGISProject("CURRENT")
+            current_map=aprx.activeMap
+            layers=current_map.listLayers()
 
             for layer in layers:
 
-                if layer.name == "JaringanJalanForND":
-
-                    layer.visible = False
+                if layer.name=="JaringanJalanForND":
+                    layer.visible=False
 
         except:
-
             pass
 
-        # =====================================================
-        # OUTPUT PARAMETER
-        # =====================================================
+        parameters[0].value=persil_name
+        parameters[1].value=jaringanjalan
 
-        parameters[0].value = (
-            persil
-        )
+        messages.addMessage("== Proses selesai ==")
 
-        parameters[1].value = (
-            jaringanjalan
-        )
+        return   
 
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
-        return
-    
 class Set_Lebar_Jalan_Persil(object):
 
     def __init__(self):
-        self.label = "Set Lebar Jalan Persil"
-        self.description = ""
-        self.canRunInBackground = False
+        self.label="Set Lebar Jalan Persil"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        lb_jln = arcpy.Parameter(
+        lb_jln=arcpy.Parameter(
             displayName="Lebar Jalan",
             name="lb_jln",
             datatype="GPDouble",
@@ -1304,165 +1073,74 @@ class Set_Lebar_Jalan_Persil(object):
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import os
-        import arcpy
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
+        lb_jln=parameters[0].value
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        # =====================================================
-        # PARAMETER
-        # =====================================================
+        persil_baru="Persil_Layer"
+        persil_baru_path=os.path.join(dataset_path,persil_baru)
 
-        lb_jln = (
-            parameters[0].value
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =====================================================
-        # DATASET
-        # =====================================================
-
-        persil_baru = (
-            "Persil_Baru"
-        )
-
-        persil_baru_path = os.path.join(
-            dataset_path,
-            persil_baru
-        )
-
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
-
-        persil_fields = [
-            f.name
-            for f in arcpy.ListFields(
-                persil_baru_path
-            )
-        ]
+        persil_fields=[f.name for f in arcpy.ListFields(persil_baru_path)]
 
         if "SimLJln2" not in persil_fields:
-
-            arcpy.management.AddField(
-                persil_baru_path,
-                "SimLJln2",
-                "TEXT"
-            )
+            arcpy.management.AddField(persil_baru_path,"SimLJln2","TEXT")
 
         if "lb_jln" not in persil_fields:
 
-            messages.addErrorMessage(
-                "== Field lb_jln tidak ditemukan =="
-            )
+            messages.addErrorMessage("== Field lb_jln tidak ditemukan ==")
 
             raise arcpy.ExecuteError
 
-        # =====================================================
-        # KATEGORI SIMBOLOGI
-        # =====================================================
+        if lb_jln==0:
+            SimLJln2="0"
 
-        if lb_jln == 0:
+        elif lb_jln>0 and lb_jln<=1.5:
+            SimLJln2="1.5"
 
-            SimLJln2 = "0"
+        elif lb_jln>1.5 and lb_jln<=3:
+            SimLJln2="3"
 
-        elif (
-            lb_jln > 0
-            and lb_jln <= 1.5
-        ):
+        elif lb_jln>3 and lb_jln<=5:
+            SimLJln2="5"
 
-            SimLJln2 = "1.5"
-
-        elif (
-            lb_jln > 1.5
-            and lb_jln <= 3
-        ):
-
-            SimLJln2 = "3"
-
-        elif (
-            lb_jln > 3
-            and lb_jln <= 5
-        ):
-
-            SimLJln2 = "5"
-
-        elif (
-            lb_jln > 5
-            and lb_jln <= 8
-        ):
-
-            SimLJln2 = "8"
+        elif lb_jln>5 and lb_jln<=8:
+            SimLJln2="8"
 
         else:
+            SimLJln2="8+"
 
-            SimLJln2 = "8+"
+        ada_seleksi=len(arcpy.Describe(persil_baru).FIDSet)
 
-        # =====================================================
-        # VALIDASI SELEKSI
-        # =====================================================
+        if ada_seleksi==0:
 
-        ada_seleksi = len(
-            arcpy.Describe(
-                persil_baru
-            ).FIDSet
-        )
-
-        if ada_seleksi == 0:
-
-            messages.addWarningMessage(
-                "== Tidak ada persil yang dipilih =="
-            )
+            messages.addWarningMessage("== Tidak ada persil yang dipilih ==")
 
             return
 
-        # =====================================================
-        # UPDATE FIELD
-        # =====================================================
-
-        messages.addMessage(
-            "== Update lebar jalan persil =="
-        )
+        messages.addMessage("== Update lebar jalan persil ==")
 
         with arcpy.da.UpdateCursor(
             persil_baru,
-            [
-                "lb_jln",
-                "SimLJln2"
-            ]
+            ["lb_jln","SimLJln2"]
         ) as rows:
 
             for row in rows:
 
-                row[0] = lb_jln
-                row[1] = SimLJln2
+                row[0]=lb_jln
+                row[1]=SimLJln2
 
                 rows.updateRow(row)
-
-        # =====================================================
-        # UPDATE FINAL
-        # =====================================================
 
         arcpy.management.CalculateField(
             persil_baru,
@@ -1471,22 +1149,20 @@ class Set_Lebar_Jalan_Persil(object):
             "PYTHON3"
         )
 
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
-        return
+        return   
     
 class Update_Simbologi_Kelas_Jalan_Persil(object):
 
     def __init__(self):
-        self.label = "Update Simbologi Kelas Jalan Persil"
-        self.description = ""
-        self.canRunInBackground = False
+        self.label="Update Simbologi Kelas Jalan Persil"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        output_persil = arcpy.Parameter(
+        output_persil=arcpy.Parameter(
             displayName="Output Persil Baru",
             name="output_persil",
             datatype="GPFeatureLayer",
@@ -1494,7 +1170,7 @@ class Update_Simbologi_Kelas_Jalan_Persil(object):
             direction="Output"
         )
 
-        output_jaringan_jalan = arcpy.Parameter(
+        output_jaringan_jalan=arcpy.Parameter(
             displayName="Output Jaringan Jalan",
             name="output_jaringan_jalan",
             datatype="GPFeatureLayer",
@@ -1510,173 +1186,70 @@ class Update_Simbologi_Kelas_Jalan_Persil(object):
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import os
-        import arcpy
 
-        arcpy.env.overwriteOutput = True
+        messages.addMessage("== Proses dimulai ==")
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
+        appdata=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-        configs = persil.get_config_values()
+        persil_name="Persil_Layer"
+        persil_path=os.path.join(dataset_path,persil_name)
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
+        jaringanjalan="Jaringan_Jalan"
+        jaringanjalan_path=os.path.join(dataset_path,jaringanjalan)
 
-        # =====================================================
-        # APPDATA
-        # =====================================================
+        simbologi_persil_path=os.path.join(appdata,"SimbologiKelasJalanPersilUpdate.lyrx")
+        simbologi_jalan_path=os.path.join(appdata,"SimbologiKelasJalan.lyr")
 
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
+        messages.addMessage("== Refresh layer persil ==")
 
-        # =====================================================
-        # DATASET
-        # =====================================================
+        if arcpy.Exists(persil_name):
+            try: arcpy.management.Delete(persil_name)
+            except: pass
 
-        persil = (
-            "Persil_Baru"
-        )
+        arcpy.management.MakeFeatureLayer(persil_path,persil_name)
 
-        persil_path = os.path.join(
-            dataset_path,
-            persil
-        )
+        if os.path.exists(simbologi_persil_path):
+            arcpy.management.ApplySymbologyFromLayer(persil_name,simbologi_persil_path)
 
-        jaringanjalan = (
-            "Jaringan_Jalan"
-        )
+        messages.addMessage("== Refresh layer jaringan jalan ==")
 
-        jaringanjalan_path = os.path.join(
-            dataset_path,
-            jaringanjalan
-        )
+        if arcpy.Exists(jaringanjalan):
+            try: arcpy.management.Delete(jaringanjalan)
+            except: pass
 
-        # =====================================================
-        # SYMBOLOGY
-        # =====================================================
+        arcpy.management.MakeFeatureLayer(jaringanjalan_path,jaringanjalan)
 
-        simbologi_persil_path = os.path.join(
-            appdata,
-            "SimbologiKelasJalanPersilUpdate.lyrx"
-        )
+        if os.path.exists(simbologi_jalan_path):
+            arcpy.management.ApplySymbologyFromLayer(jaringanjalan,simbologi_jalan_path)
 
-        simbologi_jalan_path = os.path.join(
-            appdata,
-            "SimbologiKelasJalan.lyr"
-        )
+        parameters[0].value=persil_name
+        parameters[1].value=jaringanjalan
 
-        # =====================================================
-        # REFRESH PERSIL
-        # =====================================================
-
-        messages.addMessage(
-            "== Refresh layer persil =="
-        )
-
-        if arcpy.Exists(
-            persil
-        ):
-
-            try:
-                arcpy.management.Delete(
-                    persil
-                )
-            except:
-                pass
-
-        arcpy.management.MakeFeatureLayer(
-            persil_path,
-            persil
-        )
-
-        if os.path.exists(
-            simbologi_persil_path
-        ):
-
-            arcpy.management.ApplySymbologyFromLayer(
-                persil,
-                simbologi_persil_path
-            )
-
-        # =====================================================
-        # REFRESH JARINGAN JALAN
-        # =====================================================
-
-        messages.addMessage(
-            "== Refresh layer jaringan jalan =="
-        )
-
-        if arcpy.Exists(
-            jaringanjalan
-        ):
-
-            try:
-                arcpy.management.Delete(
-                    jaringanjalan
-                )
-            except:
-                pass
-
-        arcpy.management.MakeFeatureLayer(
-            jaringanjalan_path,
-            jaringanjalan
-        )
-
-        if os.path.exists(
-            simbologi_jalan_path
-        ):
-
-            arcpy.management.ApplySymbologyFromLayer(
-                jaringanjalan,
-                simbologi_jalan_path
-            )
-
-        # =====================================================
-        # OUTPUT PARAMETER
-        # =====================================================
-
-        parameters[0].value = (
-            persil
-        )
-
-        parameters[1].value = (
-            jaringanjalan
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
-    
+
 class Set_Kelas_Jalan_Persil(object):
 
     def __init__(self):
-        self.label = "Set Kelas Jalan Persil"
-        self.description = ""
-        self.canRunInBackground = False
+        self.label="Set Kelas Jalan Persil"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        kls_jln = arcpy.Parameter(
+        kls_jln=arcpy.Parameter(
             displayName="Kelas Jalan",
             name="kls_jln",
             datatype="GPString",
@@ -1684,7 +1257,7 @@ class Set_Kelas_Jalan_Persil(object):
             direction="Input"
         )
 
-        kls_jln.filter.list = [
+        kls_jln.filter.list=[
             "Arteri Primer",
             "Arteri Sekunder",
             "Kolektor Primer",
@@ -1699,100 +1272,51 @@ class Set_Kelas_Jalan_Persil(object):
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import os
-        import arcpy
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
+        kls_jln=parameters[0].valueAsText
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        # =====================================================
-        # PARAMETER
-        # =====================================================
+        persil_baru="Persil_Layer"
+        persil_baru_path=os.path.join(dataset_path,persil_baru)
 
-        kls_jln = (
-            parameters[0].valueAsText
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =====================================================
-        # DATASET
-        # =====================================================
-
-        persil_baru = (
-            "Persil_Baru"
-        )
-
-        persil_baru_path = os.path.join(
-            dataset_path,
-            persil_baru
-        )
-
-        # =====================================================
-        # SKOR KELAS JALAN
-        # =====================================================
-
-        kelas_jalan_dict = {
-            "Arteri Primer": 7,
-            "Arteri Sekunder": 6,
-            "Kolektor Primer": 5,
-            "Kolektor Sekunder": 4,
-            "Lokal Primer": 3,
-            "Lokal Sekunder": 2,
-            "Lokal Setapak": 1
+        kelas_jalan_dict={
+            "Arteri Primer":7,
+            "Arteri Sekunder":6,
+            "Kolektor Primer":5,
+            "Kolektor Sekunder":4,
+            "Lokal Primer":3,
+            "Lokal Sekunder":2,
+            "Lokal Setapak":1
         }
 
-        s_kls_jln = kelas_jalan_dict.get(
-            kls_jln,
-            1
-        )
+        s_kls_jln=kelas_jalan_dict.get(kls_jln,1)
 
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
+        persil_fields=[f.name for f in arcpy.ListFields(persil_baru)]
 
-        persil_fields = [
-            f.name
-            for f in arcpy.ListFields(
-                persil_baru
-            )
-        ]
-
-        required_fields = [
+        required_fields=[
             "kls_jln",
             "s_kls_jln"
         ]
 
-        missing_fields = []
+        missing_fields=[]
 
         for field_name in required_fields:
 
             if field_name not in persil_fields:
+                missing_fields.append(field_name)
 
-                missing_fields.append(
-                    field_name
-                )
-
-        if len(missing_fields) > 0:
+        if len(missing_fields)>0:
 
             messages.addErrorMessage(
                 "== Field berikut tidak ditemukan: {} ==".format(
@@ -1802,17 +1326,9 @@ class Set_Kelas_Jalan_Persil(object):
 
             raise arcpy.ExecuteError
 
-        # =====================================================
-        # VALIDASI SELEKSI
-        # =====================================================
+        ada_seleksi=len(arcpy.Describe(persil_baru).FIDSet)
 
-        ada_seleksi = len(
-            arcpy.Describe(
-                persil_baru
-            ).FIDSet
-        )
-
-        if ada_seleksi == 0:
+        if ada_seleksi==0:
 
             messages.addWarningMessage(
                 "== Tidak ada persil yang dipilih =="
@@ -1820,32 +1336,19 @@ class Set_Kelas_Jalan_Persil(object):
 
             return
 
-        # =====================================================
-        # UPDATE FIELD
-        # =====================================================
-
-        messages.addMessage(
-            "== Update kelas jalan persil =="
-        )
+        messages.addMessage("== Update kelas jalan persil ==")
 
         with arcpy.da.UpdateCursor(
             persil_baru,
-            [
-                "kls_jln",
-                "s_kls_jln"
-            ]
+            ["kls_jln","s_kls_jln"]
         ) as rows:
 
             for row in rows:
 
-                row[0] = kls_jln
-                row[1] = s_kls_jln
+                row[0]=kls_jln
+                row[1]=s_kls_jln
 
                 rows.updateRow(row)
-
-        # =====================================================
-        # UPDATE FINAL
-        # =====================================================
 
         arcpy.management.CalculateField(
             persil_baru,
@@ -1854,23 +1357,20 @@ class Set_Kelas_Jalan_Persil(object):
             "PYTHON3"
         )
 
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
-        return
+        return 
     
 class Update_Letak_Persil(object):
 
     def __init__(self):
-
-        self.label = "Update Letak Persil"
-        self.description = ""
-        self.canRunInBackground = False
+        self.label="Update Letak Persil"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        output_persil = arcpy.Parameter(
+        output_persil=arcpy.Parameter(
             displayName="Output Persil",
             name="output_persil",
             datatype="GPFeatureLayer",
@@ -1883,78 +1383,36 @@ class Update_Letak_Persil(object):
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    # =========================================================
-    # HELPER
-    # =========================================================
-
-    def delete_if_exists(self, path):
+    def delete_if_exists(self,path):
 
         if arcpy.Exists(path):
 
-            try:
-                arcpy.management.Delete(path)
+            try: arcpy.management.Delete(path)
+            except: pass
 
-            except:
-                pass
+    def add_field_if_not_exists(self,feature_class,field_name,field_type):
 
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
+        field_names=[field.name for field in arcpy.ListFields(feature_class)]
 
         if field_name not in field_names:
+            arcpy.management.AddField(feature_class,field_name,field_type)
 
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
+    def remove_field_if_exists(self,feature_class,field_name):
 
-    def remove_field_if_exists(
-        self,
-        feature_class,
-        field_name
-    ):
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
+        field_names=[field.name for field in arcpy.ListFields(feature_class)]
 
         if field_name in field_names:
+            arcpy.management.DeleteField(feature_class,field_name)
 
-            arcpy.management.DeleteField(
-                feature_class,
-                field_name
-            )
+    def make_layer(self,input_fc,output_lyr,where_clause=None):
 
-    def make_layer(
-        self,
-        input_fc,
-        output_lyr,
-        where_clause=None
-    ):
-
-        self.delete_if_exists(
-            output_lyr
-        )
+        self.delete_if_exists(output_lyr)
 
         arcpy.management.MakeFeatureLayer(
             input_fc,
@@ -1962,151 +1420,40 @@ class Update_Letak_Persil(object):
             where_clause
         )
 
-    # =========================================================
-    # EXECUTE
-    # =========================================================
+    def execute(self,parameters,messages):
 
-    def execute(self, parameters, messages):
+        messages.addMessage("== Proses dimulai ==")
 
-        import os
-        import arcpy
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        arcpy.env.overwriteOutput = True
+        appdata=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        persil_name="Persil_Layer"
+        persil_path=os.path.join(dataset_path,persil_name)
 
-        # =====================================================
-        # CONFIG
-        # =====================================================
+        jaringan_jalan="Jaringan_Jalan"
 
-        configs = persil.get_config_values()
+        jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
+        simbologi_path=os.path.join(appdata,"SimbologiLetakPersilUpdate.lyr")
 
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
+        persil_fokus=os.path.join('in_memory',"PersilHanyaUpdate")
+        persil_tetap=os.path.join('in_memory',"PersilBaruTetap")
+        persil_line=os.path.join('in_memory',"PersilLineUpdate")
+        persil_split=os.path.join('in_memory',"PersilSplitUpdate")
+        persil_midpoint=os.path.join('in_memory',"PersilMidpointUpdate")
+        join_line=os.path.join('in_memory',"JoinLineUpdate")
+        join_spatial=os.path.join('in_memory',"JoinPersilJalanUpdate_2")
+        posisi_awal=os.path.join('in_memory',"cp_datawal_posisi_baru")
+        posisi_erase=os.path.join('in_memory',"PosisiErase")
+        junction_final=os.path.join(dataset_path,"JunctionFinal")
 
-        # =====================================================
-        # PATH
-        # =====================================================
+        messages.addMessage("== Bersih-bersih data sementara ==")
 
-        persil = "Persil_Baru"
-        persil_path = os.path.join(
-            dataset_path,
-            persil
-        )
+        self.add_field_if_not_exists(jaringan_jalan_path,"IdJalan","LONG")
 
-        jaringan_jalan = "Jaringan_Jalan"
-
-        jaringan_jalan_path = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        simbologi_path = os.path.join(
-            appdata,
-            "SimbologiLetakPersilUpdate.lyr"
-        )
-
-        # =====================================================
-        # TEMP DATA
-        # =====================================================
-
-        persil_fokus = os.path.join(
-            dataset_path,
-            "PersilHanyaUpdate"
-        )
-
-        persil_tetap = os.path.join(
-            dataset_path,
-            "PersilBaruTetap"
-        )
-
-        persil_line = os.path.join(
-            dataset_path,
-            "PersilLineUpdate"
-        )
-
-        persil_split = os.path.join(
-            dataset_path,
-            "PersilSplitUpdate"
-        )
-
-        persil_midpoint = os.path.join(
-            dataset_path,
-            "PersilMidpointUpdate"
-        )
-
-        join_line = os.path.join(
-            dataset_path,
-            "JoinLineUpdate"
-        )
-
-        join_spatial = os.path.join(
-            dataset_path,
-            "JoinPersilJalanUpdate_2"
-        )
-
-        posisi_awal = os.path.join(
-            dataset_path,
-            "cp_datawal_posisi_baru"
-        )
-
-        posisi_erase = os.path.join(
-            dataset_path,
-            "PosisiErase"
-        )
-
-        junction_final = os.path.join(
-            dataset_path,
-            "JunctionFinal"
-        )
-
-        # =====================================================
-        # CLEAN TEMP
-        # =====================================================
-
-        messages.addMessage(
-            "== Bersih-bersih data sementara =="
-        )
-
-        temp_objects = [
-            persil_fokus,
-            persil_tetap,
-            persil_line,
-            persil_split,
-            persil_midpoint,
-            join_line,
-            join_spatial,
-            posisi_awal,
-            posisi_erase
-        ]
-
-        for item in temp_objects:
-
-            self.delete_if_exists(
-                item
-            )
-
-        # =====================================================
-        # VALIDASI FIELD JALAN
-        # =====================================================
-
-        self.add_field_if_not_exists(
-            jaringan_jalan_path,
-            "IdJalan",
-            "LONG"
-        )
-
-        oid_field = arcpy.Describe(
-            jaringan_jalan_path
-        ).OIDFieldName
+        oid_field=arcpy.Describe(jaringan_jalan_path).OIDFieldName
 
         arcpy.management.CalculateField(
             jaringan_jalan_path,
@@ -2115,13 +1462,7 @@ class Update_Letak_Persil(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # PERSIL UPDATE
-        # =====================================================
-
-        messages.addMessage(
-            "== Persiapan persil update =="
-        )
+        messages.addMessage("== Persiapan persil update ==")
 
         self.make_layer(
             persil_path,
@@ -2129,10 +1470,7 @@ class Update_Letak_Persil(object):
             "status_per = 'update'"
         )
 
-        arcpy.management.CopyFeatures(
-            "persil_update_lyr",
-            persil_fokus
-        )
+        arcpy.management.CopyFeatures("persil_update_lyr", persil_fokus)
 
         self.make_layer(
             persil_path,
@@ -2140,18 +1478,9 @@ class Update_Letak_Persil(object):
             "status_per = 'tetap'"
         )
 
-        arcpy.management.CopyFeatures(
-            "persil_tetap_lyr",
-            persil_tetap
-        )
+        arcpy.management.CopyFeatures("persil_tetap_lyr",persil_tetap)
 
-        # =====================================================
-        # SPLIT LINE
-        # =====================================================
-
-        messages.addMessage(
-            "== Split garis persil =="
-        )
+        messages.addMessage("== Split garis persil ==")
 
         arcpy.management.PolygonToLine(
             persil_fokus,
@@ -2159,16 +1488,9 @@ class Update_Letak_Persil(object):
             "IGNORE_NEIGHBORS"
         )
 
-        arcpy.management.SplitLine(
-            persil_line,
-            persil_split
-        )
+        arcpy.management.SplitLine(persil_line, persil_split)
 
-        self.add_field_if_not_exists(
-            persil_split,
-            "LebarSisi",
-            "DOUBLE"
-        )
+        self.add_field_if_not_exists(persil_split,"LebarSisi","DOUBLE")
 
         arcpy.management.CalculateField(
             persil_split,
@@ -2177,13 +1499,7 @@ class Update_Letak_Persil(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # MIDPOINT
-        # =====================================================
-
-        messages.addMessage(
-            "== Membuat midpoint =="
-        )
+        messages.addMessage("== Membuat midpoint ==")
 
         arcpy.management.FeatureToPoint(
             persil_split,
@@ -2191,17 +1507,8 @@ class Update_Letak_Persil(object):
             "INSIDE"
         )
 
-        self.add_field_if_not_exists(
-            persil_midpoint,
-            "X",
-            "DOUBLE"
-        )
-
-        self.add_field_if_not_exists(
-            persil_midpoint,
-            "Y",
-            "DOUBLE"
-        )
+        self.add_field_if_not_exists(persil_midpoint,"X","DOUBLE")
+        self.add_field_if_not_exists(persil_midpoint,"Y","DOUBLE")
 
         arcpy.management.CalculateField(
             persil_midpoint,
@@ -2217,15 +1524,9 @@ class Update_Letak_Persil(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # NEAR ANALYSIS
-        # =====================================================
+        messages.addMessage("== Near analysis ==")
 
-        messages.addMessage(
-            "== Near analysis =="
-        )
-
-        near_fields = [
+        near_fields=[
             "NEAR_DIST",
             "NEAR_FID",
             "NEAR_X",
@@ -2234,11 +1535,7 @@ class Update_Letak_Persil(object):
         ]
 
         for field_name in near_fields:
-
-            self.remove_field_if_exists(
-                persil_midpoint,
-                field_name
-            )
+            self.remove_field_if_exists(persil_midpoint,field_name)
 
         arcpy.analysis.Near(
             persil_midpoint,
@@ -2248,13 +1545,7 @@ class Update_Letak_Persil(object):
             "ANGLE"
         )
 
-        # =====================================================
-        # JOIN LINE
-        # =====================================================
-
-        messages.addMessage(
-            "== Membuat join line =="
-        )
+        messages.addMessage("== Membuat join line ==")
 
         self.add_field_if_not_exists(
             persil_midpoint,
@@ -2262,9 +1553,7 @@ class Update_Letak_Persil(object):
             "LONG"
         )
 
-        oid_mid = arcpy.Describe(
-            persil_midpoint
-        ).OIDFieldName
+        oid_mid=arcpy.Describe(persil_midpoint).OIDFieldName
 
         arcpy.management.CalculateField(
             persil_midpoint,
@@ -2273,9 +1562,7 @@ class Update_Letak_Persil(object):
             "PYTHON3"
         )
 
-        spatial_ref = arcpy.Describe(
-            persil_midpoint
-        ).spatialReference
+        spatial_ref=arcpy.Describe(persil_midpoint).spatialReference
 
         arcpy.management.XYToLine(
             persil_midpoint,
@@ -2289,32 +1576,17 @@ class Update_Letak_Persil(object):
             spatial_ref
         )
 
-        # =====================================================
-        # JOIN FIELD
-        # =====================================================
-
-        messages.addMessage(
-            "== Join atribut =="
-        )
+        messages.addMessage("== Join atribut ==")
 
         arcpy.management.JoinField(
             join_line,
             "IdJoinLine",
             persil_midpoint,
             "IdJoinLine",
-            [
-                "IdBidang",
-                "LebarSisi"
-            ]
+            ["IdBidang","LebarSisi"]
         )
 
-        # =====================================================
-        # SPATIAL JOIN
-        # =====================================================
-
-        messages.addMessage(
-            "== Spatial join jalan =="
-        )
+        messages.addMessage("== Spatial join jalan ==")
 
         arcpy.analysis.SpatialJoin(
             join_line,
@@ -2325,14 +1597,7 @@ class Update_Letak_Persil(object):
             match_option="INTERSECT"
         )
 
-        # =====================================================
-        # COPY POSISI
-        # =====================================================
-
-        arcpy.management.CopyFeatures(
-            join_spatial,
-            posisi_awal
-        )
+        arcpy.management.CopyFeatures(join_spatial,posisi_awal)
 
         self.add_field_if_not_exists(
             posisi_awal,
@@ -2347,13 +1612,7 @@ class Update_Letak_Persil(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # ERASE
-        # =====================================================
-
-        messages.addMessage(
-            "== Analisis posisi bidang =="
-        )
+        messages.addMessage("== Analisis posisi bidang ==")
 
         arcpy.analysis.Erase(
             posisi_awal,
@@ -2361,17 +1620,8 @@ class Update_Letak_Persil(object):
             posisi_erase
         )
 
-        self.add_field_if_not_exists(
-            posisi_erase,
-            "PanjangErase",
-            "DOUBLE"
-        )
-
-        self.add_field_if_not_exists(
-            posisi_erase,
-            "Pengurangan",
-            "DOUBLE"
-        )
+        self.add_field_if_not_exists(posisi_erase,"PanjangErase","DOUBLE")
+        self.add_field_if_not_exists(posisi_erase,"Pengurangan","DOUBLE")
 
         arcpy.management.CalculateField(
             posisi_erase,
@@ -2387,25 +1637,13 @@ class Update_Letak_Persil(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # LETAK
-        # =====================================================
+        messages.addMessage("== Identifikasi letak bidang ==")
 
-        messages.addMessage(
-            "== Identifikasi letak bidang =="
-        )
+        self.add_field_if_not_exists(posisi_erase,"letak","TEXT")
 
-        self.add_field_if_not_exists(
-            posisi_erase,
-            "letak",
-            "TEXT"
-        )
+        expression="""get(!Pengurangan!)"""
 
-        expression = """
-get(!Pengurangan!)
-"""
-
-        code_block = """
+        code_block="""
 def get(v):
 
     if v < -0.1:
@@ -2422,77 +1660,74 @@ def get(v):
             code_block
         )
 
-        # =====================================================
-        # UPDATE LETAK FINAL
-        # =====================================================
+        messages.addMessage("== Update letak final ==")
 
-        self.make_layer(
+        join_dict={}
+
+        with arcpy.da.SearchCursor(
+            posisi_erase,
+            ["IdBidang","letak"]
+        ) as rows:
+
+            for row in rows:
+
+                join_dict[row[0]]=row[1]
+
+        with arcpy.da.UpdateCursor(
             persil_path,
-            "persil_pinggir",
-            "status_per = 'update'"
-        )
+            ["IdBidang","letak","s_letak"]
+        ) as rows:
 
-        arcpy.management.CalculateField(
-            "persil_pinggir",
-            "letak",
-            "'Pinggir Jalan'",
-            "PYTHON3"
-        )
+            for row in rows:
 
-        arcpy.management.CalculateField(
-            "persil_pinggir",
-            "s_letak",
-            "0",
-            "PYTHON3"
-        )
+                idbidang=row[0]
 
-        # =====================================================
-        # FINAL LAYER
-        # =====================================================
+                # default
+                letak="Pinggir Jalan"
+                s_letak=0
 
-        self.delete_if_exists(
-            persil
-        )
+                # jika hasil analisis ada
+                if idbidang in join_dict:
+
+                    letak=join_dict[idbidang]
+
+                    if letak=="Lain-lain":
+                        s_letak=1
+
+                row[1]=letak
+                row[2]=s_letak
+
+                rows.updateRow(row)
+
+        self.delete_if_exists(persil_name)
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
-            persil
+            persil_name
         )
 
-        if os.path.exists(
-            simbologi_path
-        ):
-
+        if os.path.exists(simbologi_path):
             arcpy.management.ApplySymbologyFromLayer(
-                persil,
+                persil_name,
                 simbologi_path
             )
 
-        # =====================================================
-        # OUTPUT
-        # =====================================================
+        parameters[0].value=persil_name
 
-        parameters[0].value = (
-            persil
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
 
 class Set_Letak_Persil(object):
 
     def __init__(self):
-
-        self.label = "Set Letak Persil"
-        self.description = ""
-        self.canRunInBackground = False
+        self.label="Set Letak Persil"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        letak = arcpy.Parameter(
+        letak=arcpy.Parameter(
             displayName="Letak Persil",
             name="letak",
             datatype="GPString",
@@ -2500,7 +1735,7 @@ class Set_Letak_Persil(object):
             direction="Input"
         )
 
-        letak.filter.list = [
+        letak.filter.list=[
             "Lain-Lain",
             "Tusuk Sate",
             "Normal",
@@ -2512,97 +1747,57 @@ class Set_Letak_Persil(object):
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    def execute(self, parameters, messages):
+    def execute(self,parameters,messages):
 
-        import arcpy
-        import os
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
+        letak=parameters[0].valueAsText
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        # =====================================================
-        # PARAMETER
-        # =====================================================
+        persil_update="Persil_Layer"
 
-        letak = (
-            parameters[0].valueAsText
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =====================================================
-        # DATASET
-        # =====================================================
-
-        persil_update = (
-            "Persil_Baru"
-        )
-
-        persil_update_path = os.path.join(
+        persil_update_path=os.path.join(
             dataset_path,
             persil_update
         )
 
-        # =====================================================
-        # SKOR LETAK
-        # =====================================================
-
-        letak_dict = {
-            "Lain-Lain": 1,
-            "Tusuk Sate": 2,
-            "Normal": 3,
-            "Hook": 4
+        letak_dict={
+            "Lain-Lain":1,
+            "Tusuk Sate":2,
+            "Normal":3,
+            "Hook":4
         }
 
-        s_letak = letak_dict.get(
-            letak,
-            1
-        )
+        s_letak=letak_dict.get(letak,1)
 
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
-
-        fields = [
+        fields=[
             f.name
             for f in arcpy.ListFields(
                 persil_update_path
             )
         ]
 
-        required_fields = [
+        required_fields=[
             "letak",
             "s_letak"
         ]
 
-        missing_fields = []
+        missing_fields=[]
 
         for field_name in required_fields:
 
             if field_name not in fields:
+                missing_fields.append(field_name)
 
-                missing_fields.append(
-                    field_name
-                )
-
-        if len(missing_fields) > 0:
+        if len(missing_fields)>0:
 
             messages.addErrorMessage(
                 "== Field berikut tidak ditemukan: {} ==".format(
@@ -2612,17 +1807,13 @@ class Set_Letak_Persil(object):
 
             raise arcpy.ExecuteError
 
-        # =====================================================
-        # VALIDASI SELEKSI
-        # =====================================================
-
-        ada_seleksi = len(
+        ada_seleksi=len(
             arcpy.Describe(
                 persil_update
             ).FIDSet
         )
 
-        if ada_seleksi == 0:
+        if ada_seleksi==0:
 
             messages.addWarningMessage(
                 "== Tidak ada persil yang dipilih =="
@@ -2630,32 +1821,21 @@ class Set_Letak_Persil(object):
 
             return
 
-        # =====================================================
-        # UPDATE FIELD
-        # =====================================================
-
         messages.addMessage(
             "== Update letak persil =="
         )
 
         with arcpy.da.UpdateCursor(
             persil_update,
-            [
-                "letak",
-                "s_letak"
-            ]
+            ["letak","s_letak"]
         ) as rows:
 
             for row in rows:
 
-                row[0] = letak
-                row[1] = s_letak
+                row[0]=letak
+                row[1]=s_letak
 
                 rows.updateRow(row)
-
-        # =====================================================
-        # UPDATE FINAL
-        # =====================================================
 
         arcpy.management.CalculateField(
             persil_update,
@@ -2669,18 +1849,17 @@ class Set_Letak_Persil(object):
         )
 
         return
-
+    
 class Hitung_Lebar_Depan_Persil(object):
 
     def __init__(self):
-
-        self.label = "Hitung Lebar Depan Persil"
-        self.description = ""
-        self.canRunInBackground = False
+        self.label="Hitung Lebar Depan Persil"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        output_persil = arcpy.Parameter(
+        output_persil=arcpy.Parameter(
             displayName="Output Persil",
             name="output_persil",
             datatype="GPFeatureLayer",
@@ -2693,153 +1872,56 @@ class Hitung_Lebar_Depan_Persil(object):
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
-    def delete_if_exists(self, path):
+    def delete_if_exists(self,path):
 
         if arcpy.Exists(path):
 
-            try:
-                arcpy.management.Delete(path)
+            try: arcpy.management.Delete(path)
+            except: pass
 
-            except:
-                pass
+    def add_field_if_not_exists(self,feature_class,field_name,field_type):
 
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
+        field_names=[field.name for field in arcpy.ListFields(feature_class)]
 
         if field_name not in field_names:
+            arcpy.management.AddField(feature_class,field_name,field_type)
 
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
+    def delete_field_if_exists(self,feature_class,field_name):
 
-    def delete_field_if_exists(
-        self,
-        feature_class,
-        field_name
-    ):
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
+        field_names=[field.name for field in arcpy.ListFields(feature_class)]
 
         if field_name in field_names:
+            arcpy.management.DeleteField(feature_class,field_name)
 
-            arcpy.management.DeleteField(
-                feature_class,
-                field_name
-            )
+    def execute(self,parameters,messages):
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
+        messages.addMessage("== Proses dimulai ==")
 
-    def execute(self, parameters, messages):
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
 
-        import os
-        import arcpy
+        appdata=os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-        arcpy.env.overwriteOutput = True
+        persil_name="Persil_Layer"
+        persil_path=os.path.join(dataset_path,persil_name)
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        persilline="PersilLineUpdate"
+        persilline_path=os.path.join(dataset_path,persilline)
 
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
+        temp_pingjalan_diss_path=os.path.join(dataset_path,"posisi_pingjalan_diss")
+        temp_lain_lain_centroid_path=os.path.join(dataset_path,"posisi_lain_lain_centroid")
 
-        configs = persil.get_config_values()
+        temp_lyr="temp"
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
+        messages.addMessage("== Hitung lebar depan ==")
 
-        # =====================================================
-        # APPDATA
-        # =====================================================
-
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
-
-        # =====================================================
-        # DATASET
-        # =====================================================
-
-        persil = (
-            "Persil_Baru"
-        )
-
-        persil_path = os.path.join(
-            dataset_path,
-            persil
-        )
-
-        persilline = (
-            "PersilLineUpdate"
-        )
-
-        persilline_path = os.path.join(
-            dataset_path,
-            persilline
-        )
-
-        # =====================================================
-        # TEMP DATASET
-        # =====================================================
-
-        temp_pingjalan_diss_path = os.path.join(
-            dataset_path,
-            "posisi_pingjalan_diss"
-        )
-
-        temp_lain_lain_centroid_path = os.path.join(
-            dataset_path,
-            "posisi_lain_lain_centroid"
-        )
-
-        temp_lyr = "temp"
-
-        # =====================================================
-        # HITUNG LEBAR DEPAN
-        # =====================================================
-
-        messages.addMessage(
-            "== Hitung lebar depan =="
-        )
-
-        self.delete_field_if_exists(
-            persil_path,
-            "SUM_LebarSisi"
-        )
+        self.delete_field_if_exists(persil_path,"SUM_LebarSisi")
 
         arcpy.management.JoinField(
             persil_path,
@@ -2849,13 +1931,7 @@ class Hitung_Lebar_Depan_Persil(object):
             ["SUM_LebarSisi"]
         )
 
-        # =====================================================
-        # UPDATE LB_DPN DARI SUM_LebarSisi
-        # =====================================================
-
-        self.delete_if_exists(
-            temp_lyr
-        )
+        self.delete_if_exists(temp_lyr)
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
@@ -2873,17 +1949,8 @@ class Hitung_Lebar_Depan_Persil(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # CENTROID UNTUK NULL
-        # =====================================================
-
-        self.delete_if_exists(
-            temp_lyr
-        )
-
-        self.delete_if_exists(
-            temp_lain_lain_centroid_path
-        )
+        self.delete_if_exists(temp_lyr)
+        self.delete_if_exists(temp_lain_lain_centroid_path)
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
@@ -2900,13 +1967,7 @@ class Hitung_Lebar_Depan_Persil(object):
             "INSIDE"
         )
 
-        # =====================================================
-        # NEAR ANALYSIS
-        # =====================================================
-
-        messages.addMessage(
-            "== Near analysis =="
-        )
+        messages.addMessage("== Near analysis ==")
 
         arcpy.analysis.Near(
             temp_lain_lain_centroid_path,
@@ -2921,13 +1982,7 @@ class Hitung_Lebar_Depan_Persil(object):
             ["NEAR_DIST"]
         )
 
-        # =====================================================
-        # UPDATE LB_DPN DARI NEAR DIST
-        # =====================================================
-
-        self.delete_if_exists(
-            temp_lyr
-        )
+        self.delete_if_exists(temp_lyr)
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
@@ -2945,23 +2000,8 @@ class Hitung_Lebar_Depan_Persil(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # CLEAN FIELD
-        # =====================================================
-
-        self.delete_field_if_exists(
-            persil_path,
-            "SUM_LebarSisi"
-        )
-
-        self.delete_field_if_exists(
-            persil_path,
-            "NEAR_DIST"
-        )
-
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
+        self.delete_field_if_exists(persil_path,"SUM_LebarSisi")
+        self.delete_field_if_exists(persil_path,"NEAR_DIST")
 
         self.add_field_if_not_exists(
             persil_path,
@@ -2969,51 +2009,32 @@ class Hitung_Lebar_Depan_Persil(object):
             "TEXT"
         )
 
-        # =====================================================
-        # UPDATE SimLbDpn
-        # =====================================================
-
-        messages.addMessage(
-            "== Update kategori lebar depan =="
-        )
+        messages.addMessage("== Update kategori lebar depan ==")
 
         with arcpy.da.UpdateCursor(
             persil_path,
-            [
-                "lb_dpn",
-                "SimLbDpn"
-            ]
+            ["lb_dpn","SimLbDpn"]
         ) as rows:
 
             for row in rows:
 
                 if not row[0]:
 
-                    row[0] = 0
-                    row[1] = "0"
+                    row[0]=0
+                    row[1]="0"
 
                 else:
 
-                    if (
-                        row[0] >= 0
-                        and row[0] <= 3
-                    ):
+                    if row[0]>=0 and row[0]<=3:
+                        row[1]="3"
 
-                        row[1] = "3"
-
-                    elif row[0] > 3:
-
-                        row[1] = "3+"
+                    elif row[0]>3:
+                        row[1]="3+"
 
                     else:
-
-                        row[1] = "0"
+                        row[1]="0"
 
                 rows.updateRow(row)
-
-        # =====================================================
-        # FIELD sim_l_dpn
-        # =====================================================
 
         self.add_field_if_not_exists(
             persil_path,
@@ -3021,11 +2042,9 @@ class Hitung_Lebar_Depan_Persil(object):
             "TEXT"
         )
 
-        expression = """
-get(!lb_dpn!)
-"""
+        expression="""get(!lb_dpn!)"""
 
-        code_block = """
+        code_block="""
 def get(b):
 
     if b > 3:
@@ -3042,44 +2061,28 @@ def get(b):
             code_block
         )
 
-        # =====================================================
-        # REFRESH LAYER
-        # =====================================================
-
-        simbologi_path = os.path.join(
+        simbologi_path=os.path.join(
             appdata,
             "SimbologiLebarDepanUpdate.lyr"
         )
 
-        self.delete_if_exists(
-            persil
-        )
+        self.delete_if_exists(persil)
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
-            persil
+            persil_name
         )
 
-        if os.path.exists(
-            simbologi_path
-        ):
+        if os.path.exists(simbologi_path):
 
             arcpy.management.ApplySymbologyFromLayer(
-                persil,
+                persil_name,
                 simbologi_path
             )
 
-        # =====================================================
-        # OUTPUT
-        # =====================================================
+        parameters[0].value=persil_name
 
-        parameters[0].value = (
-            persil
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
 
@@ -3176,7 +2179,7 @@ class Set_Lebar_Depan_Persil(object):
         # =====================================================
 
         persil_update = (
-            "Persil_Baru"
+            "Persil_Layer"
         )
 
         persil_update_path = os.path.join(
@@ -3388,7 +2391,7 @@ class Hitung_Jarak_Kelas_Jalan(object):
         # DATASET
         # =================================================
 
-        persil = "Persil_Baru"
+        persil = "Persil_Layer"
 
         persil_path = os.path.join(
             dataset_path,
@@ -3834,7 +2837,7 @@ class Set_Jarak_Kelas_Jalan_Persil(object):
         # =================================================
 
         persil_update = (
-            "Persil_Baru"
+            "Persil_Layer"
         )
 
         persil_update_path = os.path.join(

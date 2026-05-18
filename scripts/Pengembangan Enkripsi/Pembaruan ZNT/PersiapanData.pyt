@@ -15,7 +15,7 @@ if parent_dir not in sys.path:
 from zntutils.constant import PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import upload_shapefile_to_sipenta, upload_feature_layer_to_sipenta
-from zntutils.system_utils import get_user_data, get_all_berkas_id
+from zntutils.system_utils import get_user_data, get_all_berkas_id, setup_user_data
 from zntutils.zona_layer import get_config_values, validate_zona_layer_before_upload, check_if_there_selected_field
 
 #Helper Functions
@@ -59,9 +59,13 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
             
@@ -84,9 +88,12 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
         if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            if '02/' in preferred_berkas:
-                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '02/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -180,6 +187,8 @@ class Upload_Peta_Rencana_Area_Kerja_Pembaruan_ZNT(object):
             shapefile_path=shapefile_path,
             use_production=use_production)
 
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
+
         return
 
 class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
@@ -193,9 +202,13 @@ class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
@@ -216,9 +229,12 @@ class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
         if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            if '02/' in preferred_berkas:
-                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '02/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -312,6 +328,7 @@ class Upload_Peta_Area_Kerja_Pembaruan_ZNT(object):
             shapefile_path=shapefile_path,
             use_production=use_production)
 
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
 
         return        
 
@@ -872,9 +889,13 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
@@ -896,9 +917,12 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
         if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            if '02/' in preferred_berkas:
-                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '02/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -983,4 +1007,6 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
             feature_layer=feature_layer,
             use_production=use_production)
         
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
+
         return        

@@ -3,10 +3,6 @@
 from datetime import datetime
 import sys
 import arcpy, os, json
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -20,7 +16,7 @@ if parent_dir not in sys.path:
 from zntutils.constant import PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import upload_shapefile_to_sipenta, upload_feature_layer_to_sipenta
-from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
+from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id, setup_user_data
 from zntutils import zona_layer as zonalayer
 #Helper Functions
 def is_internal():
@@ -70,9 +66,13 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
@@ -94,12 +94,14 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
         if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            if '02/' in preferred_berkas:
-                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '02/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
-        
 
         penjelasan = arcpy.Parameter(
             displayName="Informasi Tools",
@@ -179,10 +181,10 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
             nomor_berkas=berkas_value,
             token=token,
             param="pembaruan_znt_data_shp_titik_sampel",
-            in_feature="Zona_Layer",
+            in_feature="Titik_Sampel",
             feature_layer=feature_layer,
             use_production=use_production)
-
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
 
         return
 
@@ -200,9 +202,13 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
@@ -224,9 +230,12 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
         if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            if '02/' in preferred_berkas:
-                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '02/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -304,10 +313,10 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
             nomor_berkas=berkas_value,
             token=token,
             param="pembaruan_znt_data_shp_titik_zona",
-            in_feature="Zona_Layer",
+            in_feature="Titik_Zona",
             feature_layer=feature_layer,
             use_production=use_production)
-           
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return
 
 #========== Analisis dan Pengolahan Data - Data Zona Nilai Tanah ==========
@@ -325,9 +334,13 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
@@ -349,9 +362,12 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
         if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            if '02/' in preferred_berkas:
-                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '02/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -437,4 +453,5 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
             feature_layer=feature_layer,
             use_production=use_production)
         
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return        

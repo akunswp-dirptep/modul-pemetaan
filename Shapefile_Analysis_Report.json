@@ -1,0 +1,11 @@
+{
+    "metadata": {
+        "project_id": "04/2026/0005",
+        "tahun": 2026,
+        "date_and_time": "2026-05-18 14:44:12",
+        "shapefile_analyzed": "Persil_Baru",
+        "row_count": 4430,
+        "spatial_reference": "DGN_1995_Indonesia_TM-3_Zone_49.1"
+    },
+    "validation_results": "All required columns are complete. No NULL values detected."
+}

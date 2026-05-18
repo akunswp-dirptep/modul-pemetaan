@@ -1,0 +1,13 @@
+Shapefile Analysis Report
+=========================
+
+Nomor Berkas: 04/2026/0005
+Tahun: 2026
+
+Date and Time: 2026-05-18 14:44:12
+Shapefile Analyzed: Persil_Baru
+Row Count: 4430
+Spatial Reference: DGN_1995_Indonesia_TM-3_Zone_49.1
+
+Validation Results:
+All required columns are complete. No NULL values detected.

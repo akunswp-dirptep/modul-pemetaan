@@ -1,10 +1,6 @@
 ﻿import arcpy, os, json, sys
 
 from datetime import datetime
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -17,7 +13,7 @@ if parent_dir not in sys.path:
 from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import upload_feature_layer_to_sipenta
 from zntutils.zona_layer import get_config_values, check_if_there_selected_field, validate_zona_layer_before_upload
-from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id
+from zntutils.system_utils import get_user_data, setup_user_data, get_all_berkas_id
 from zntutils.constant import CREDENTIAL_KEY, AUTH_KEY, PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID
 
 # ======================
@@ -309,9 +305,13 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
         berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
@@ -332,12 +332,14 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.filter.type = "ValueList"
-        berkas.filter.list = berkas_show
+
         if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            if '01/' in preferred_berkas:
-                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '01/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -391,12 +393,13 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
     def execute(self, parameters, messages):
         """The source code of the tool."""
         check_if_there_selected_field()
+        
         user_data = get_user_data(CREDENTIAL_KEY)
 
-        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
 
         if berkas_list is None:
-            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan ZNT.")
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembuatan ZNT.")
             return
         
         feature_layer = parameters[0].valueAsText
@@ -411,9 +414,7 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
             arcpy.AddError(validation_error)
             return
 
-
-
-        validate_document_type(berkas_value, target='Pembaruan ZNT')
+        validate_document_type(berkas_value, target='Pembuatan ZNT')
         upload_feature_layer_to_sipenta(
             nomor_berkas=berkas_value,
             token=token,
@@ -421,6 +422,8 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
             in_feature="Zona_Layer",
             feature_layer=feature_layer,
             use_production=use_production)
+        
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return             
 
 class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
@@ -436,9 +439,13 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
@@ -459,12 +466,13 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.filter.type = "ValueList"
-        berkas.filter.list = berkas_show
         if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            if '02/' in preferred_berkas:
-                berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '01/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -540,8 +548,6 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
             arcpy.AddError(validation_error)
             return
 
-
-
         validate_document_type(berkas_value, target='Pembaruan ZNT')
         upload_feature_layer_to_sipenta(
             nomor_berkas=berkas_value,
@@ -550,4 +556,6 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
             in_feature="Zona_Layer",
             feature_layer=feature_layer,
             use_production=use_production)
+        
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return      

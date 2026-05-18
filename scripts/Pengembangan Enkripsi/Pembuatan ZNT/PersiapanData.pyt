@@ -1,27 +1,23 @@
 ﻿from datetime import datetime
 import sys
-import arcpy, os, json
+import arcpy, os, math
+import arcpy, os, math
 
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
+arcpy.env.outputZFlag = "Disabled"
+arcpy.env.outputMFlag = "Disabled"
 
-from spnego import server
-
-
+# Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
+from zntutils.constant import PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY
 from zntutils.document import validate_document_type, get_credentials
-from zntutils.zona_layer import get_config_values, check_if_there_selected_field
-from zntutils.system_utils import get_user_data, get_all_berkas_id
-from zntutils.constant import THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, YEAR_KEY
+from zntutils.upload_utils import upload_shapefile_to_sipenta, upload_feature_layer_to_sipenta
+from zntutils.system_utils import get_user_data, get_all_berkas_id, setup_user_data 
+from zntutils.zona_layer import check_if_there_selected_field, get_config_values, validate_zona_layer_before_upload, check_if_there_selected_field
 
-arcpy.env.outputZFlag = "Disabled"
-arcpy.env.outputMFlag = "Disabled"
 
 #Helper Functions
 def is_internal():
@@ -61,21 +57,27 @@ class Upload_Peta_Rencana_Area_Kerja(object):
 
 
     def getParameterInfo(self):
-        berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
         berkas_show = []
+        can_show = 0
         if berkas_list is not None:
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
             
         shapefile = arcpy.Parameter(
-            displayName="Shapefile Rencana Lokasi Kegiatan (.shp)",
+            displayName="Shapefile Rencana Area Kerja (.shp)",
             name="shapefile_path",
             datatype="DEFile",  
             parameterType="Required",
             direction="Input")
+        
+        shapefile.filter.list = ["shp"]
         
         berkas = arcpy.Parameter(
             displayName="Berkas",
@@ -86,37 +88,78 @@ class Upload_Peta_Rencana_Area_Kerja(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        if berkas_list and can_show > 0:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '01/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]           
+        elif berkas_list and can_show == 0:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
         penjelasan = arcpy.Parameter(
-            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            displayName="Informasi Tools",
             name="petunjuk",
             datatype="GPString",
             parameterType="Optional",
             direction="Input")
         
         penjelasan.value = (
-                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(current_year()))
-        
+                "Tahun: {}\n".format(datetime.now().year))
+        params = [shapefile, berkas, penjelasan]
+        return params
+    
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
 
-        if is_login:
-            params = [shapefile, berkas]
-            return params
+        shapefile_path = parameters[0]
+        berkas = parameters[1]
+        penjelasan = parameters[2]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            shapefile_path.enabled = False
+            berkas.enabled = False
+            penjelasan.enabled = True
         else:
-            return [penjelasan]
+            shapefile_path.enabled = True
+            berkas.enabled = True
+            penjelasan.enabled = False
         
+        return 
+
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter.  This method is called after internal validation."""
+        shapefile_param = parameters[0]
+        
+        if shapefile_param.valueAsText:
+            shapefile_path = shapefile_param.valueAsText
+            shapefile_base = os.path.splitext(shapefile_path)[0]
+            required_ext = [".shp", ".shx", ".dbf", ".prj", ".cpg", ".shp.xml", ".sbn", ".sbx"]
+            missing = [
+                ext for ext in required_ext
+                if not os.path.exists(shapefile_base + ext)
+            ]
+
+            if missing:
+                shapefile_param.setErrorMessage(
+                    f"Komponen shapefile tidak lengkap.\nFile dengan ekstensi berikut tidak ditemukan: {', '.join(missing)}"
+                )
 
         return   
     
     def execute(self, parameters, messages):
+        user_data = get_user_data(CREDENTIAL_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
 
         if berkas_list is None:
@@ -128,18 +171,22 @@ class Upload_Peta_Rencana_Area_Kerja(object):
 
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
-        nik = get_user_data(NIK_KEY)
-        tahun = get_user_data(YEAR_KEY)
+        token = user_data.get(AUTH_KEY, None)
 
 
-        project_id = berkas_value.split(" - ")[0]
-        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
+        validate_document_type(
+            document_id=berkas_value,
+            target='Pembuatan ZNT')
         
-        validate_document_type(project_id, target='Pembuatan ZNT')
+        upload_shapefile_to_sipenta(
+            nomor_berkas=berkas_value,
+            token=token,
+            param="pembuatan_znt_peta_rencana_area_kerja",
+            in_feature="Zona_Layer",
+            shapefile_path=shapefile_path,
+            use_production=use_production)
 
-        main_upload_shapefile(project_id, nik, "Peta Rencana Lokasi Kegiatan", "Persiapan", "Zona_Layer", tahun, "ZNT", shapefile_path, use_production)
-        
-
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return
 
 class Upload_Peta_Area_Kerja_Disepakati(object):
@@ -150,16 +197,27 @@ class Upload_Peta_Area_Kerja_Disepakati(object):
 
 
     def getParameterInfo(self):
-        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
-        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
-
+        berkas_show = []
+        if berkas_list is not None:
+            can_show = 0
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+            
         shapefile = arcpy.Parameter(
-            displayName="Shapefile Rencana Lokasi Kegiatan (.shp)",
+            displayName="Shapefile Peta Area Kerja Disepakati (.shp)",
             name="shapefile_path",
             datatype="DEFile",  
             parameterType="Required",
             direction="Input")
+        
+        shapefile.filter.list = ["shp"]
         
         berkas = arcpy.Parameter(
             displayName="Berkas",
@@ -170,38 +228,77 @@ class Upload_Peta_Area_Kerja_Disepakati(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        if berkas_list:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '01/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
         penjelasan = arcpy.Parameter(
-            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            displayName="Informasi Tools",
             name="petunjuk",
             datatype="GPString",
             parameterType="Optional",
             direction="Input")
         
         penjelasan.value = (
-                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(current_year()))
-        
+                "Tahun: {}\n".format(datetime.now().year))
+        params = [shapefile, berkas, penjelasan]
+        return params
+    
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
 
-        if is_login:
-            params = [shapefile, berkas]
-            return params
+        shapefile_path = parameters[0]
+        berkas = parameters[1]
+        penjelasan = parameters[2]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            shapefile_path.enabled = False
+            berkas.enabled = False
+            penjelasan.enabled = True
         else:
-            return [penjelasan]
-
+            shapefile_path.enabled = True
+            berkas.enabled = True
+            penjelasan.enabled = False
         
+        return 
+
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter.  This method is called after internal validation."""
+        shapefile_param = parameters[0]
+        
+        if shapefile_param.valueAsText:
+            shapefile_path = shapefile_param.valueAsText
+            shapefile_base = os.path.splitext(shapefile_path)[0]
+            required_ext = [".shp", ".shx", ".dbf", ".prj", ".cpg", ".shp.xml", ".sbn", ".sbx"]
+            missing = [
+                ext for ext in required_ext
+                if not os.path.exists(shapefile_base + ext)
+            ]
+
+            if missing:
+                shapefile_param.setErrorMessage(
+                    f"Komponen shapefile tidak lengkap.\nFile dengan ekstensi berikut tidak ditemukan: {', '.join(missing)}"
+                )
 
         return   
+    
    
     def execute(self, parameters, messages):
+        user_data = get_user_data(CREDENTIAL_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
 
         if berkas_list is None:
@@ -213,35 +310,53 @@ class Upload_Peta_Area_Kerja_Disepakati(object):
 
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
-        username = get_user_data(NIK_KEY)
-        tahun = get_user_data(YEAR_KEY)
+        token = user_data.get(AUTH_KEY, None)
 
 
-        project_id = berkas_value.split(" - ")[0]
-        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
+        validate_document_type(
+            document_id=berkas_value,
+            target='Pembuatan ZNT')
         
-        validate_document_type(project_id, target='Pembuatan ZNT')
-        main_upload_shapefile(project_id, username, "Peta Lokasi Kegiatan", "Persiapan", "Zona_Layer", tahun, "ZNT", shapefile_path, use_production)
-            
+        upload_shapefile_to_sipenta(
+            nomor_berkas=berkas_value,
+            token=token,
+            param="pembuatan_znt_peta_area_kerja_disepakati",
+            in_feature="Zona_Layer",
+            shapefile_path=shapefile_path,
+            use_production=use_production)
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return
 
 class Upload_Peta_Area_Kerja_Pembuatan_ZNT_AOI(object):
+    
     def __init__(self):
         self.label = "Upload Peta Area Kerja (AOI)"
         self.description = ""
         self.canRunInBackground = False
 
-    def getParameterInfo(self):
-        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
-        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
-        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
 
+    def getParameterInfo(self):
+        berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
+        berkas_show = []
+        if berkas_list is not None:
+            can_show = 0
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+            
         shapefile = arcpy.Parameter(
-            displayName="Shapefile Rencana Lokasi Kegiatan (.shp)",
+            displayName="Shapefile Peta Area Kerja (AOI) (.shp)",
             name="shapefile_path",
             datatype="DEFile",  
             parameterType="Required",
             direction="Input")
+        
+        shapefile.filter.list = ["shp"]
         
         berkas = arcpy.Parameter(
             displayName="Berkas",
@@ -252,37 +367,81 @@ class Upload_Peta_Area_Kerja_Pembuatan_ZNT_AOI(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        if berkas_list:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '01/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
         penjelasan = arcpy.Parameter(
-            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            displayName="Informasi Tools",
             name="petunjuk",
             datatype="GPString",
             parameterType="Optional",
             direction="Input")
         
         penjelasan.value = (
-                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(current_year()))
-        
+                "Tahun: {}\n".format(datetime.now().year))
+        params = [shapefile, berkas, penjelasan]
+        return params
+    
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        return True
+    
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
 
-        if is_login:
-            params = [shapefile, berkas]
-            return params
+        shapefile_path = parameters[0]
+        berkas = parameters[1]
+        penjelasan = parameters[2]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            shapefile_path.enabled = False
+            berkas.enabled = False
+            penjelasan.enabled = True
         else:
-            return [penjelasan]
+            shapefile_path.enabled = True
+            berkas.enabled = True
+            penjelasan.enabled = False
         
+        return 
+
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
         parameter.  This method is called after internal validation."""
+        shapefile_param = parameters[0]
+        
+        if shapefile_param.valueAsText:
+            shapefile_path = shapefile_param.valueAsText
+            shapefile_base = os.path.splitext(shapefile_path)[0]
+            required_ext = [".shp", ".shx", ".dbf", ".prj", ".cpg", ".shp.xml", ".sbn", ".sbx"]
+            missing = [
+                ext for ext in required_ext
+                if not os.path.exists(shapefile_base + ext)
+            ]
+
+            if missing:
+                shapefile_param.setErrorMessage(
+                    f"Komponen shapefile tidak lengkap.\nFile dengan ekstensi berikut tidak ditemukan: {', '.join(missing)}"
+                )
 
         return   
+    
    
     def execute(self, parameters, messages):
+        user_data = get_user_data(CREDENTIAL_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
 
         if berkas_list is None:
@@ -294,17 +453,24 @@ class Upload_Peta_Area_Kerja_Pembuatan_ZNT_AOI(object):
 
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
-        username = get_user_data(NIK_KEY)
-        tahun = get_user_data(YEAR_KEY)
+        token = user_data.get(AUTH_KEY, None)
 
 
-        project_id = berkas_value.split(" - ")[0]
-        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
-              
-        validate_document_type(project_id, target='Pembuatan ZNT')
-        main_upload_shapefile(project_id, username, "Peta Area Kerja", "Pembuatan Zona Awal", "Zona_Layer", tahun, "ZNT", shapefile_path, use_production)
+        validate_document_type(
+            document_id=berkas_value,
+            target='Pembuatan ZNT')
+        
+        upload_shapefile_to_sipenta(
+            nomor_berkas=berkas_value,
+            token=token,
+            param="pembuatan_znt_peta_area_kerja_aoi",
+            in_feature="Zona_Layer",
+            shapefile_path=shapefile_path,
+            use_production=use_production)
+        
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
 
-        return        
+        return
 
 class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
     def __init__(self):
@@ -487,12 +653,21 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 
     def getParameterInfo(self):
         """Define parameter definitions"""
-        is_login = get_user_data(THIRD_PARTY_DATA_KEY)
         berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
-        berkas_show = [f"{berkas[0]} - {berkas[1]}" for berkas in berkas_list] if berkas_list else ['Tidak ada berkas yang dapat dipilih']
+        berkas_show = []
+        if berkas_list is not None:
+            can_show = 0
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
-        feature_class = arcpy.Parameter(
-            displayName="Zona Layer (Feature Class)",
+        feature_layer = arcpy.Parameter(
+            displayName="Zona Layer (Feature Layer)",
             name="feature_layer",
             datatype="GPFeatureLayer",  
             parameterType="Required",
@@ -507,29 +682,30 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        berkas.value = berkas_show[0] if berkas_list else 'Tidak ada berkas yang dapat dipilih'
+        if berkas_list:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '01/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]     
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
         penjelasan = arcpy.Parameter(
-            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            displayName="Informasi Tools",
             name="petunjuk",
             datatype="GPString",
             parameterType="Optional",
             direction="Input")
         
         penjelasan.value = (
-                "Login terlebih dahulu pada menu Login Pemeta Nilai Tanah.\n"
-                "\n----------------------------------------------\n"
-                "Dikembangkan oleh:\n"
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(current_year()))
-        
-
-        if is_login:
-            params = [feature_class, berkas]
-            return params
-        else:
-            return [penjelasan]
+                "Tahun: {}\n".format(datetime.now().year))
+        params = [feature_layer, berkas, penjelasan]
+        return params
 
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
@@ -539,6 +715,22 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
         """Modify the values and properties of parameters before internal
         validation is performed.  This method is called whenever a parameter
         has been changed."""
+
+        feature_layer = parameters[0]
+        berkas = parameters[1]
+        penjelasan = parameters[2]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            feature_layer.enabled = False
+            berkas.enabled = False
+            penjelasan.enabled = True
+        else:
+            feature_layer.enabled = True
+            berkas.enabled = True
+            penjelasan.enabled = False
+        
         return
         
     def updateMessages(self, parameters):
@@ -549,6 +741,9 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
+        check_if_there_selected_field()
+        user_data = get_user_data(CREDENTIAL_KEY)
+
         berkas_list = get_all_berkas_id(process_type='Pembuatan ZNT')
 
         if berkas_list is None:
@@ -560,14 +755,24 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
 
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
-        username = get_user_data(NIK_KEY)
-        tahun = get_user_data(YEAR_KEY)
+        token = user_data.get(AUTH_KEY, None)
+
+        validation_error = validate_zona_layer_before_upload(feature_layer)
+        if validation_error:
+            arcpy.AddError(validation_error)
+            sys.exit(1)
+            return
 
 
-        project_id = berkas_value.split(" - ")[0]
-        arcpy.AddMessage(f"Berkas yang dipilih: {project_id}")
-
-        validate_document_type(project_id, target='Pembuatan ZNT')
-        main_upload(project_id, username, "Delineasi Zona Awal Nilai Tanah", "Pembuatan Zona Awal", "Zona_Layer", tahun, "ZNT", feature_layer, use_production)
+        validate_document_type(berkas_value, target='Pembuatan ZNT')
+        upload_feature_layer_to_sipenta(
+            nomor_berkas=berkas_value,
+            token=token,
+            param="pembuatan_znt_delineasi_zona_awal",
+            in_feature="Zona_Layer",
+            feature_layer=feature_layer,
+            use_production=use_production)
+        
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
 
         return        

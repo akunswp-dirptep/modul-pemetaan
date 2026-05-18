@@ -9,31 +9,7 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from zntutils.system_utils import renew_user_data, get_all_config, get_user_data, clear_user_data, get_all_berkas_id, renew_multiple_user_data
-from zntutils.constant import THIRD_PARTY_DATA_KEY, TIPE_USER_PIHAK_KETIGA, TIPE_USER_SSO, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
-
-def prepare_restart_arcgis_bat(project_path=None):
-    restart_bat_path = r"C:\PenilaianTanah\ui\restart_arcgis.bat"
-    arcgis_exe_path = r"C:\Program Files\ArcGIS\Pro\bin\ArcGISPro.exe"
-    sanitized_project_path = (project_path or "").replace('"', "")
-
-    bat_content = (
-        "@echo off\n"
-        "echo Membuka ulang ArcGIS...\n"
-        "timeout /t 2\n"
-        f"set \"ARCGIS_EXE={arcgis_exe_path}\"\n"
-        f"set \"ARCGIS_PROJECT={sanitized_project_path}\"\n"
-        "\n"
-        "if exist \"%ARCGIS_PROJECT%\" (\n"
-        "    start \"\" \"%ARCGIS_EXE%\" \"%ARCGIS_PROJECT%\"\n"
-        ") else (\n"
-        "    start \"\" \"%ARCGIS_EXE%\"\n"
-        ")\n"
-    )
-
-    with open(restart_bat_path, "w") as bat_file:
-        bat_file.write(bat_content)
-
-    return restart_bat_path
+from zntutils.constant import PREFERRED_BERKAS_ID, TIPE_USER_PIHAK_KETIGA, TIPE_USER_SSO, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
 
 class Toolbox:
     def __init__(self):
@@ -49,7 +25,7 @@ class Toolbox:
 class Login_Pemeta_Nilai_Tanah:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Kredensial Pemeta Nilai Tanah"
+        self.label = "Akun Pemeta Nilai Tanah"
         self.description = ""
 
     def getParameterInfo(self):
@@ -148,9 +124,7 @@ class Login_Pemeta_Nilai_Tanah:
                     "Informasi akun:\n\n"
                     f"Nama: {user_data['nama_pengguna']}\n"
                     f"Instansi: {user_data['instansi']}\n\n"
-                    "Kalau baru saja login, silakan restart ArcGIS Pro\n"
-                    "agar fitur terbaru bisa digunakan. Untuk logout, \n"
-                    "jalankan kembali tool ini.\n\n"
+
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
                     "Kementerian ATR/BPN\n"
                     f"Tahun: {datetime.now().year}"
@@ -167,7 +141,8 @@ class Login_Pemeta_Nilai_Tanah:
                 "Kementerian ATR/BPN\n"
                 "Tahun: {}".format(datetime.now().year) 
             )
-        return [penjelasan, pilihan_jenis_login, input_nik, input_password, server, pilihan_jenis_kegiatan, daftar_berkas, automatic_reload]
+        return [penjelasan, pilihan_jenis_login, input_nik, 
+                input_password, server, pilihan_jenis_kegiatan, daftar_berkas, automatic_reload]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
@@ -199,9 +174,7 @@ class Login_Pemeta_Nilai_Tanah:
                     "Informasi akun:\n\n"
                     f"Nama: {user_data['nama_pengguna']}\n"
                     f"Instansi: {user_data['instansi']}\n\n"
-                    "Kalau baru saja login, silakan restart ArcGIS Pro\n"
-                    "agar fitur terbaru bisa digunakan. Untuk logout, \n"
-                    "jalankan kembali tool ini.\n\n"
+
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
                     "Kementerian ATR/BPN\n"
                     f"Tahun: {datetime.now().year}"
@@ -246,6 +219,8 @@ class Login_Pemeta_Nilai_Tanah:
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
                     "Kementerian ATR/BPN\n"
                     "Tahun: {}".format(datetime.now().year))
+                
+
 
             elif pilihan_login.value == "Pemeta ASN ATR/BPN (SSO)":
                 input_nik.enabled = False
@@ -257,18 +232,7 @@ class Login_Pemeta_Nilai_Tanah:
                     "Kementerian ATR/BPN\n"
                     "Tahun: {}".format(datetime.now().year))
 
-                # ===== Validasi NIK hanya kalau aktif =====
-                if input_nik.enabled and input_nik.value:
-                    nik_str = str(input_nik.value).replace(" ", "")
 
-                    if not nik_str.isdigit():
-                        input_nik.setErrorMessage("NIK harus berisi angka saja")
-                    elif len(nik_str) != 16:
-                        input_nik.setErrorMessage(
-                            f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)"
-                        )
-                    else:
-                        input_nik.clearMessage()
 
         return
     def updateMessages(self, parameters):
@@ -281,29 +245,39 @@ class Login_Pemeta_Nilai_Tanah:
         """The source code of the tool."""
         user_data = get_user_data(CREDENTIAL_KEY)
         server = parameters[4].value
-        automatic_reload = parameters[7].value
+
         if user_data is None:
             pilihan_login = parameters[1].valueAsText
             
             if pilihan_login == "Pemeta ASN ATR/BPN (SSO)":
-                self.login_sso(server, automatic_reload)
+                self.login_sso(server)
                 
             else:
                 nik = parameters[2].value
                 password = parameters[3].value
+                nik_str = str(nik).replace(" ", "")
+
+                if not nik_str.isdigit():
+                        arcpy.AddError("NIK hanya boleh berisi angka")
+                        return
+                elif len(nik_str) != 16:
+                        arcpy.AddError(
+                            f"NIK harus tepat 16 digit (saat ini: {len(nik_str)} digit)"
+                        )
+                        return
                 if not nik:
                     arcpy.AddError("NIK wajib diisi")
-                    sys.exit(1)
+                    return
 
                 if not password:
                     arcpy.AddError("Password wajib diisi")
-                    sys.exit(1)
+                    return
                 use_production = True if server == "Produksi" or server == None else False
 
-                self.login_pihak_ketiga(nik, password, use_production, automatic_reload)
+                self.login_pihak_ketiga(nik, password, use_production)
                  
         if user_data:
-            self.logout_pemeta_nilai_tanah(automatic_reload=automatic_reload)
+            self.logout_pemeta_nilai_tanah()
 
 
 
@@ -316,7 +290,7 @@ class Login_Pemeta_Nilai_Tanah:
 
         return
     
-    def login_pihak_ketiga(self, nik, password, use_production=True, automatic_reload=False):
+    def login_pihak_ketiga(self, nik, password, use_production=True):
         """
         Fungsi untuk memanggil API SIPENTA dan mendapatkan data survey.
         
@@ -360,10 +334,17 @@ class Login_Pemeta_Nilai_Tanah:
                             'instansi_id': data['user']['perusahaan_id'],
                             'tipe_kredensial': TIPE_USER_PIHAK_KETIGA},
                         PREFERRED_SERVER_KEY: "Produksi" if use_production else "Belajar",
+                        PREFERRED_BERKAS_ID: None
                     }
                     renew_multiple_user_data(renew_data)
+                    
                 else:
                     arcpy.AddError(f"Login gagal: {data.get('message', 'Tidak ada pesan error yang diberikan')}")
+                    return
+            else:
+                result = response.json()
+                arcpy.AddError(f"Login gagal {result.get('message','')} (HTTP {response.status_code})")
+                return
 
             
             return 
@@ -381,10 +362,10 @@ class Login_Pemeta_Nilai_Tanah:
             arcpy.AddError(f"Error dalam parsing response API: {str(e)}")
             raise arcpy.ExecuteError
 
-    def logout_pemeta_nilai_tanah(self, automatic_reload=False):
+    def logout_pemeta_nilai_tanah(self):
         clear_user_data()      
 
-    def login_sso(self, server, automatic_reload=False):
+    def login_sso(self, server):
         mapping_server = {
             'Belajar': 'belajar-2',
             'Produksi': 'prod'
@@ -421,6 +402,7 @@ class Login_Pemeta_Nilai_Tanah:
                                 'tipe_kantor_id': data['user']['tipe_kantor_id'],
                                 'tipe_kredensial': TIPE_USER_SSO },
                         PREFERRED_SERVER_KEY: server,
+                        PREFERRED_BERKAS_ID: None
                     }
             renew_multiple_user_data(renew_data)
             

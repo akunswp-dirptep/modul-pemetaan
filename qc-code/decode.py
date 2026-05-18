@@ -7,6 +7,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 
+
+
  
 # Cryptography Functions
 def generate_key():
@@ -150,19 +152,64 @@ def setup_project_config(data_dict: dict, config_path):
             arcpy.AddError(f"Gagal menyimpan user config: {str(e)}")
             return False
     return True
-def get_user_data(key:str):
-    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
+def get_all_berkas_id(process_type = None, DATA_KEY = "user_credential"):
 
+    process_mapping = {
+        'Pembuatan ZNT': '01',
+        'Pembaruan ZNT': '02',
+        'Pembuatan NBT': '03',
+        'Pembaruan NBT': '04',
+    }
+
+    mapped_process_code = process_mapping.get(process_type) if process_type is not None else None
+
+    config_path = r'C:\PenilaianTanah\config\penilaiantanah.bin'
     try:
         if os.path.exists(config_path):
             data = decrypt_message(generate_key(), config_path) 
-            value = data.get(key, None)
-            return value
+            user_data = data.get(DATA_KEY, {})
+            if len(user_data.get('berkas', [])) > 0:
+                data_berkas = []
+                for berkas in user_data['berkas']:
+                    berkas_id_key = 'no_berkas'
+
+                    no_berkas = berkas.get(berkas_id_key, None)
+                    bisa_upload = berkas.get('can_upload', False)
+
+                    if mapped_process_code is not None:
+                        nomor_depan = (no_berkas or '').split('/')[0]
+                        if nomor_depan != mapped_process_code:
+                            continue
+
+                    data_berkas.append((no_berkas, bisa_upload ))
+
+                def sort_key(item):
+                    no_berkas = item[0] or ""
+                    parts = no_berkas.split('/')
+
+                    if len(parts) < 3:
+                        return (9999, 0, no_berkas)
+
+                    try:
+                        nomor_grup = int(parts[0])
+                        nomor_urut = int(parts[-1])
+                        return (nomor_grup, -nomor_urut, no_berkas)
+                    except ValueError:
+                        return (9999, 0, no_berkas)
+
+                data_berkas.sort(key=sort_key)
+
+                if len(data_berkas) == 0:
+                    return None
+                
+                return data_berkas
+
         else:
             return None
         
     except Exception as e:
         return None
+
 project_config = r'E:\Akmal\Jobdesk\Uji Coba Plugin Penilaian Tanah\Pembaruan ZNT\Uji Coba Versi 6 2704\penilaian_tanah_config.bin'
 
 reset_last_sample = {

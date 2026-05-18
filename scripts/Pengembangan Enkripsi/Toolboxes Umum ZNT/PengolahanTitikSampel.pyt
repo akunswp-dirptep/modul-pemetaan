@@ -44,9 +44,13 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         berkas_list = get_all_berkas_id()
         berkas_show = []
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 

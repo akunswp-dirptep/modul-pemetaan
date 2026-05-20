@@ -961,7 +961,7 @@ class Masukkan_Data_Jaringan_Jalan(object):
         jaringan_jalan=arcpy.Parameter(
             displayName="Jaringan Jalan (.shp)",
             name="jaringan_jalan",
-            datatype="GPFeatureLayer",
+            datatype="DEFeatureClass",
             parameterType="Required",
             direction="Input"
         )
@@ -1017,6 +1017,7 @@ class Masukkan_Data_Jaringan_Jalan(object):
         jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
         jaringan_jalan="Jaringan_Jalan"     
 
+
         with arcpy.da.SearchCursor(in_jaringan_jalan, interest_fields) as cursor:
             for row in cursor:
                 if row[0] is None or row[1] is None:
@@ -1025,6 +1026,11 @@ class Masukkan_Data_Jaringan_Jalan(object):
                 if row[0] > 7 or row[0] < 1:
                     arcpy.AddError("Terdapat nilai pada field skor kelas jalan yang tidak valid. Pastikan semua nilai pada field tersebut berada dalam rentang 1 hingga 7.")
                     return
+
+        del cursor
+
+        if arcpy.Exists(jaringan_jalan_path):
+            arcpy.management.Delete(jaringan_jalan_path)
 
         arcpy.conversion.FeatureClassToFeatureClass(
                 in_jaringan_jalan,
@@ -1082,6 +1088,31 @@ class Masukkan_Data_Jaringan_Jalan(object):
             '"Tetap"',
             "PYTHON3"
         )
+        required_fields = {
+            "OBJECTID",
+            "Shape",
+            "Shape_Length",
+            "Shape_Area",
+            "s_kls_jln",
+            "lb_jln",
+            "kls_jln",
+            "status_jal"
+        }
+
+        delete_fields = [
+            field.name
+            for field in arcpy.ListFields(jaringan_jalan_path)
+            if (
+                field.type not in ["OID", "Geometry"] and
+                field.name not in required_fields
+            )
+        ]
+
+        if delete_fields:
+            arcpy.management.DeleteField(
+                jaringan_jalan_path,
+                delete_fields
+            )
 
         if arcpy.Exists(jaringan_jalan):
             try:
@@ -1111,7 +1142,7 @@ class Masukkan_Data_Fasilitas(object):
         fasilitas_path = arcpy.Parameter(
             displayName="Feature Class Fasilitas",
             name="fasilitas_path",
-            datatype="GPFeatureLayer",
+            datatype="DEFeatureClass",
             parameterType="Required",
             direction="Input"
         )
@@ -1119,11 +1150,13 @@ class Masukkan_Data_Fasilitas(object):
         data_field = arcpy.Parameter(
             displayName="Field Jarak Fasilitas",
             name="data_field",
-            datatype="Field",
+            datatype="GPString",
             parameterType="Required",
             direction="Input"
         )
+        
         data_field.filter.type = "ValueList"
+        data_field.filter.list = []
 
         output_layer = arcpy.Parameter(
             displayName="Output Fasilitas",
@@ -1139,9 +1172,7 @@ class Masukkan_Data_Fasilitas(object):
         return True
 
     def updateParameters(self, parameters):
-
         field_list = []
-
         configs = persil.get_config_values()
 
         persil_path = os.path.join(
@@ -1153,11 +1184,8 @@ class Masukkan_Data_Fasilitas(object):
             field_list = [
                 field.name
                 for field in arcpy.ListFields(persil_path)
-                if field.type in ["Double", "Single", "Integer", "SmallInteger"]
             ]
-
         parameters[1].filter.list = field_list
-
         return
 
     def updateMessages(self, parameters):

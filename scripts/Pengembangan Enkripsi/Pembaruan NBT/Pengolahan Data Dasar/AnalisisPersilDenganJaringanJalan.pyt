@@ -24,11 +24,13 @@ class Toolbox:
         # List of tool classes associated with this toolbox
         self.tools = [Load_Persil_dan_Jaringan_Jalan,
                       Update_Kelas_dan_Lebar_Jalan_Persil,
+                      Update_Kelas_dan_Lebar_Jalan_Persil_File,
                       Build_Network_Dataset_Jaringan_Jalan,
-                      Update_Kelas_dan_Lebar_Jalan_Persil,
+                      Build_Network_Dataset_Jaringan_Jalan_Tes,
                       Update_Simbologi_Kelas_Jalan_Persil,
                       Update_Simbologi_Lebar_Jalan_Persil,
                       Update_Letak_Persil,
+                      Update_Letak_Persil_File,
                       Set_Jarak_Kelas_Jalan_Persil,
                       Set_Lebar_Jalan_Persil,
                       Set_Kelas_Jalan_Persil,
@@ -36,7 +38,8 @@ class Toolbox:
                       Hitung_Lebar_Depan_Persil,
                       Set_Lebar_Depan_Persil,
                       Hitung_Jarak_Kelas_Jalan,
-                      Set_Jarak_Kelas_Jalan_Persil]
+                      Set_Jarak_Kelas_Jalan_Persil,
+                      Hitung_Lebar_Depan_Persil_File]
 
 
 class Load_Persil_dan_Jaringan_Jalan(object):
@@ -388,6 +391,318 @@ class Update_Kelas_dan_Lebar_Jalan_Persil(object):
         messages.addMessage("== Proses selesai ==")
         return   
 
+class Update_Kelas_dan_Lebar_Jalan_Persil_File(object):
+
+    def __init__(self):
+        self.label="Update Kelas dan Lebar Jalan Persil File"
+        self.description=""
+        self.canRunInBackground=False
+
+    def getParameterInfo(self):
+
+        param0=arcpy.Parameter(
+            displayName="Layer Persil",
+            name="persil_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        param1=arcpy.Parameter(
+            displayName="Layer Jaringan Jalan",
+            name="jalan_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        param2=arcpy.Parameter(
+            displayName="Field ID Persil",
+            name="field_id_persil",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param2.parameterDependencies=[param0.name]
+
+        param3=arcpy.Parameter(
+            displayName="Field Kelas Jalan Sumber",
+            name="field_kelas_sumber",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param3.parameterDependencies=[param1.name]
+
+        param4=arcpy.Parameter(
+            displayName="Field Lebar Jalan Sumber",
+            name="field_lebar_sumber",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param4.parameterDependencies=[param1.name]
+
+        param5=arcpy.Parameter(
+            displayName="Field Target Nilai Kelas Jalan",
+            name="field_target_kelas_nilai",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param5.parameterDependencies=[param0.name]
+
+        param6=arcpy.Parameter(
+            displayName="Field Target Nama Kelas Jalan",
+            name="field_target_kelas_nama",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param6.parameterDependencies=[param0.name]
+
+        param7=arcpy.Parameter(
+            displayName="Field Target Lebar Jalan",
+            name="field_target_lebar",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param7.parameterDependencies=[param0.name]
+
+        param8=arcpy.Parameter(
+            displayName="Jarak Pencarian (meter)",
+            name="search_radius",
+            datatype="GPDouble",
+            parameterType="Optional",
+            direction="Input"
+        )
+        param8.value=200
+
+        output=arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+            output
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self,parameters):
+        return
+
+    def updateMessages(self,parameters):
+        return
+
+    def execute(self,parameters,messages):
+
+        messages.addMessage("== Proses dimulai ==")
+
+        persil_layer=parameters[0].valueAsText
+        jalan_layer=parameters[1].valueAsText
+
+        field_id_persil=parameters[2].valueAsText
+
+        field_kelas_sumber=parameters[3].valueAsText
+        field_lebar_sumber=parameters[4].valueAsText
+
+        field_target_kelas_nilai=parameters[5].valueAsText
+        field_target_kelas_nama=parameters[6].valueAsText
+        field_target_lebar=parameters[7].valueAsText
+
+        search_radius=parameters[8].valueAsText or "200"
+
+        temp_gdb=os.path.join(arcpy.env.scratchFolder,"temp_jalan.gdb")
+
+        if arcpy.Exists(temp_gdb):
+            arcpy.management.Delete(temp_gdb)
+
+        arcpy.management.CreateFileGDB(arcpy.env.scratchFolder,"temp_jalan.gdb")
+
+        midpoint=os.path.join(temp_gdb,"midpoint")
+        joinline=os.path.join(temp_gdb,"joinline")
+        spatialjoin=os.path.join(temp_gdb,"spatialjoin")
+        dissolve1=os.path.join(temp_gdb,"dissolve1")
+        dissolve2=os.path.join(temp_gdb,"dissolve2")
+
+        messages.addMessage("== Membuat titik tengah persil ==")
+
+        arcpy.management.FeatureToPoint(
+            persil_layer,
+            midpoint,
+            "INSIDE"
+        )
+
+        field_names=[f.name for f in arcpy.ListFields(midpoint)]
+
+        if "X" not in field_names:
+            arcpy.management.AddField(midpoint,"X","DOUBLE")
+
+        if "Y" not in field_names:
+            arcpy.management.AddField(midpoint,"Y","DOUBLE")
+
+        arcpy.management.CalculateField(midpoint,"X","!Shape.firstPoint.X!","PYTHON3")
+        arcpy.management.CalculateField(midpoint,"Y","!Shape.firstPoint.Y!","PYTHON3")
+
+        for fld in ["NEAR_DIST","NEAR_FID","NEAR_X","NEAR_Y","NEAR_ANGLE"]:
+            if fld in [f.name for f in arcpy.ListFields(midpoint)]:
+                arcpy.management.DeleteField(midpoint,fld)
+
+        messages.addMessage("== Cari jalan terdekat ==")
+
+        arcpy.analysis.Near(
+            midpoint,
+            jalan_layer,
+            search_radius,
+            "LOCATION",
+            "ANGLE"
+        )
+
+        oid_field=arcpy.Describe(midpoint).OIDFieldName
+
+        if "JOIN_ID" not in [f.name for f in arcpy.ListFields(midpoint)]:
+            arcpy.management.AddField(midpoint,"JOIN_ID","LONG")
+
+        arcpy.management.CalculateField(midpoint,"JOIN_ID",f"!{oid_field}!","PYTHON3")
+
+        sr=arcpy.Describe(midpoint).spatialReference
+
+        messages.addMessage("== Membuat garis koneksi ==")
+
+        arcpy.management.XYToLine(
+            midpoint,
+            joinline,
+            "X",
+            "Y",
+            "NEAR_X",
+            "NEAR_Y",
+            "GEODESIC",
+            "JOIN_ID",
+            sr
+        )
+
+        arcpy.management.JoinField(
+            joinline,
+            "JOIN_ID",
+            midpoint,
+            "JOIN_ID",
+            [field_id_persil]
+        )
+
+
+        messages.addMessage("== Spatial Join jalan ==")
+
+        arcpy.analysis.SpatialJoin(
+            joinline,
+            jalan_layer,
+            spatialjoin,
+            "JOIN_ONE_TO_ONE",
+            "KEEP_ALL",
+            match_option="INTERSECT"
+        )
+
+        messages.addMessage("== Dissolve hasil ==")
+
+        arcpy.management.Dissolve(
+            spatialjoin,
+            dissolve1,
+            [field_id_persil],
+            [
+                [field_kelas_sumber,"MAX"],
+                [field_lebar_sumber,"MAX"]
+            ],
+            "MULTI_PART",
+            "DISSOLVE_LINES"
+        )
+
+        kelas_field=f"MAX_{field_kelas_sumber}"
+        lebar_field=f"MAX_{field_lebar_sumber}"
+
+        join_dict={}
+
+        with arcpy.da.SearchCursor(
+            dissolve1,
+            [field_id_persil,kelas_field,lebar_field]
+        ) as rows:
+
+            for row in rows:
+                join_dict[row[0]]=[row[1],row[2]]
+
+        kelas_jalan={
+            7:"Arteri Primer",
+            6:"Arteri Sekunder",
+            5:"Kolektor Primer",
+            4:"Kolektor Sekunder",
+            3:"Lokal Primer",
+            2:"Lokal Sekunder",
+            1:"Lokal Setapak"
+        }
+
+        kelas_jalan_reverse={
+            "Arteri Primer":7,
+            "Arteri Sekunder":6,
+            "Kolektor Primer":5,
+            "Kolektor Sekunder":4,
+            "Lokal Primer":3,
+            "Lokal Sekunder":2,
+            "Lokal Setapak":1
+        }
+
+        messages.addMessage("== Update field persil ==")
+
+        with arcpy.da.UpdateCursor(
+            persil_layer,
+            [
+                field_id_persil,
+                field_target_kelas_nilai,
+                field_target_kelas_nama,
+                field_target_lebar
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                idbidang=row[0]
+
+                if idbidang in join_dict:
+
+                    nilai_kelas=join_dict[idbidang][0]
+                    lebar_jalan=join_dict[idbidang][1]
+
+                    if isinstance(nilai_kelas,str):
+                        nilai_kelas=kelas_jalan_reverse.get(nilai_kelas,1)
+
+                    nilai_kelas=int(nilai_kelas) if nilai_kelas else 1
+
+                    row[1]=nilai_kelas
+                    row[2]=kelas_jalan.get(nilai_kelas,"Setapak")
+                    row[3]=lebar_jalan
+
+                    rows.updateRow(row)
+
+        arcpy.management.MakeFeatureLayer(persil_layer,"Persil_Update")
+
+        parameters[9].value="Persil_Update"
+
+        messages.addMessage("== Proses selesai ==")
+
+        return
+
 class Build_Network_Dataset_Jaringan_Jalan(object):
 
     def __init__(self):
@@ -439,118 +754,50 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
     def execute(self, parameters, messages):
 
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =====================================================
-        # LOAD CONFIG
-        # =====================================================
-
+        messages.addMessage("== Proses dimulai ==")
         configs = persil.get_config_values()
+        dataset_path = configs["project_config"]["dataset_path"]
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
+        gdb_path = configs["project_config"]["gdb_path"]
+        jaringan_jalan = 'Jaringan_Jalan'
 
-        gdb_path = (
-            configs["project_config"]["gdb_path"]
-        )
+        jaringanjalan_path = configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
 
-        jaringanjalan = (
-            "Jaringan_Jalan"
-        )
+        nd_path = configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
 
-        jaringanjalan_path = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
+        jaringanjalan_nd_path = configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
+        junction_path = os.path.join(dataset_path, "Junction")
 
-        nd_path = (
-            configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
-        )
+        junction_nd_path = os.path.join( os.path.dirname(jaringanjalan_nd_path), "JaringanJalan_ND_Junctions")
+        junction_diss_path = os.path.join( dataset_path, "junction_diss")
+        junction_final_path = os.path.join( dataset_path, "JunctionFinal")
 
-        jaringanjalan_nd_path = (
-            configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
-        )
-
-        # =====================================================
-        # APPDATA
-        # =====================================================
-
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
-
-        # =====================================================
-        # PATH
-        # =====================================================
-
-        junction_path = os.path.join(
-            dataset_path,
-            "Junction"
-        )
-
-        junction_nd_path = os.path.join(
-            os.path.dirname(
-                jaringanjalan_nd_path
-            ),
-            "JaringanJalan_ND_Junctions"
-        )
-
-        junction_diss_path = os.path.join(
-            dataset_path,
-            "junction_diss"
-        )
-
-        junction_final_path = os.path.join(
-            dataset_path,
-            "JunctionFinal"
-        )
-
-        # =====================================================
-        # CLEAN ND
-        # =====================================================
-
-        messages.addMessage(
-            "== Bersih-bersih network dataset =="
-        )
+        messages.addMessage( "== Bersih-bersih network dataset ==")
 
         try:
-
-            arcpy.management.DeleteRows(
-                jaringanjalan_nd_path
-            )
+            arcpy.management.DeleteRows( jaringanjalan_nd_path)
 
         except:
             pass
 
-        # =====================================================
-        # VALIDASI KELAS JALAN
-        # =====================================================
-
-        messages.addMessage(
-            "== Validasi kelas jalan =="
-        )
-
+        messages.addMessage( "== Validasi kelas jalan =="  )
         temp_jalan = "temp_jalan"
 
-        if arcpy.Exists(
-            temp_jalan
-        ):
-
+        if arcpy.Exists(temp_jalan ):
             try:
-                arcpy.management.Delete(
-                    temp_jalan
-                )
+                arcpy.management.Delete( temp_jalan )
             except:
                 pass
+
+        kls_jln=arcpy.AddFieldDelimiters(jaringanjalan_path,"kls_jln")
+        s_kls_jln=arcpy.AddFieldDelimiters(jaringanjalan_path,"s_kls_jln")
+
+        where_clause=f"{kls_jln} IS NULL OR {s_kls_jln} IS NULL"
 
         arcpy.management.MakeFeatureLayer(
             jaringanjalan_path,
             temp_jalan,
-            "kls_jln IS NULL OR s_kls_jln IS NULL"
+            where_clause
         )
 
         arcpy.management.CalculateField(
@@ -567,21 +814,10 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
             "PYTHON3"
         )
 
-        if arcpy.Exists(
-            temp_jalan
-        ):
+        if arcpy.Exists(temp_jalan):
+            arcpy.management.Delete( temp_jalan)
 
-            arcpy.management.Delete(
-                temp_jalan
-            )
-
-        # =====================================================
-        # VALIDASI FIELD
-        # =====================================================
-
-        oid_field_name = arcpy.Describe(
-            jaringanjalan_path
-        ).OIDFieldName
+        oid_field_name = arcpy.Describe(jaringanjalan_path).OIDFieldName
 
         field_names = [
             field.name
@@ -591,7 +827,6 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
         ]
 
         if "IdJalan" not in field_names:
-
             arcpy.management.AddField(
                 jaringanjalan_path,
                 "IdJalan",
@@ -599,7 +834,6 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
             )
 
         if "P_Jalan" not in field_names:
-
             arcpy.management.AddField(
                 jaringanjalan_path,
                 "P_Jalan",
@@ -620,10 +854,6 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # VALIDASI FIELD ND
-        # =====================================================
-
         field_names_nd = [
             field.name
             for field in arcpy.ListFields(
@@ -632,20 +862,13 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
         ]
 
         if "IdJalan" not in field_names_nd:
-
             arcpy.management.AddField(
                 jaringanjalan_nd_path,
                 "IdJalan",
                 "LONG"
             )
 
-        # =====================================================
-        # APPEND TO ND
-        # =====================================================
-
-        messages.addMessage(
-            "== Append data jaringan jalan ke ND =="
-        )
+        messages.addMessage( "== Append data jaringan jalan ke ND ==" )
 
         arcpy.management.Append(
             [jaringanjalan_path],
@@ -653,21 +876,9 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
             "NO_TEST"
         )
 
-        # =====================================================
-        # BUILD NETWORK
-        # =====================================================
 
-        messages.addMessage(
-            "== Build network dataset =="
-        )
-
-        arcpy.na.BuildNetwork(
-            nd_path
-        )
-
-        # =====================================================
-        # DELETE TEMP LAYER
-        # =====================================================
+        messages.addMessage( "== Build network dataset ==" )
+        arcpy.na.BuildNetwork(nd_path )
 
         delete_layers = [
             "JaringanJalan_ND",
@@ -676,23 +887,13 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
         ]
 
         for lyr in delete_layers:
-
             if arcpy.Exists(lyr):
-
                 try:
-                    arcpy.management.Delete(
-                        lyr
-                    )
+                    arcpy.management.Delete( lyr)
                 except:
                     pass
 
-        # =====================================================
-        # OLAH JUNCTION
-        # =====================================================
-
-        messages.addMessage(
-            "== Olah junction =="
-        )
+        messages.addMessage( "== Olah junction ==" )
 
         delete_items = [
             junction_path,
@@ -700,21 +901,13 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
         ]
 
         for item in delete_items:
-
             if arcpy.Exists(item):
-
                 try:
-                    arcpy.management.Delete(
-                        item
-                    )
+                    arcpy.management.Delete(item)
                 except:
                     pass
 
-        arcpy.analysis.Intersect(
-            [
-                jaringanjalan_path,
-                junction_nd_path
-            ],
+        arcpy.analysis.Intersect([jaringanjalan_path, junction_nd_path      ],
             junction_path,
             "ALL",
             "",
@@ -917,6 +1110,415 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
         )
 
         return
+
+class Build_Network_Dataset_Jaringan_Jalan_Tes(object):
+
+    def __init__(self):
+        self.label="Build Network Dataset Jaringan Jalan Tes"
+        self.description=""
+        self.canRunInBackground=False
+
+    def getParameterInfo(self):
+
+        jaringan_jalan=arcpy.Parameter(
+            displayName="Jaringan Jalan",
+            name="jaringan_jalan",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        field_kls_jln=arcpy.Parameter(
+            displayName="Field Kelas Jalan",
+            name="field_kls_jln",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        field_kls_jln.parameterDependencies=[jaringan_jalan.name]
+
+        field_s_kls_jln=arcpy.Parameter(
+            displayName="Field Skor Kelas Jalan",
+            name="field_s_kls_jln",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        field_s_kls_jln.parameterDependencies=[jaringan_jalan.name]
+
+        field_lb_jln=arcpy.Parameter(
+            displayName="Field Lebar Jalan",
+            name="field_lb_jln",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        field_lb_jln.parameterDependencies=[jaringan_jalan.name]
+
+        output_nd=arcpy.Parameter(
+            displayName="Output Network Dataset",
+            name="output_nd",
+            datatype="DENetworkDataset",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        output_jalan_nd=arcpy.Parameter(
+            displayName="Output Jaringan Jalan ND",
+            name="output_jalan_nd",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        output_junction=arcpy.Parameter(
+            displayName="Output Junction ND",
+            name="output_junction",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return[
+            jaringan_jalan,
+            field_kls_jln,
+            field_s_kls_jln,
+            field_lb_jln,
+            output_nd,
+            output_jalan_nd,
+            output_junction
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self,parameters):
+        return
+
+    def updateMessages(self,parameters):
+        return
+
+    def delete_if_exists(self,path):
+
+        if arcpy.Exists(path):
+
+            try:
+                arcpy.management.Delete(path)
+            except:
+                pass
+
+    def execute(self,parameters,messages):
+
+        import os
+        import arcpy
+
+        messages.addMessage("== Proses dimulai ==")
+
+        configs=persil.get_config_values()
+
+        dataset_path=configs["project_config"]["dataset_path"]
+        gdb_path=configs["project_config"]["gdb_path"]
+
+        nd_path=configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
+        jaringanjalan_nd_path=configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
+
+        jaringan_jalan=parameters[0].valueAsText
+        field_kls_jln=parameters[1].valueAsText
+        field_s_kls_jln=parameters[2].valueAsText
+        field_lb_jln=parameters[3].valueAsText
+
+        junction_path=os.path.join(dataset_path,"Junction")
+
+        junction_nd_path=os.path.join(
+            os.path.dirname(jaringanjalan_nd_path),
+            "JaringanJalan_ND_Junctions"
+        )
+
+        junction_diss_path=os.path.join(
+            dataset_path,
+            "junction_diss"
+        )
+
+        junction_final_path=os.path.join(
+            dataset_path,
+            "JunctionFinal"
+        )
+
+        messages.addMessage("== Bersih-bersih network dataset ==")
+
+        try:
+            arcpy.management.DeleteRows(jaringanjalan_nd_path)
+        except:
+            pass
+
+        messages.addMessage("== Validasi kelas jalan ==")
+
+        temp_jalan="temp_jalan"
+
+        self.delete_if_exists(temp_jalan)
+
+        kls_jln=arcpy.AddFieldDelimiters(
+            jaringan_jalan,
+            field_kls_jln
+        )
+
+        s_kls_jln=arcpy.AddFieldDelimiters(
+            jaringan_jalan,
+            field_s_kls_jln
+        )
+
+        where_clause=f"{kls_jln} IS NULL OR {s_kls_jln} IS NULL"
+
+        arcpy.management.MakeFeatureLayer(
+            jaringan_jalan,
+            temp_jalan,
+            where_clause
+        )
+
+        arcpy.management.CalculateField(
+            temp_jalan,
+            field_kls_jln,
+            '"Lokal"',
+            "PYTHON3"
+        )
+
+        arcpy.management.CalculateField(
+            temp_jalan,
+            field_s_kls_jln,
+            "1",
+            "PYTHON3"
+        )
+
+        self.delete_if_exists(temp_jalan)
+
+        oid_field_name=arcpy.Describe(
+            jaringan_jalan
+        ).OIDFieldName
+
+        field_names=[
+            field.name
+            for field in arcpy.ListFields(jaringan_jalan)
+        ]
+
+        if "IdJalan" not in field_names:
+
+            arcpy.management.AddField(
+                jaringan_jalan,
+                "IdJalan",
+                "LONG"
+            )
+
+        if "P_Jalan" not in field_names:
+
+            arcpy.management.AddField(
+                jaringan_jalan,
+                "P_Jalan",
+                "DOUBLE"
+            )
+
+        arcpy.management.CalculateField(
+            jaringan_jalan,
+            "P_Jalan",
+            "!shape.length!",
+            "PYTHON3"
+        )
+
+        arcpy.management.CalculateField(
+            jaringan_jalan,
+            "IdJalan",
+            f"!{oid_field_name}!",
+            "PYTHON3"
+        )
+
+        field_names_nd=[
+            field.name
+            for field in arcpy.ListFields(jaringanjalan_nd_path)
+        ]
+
+        if "IdJalan" not in field_names_nd:
+
+            arcpy.management.AddField(
+                jaringanjalan_nd_path,
+                "IdJalan",
+                "LONG"
+            )
+
+        messages.addMessage("== Append data jaringan jalan ke ND ==")
+
+        arcpy.management.Append(
+            [jaringan_jalan],
+            jaringanjalan_nd_path,
+            "NO_TEST"
+        )
+
+        messages.addMessage("== Build network dataset ==")
+
+        arcpy.na.BuildNetwork(nd_path)
+
+        delete_layers=[
+            "JaringanJalan_ND",
+            "JaringanJalanForND",
+            "JaringanJalan_ND_Junctions"
+        ]
+
+        for lyr in delete_layers:
+
+            if arcpy.Exists(lyr):
+
+                try:
+                    arcpy.management.Delete(lyr)
+                except:
+                    pass
+
+        messages.addMessage("== Olah junction ==")
+
+        delete_items=[
+            junction_path,
+            junction_diss_path
+        ]
+
+        for item in delete_items:
+
+            if arcpy.Exists(item):
+
+                try:
+                    arcpy.management.Delete(item)
+                except:
+                    pass
+
+        arcpy.analysis.Intersect(
+            [jaringan_jalan,junction_nd_path],
+            junction_path,
+            "ALL",
+            "",
+            "INPUT"
+        )
+
+        arcpy.management.Dissolve(
+            junction_path,
+            junction_diss_path,
+            ["FID_JaringanJalan_ND_Junctions"],
+            [["FID_Jaringan_Jalan","COUNT"]],
+            "MULTI_PART",
+            "DISSOLVE_LINES"
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            junction_diss_path,
+            "temp_jalan",
+            "COUNT_FID_Jaringan_Jalan = 1"
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            junction_path,
+            "temp_jalan2"
+        )
+
+        arcpy.management.SelectLayerByLocation(
+            "temp_jalan2",
+            "INTERSECT",
+            "temp_jalan",
+            selection_type="NEW_SELECTION"
+        )
+
+        arcpy.management.DeleteFeatures("temp_jalan2")
+
+        arcpy.management.Delete("temp_jalan")
+        arcpy.management.Delete("temp_jalan2")
+
+        if arcpy.Exists(junction_final_path):
+
+            try:
+                arcpy.management.Delete(junction_final_path)
+            except:
+                pass
+
+        arcpy.management.Dissolve(
+            junction_path,
+            junction_final_path,
+            ["FID_JaringanJalan_ND_Junctions"],
+            [
+                [field_s_kls_jln,"MAX"],
+                [field_lb_jln,"MAX"]
+            ],
+            "MULTI_PART",
+            "DISSOLVE_LINES"
+        )
+
+        messages.addMessage("== Bagi junction berdasarkan kelas jalan ==")
+
+        ds_kelas_jalan=os.path.join(
+            gdb_path,
+            "kelas_jalan"
+        )
+
+        if not arcpy.Exists(ds_kelas_jalan):
+
+            arcpy.management.CreateFeatureDataset(
+                gdb_path,
+                "kelas_jalan",
+                arcpy.Describe(jaringan_jalan).spatialReference
+            )
+
+        kelas_configs=[
+            (7,"JunctionKls7"),
+            (6,"JunctionKls6"),
+            (5,"JunctionKls5"),
+            (4,"JunctionKls4"),
+            (3,"JunctionKls3"),
+            (2,"JunctionKls2"),
+            (1,"JunctionKls1")
+        ]
+
+        for nilai,nama_fc in kelas_configs:
+
+            out_fc=os.path.join(
+                ds_kelas_jalan,
+                nama_fc
+            )
+
+            if arcpy.Exists(out_fc):
+
+                try:
+                    arcpy.management.Delete(out_fc)
+                except:
+                    pass
+
+            temp_layer=f"temp_{nama_fc}"
+
+            where_clause=f"MAX_{field_s_kls_jln} = {nilai}"
+
+            arcpy.management.MakeFeatureLayer(
+                junction_final_path,
+                temp_layer,
+                where_clause
+            )
+
+            arcpy.management.CopyFeatures(
+                temp_layer,
+                out_fc
+            )
+
+            arcpy.management.Delete(temp_layer)
+
+        arcpy.na.MakeNetworkDatasetLayer(
+            nd_path,
+            "JaringanJalan_ND"
+        )
+
+        aprx=arcpy.mp.ArcGISProject("CURRENT")
+        current_map=aprx.activeMap
+
+        current_map.addDataFromPath(jaringanjalan_nd_path)
+        current_map.addDataFromPath(junction_nd_path)
+
+        parameters[4].value=nd_path
+        parameters[5].value=jaringanjalan_nd_path
+        parameters[6].value=junction_nd_path
+
+        messages.addMessage("== Proses selesai ==")
+
+        return 
 
 class Update_Simbologi_Lebar_Jalan_Persil(object):
 
@@ -1718,6 +2320,576 @@ def get(v):
 
         return
 
+class Update_Letak_Persil_File(object):
+
+    def __init__(self):
+        self.label="Update Letak Persil File"
+        self.description=""
+        self.canRunInBackground=False
+
+    def getParameterInfo(self):
+
+        param0=arcpy.Parameter(
+            displayName="Layer Persil",
+            name="persil_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        param1=arcpy.Parameter(
+            displayName="Layer Jaringan Jalan",
+            name="jalan_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        param2=arcpy.Parameter(
+            displayName="Layer Junction",
+            name="junction_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        param3=arcpy.Parameter(
+            displayName="Field ID Persil",
+            name="field_id",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param3.parameterDependencies=[param0.name]
+
+        param4=arcpy.Parameter(
+            displayName="Field Target Letak",
+            name="field_letak",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param4.parameterDependencies=[param0.name]
+
+        param5=arcpy.Parameter(
+            displayName="Field Target Skor Letak",
+            name="field_skor_letak",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param5.parameterDependencies=[param0.name]
+
+        param6=arcpy.Parameter(
+            displayName="Field Lebar Jalan",
+            name="field_lb_jln",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param6.parameterDependencies=[param0.name]
+
+        param7=arcpy.Parameter(
+            displayName="Field Skor Kelas Jalan",
+            name="field_s_kls_jln",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param7.parameterDependencies=[param0.name]
+
+        param8=arcpy.Parameter(
+            displayName="Field Lebar Depan",
+            name="field_lb_dpn",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param8.parameterDependencies=[param0.name]
+
+        param9=arcpy.Parameter(
+            displayName="Radius Near",
+            name="near_radius",
+            datatype="GPDouble",
+            parameterType="Optional",
+            direction="Input"
+        )
+        param9.value=200
+
+        output=arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+            param9,
+            output
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self,parameters):
+        return
+
+    def updateMessages(self,parameters):
+        return
+
+    def delete_if_exists(self,path):
+
+        if arcpy.Exists(path):
+
+            try: arcpy.management.Delete(path)
+            except: pass
+
+    def add_field_if_not_exists(self,fc,name,typ):
+
+        fields=[f.name for f in arcpy.ListFields(fc)]
+
+        if name not in fields:
+            arcpy.management.AddField(fc,name,typ)
+
+    def execute(self,parameters,messages):
+
+        messages.addMessage("== Proses dimulai ==")
+
+        persil=parameters[0].valueAsText
+        jalan=parameters[1].valueAsText
+        junction=parameters[2].valueAsText
+
+        field_id=parameters[3].valueAsText
+
+        field_letak=parameters[4].valueAsText
+        field_s_letak=parameters[5].valueAsText
+
+        field_lb_jln=parameters[6].valueAsText
+        field_s_kls_jln=parameters[7].valueAsText
+        field_lb_dpn=parameters[8].valueAsText
+
+        near_radius=parameters[9].valueAsText or "200"
+
+        split=os.path.join("in_memory","split")
+        midpoint=os.path.join("in_memory","midpoint")
+        line=os.path.join("in_memory","line")
+        join=os.path.join("in_memory","join")
+        erase=os.path.join("in_memory","erase")
+        normal=os.path.join("in_memory","normal")
+        normal_mid=os.path.join("in_memory","normal_mid")
+        normal_diss=os.path.join("in_memory","normal_diss")
+        hook=os.path.join("in_memory","hook")
+
+        messages.addMessage("== Persiapan jalan ==")
+
+        self.add_field_if_not_exists(
+            jalan,
+            "IdJalan",
+            "LONG"
+        )
+
+        oid=arcpy.Describe(jalan).OIDFieldName
+
+        arcpy.management.CalculateField(
+            jalan,
+            "IdJalan",
+            f"!{oid}!",
+            "PYTHON3"
+        )
+
+        messages.addMessage("== Split bidang ==")
+
+        arcpy.management.PolygonToLine(
+            persil,
+            line,
+            "IGNORE_NEIGHBORS"
+        )
+
+        arcpy.management.SplitLine(
+            line,
+            split
+        )
+
+        self.add_field_if_not_exists(
+            split,
+            "LebarSisi",
+            "DOUBLE"
+        )
+
+        arcpy.management.CalculateField(
+            split,
+            "LebarSisi",
+            "!shape.length!",
+            "PYTHON3"
+        )
+
+        messages.addMessage("== Midpoint ==")
+
+        arcpy.management.FeatureToPoint(
+            split,
+            midpoint,
+            "INSIDE"
+        )
+
+        self.add_field_if_not_exists(
+            midpoint,
+            "X",
+            "DOUBLE"
+        )
+
+        self.add_field_if_not_exists(
+            midpoint,
+            "Y",
+            "DOUBLE"
+        )
+
+        arcpy.management.CalculateField(
+            midpoint,
+            "X",
+            "!Shape.firstPoint.X!",
+            "PYTHON3"
+        )
+
+        arcpy.management.CalculateField(
+            midpoint,
+            "Y",
+            "!Shape.firstPoint.Y!",
+            "PYTHON3"
+        )
+
+        messages.addMessage("== Near jalan ==")
+
+        arcpy.analysis.Near(
+            midpoint,
+            jalan,
+            f"{near_radius} Meters",
+            "LOCATION",
+            "ANGLE"
+        )
+
+        self.add_field_if_not_exists(
+            midpoint,
+            "IdJoin",
+            "LONG"
+        )
+
+        oid_mid=arcpy.Describe(midpoint).OIDFieldName
+
+        arcpy.management.CalculateField(
+            midpoint,
+            "IdJoin",
+            f"!{oid_mid}!",
+            "PYTHON3"
+        )
+
+        sr=arcpy.Describe(midpoint).spatialReference
+
+        arcpy.management.XYToLine(
+            midpoint,
+            line,
+            "X",
+            "Y",
+            "NEAR_X",
+            "NEAR_Y",
+            "GEODESIC",
+            "IdJoin",
+            sr
+        )
+
+        arcpy.management.JoinField(
+            line,
+            "IdJoin",
+            midpoint,
+            "IdJoin",
+            [field_id,"LebarSisi"]
+        )
+
+        arcpy.analysis.SpatialJoin(
+            line,
+            jalan,
+            join,
+            "JOIN_ONE_TO_ONE",
+            "KEEP_ALL",
+            match_option="INTERSECT"
+        )
+
+        self.add_field_if_not_exists(
+            join,
+            "PanjangNearLine",
+            "DOUBLE"
+        )
+
+        arcpy.management.CalculateField(
+            join,
+            "PanjangNearLine",
+            "!shape.length!",
+            "PYTHON3"
+        )
+
+        messages.addMessage("== Erase ==")
+
+        arcpy.analysis.Erase(
+            join,
+            persil,
+            erase
+        )
+
+        self.add_field_if_not_exists(
+            erase,
+            "PanjangErase",
+            "DOUBLE"
+        )
+
+        self.add_field_if_not_exists(
+            erase,
+            "Pengurangan",
+            "DOUBLE"
+        )
+
+        arcpy.management.CalculateField(
+            erase,
+            "PanjangErase",
+            "!shape.length!",
+            "PYTHON3"
+        )
+
+        arcpy.management.CalculateField(
+            erase,
+            "Pengurangan",
+            "!PanjangErase! - !PanjangNearLine!",
+            "PYTHON3"
+        )
+
+        self.add_field_if_not_exists(
+            erase,
+            "letak_tmp",
+            "TEXT"
+        )
+
+        exp="""get(!Pengurangan!)"""
+
+        code="""
+def get(v):
+
+    if v < -0.1:
+        return 'Lain-lain'
+
+    return 'Pinggir Jalan'
+"""
+
+        arcpy.management.CalculateField(
+            erase,
+            "letak_tmp",
+            exp,
+            "PYTHON3",
+            code
+        )
+
+        messages.addMessage("== Dissolve jalan ==")
+
+        diss=os.path.join("in_memory","diss")
+
+        arcpy.management.Dissolve(
+            join,
+            diss,
+            [field_id,"IdJalan"],
+            [["LebarSisi","SUM"],[field_s_kls_jln,"MAX"]],
+            "MULTI_PART",
+            "DISSOLVE_LINES"
+        )
+
+        diss2=os.path.join("in_memory","diss2")
+
+        arcpy.management.Dissolve(
+            diss,
+            diss2,
+            [field_id],
+            [["IdJalan","COUNT"],["SUM_LebarSisi","SUM"],[f"MAX_{field_s_kls_jln}","MAX"]],
+            "MULTI_PART",
+            "DISSOLVE_LINES"
+        )
+
+        join_dict={}
+
+        with arcpy.da.SearchCursor(
+            erase,
+            [field_id,"letak_tmp"]
+        ) as rows:
+
+            for row in rows:
+                join_dict[row[0]]=row[1]
+
+        jalan_dict={}
+
+        with arcpy.da.SearchCursor(
+            diss2,
+            [
+                field_id,
+                "COUNT_IdJalan",
+                "SUM_SUM_LebarSisi",
+                f"MAX_MAX_{field_s_kls_jln}"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                jalan_dict[row[0]]={
+                    "count_jalan":row[1],
+                    "lb_dpn":row[2],
+                    "s_kls_jln":row[3]
+                }
+
+        messages.addMessage("== Update awal ==")
+
+        with arcpy.da.UpdateCursor(
+            persil,
+            [
+                field_id,
+                field_letak,
+                field_s_letak,
+                field_lb_dpn
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                idbid=row[0]
+
+                letak="Pinggir Jalan"
+                skor=0
+                lb_dpn=0
+
+                if idbid in join_dict:
+                    letak=join_dict[idbid]
+
+                if idbid in jalan_dict:
+                    lb_dpn=jalan_dict[idbid]["lb_dpn"]
+
+                if letak=="Lain-lain":
+                    skor=1
+
+                elif idbid in jalan_dict:
+
+                    if jalan_dict[idbid]["count_jalan"]>1:
+                        letak="Hook"
+                        skor=4
+
+                    else:
+                        letak="Normal"
+                        skor=3
+
+                row[1]=letak
+                row[2]=skor
+                row[3]=lb_dpn
+
+                rows.updateRow(row)
+
+        messages.addMessage("== Analisis tusuk sate ==")
+
+        arcpy.management.MakeFeatureLayer(
+            persil,
+            "normal_lyr",
+            f"{field_letak}='Normal'"
+        )
+
+        arcpy.management.CopyFeatures(
+            "normal_lyr",
+            normal
+        )
+
+        arcpy.management.FeatureToPoint(
+            normal,
+            normal_mid,
+            "INSIDE"
+        )
+
+        arcpy.analysis.Near(
+            normal_mid,
+            junction,
+            "100",
+            "LOCATION"
+        )
+
+        self.add_field_if_not_exists(
+            normal_mid,
+            "P_Line",
+            "DOUBLE"
+        )
+
+        arcpy.management.CalculateField(
+            normal_mid,
+            "P_Line",
+            "!NEAR_DIST!",
+            "PYTHON3"
+        )
+
+        arcpy.analysis.SpatialJoin(
+            normal_mid,
+            split,
+            normal_diss,
+            "JOIN_ONE_TO_ONE",
+            "KEEP_ALL",
+            match_option="INTERSECT"
+        )
+
+        tusuk_dict={}
+
+        with arcpy.da.SearchCursor(
+            normal_diss,
+            [field_id,"P_Line","LebarSisi"]
+        ) as rows:
+
+            for row in rows:
+
+                if row[1] is None or row[2] is None:
+                    continue
+
+                if row[1] < row[2]:
+                    tusuk_dict[row[0]]="Tusuk Sate"
+
+        with arcpy.da.UpdateCursor(
+            persil,
+            [
+                field_id,
+                field_letak,
+                field_s_letak
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                idbid=row[0]
+
+                if idbid in tusuk_dict:
+
+                    row[1]="Tusuk Sate"
+                    row[2]=2
+
+                    rows.updateRow(row)
+
+        messages.addMessage("== Finalisasi ==")
+
+        arcpy.management.MakeFeatureLayer(
+            persil,
+            "Persil_Update"
+        )
+
+        parameters[10].value="Persil_Update"
+
+        messages.addMessage("== Proses selesai ==")
+
+        return
+     
 class Set_Letak_Persil(object):
 
     def __init__(self):
@@ -2083,6 +3255,599 @@ def get(b):
         parameters[0].value=persil_name
 
         messages.addMessage("== Proses selesai ==")
+
+        return
+
+class Hitung_Lebar_Depan_Persil_File(object):
+
+    def __init__(self):
+
+        self.label="Hitung Lebar Depan Persil File"
+        self.description=""
+        self.canRunInBackground=False
+
+    def getParameterInfo(self):
+
+        param0=arcpy.Parameter(
+            displayName="Layer Persil",
+            name="persil_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        param1=arcpy.Parameter(
+            displayName="Layer Jaringan Jalan",
+            name="jalan_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        param2=arcpy.Parameter(
+            displayName="Field ID Persil",
+            name="field_id",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param2.parameterDependencies=[param0.name]
+
+        param3=arcpy.Parameter(
+            displayName="Field Kelas Jalan",
+            name="field_kelas_jalan",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param3.parameterDependencies=[param1.name]
+
+        param4=arcpy.Parameter(
+            displayName="Field Lebar Jalan",
+            name="field_lebar_jalan",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param4.parameterDependencies=[param1.name]
+
+        param5=arcpy.Parameter(
+            displayName="Field Target Lebar Depan",
+            name="field_lb_dpn",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param5.parameterDependencies=[param0.name]
+
+        param6=arcpy.Parameter(
+            displayName="Field Target Simbol",
+            name="field_simbol",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param6.parameterDependencies=[param0.name]
+
+        param7=arcpy.Parameter(
+            displayName="Field Target Skor",
+            name="field_skor",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        param7.parameterDependencies=[param0.name]
+
+        param8=arcpy.Parameter(
+            displayName="Radius Near",
+            name="near_radius",
+            datatype="GPDouble",
+            parameterType="Optional",
+            direction="Input"
+        )
+        param8.value=30
+
+        output=arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [
+            param0,
+            param1,
+            param2,
+            param3,
+            param4,
+            param5,
+            param6,
+            param7,
+            param8,
+            output
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self,parameters):
+        return
+
+    def updateMessages(self,parameters):
+        return
+
+    def delete_if_exists(self,path):
+
+        if arcpy.Exists(path):
+
+            try:
+                arcpy.management.Delete(path)
+
+            except:
+                pass
+
+    def add_field_if_not_exists(
+        self,
+        fc,
+        name,
+        typ
+    ):
+
+        fields=[
+            f.name
+            for f in arcpy.ListFields(fc)
+        ]
+
+        if name not in fields:
+
+            arcpy.management.AddField(
+                fc,
+                name,
+                typ
+            )
+
+    def remove_field_if_exists(
+        self,
+        fc,
+        name
+    ):
+
+        fields=[
+            f.name
+            for f in arcpy.ListFields(fc)
+        ]
+
+        if name in fields:
+
+            arcpy.management.DeleteField(
+                fc,
+                name
+            )
+
+    def execute(self,parameters,messages):
+
+        messages.addMessage(
+            "== Proses dimulai =="
+        )
+
+        persil=parameters[0].valueAsText
+        jalan=parameters[1].valueAsText
+
+        field_id=parameters[2].valueAsText
+
+        field_kelas=parameters[3].valueAsText
+        field_lebar=parameters[4].valueAsText
+
+        field_lb_dpn=parameters[5].valueAsText
+        field_simbol=parameters[6].valueAsText
+        field_skor=parameters[7].valueAsText
+
+        near_radius=parameters[8].valueAsText or "30"
+        gdb_path = arcpy.env.scratchGDB
+
+        line=os.path.join(
+            "in_memory",
+            "persil_line"
+        )
+
+        split=os.path.join(
+            "in_memory",
+            "persil_split"
+        )
+
+        midpoint=os.path.join(
+            "in_memory",
+            "midpoint"
+        )
+
+        join_line=os.path.join(
+            "in_memory",
+            "join_line"
+        )
+
+        join_spatial=os.path.join(
+            gdb_path,
+            "join_spatial"
+        )
+
+        centroid=os.path.join(
+            "in_memory",
+            "centroid"
+        )
+
+        messages.addMessage(
+            "== Persiapan jalan =="
+        )
+
+        self.add_field_if_not_exists(
+            jalan,
+            "IdJalan",
+            "LONG"
+        )
+
+        oid_jalan=arcpy.Describe(
+            jalan
+        ).OIDFieldName
+
+        arcpy.management.CalculateField(
+            jalan,
+            "IdJalan",
+            f"!{oid_jalan}!",
+            "PYTHON3"
+        )
+
+        messages.addMessage(
+            "== Polygon to line =="
+        )
+
+        self.delete_if_exists(
+            line
+        )
+
+        arcpy.management.PolygonToLine(
+            persil,
+            line,
+            "IGNORE_NEIGHBORS"
+        )
+
+        self.delete_if_exists(
+            split
+        )
+
+        arcpy.management.SplitLine(
+            line,
+            split
+        )
+
+        self.add_field_if_not_exists(
+            split,
+            "LebarSisi",
+            "DOUBLE"
+        )
+
+        arcpy.management.CalculateField(
+            split,
+            "LebarSisi",
+            "!shape.length!",
+            "PYTHON3"
+        )
+
+        messages.addMessage(
+            "== Midpoint sisi =="
+        )
+
+        self.delete_if_exists(
+            midpoint
+        )
+
+        arcpy.management.FeatureToPoint(
+            split,
+            midpoint,
+            "INSIDE"
+        )
+
+        self.add_field_if_not_exists(
+            midpoint,
+            "X",
+            "DOUBLE"
+        )
+
+        self.add_field_if_not_exists(
+            midpoint,
+            "Y",
+            "DOUBLE"
+        )
+
+        arcpy.management.CalculateField(
+            midpoint,
+            "X",
+            "!Shape.firstPoint.X!",
+            "PYTHON3"
+        )
+
+        arcpy.management.CalculateField(
+            midpoint,
+            "Y",
+            "!Shape.firstPoint.Y!",
+            "PYTHON3"
+        )
+
+        for fld in [
+            "NEAR_DIST",
+            "NEAR_FID",
+            "NEAR_X",
+            "NEAR_Y",
+            "NEAR_ANGLE"
+        ]:
+
+            self.remove_field_if_exists(
+                midpoint,
+                fld
+            )
+
+        messages.addMessage(
+            "== Near jalan =="
+        )
+
+        arcpy.analysis.Near(
+            midpoint,
+            jalan,
+            f"{near_radius} Meters",
+            "LOCATION",
+            "ANGLE"
+        )
+
+        self.add_field_if_not_exists(
+            midpoint,
+            "IdJoin",
+            "LONG"
+        )
+
+        oid_mid=arcpy.Describe(
+            midpoint
+        ).OIDFieldName
+
+        arcpy.management.CalculateField(
+            midpoint,
+            "IdJoin",
+            f"!{oid_mid}!",
+            "PYTHON3"
+        )
+
+        sr=arcpy.Describe(
+            midpoint
+        ).spatialReference
+
+        messages.addMessage(
+            "== Konstruksi garis =="
+        )
+
+        self.delete_if_exists(
+            join_line
+        )
+
+        arcpy.management.XYToLine(
+            midpoint,
+            join_line,
+            "X",
+            "Y",
+            "NEAR_X",
+            "NEAR_Y",
+            "GEODESIC",
+            "IdJoin",
+            sr
+        )
+
+        arcpy.management.JoinField(
+            join_line,
+            "IdJoin",
+            midpoint,
+            "IdJoin",
+            [
+                field_id,
+                "LebarSisi",
+                "NEAR_DIST"
+            ]
+        )
+
+        messages.addMessage(
+            "== Spatial join jalan =="
+        )
+
+        self.delete_if_exists(
+            join_spatial
+        )
+
+        arcpy.analysis.SpatialJoin(
+            join_line,
+            jalan,
+            join_spatial,
+            "JOIN_ONE_TO_ONE",
+            "KEEP_ALL",
+            match_option="INTERSECT"
+        )
+
+        messages.addMessage(
+            "== Seleksi frontage terbaik =="
+        )
+
+        kandidat_dict={}
+
+        with arcpy.da.SearchCursor(
+            join_spatial,
+            [
+                field_id,
+                field_kelas,
+                field_lebar,
+                "LebarSisi",
+                "NEAR_DIST"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                idbid=row[0]
+
+                kelas=row[1]
+                lb_jln=row[2]
+                lb_sisi=row[3]
+                near=row[4]
+
+                if near is None:
+                    continue
+
+                try:
+                    kelas=float(kelas)
+                except:
+                    kelas=1
+
+                try:
+                    lb_jln=float(lb_jln)
+                except:
+                    lb_jln=0
+
+                try:
+                    lb_sisi=float(lb_sisi)
+                except:
+                    lb_sisi=0
+
+                score=  (kelas*1000000) + (lb_jln*1000) - near
+                
+
+                kandidat=[
+                    score,
+                    kelas,
+                    lb_jln,
+                    near,
+                    lb_sisi
+                ]
+
+                if idbid not in kandidat_dict:
+
+                    kandidat_dict[idbid]=kandidat
+
+                else:
+
+                    if kandidat[0] > kandidat_dict[idbid][0]:
+
+                        kandidat_dict[idbid]=kandidat
+        arcpy.AddMessage( f"Jumlah kandidat: {len(kandidat_dict)}" )
+        arcpy.AddMessage( f"Kandidat: {kandidat_dict}" )
+
+        messages.addMessage(
+            "== Update lebar depan =="
+        )
+
+        with arcpy.da.UpdateCursor(
+            persil,
+            [
+                field_id,
+                field_lb_dpn,
+                field_simbol,
+                field_skor
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                idbid=row[0]
+
+                lb_dpn=0
+
+                if idbid in kandidat_dict:
+
+                    lb_dpn=kandidat_dict[idbid][4]
+
+                else:
+
+                    self.delete_if_exists(
+                        centroid
+                    )
+
+                    arcpy.management.MakeFeatureLayer(
+                        persil,
+                        "temp_centroid",
+                        f"{field_id}={idbid}"
+                    )
+
+                    arcpy.management.FeatureToPoint(
+                        "temp_centroid",
+                        centroid,
+                        "INSIDE"
+                    )
+
+                    for fld in [
+                        "NEAR_DIST",
+                        "NEAR_FID"
+                    ]:
+
+                        self.remove_field_if_exists(
+                            centroid,
+                            fld
+                        )
+
+                    arcpy.analysis.Near(
+                        centroid,
+                        line
+                    )
+
+                    with arcpy.da.SearchCursor(
+                        centroid,
+                        ["NEAR_DIST"]
+                    ) as crows:
+
+                        for crow in crows:
+
+                            if crow[0]:
+
+                                lb_dpn=(
+                                    2*crow[0]
+                                )
+
+                row[1]=lb_dpn
+
+                if lb_dpn<=0:
+
+                    row[2]="0"
+                    row[3]="0"
+
+                elif lb_dpn<=3:
+
+                    row[2]="3"
+                    row[3]="0"
+
+                else:
+
+                    row[2]="3+"
+                    row[3]="1"
+
+                rows.updateRow(row)
+
+        messages.addMessage(
+            "== Bersih-bersih =="
+        )
+
+        for fld in [
+            "NEAR_DIST",
+            "NEAR_FID"
+        ]:
+
+            self.remove_field_if_exists(
+                persil,
+                fld
+            )
+
+        arcpy.management.MakeFeatureLayer(
+            persil,
+            "Persil_Update"
+        )
+
+        parameters[9].value="Persil_Update"
+
+        messages.addMessage(
+            "== Proses selesai =="
+        )
 
         return
 

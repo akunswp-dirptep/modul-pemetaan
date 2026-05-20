@@ -42,7 +42,9 @@ class Toolbox:
                       Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI,
                       Upload_Peta_Peta_Area_Kerja_AOI,
                       Buat_Workspace_Pembaruan_NBT,
-                      Masukkan_Data_NBT_Sebelumnya, 
+                      Masukkan_Data_NBT_Sebelumnya,
+                      Masukkan_Data_Jaringan_Jalan,
+                      Masukkan_Data_Fasilitas
                       ]
 
 class Upload_Peta_Rencana_Lokasi_Kegiatan_AOI(object):
@@ -470,6 +472,33 @@ class Buat_Workspace_Pembaruan_NBT(object):
             direction='Input'
         )
 
+        provinsi = arcpy.Parameter(
+            displayName="Provinsi",
+            name="provinsi",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        
+        provinsi.filter.type = "ValueList"
+        provinsi.filter.list = NAMA_PROVINSI
+
+        kab_kota = arcpy.Parameter(
+            displayName="Kabupaten/Kota",
+            name="kab_kota",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        tahun_penilaian = arcpy.Parameter(
+            displayName="Tahun Penilaian",
+            name="tahun_penilaian",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        tahun_penilaian.value = current_year()
+
         output_fl = arcpy.Parameter(
             name='fl_output',
             datatype='GPFeatureLayer',
@@ -477,12 +506,25 @@ class Buat_Workspace_Pembaruan_NBT(object):
             direction='Output'
         )
 
-        return [workspace_folder, koordinat_system, output_fl]
+        return [workspace_folder, koordinat_system, provinsi, kab_kota, tahun_penilaian, output_fl]
+
+    def updateParameters(self, parameters):
+        prov = parameters[2].valueAsText  # parameter Provinsi
+        kab = parameters[3]               # parameter Kab/Kota
+
+        if prov:
+            kab.filter.type = "ValueList"
+            kab.filter.list = KAB_KOTA.get(prov, [])
+        else:
+            kab.filter.list = []
 
     def execute(self, parameters, messages):
 
         folder_path = parameters[0].valueAsText
         spatial_reference = parameters[1].value
+        provinsi = parameters[2].valueAsText
+        kab_kota = parameters[3].valueAsText
+        tahun_penilaian = parameters[4].value
 
         appdata = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -565,6 +607,9 @@ class Buat_Workspace_Pembaruan_NBT(object):
                 'conf_path': conf_path,
                 'gdb_path': gdb_path,
                 'dataset_path': dataset_path,
+                'provinsi': provinsi,
+                'kab_kota': kab_kota,
+                'tahun_penilaian': tahun_penilaian,
                 'daftar_variabel_path': os.path.join(
                     folder_path,
                     constant.KONFIG_DAFTAR_VARIABEL
@@ -698,7 +743,7 @@ class Buat_Workspace_Pembaruan_NBT(object):
                 folder_connections,
                 validate=True
             )
-        arcpy.SetParameter(2, fl)
+        arcpy.SetParameter(5, fl)
         arcpy.AddMessage("Workspace berhasil dibuat")
 
 class Masukkan_Data_NBT_Sebelumnya(object):
@@ -761,31 +806,33 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 ]
 
                 default_variabel = [
-                    ['Tipe Hak', self.cari_field(field_names, ['TIPEHAK', 'STATUS_PER'])],
-                    ["Lebar Depan", self.cari_field(field_names, ['LBRDPN', 'LB_DPN'])],
-                    ["Luas Tanah", self.cari_field(field_names, ['LUASM2', 'LS_TNH'])],
-                    ["Zonasi", self.cari_field(field_names, ['ZONASI'])],
-                    ["Skoring Zonasi", self.cari_field(field_names, ['S_ZONASI'])],
-                    ["Letak", self.cari_field(field_names, ['LETAK'])],
-                    ["Skoring Letak", self.cari_field(field_names, ['S_LETAK'])],
-                    ["Elevasi", self.cari_field(field_names, ['ELVASI'])],
-                    ["Skoring Elevasi", self.cari_field(field_names, ['S_ELVASI'])],
-                    ["Lebar Jalan", self.cari_field(field_names, ['LBRJLN', 'LB_JLN'])],
-                    ["Kelas Jalan", self.cari_field(field_names, ['KLSJLN', 'KLS_JLN'])],
-                    ["Skoring Kelas Jalan", self.cari_field(field_names, ['S_KLS_JLN', 'S_KLS_JLN'])],
-                    ["Jarak Arteri Primer", self.cari_field(field_names, ['JKATRP', 'JK_ATRP'])],
-                    ["Jarak Arteri Sekunder", self.cari_field(field_names, ['JKATRS', 'JK_ATRS'])],
-                    ["Jarak Kolektor Primer", self.cari_field(field_names, ['JKKOLP', 'JK_KOLP'])],
-                    ["Jarak Kolektor Sekunder", self.cari_field(field_names, ['JKKOLS', 'JK_KOLS'])],
-                    ["Jarak CBD", self.cari_field(field_names, ['JKCBD', 'JK_CBD'])],
-                    ["Jarak Fasilitas Kesehatan", self.cari_field(field_names, ['JKKES', 'JK_KES'])],
-                    ["Jarak Fasilitas Pendidikan", self.cari_field(field_names, ['JKPDDKN', 'JK_EDU'])],
-                    ["Jarak Fasilitas Transportasi", self.cari_field(field_names, ['JKTRANSP', 'JK_TRAN'])],
-                    ["Jarak Fasilitas Pemerintahan", self.cari_field(field_names, ['JKPMRNTH', 'JK_PEM'])],
-                    ["Banjir", self.cari_field(field_names, ['BANJIR'])],
-                    ["Longsor", self.cari_field(field_names, ['LONGSOR'])],
-                    ["Nilai Bidang Tanah", self.cari_field(field_names, ['NILAIBD'])],
-                    ['NIB', self.cari_field(field_names, ['NIB'])],
+                    ['Kelurahan', self.cari_field(field_names, ['KELURAHAN', 'KEL'])], #WADMKC
+                    ['Kecamatan', self.cari_field(field_names, ['KECAMATAN', 'KEC'])], #WADMKD
+                    ['Tipe Hak', self.cari_field(field_names, ['TIPEHAK', 'STATUS_PER'])], #TIPEHAK
+                    ["Lebar Depan", self.cari_field(field_names, ['LBRDPN', 'LB_DPN'])], #LBRDPN
+                    ["Luas Tanah", self.cari_field(field_names, ['LUASM2', 'LS_TNH'])], #LUASM2
+                    ["Zonasi", self.cari_field(field_names, ['ZONASI'])], #ZONASI
+                    ["Skoring Zonasi", self.cari_field(field_names, ['S_ZONASI'])], #S_ZONASI
+                    ["Letak", self.cari_field(field_names, ['LETAK'])], #LETAK
+                    ["Skoring Letak", self.cari_field(field_names, ['S_LETAK'])], #S_LETAK
+                    ["Elevasi", self.cari_field(field_names, ['ELVASI'])], #ELEVASI
+                    ["Skoring Elevasi", self.cari_field(field_names, ['S_ELVASI'])], #S_ELEVASI
+                    ["Lebar Jalan", self.cari_field(field_names, ['LBRJLN', 'LB_JLN'])], #LBRJLN
+                    ["Kelas Jalan", self.cari_field(field_names, ['KLSJLN', 'KLS_JLN'])], #KLSJLN
+                    ["Skoring Kelas Jalan", self.cari_field(field_names, ['S_KLS_JLN', 'S_KLS_JLN'])], #S_KLS_JLN
+                    ["Jarak Arteri Primer", self.cari_field(field_names, ['JKATRP', 'JK_ATRP'])], #JKATRP
+                    ["Jarak Arteri Sekunder", self.cari_field(field_names, ['JKATRS', 'JK_ATRS'])], #JKATRS
+                    ["Jarak Kolektor Primer", self.cari_field(field_names, ['JKKOLP', 'JK_KOLP'])], #JKKOLP
+                    ["Jarak Kolektor Sekunder", self.cari_field(field_names, ['JKKOLS', 'JK_KOLS'])], #JKKOLS
+                    ["Jarak CBD", self.cari_field(field_names, ['JKCBD', 'JK_CBD'])], #JKCBD
+                    ["Jarak Fasilitas Kesehatan", self.cari_field(field_names, ['JKKES', 'JK_KES'])], #JKKES
+                    ["Jarak Fasilitas Pendidikan", self.cari_field(field_names, ['JKPDDKN', 'JK_EDU'])], #JKPDDKN
+                    ["Jarak Fasilitas Transportasi", self.cari_field(field_names, ['JKTRANSP', 'JK_TRAN'])], #JKTRANSP
+                    ["Jarak Fasilitas Pemerintahan", self.cari_field(field_names, ['JKPMRNTH', 'JK_PEM'])], #JKPMRNTH
+                    ["Banjir", self.cari_field(field_names, ['BANJIR'])], #BANJIR
+                    ["Longsor", self.cari_field(field_names, ['LONGSOR'])], #LONGSOR
+                    ["Nilai Bidang Tanah", self.cari_field(field_names, ['NILAIBD'])], #NILAIBD
+                    ['NIB', self.cari_field(field_names, ['NIB'])], #NIB
                     ['IdBidang', self.cari_field(field_names, ['IDBIDANG'])]
                 ]
 
@@ -834,25 +881,16 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             "daftar_variabel": daftar_variabel_python
         }
 
-        with open(
-            konfigurasi_variabel_path,
-            "w"
-        ) as conf_file:
-            json.dump(
-                json_config,
-                conf_file,
-                indent=4
-            )
+        with open( konfigurasi_variabel_path, "w" ) as conf_file:
+            json.dump( json_config, conf_file, indent=4)
         
-        dest_lama_path = r"in_memory\PersilPetaLama"
+        dest_temp_path = r"in_memory\Persil_Lama"
         
-        arcpy.management.CopyFeatures(
-            peta_lama_input,
-            dest_lama_path
-        )
-        arcpy.AddMessage(daftar_variabel_python)
+        arcpy.management.CopyFeatures(peta_lama_input,  dest_temp_path)
 
-        for field in arcpy.ListFields(dest_lama_path):
+        fields_data = arcpy.ListFields(dest_temp_path)
+
+        for field in fields_data:
             field_name = field.name
             is_protected = (
                 field.type in ["Geometry", "OID"]
@@ -862,23 +900,26 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             if not is_protected:
                 try:
                     arcpy.management.DeleteField(
-                        dest_lama_path,
+                        dest_temp_path,
                         field_name
                     )
                 except Exception as e:
                     arcpy.AddWarning(str(e))
 
-        self.calculate_area_field(
-            dest_lama_path
-        )
+
+        if 'ls_asal' not in fields_data:
+            arcpy.management.AddField( dest_temp_path, "ls_asal", "DOUBLE" )
+
+        arcpy.management.CalculateField( dest_temp_path, "ls_asal", "!shape.area!", "PYTHON3")
+
 
         persil_layer = arcpy.conversion.FeatureClassToFeatureClass(
-            dest_lama_path,
+            dest_temp_path,
             dataset_path,
             constant.LAYER_PERSIL
         )[0]
 
-        parameters[2].value = persil_layer
+        arcpy.SetParameter(2, persil_layer)
 
         return
     def cari_field(self, field_names, kandidat):
@@ -908,31 +949,302 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         for lyr in layers:
             self.delete_if_exists(lyr)
 
-    def calculate_area_field(
-        self,
-        fc,
-        field_name="ls_asal"
-    ):
+class Masukkan_Data_Jaringan_Jalan(object):
 
-        field_names = [
-            f.name
-            for f in arcpy.ListFields(fc)
-        ]
+    def __init__(self):
+        self.label = "Masukkan Data Jaringan Jalan"
+        self.description = ""
+        self.canRunInBackground = False
 
-        if field_name not in field_names:
+    def getParameterInfo(self):
 
+        jaringan_jalan=arcpy.Parameter(
+            displayName="Jaringan Jalan (.shp)",
+            name="jaringan_jalan",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        jaringan_jalan.filter.list = ["shp"]
+
+        field_skor_jalan=arcpy.Parameter(
+            displayName="Field Skor Kelas Jalan",
+            name="field_skor_jalan",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        field_skor_jalan.parameterDependencies=[jaringan_jalan.name]
+
+        field_lebar_jalan=arcpy.Parameter(
+            displayName="Field Lebar Jalan",
+            name="field_lebar_jalan",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        field_lebar_jalan.parameterDependencies=[jaringan_jalan.name]
+
+        output_jaringan_jalan = arcpy.Parameter(
+            displayName="Output Jaringan Jalan",
+            name="output_jaringan_jalan",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [ jaringan_jalan, field_skor_jalan, field_lebar_jalan, output_jaringan_jalan ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self,parameters,messages):
+
+        in_jaringan_jalan=parameters[0].valueAsText
+        field_skor_jalan = parameters[1].valueAsText
+        field_lebar_jalan = parameters[2].valueAsText
+
+        interest_fields = [field_skor_jalan, field_lebar_jalan]
+        configs=persil.get_config_values()
+        dataset_path=configs["project_config"]["dataset_path"]
+        jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        jaringan_jalan="Jaringan_Jalan"     
+
+        with arcpy.da.SearchCursor(in_jaringan_jalan, interest_fields) as cursor:
+            for row in cursor:
+                if row[0] is None or row[1] is None:
+                    arcpy.AddError("Terdapat nilai kosong pada field skor kelas jalan atau field lebar jalan. Pastikan semua data pada kedua field tersebut terisi dengan benar.")
+                    return
+                if row[0] > 7 or row[0] < 1:
+                    arcpy.AddError("Terdapat nilai pada field skor kelas jalan yang tidak valid. Pastikan semua nilai pada field tersebut berada dalam rentang 1 hingga 7.")
+                    return
+
+        arcpy.conversion.FeatureClassToFeatureClass(
+                in_jaringan_jalan,
+                dataset_path,
+                jaringan_jalan
+        )
+
+        arcpy.management.AlterField(
+            jaringan_jalan_path,
+            field_skor_jalan,
+            "s_kls_jln",
+            "Skor Kelas Jalan"
+        )
+
+        arcpy.management.AlterField(
+            jaringan_jalan_path,
+            field_lebar_jalan,
+            "lb_jln",
+            "Lebar Jalan"
+        )
+        arcpy.management.AddField(
+            jaringan_jalan_path,
+            "kls_jln",
+            "TEXT",
+            field_alias="Kelas Jalan"
+        )
+        kelas_mapping = {
+            1: "Setapak",
+            2: "Lokal Sekunder",
+            3: "Lokal Primer",
+            4: "Kolektor Sekunder",
+            5: "Kolektor Primer",
+            6: "Arteri Sekunder",
+            7: "Arteri Primer"
+        }
+        with arcpy.da.UpdateCursor(jaringan_jalan_path, ["s_kls_jln", "kls_jln"]) as cursor:
+            for row in cursor:
+                skor = row[0]
+                row[1] = kelas_mapping.get(skor, "Kelas Tidak Diketahui")
+
+                cursor.updateRow(row)
+
+        list_names=[f.name for f in arcpy.ListFields(jaringan_jalan_path)]
+
+        if "status_jal" not in list_names:
             arcpy.management.AddField(
-                fc,
-                field_name,
-                "DOUBLE"
+                jaringan_jalan_path,
+                "status_jal",
+                "TEXT"
             )
 
         arcpy.management.CalculateField(
-            fc,
-            field_name,
-            "!shape.area!",
+            jaringan_jalan_path,
+            "status_jal",
+            '"Tetap"',
             "PYTHON3"
         )
+
+        if arcpy.Exists(jaringan_jalan):
+            try:
+                arcpy.management.Delete(jaringan_jalan)
+            except:
+                pass
+
+        arcpy.management.MakeFeatureLayer(
+            jaringan_jalan_path,
+            jaringan_jalan
+        )
+
+        arcpy.SetParameter(3, jaringan_jalan)
+
+        messages.addMessage("== Proses selesai ==")
+        return
+
+class Masukkan_Data_Fasilitas(object):
+
+    def __init__(self):
+        self.label = "Masukkan Data Fasilitas"
+        self.description = ""
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+
+        fasilitas_path = arcpy.Parameter(
+            displayName="Feature Class Fasilitas",
+            name="fasilitas_path",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        data_field = arcpy.Parameter(
+            displayName="Field Jarak Fasilitas",
+            name="data_field",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        data_field.filter.type = "ValueList"
+
+        output_layer = arcpy.Parameter(
+            displayName="Output Fasilitas",
+            name="output_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [fasilitas_path, data_field, output_layer]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+
+        field_list = []
+
+        configs = persil.get_config_values()
+
+        persil_path = os.path.join(
+            configs["project_config"]["dataset_path"],
+            "Persil_Layer"
+        )
+
+        if arcpy.Exists(persil_path):
+            field_list = [
+                field.name
+                for field in arcpy.ListFields(persil_path)
+                if field.type in ["Double", "Single", "Integer", "SmallInteger"]
+            ]
+
+        parameters[1].filter.list = field_list
+
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+
+        messages.addMessage("== Proses dimulai ==")
+
+        fasilitas_path = parameters[0].valueAsText
+        field_fasilitas = parameters[1].valueAsText
+
+        if not fasilitas_path:
+            messages.addErrorMessage("Feature class fasilitas tidak valid")
+            raise arcpy.ExecuteError
+
+        if not field_fasilitas:
+            messages.addErrorMessage("Field fasilitas tidak valid")
+            raise arcpy.ExecuteError
+
+        configs = persil.get_config_values()
+
+        dataset_path = configs["fasilitas_config"]["dataset_path"]
+        gdb_path = configs["project_config"]["gdb_path"]
+        jalan_path = configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+
+        if not arcpy.Exists(dataset_path):
+
+            messages.addMessage("== Membuat dataset fasilitas ==")
+
+            spatial_ref = arcpy.Describe(jalan_path).spatialReference
+
+            arcpy.management.CreateFeatureDataset(
+                gdb_path,
+                os.path.basename(dataset_path),
+                spatial_ref
+            )
+
+        nama_fasilitas = os.path.splitext(
+            os.path.basename(fasilitas_path)
+        )[0]
+
+        output_fc = os.path.join(dataset_path, nama_fasilitas)
+
+        if arcpy.Exists(output_fc):
+
+            messages.addWarningMessage(
+                f"Feature class {nama_fasilitas} sudah ada, menghapus data lama"
+            )
+
+            arcpy.management.Delete(output_fc)
+
+        messages.addMessage(
+            f"== Menambahkan fasilitas {nama_fasilitas} =="
+        )
+
+        arcpy.conversion.FeatureClassToFeatureClass(
+            fasilitas_path,
+            dataset_path,
+            nama_fasilitas
+        )
+
+        mapping_fasilitas = configs["fasilitas_config"].get(
+            "mapping_fasilitas",
+            {}
+        )
+
+        mapping_fasilitas[field_fasilitas] = {
+            "nama_fasilitas": nama_fasilitas,
+            "file_path": output_fc
+        }
+
+        configs["fasilitas_config"]["mapping_fasilitas"] = mapping_fasilitas
+
+        persil.set_config_values(configs)
+
+        arcpy.management.MakeFeatureLayer(
+            output_fc,
+            nama_fasilitas
+        )
+
+        arcpy.SetParameter(2, nama_fasilitas)
+
+        messages.addMessage("== Proses selesai ==")
+
+        return  
+
 
 
 class Buat_Workspace_Pembaruan_NBT_OLD(object):

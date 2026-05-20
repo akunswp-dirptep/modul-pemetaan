@@ -97,6 +97,17 @@ def get_config_values():
         arcpy.AddError(f"Path Geodatabase tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki path kembali dengan cara berikut:\n1. Ekspor Geodatabase menggunakaan Tools Ekspor Geodatabase pada menu Backup dan Ekspor Hasil\n2. Import kembali Geodatabase yang sudah diekspor menggunakan Tools Import Workspace pada menu Persiapan Data")
         sys.exit(1)
 
+    return configs
 
+def set_config_values(configs):
+
+    persil_path = is_persil_layer_comply(show_path_message=False)  # Validasi compliance layer zona
+    ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(persil_path)))  # Navigasi ke root workspace
+    config_path = os.path.join(ws_dir, "project_config.json")  # Path ke file config
+    configs = None
+    if arcpy.Exists(config_path):
+         with open(config_path, 'w') as f:
+            json.dump(configs, f)
 
     return configs
+

@@ -136,11 +136,6 @@ class Hapus_Fasilitas_dan_Resiko(object):
 
     def execute(self, parameters, messages):
 
-        import os
-        import arcpy
-
-        arcpy.env.overwriteOutput = True
-
         messages.addMessage(
             "== Proses mulai =="
         )
@@ -198,18 +193,13 @@ class Hapus_Fasilitas_dan_Resiko(object):
 class Tambah_Fasilitas(object):
 
     def __init__(self):
-
-        self.label = "Tambah Fasilitas"
-        self.description = ""
-        self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
+        self.label="Tambah Fasilitas"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        fasilitas_path = arcpy.Parameter(
+        fasilitas_path=arcpy.Parameter(
             displayName="Feature Class Fasilitas",
             name="fasilitas_path",
             datatype="GPFeatureLayer",
@@ -217,7 +207,7 @@ class Tambah_Fasilitas(object):
             direction="Input"
         )
 
-        jenis_fasilitas = arcpy.Parameter(
+        jenis_fasilitas=arcpy.Parameter(
             displayName="Jenis Fasilitas",
             name="jenis_fasilitas",
             datatype="GPString",
@@ -225,17 +215,15 @@ class Tambah_Fasilitas(object):
             direction="Input"
         )
 
-        jenis_fasilitas.filter.list = [
+        jenis_fasilitas.filter.list=[
             "Central Business District",
             "Fasilitas Kesehatan",
             "Fasilitas Pendidikan",
             "Fasilitas Pemerintah",
-            "Fasilitas Transportasi",
-            "Fasilitas Khusus 1",
-            "Fasilitas Khusus 2"
+            "Fasilitas Transportasi"
         ]
 
-        output_layer = arcpy.Parameter(
+        output_layer=arcpy.Parameter(
             displayName="Output Fasilitas",
             name="output_layer",
             datatype="GPFeatureLayer",
@@ -243,121 +231,58 @@ class Tambah_Fasilitas(object):
             direction="Output"
         )
 
-        return [
-            fasilitas_path,
-            jenis_fasilitas,
-            output_layer
-        ]
+        return[fasilitas_path,jenis_fasilitas,output_layer]
 
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
-    def delete_if_exists(self, path):
+    def delete_if_exists(self,path):
 
         if arcpy.Exists(path):
 
             try:
-
-                arcpy.management.Delete(
-                    path
-                )
-
+                arcpy.management.Delete(path)
             except Exception:
-
                 pass
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
+    def execute(self,parameters,messages):
 
-    def execute(self, parameters, messages):
+        messages.addMessage("== Proses dimulai ==")
 
-        import os
-        import arcpy
+        fasilitas_path=parameters[0].valueAsText
+        jenis_fasilitas=parameters[1].valueAsText
 
-        arcpy.env.overwriteOutput = True
+        configs=persil.get_config_values()
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        dataset_path=configs["fasilitas_config"]["dataset_path"]
+        gdb_path=configs["project_config"]["gdb_path"]
+        jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
 
-        # =================================================
-        # PARAMETER
-        # =================================================
-
-        fasilitas_path = (
-            parameters[0].valueAsText
-        )
-
-        jenis_fasilitas = (
-            parameters[1].valueAsText
-        )
-
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["fasilitas_config"]["dataset_path"]
-        )
-
-        gdb_path = (
-            configs["project_config"]["gdb_path"]
-        )
-
-        jalan_path = (
-            configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        )
-
-        # =================================================
-        # MAPPING FASILITAS
-        # =================================================
-
-        fasilitas_mapping = {
-            "Central Business District": "jk_cbd",
-            "Fasilitas Kesehatan": "jk_kes",
-            "Fasilitas Pendidikan": "jk_edu",
-            "Fasilitas Pemerintah": "jk_pem",
-            "Fasilitas Transportasi": "jk_trans",
-            "Fasilitas Khusus 1": "jk_fas1",
-            "Fasilitas Khusus 2": "jk_fas2"
+        fasilitas_mapping={
+            "Central Business District":"jk_cbd",
+            "Fasilitas Kesehatan":"jk_kes",
+            "Fasilitas Pendidikan":"jk_edu",
+            "Fasilitas Pemerintah":"jk_pem",
+            "Fasilitas Transportasi":"jk_trans",
+            "Fasilitas Khusus 1":"jk_fas1",
+            "Fasilitas Khusus 2":"jk_fas2"
         }
 
-        fasilitas = fasilitas_mapping.get(
-            jenis_fasilitas
-        )
+        fasilitas=fasilitas_mapping.get(jenis_fasilitas)
 
         if fasilitas is None:
-
-            messages.addErrorMessage(
-                "== Jenis fasilitas tidak valid =="
-            )
-
+            messages.addErrorMessage("== Jenis fasilitas tidak valid ==")
             raise arcpy.ExecuteError
 
-        # =================================================
-        # CREATE DATASET
-        # =================================================
+        if not arcpy.Exists(dataset_path):
 
-        if not arcpy.Exists(
-            dataset_path
-        ):
-
-            messages.addMessage(
-                "== Membuat dataset fasilitas =="
-            )
+            messages.addMessage("== Membuat dataset fasilitas ==")
 
             arcpy.management.CreateFeatureDataset(
                 gdb_path,
@@ -365,34 +290,12 @@ class Tambah_Fasilitas(object):
                 jalan_path
             )
 
-        # =================================================
-        # OUTPUT PATH
-        # =================================================
+        output_fc=os.path.join(dataset_path,fasilitas)
 
-        output_fc = os.path.join(
-            dataset_path,
-            fasilitas
-        )
+        self.delete_if_exists(output_fc)
+        self.delete_if_exists(fasilitas)
 
-        # =================================================
-        # CLEAN EXISTING
-        # =================================================
-
-        self.delete_if_exists(
-            output_fc
-        )
-
-        self.delete_if_exists(
-            fasilitas
-        )
-
-        # =================================================
-        # COPY FEATURE
-        # =================================================
-
-        messages.addMessage(
-            f"== Menambahkan fasilitas {jenis_fasilitas} =="
-        )
+        messages.addMessage(f"== Menambahkan fasilitas {jenis_fasilitas} ==")
 
         arcpy.conversion.FeatureClassToFeatureClass(
             fasilitas_path,
@@ -400,33 +303,13 @@ class Tambah_Fasilitas(object):
             fasilitas
         )
 
-        # =================================================
-        # CREATE LAYER
-        # =================================================
+        arcpy.management.MakeFeatureLayer(output_fc,fasilitas)
 
-        arcpy.management.MakeFeatureLayer(
-            output_fc,
-            fasilitas
-        )
+        parameters[2].value=fasilitas
 
-        # =================================================
-        # OUTPUT
-        # =================================================
-
-        parameters[2].value = (
-            fasilitas
-        )
-
-        # =================================================
-        # FINISH
-        # =================================================
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
+        messages.addMessage("== Proses selesai ==")
         return
-
+    
 class Tambah_Resiko(object):
 
     def __init__(self):
@@ -510,11 +393,6 @@ class Tambah_Resiko(object):
     # =====================================================
 
     def execute(self, parameters, messages):
-
-        import os
-        import arcpy
-
-        arcpy.env.overwriteOutput = True
 
         messages.addMessage(
             "== Proses dimulai =="
@@ -656,18 +534,13 @@ class Tambah_Resiko(object):
 class Hitung_Jarak_Fasilitas(object):
 
     def __init__(self):
-
-        self.label = "Hitung Jarak Fasilitas"
-        self.description = ""
-        self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
+        self.label="Hitung Jarak Fasilitas"
+        self.description=""
+        self.canRunInBackground=False
 
     def getParameterInfo(self):
 
-        output_persil = arcpy.Parameter(
+        output_persil=arcpy.Parameter(
             displayName="Output Persil",
             name="output_persil",
             datatype="GPFeatureLayer",
@@ -675,139 +548,58 @@ class Hitung_Jarak_Fasilitas(object):
             direction="Output"
         )
 
-        return [output_persil]
+        return[output_persil]
 
     def isLicensed(self):
         return True
 
-    def updateParameters(self, parameters):
+    def updateParameters(self,parameters):
         return
 
-    def updateMessages(self, parameters):
+    def updateMessages(self,parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
-    def delete_if_exists(self, path):
+    def delete_if_exists(self,path):
 
         if arcpy.Exists(path):
 
             try:
-
-                arcpy.management.Delete(
-                    path
-                )
-
+                arcpy.management.Delete(path)
             except Exception:
-
                 pass
 
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
+    def add_field_if_not_exists(self,feature_class,field_name,field_type):
 
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
+        field_names=[field.name for field in arcpy.ListFields(feature_class)]
 
         if field_name not in field_names:
+            arcpy.management.AddField(feature_class,field_name,field_type)
 
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
+    def execute(self,parameters,messages):
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
+  
 
-    def execute(self, parameters, messages):
+        messages.addMessage("== Proses mulai ==")
 
-        import os
-        import arcpy
+        configs=persil.get_config_values()
 
-        arcpy.env.overwriteOutput = True
+        dataset_path=configs["project_config"]["dataset_path"]
+        datasetfasilitas_path=configs["fasilitas_config"]["dataset_path"]
+        jaringanjalan_nd_path=configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
+        nd_path=configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
 
-        messages.addMessage(
-            "== Proses mulai =="
-        )
+        persil_nama="Persil_Layer"
+        persil_path=os.path.join(dataset_path,persil_nama)
 
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
+        persilcentroid="PersilCentroidUpdate"
+        persilcentroid_path=os.path.join(dataset_path,persilcentroid)
 
-        configs = persil.get_config_values()
+        dataset_template_path=os.path.dirname(jaringanjalan_nd_path)
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
+        self.delete_if_exists(persilcentroid)
+        self.delete_if_exists(persilcentroid_path)
 
-        datasetfasilitas_path = (
-            configs["fasilitas_config"]["dataset_path"]
-        )
-
-        jaringanjalan_nd_path = (
-            configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
-        )
-
-        nd_path = (
-            configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
-        )
-
-        # =================================================
-        # DATASET
-        # =================================================
-
-        persil = (
-            "Persil_Baru"
-        )
-
-        persil_path = os.path.join(
-            dataset_path,
-            persil
-        )
-
-        persilcentroid = (
-            "PersilCentroidUpdate"
-        )
-
-        persilcentroid_path = os.path.join(
-            dataset_path,
-            persilcentroid
-        )
-
-        dataset_template_path = os.path.dirname(
-            jaringanjalan_nd_path
-        )
-
-        # =================================================
-        # CLEAN TEMP
-        # =================================================
-
-        self.delete_if_exists(
-            persilcentroid
-        )
-
-        self.delete_if_exists(
-            persilcentroid_path
-        )
-
-        # =================================================
-        # CREATE CENTROID
-        # =================================================
-
-        messages.addMessage(
-            "== Membuat centroid persil =="
-        )
+        messages.addMessage("== Membuat centroid persil ==")
 
         arcpy.management.FeatureToPoint(
             persil_path,
@@ -815,68 +607,28 @@ class Hitung_Jarak_Fasilitas(object):
             "INSIDE"
         )
 
-        # =================================================
-        # NETWORK ANALYST CONFIG
-        # =================================================
+        messages.addMessage("== Persiapan network analyst ==")
 
-        messages.addMessage(
-            "== Persiapan network analyst =="
-        )
+        outNALayerName="hasil_na"
+        impedance_attribute="P_Jalan"
 
-        outNALayerName = (
-            "hasil_na"
-        )
+        arcpy.env.workspace=datasetfasilitas_path
 
-        impedance_attribute = (
-            "P_Jalan"
-        )
-
-        # =================================================
-        # LIST FASILITAS
-        # =================================================
-
-        arcpy.env.workspace = (
-            datasetfasilitas_path
-        )
-
-        list_fc = arcpy.ListFeatureClasses(
-            "*"
-        )
+        list_fc=arcpy.ListFeatureClasses("*")
 
         if not list_fc:
-
-            messages.addWarningMessage(
-                "== Tidak ada fasilitas ditemukan =="
-            )
-
+            messages.addWarningMessage("== Tidak ada fasilitas ditemukan ==")
             return
-
-        # =================================================
-        # LOOP FASILITAS
-        # =================================================
 
         for fc in list_fc:
 
-            fasilitas = fc
+            fasilitas=fc
+            fasilitas_path=os.path.join(datasetfasilitas_path,fasilitas)
+            namafield=fc.replace(" ","")[:7]
 
-            fasilitas_path = os.path.join(
-                datasetfasilitas_path,
-                fasilitas
-            )
+            messages.addMessage(f"== Hitung jarak fasilitas: {fasilitas} ==")
 
-            namafield = (
-                fc.replace(" ", "")[:7]
-            )
-
-            messages.addMessage(
-                f"== Hitung jarak fasilitas: {fasilitas} =="
-            )
-
-            # =============================================
-            # CREATE CLOSEST FACILITY
-            # =============================================
-
-            hasilNAObject = arcpy.na.MakeClosestFacilityLayer(
+            hasilNAObject=arcpy.na.MakeClosestFacilityLayer(
                 nd_path,
                 outNALayerName,
                 impedance_attribute,
@@ -884,13 +636,7 @@ class Hitung_Jarak_Fasilitas(object):
                 default_number_facilities_to_find=1
             )
 
-            outNALayer = (
-                hasilNAObject.getOutput(0)
-            )
-
-            # =============================================
-            # ADD LOCATIONS
-            # =============================================
+            outNALayer=hasilNAObject.getOutput(0)
 
             arcpy.na.AddLocations(
                 outNALayer,
@@ -904,80 +650,38 @@ class Hitung_Jarak_Fasilitas(object):
                 fasilitas_path
             )
 
-            # =============================================
-            # SOLVE
-            # =============================================
+            arcpy.na.Solve(outNALayer)
 
-            arcpy.na.Solve(
-                outNALayer
-            )
+            incident_path=os.path.join(dataset_template_path,f"incident_{fasilitas}")
+            route_path=os.path.join(dataset_template_path,f"route_{fasilitas}")
+            temp_join=os.path.join(dataset_template_path,"temp_join1")
 
-            # =============================================
-            # OUTPUT TEMP
-            # =============================================
+            self.delete_if_exists(incident_path)
+            self.delete_if_exists(route_path)
+            self.delete_if_exists(temp_join)
 
-            incident_path = os.path.join(
-                dataset_template_path,
-                f"incident_{fasilitas}"
-            )
-
-            route_path = os.path.join(
-                dataset_template_path,
-                f"route_{fasilitas}"
-            )
-
-            temp_join = os.path.join(
-                dataset_template_path,
-                "temp_join1"
-            )
-
-            self.delete_if_exists(
-                incident_path
-            )
-
-            self.delete_if_exists(
-                route_path
-            )
-
-            self.delete_if_exists(
-                temp_join
-            )
-
-            # =============================================
-            # EXPORT LAYER
-            # =============================================
-
-            messages.addMessage(
-                "== Export hasil network analyst =="
-            )
+            messages.addMessage("== Export hasil network analyst ==")
 
             for lyr in outNALayer.listLayers():
 
                 if lyr.isGroupLayer:
-
                     continue
 
-                if lyr.name == "Incidents":
+                if lyr.name=="Incidents":
 
                     arcpy.management.CopyFeatures(
                         lyr,
                         incident_path
                     )
 
-                elif lyr.name == "Routes":
+                elif lyr.name=="Routes":
 
                     arcpy.management.CopyFeatures(
                         lyr,
                         route_path
                     )
 
-            # =============================================
-            # JOIN ROUTE
-            # =============================================
-
-            messages.addMessage(
-                "== Join route =="
-            )
+            messages.addMessage("== Join route ==")
 
             arcpy.management.JoinField(
                 incident_path,
@@ -987,15 +691,9 @@ class Hitung_Jarak_Fasilitas(object):
                 ["Total_P_Jalan"]
             )
 
-            # =============================================
-            # SPATIAL JOIN
-            # =============================================
+            messages.addMessage("== Spatial join ==")
 
-            messages.addMessage(
-                "== Spatial join =="
-            )
-
-            field_mapping = (
+            field_mapping=(
                 f'IdBidang "IdBidang" true true false 4 Long 0 0 ,First,#,{persil_path},IdBidang,-1,-1;'
                 f'Total_P_Jalan "Total_P_Jalan" true true false 8 Double 0 0 ,First,#,{incident_path},Total_P_Jalan,-1,-1'
             )
@@ -1010,19 +708,11 @@ class Hitung_Jarak_Fasilitas(object):
                 "INTERSECT"
             )
 
-            # =============================================
-            # VALIDASI FIELD
-            # =============================================
-
             self.add_field_if_not_exists(
                 persil_path,
                 namafield,
                 "DOUBLE"
             )
-
-            # =============================================
-            # JOIN KE PERSIL
-            # =============================================
 
             arcpy.management.JoinField(
                 persil_path,
@@ -1040,45 +730,20 @@ class Hitung_Jarak_Fasilitas(object):
             )
 
             try:
-
-                arcpy.management.DeleteField(
-                    persil_path,
-                    "Total_P_Jalan"
-                )
-
+                arcpy.management.DeleteField(persil_path,"Total_P_Jalan")
             except:
-
                 pass
 
-        # =================================================
-        # REFRESH OUTPUT
-        # =================================================
-
-        self.delete_if_exists(
-            persil
-        )
+        self.delete_if_exists(persil_nama)
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
-            persil
+            persil_nama
         )
 
-        # =================================================
-        # OUTPUT
-        # =================================================
+        parameters[0].value=persil_nama
 
-        parameters[0].value = (
-            persil
-        )
-
-        # =================================================
-        # FINISH
-        # =================================================
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
+        messages.addMessage("== Proses selesai ==")
         return
 
 class Hitung_Resiko_Persil(object):
@@ -1159,11 +824,6 @@ class Hitung_Resiko_Persil(object):
     # =====================================================
 
     def execute(self, parameters, messages):
-
-        import os
-        import arcpy
-
-        arcpy.env.overwriteOutput = True
 
         messages.addMessage(
             "== Proses mulai =="

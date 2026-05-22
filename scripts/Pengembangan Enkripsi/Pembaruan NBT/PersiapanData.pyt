@@ -57,10 +57,14 @@ class Upload_Peta_Rencana_Lokasi_Kegiatan_AOI(object):
     def getParameterInfo(self):
         berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
         berkas_show = []
+        can_show = 0
         if berkas_list is not None:
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
@@ -82,13 +86,15 @@ class Upload_Peta_Rencana_Lokasi_Kegiatan_AOI(object):
                
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-        if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-
-            if preferred_berkas and preferred_berkas.startswith('04'):
-                berkas.value = preferred_berkas
-            else:
-                berkas.value = berkas_show[0]
+        if berkas_list and can_show > 0:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '04/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]           
+        elif berkas_list and can_show == 0:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
 
@@ -172,7 +178,7 @@ class Upload_Peta_Rencana_Lokasi_Kegiatan_AOI(object):
             nomor_berkas=berkas_value,
             token=token,
             param="pembaruan_nbt_peta_rencana_lokasi_kegiatan",
-            in_feature="Persil",
+            in_feature="Persil_Layer",
             shapefile_path=shapefile_path,
             use_production=use_production)
 
@@ -189,15 +195,19 @@ class Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI(object):
     def getParameterInfo(self):
         berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
         berkas_show = []
+        can_show = 0
         if berkas_list is not None:
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
         shapefile = arcpy.Parameter(
-            displayName="Shapefile Lokasi Kegiatan Disepakati(.shp)",
+            displayName="Shapefile Lokasi Kegiatan Disepakati (.shp)",
             name="shapefile_path",
             datatype="DEFile",  
             parameterType="Required",
@@ -212,17 +222,19 @@ class Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
-               
+
+
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-
-        if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-
-            if preferred_berkas and preferred_berkas.startswith('04'):
-                berkas.value = preferred_berkas
-            else:
-                berkas.value = berkas_show[0]
+        if berkas_list and can_show > 0:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '04/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]           
+        elif berkas_list and can_show == 0:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -323,15 +335,19 @@ class Upload_Peta_Peta_Area_Kerja_AOI(object):
     def getParameterInfo(self):
         berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
         berkas_show = []
+        can_show = 0
         if berkas_list is not None:
             for berkas in berkas_list:
                 if berkas[1] is True:
                     berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
         shapefile = arcpy.Parameter(
-            displayName="Shapefile Peta Area Kerja(.shp)",
+            displayName="Shapefile Peta Area Kerja (.shp)",
             name="shapefile_path",
             datatype="DEFile",  
             parameterType="Required",
@@ -349,14 +365,15 @@ class Upload_Peta_Peta_Area_Kerja_AOI(object):
                
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
-
-        if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-
-            if preferred_berkas and preferred_berkas.startswith('04'):
-                berkas.value = preferred_berkas
-            else:
-                berkas.value = berkas_show[0]
+        if berkas_list and can_show > 0:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '04/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]           
+        elif berkas_list and can_show == 0:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
@@ -813,6 +830,8 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                     ["Luas Tanah", self.cari_field(field_names, ['LUASM2', 'LS_TNH'])], #LUASM2
                     ["Zonasi", self.cari_field(field_names, ['ZONASI'])], #ZONASI
                     ["Skoring Zonasi", self.cari_field(field_names, ['S_ZONASI'])], #S_ZONASI
+                    ["Bentuk Persil", self.cari_field(field_names, ['BENTUK', 'BENTUK_PERSIL'])], #BENTUK
+                    ["Skoring Bentuk Persil", self.cari_field(field_names, ['S_BENTUK'])], #S_BENTUK
                     ["Letak", self.cari_field(field_names, ['LETAK'])], #LETAK
                     ["Skoring Letak", self.cari_field(field_names, ['S_LETAK'])], #S_LETAK
                     ["Elevasi", self.cari_field(field_names, ['ELVASI'])], #ELEVASI

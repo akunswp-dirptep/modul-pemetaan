@@ -43,10 +43,6 @@ class Persiapan_Persil_Individual(object):
         self.description = ""
         self.canRunInBackground = False
 
-    # =====================================================
-    # PARAMETER
-    # =====================================================
-
     def getParameterInfo(self):
 
         output_persil = arcpy.Parameter(
@@ -67,10 +63,6 @@ class Persiapan_Persil_Individual(object):
 
     def updateMessages(self, parameters):
         return
-
-    # =====================================================
-    # HELPER
-    # =====================================================
 
     def add_field_if_not_exists(
         self,
@@ -108,17 +100,7 @@ class Persiapan_Persil_Individual(object):
 
                 pass
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-
     def execute(self, parameters, messages):
-
-        import os
-        import arcpy
-        import arcpy.mp
-
-        arcpy.env.overwriteOutput = True
 
         messages.addMessage(
             "== Proses dimulai =="
@@ -138,23 +120,15 @@ class Persiapan_Persil_Individual(object):
         # APPDATA
         # =================================================
 
-        appdata = os.path.dirname(
-            os.path.dirname(
-                os.path.realpath(__file__)
-            )
-        )
-
         # =================================================
         # DATASET
         # =================================================
 
-        persil = (
-            "Persil_Baru"
-        )
+        persil_nama = "Persil_Layer"
 
         persil_path = os.path.join(
             dataset_path,
-            persil
+            persil_nama
         )
 
         # =================================================
@@ -197,33 +171,25 @@ class Persiapan_Persil_Individual(object):
             persil_path,
             [
                 "status_per",
-                "clusternew",
+                "kelompok_perubahan",
                 "perubahan"
             ]
         ) as rows:
 
             for row in rows:
+                if row[0] == "update":
 
-                status_per = row[0]
-                clusternew = row[1]
-
-                if status_per == "update":
-
-                    if clusternew:
-
+                    if row[1]:
                         row[2] = (
                             "mengelompok"
                         )
 
                     else:
-
                         row[2] = (
                             "menyebar"
                         )
 
-                rows.updateRow(
-                    row
-                )
+                rows.updateRow( row )
 
         # =================================================
         # UPDATE KELAS LUAS TANAH
@@ -246,47 +212,40 @@ class Persiapan_Persil_Individual(object):
 
             for row in rows:
 
-                value_ls_tnh = (
-                    row[0]
-                )
-
                 value_lb_dpn = (
                     row[1]
                 )
 
-                # =========================================
-                # LUAS TANAH
-                # =========================================
 
-                if value_ls_tnh is None:
+                if row[0] is None:
 
                     row[2] = 0
 
-                elif value_ls_tnh < 50:
+                elif row[0] < 50:
 
                     row[2] = 1
 
-                elif value_ls_tnh > 1000:
+                elif row[0] > 1000:
 
                     row[2] = 2
 
                 elif (
-                    value_ls_tnh >= 200
-                    and value_ls_tnh <= 1000
+                    row[0] >= 200
+                    and row[0] <= 1000
                 ):
 
                     row[2] = 3
 
                 elif (
-                    value_ls_tnh >= 50
-                    and value_ls_tnh < 100
+                    row[0] >= 50
+                    and row[0] < 100
                 ):
 
                     row[2] = 4
 
                 elif (
-                    value_ls_tnh >= 100
-                    and value_ls_tnh <= 200
+                    row[0] >= 100
+                    and row[0] <= 200
                 ):
 
                     row[2] = 5
@@ -350,79 +309,10 @@ class Persiapan_Persil_Individual(object):
             "PYTHON3"
         )
 
-        # =================================================
-        # REFRESH LAYER
-        # =================================================
+        arcpy.SetParameter(0, persil_nama)
 
-        self.delete_if_exists(
-            persil
-        )
 
-        arcpy.management.MakeFeatureLayer(
-            persil_path,
-            persil
-        )
-
-        # =================================================
-        # APPLY SYMBOLOGY
-        # =================================================
-
-        simbologi_path = os.path.join(
-            appdata,
-            "Simbologi_PersilIndividual.lyrx"
-        )
-
-        if os.path.exists(
-            simbologi_path
-        ):
-
-            arcpy.management.ApplySymbologyFromLayer(
-                persil,
-                simbologi_path
-            )
-
-        # =================================================
-        # OUTPUT
-        # =================================================
-
-        parameters[0].value = (
-            persil
-        )
-
-        # =================================================
-        # HIDE LAYER
-        # =================================================
-
-        try:
-
-            aprx = arcpy.mp.ArcGISProject(
-                "CURRENT"
-            )
-
-            current_map = (
-                aprx.activeMap
-            )
-
-            for layer in current_map.listLayers():
-
-                if (
-                    layer.name
-                    == "Titik_Sampel_Update"
-                ):
-
-                    layer.visible = False
-
-        except Exception:
-
-            pass
-
-        # =================================================
-        # FINISH
-        # =================================================
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage( "== Proses selesai ==" )
 
         return
 
@@ -611,9 +501,6 @@ class Hitung_Persil_Individual(object):
 
         return pembanding_layers
 
-    # =====================================================
-    # GET DATA ROW
-    # =====================================================
 
     def get_data_row(
         self,

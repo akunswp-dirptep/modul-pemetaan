@@ -216,5 +216,5 @@ reset_last_sample = {
     'last_sample_id': 0
 }
 # setup_project_config(reset_last_sample, project_config)
-# print(get_all_config())
-print(get_user_data('preferred_berkas_id'))
+print(get_all_config())
+# print(get_user_data('preferred_berkas_id'))

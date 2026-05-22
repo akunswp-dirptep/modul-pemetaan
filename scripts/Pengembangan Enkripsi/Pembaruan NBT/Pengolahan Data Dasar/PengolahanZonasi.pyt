@@ -12,7 +12,6 @@ if gp_dir not in sys.path:
 
 from nbtutils import persil
 
-
 class Toolbox:
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the

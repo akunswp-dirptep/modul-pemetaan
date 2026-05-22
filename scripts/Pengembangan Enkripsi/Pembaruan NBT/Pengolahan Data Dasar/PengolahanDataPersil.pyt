@@ -22,17 +22,19 @@ class Toolbox:
 
         # List of tool classes associated with this toolbox
         self.tools = [Identifikasi_Perubahan_Persil, 
-                      Update_Indikator_Perubahan_Persil,
-                      Set_Status_Perubahan_Persil,
-                      Persil_Cluster,
-                      Reset_Persil_Cluster,
-                      Generate_Peta_Persil_Cluster,
+                    Periksa_Perubahan_Persil,
+                      Sesuaikan_Status_Perubahan_Persil,
+                      Menentukan_Perubahan_Mengelompok,
+                      Reset_Perubahan_Mengelompok,
+                      Simpan_Perubahan_Ke_Persil_Baru,
                       Generate_Peta_Akhir,
                       Update_Luas_Tanah,
                       Analisis_Bentuk_Persil,
                       Edit_Bentuk_Persil,
                       Simpan_Bentuk_Persil,
-                      Tampilkan_Simbologi_Persil]
+                      Tampilkan_Simbologi_Persil,
+                      Sinkronkan_Indikator_Persil,
+                      Analisis_Bentuk_Persil_File]
 
 
 class Identifikasi_Perubahan_Persil(object):
@@ -126,11 +128,11 @@ class Identifikasi_Perubahan_Persil(object):
 
         arcpy.management.CopyFeatures(layer_name,output_fc)
 
-    def set_default_value(self,fc,field_name,value,field_type="TEXT"):
+    def set_default_value(self, fc, field_name, value, field_type="TEXT", field_alias=None):
         field_names=[f.name for f in arcpy.ListFields(fc)]
 
         if field_name not in field_names:
-            arcpy.management.AddField(fc,field_name,field_type)
+            arcpy.management.AddField(fc,field_name,field_type, field_alias = field_alias)
 
         arcpy.management.CalculateField(fc,field_name,f'"{value}"',"PYTHON3")
 
@@ -221,7 +223,9 @@ class Identifikasi_Perubahan_Persil(object):
 
         arcpy.management.Merge([temp_baru_path,temp_lama_path],indikator_temp)
 
-        self.set_default_value(indikator_temp,"indikator_perubahan","Indikator Periksa")
+        self.set_default_value(indikator_temp,"indikator_perubahan","Indikator Periksa", field_alias="Indikator Perubahan")
+        self.set_default_value(indikator_temp, 'kelompok_perubahan', None, 'SHORT', 'Kelompok Perubahan')
+        self.set_default_value(indikator_temp, 'klaster_zona', None, 'SHORT', 'Klaster Zona')
 
         f_lyr_name, lyr_path, sim_lyr_path =self.save_layer(dest_baru_path, dataset_path,"Persil_Baru")
         arcpy.management.MakeFeatureLayer(lyr_path, f_lyr_name)
@@ -240,7 +244,7 @@ class Identifikasi_Perubahan_Persil(object):
 class Tampilkan_Simbologi_Persil(object):
     """Tool untuk menampilkan simbologi pada layer Persil"""
     def __init__(self):
-        self.label = "Tampilkan Simbologi Persil"
+        self.label = "Tampilkan Simbologi Layer Identifikasi"
         self.description = "Tool untuk menampilkan simbologi "
 
         self.canRunInBackground = False
@@ -310,15 +314,15 @@ class Tampilkan_Simbologi_Persil(object):
         arcpy.SetParameter(1, 'Persil_Baru')
         arcpy.SetParameter(2, 'Indikator_Perubahan_Persil' if arcpy.Exists(indi_path) else None)
 
-class Update_Indikator_Perubahan_Persil(object):
+class Periksa_Perubahan_Persil(object):
     def __init__(self):
-        self.label="Update Indikator Perubahan Persil"
+        self.label="Periksa Perubahan Persil"
         self.description=""
         self.canRunInBackground=False
 
     def getParameterInfo(self):
         radius=arcpy.Parameter(
-            displayName="Radius Toleransi",
+            displayName="Radius Toleransi Perubahan (m)",
             name="radius",
             datatype="GPDouble",
             parameterType="Required",
@@ -394,16 +398,38 @@ class Update_Indikator_Perubahan_Persil(object):
             "JOIN_ONE_TO_ONE",
             "KEEP_ALL",
             "OBJECTID \"OBJECTID\" true true false 9 Long 0 9 ,First,#,"+
-            peta_indikator_path+",OBJECTID,-1,-1;NIB \"NIB\" true true false 5 Long 0 0 ,First,#,"+
-            peta_indikator_path+",NIB,-1,-1;IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#,"+
-            peta_indikator_path+",IdBidang,-1,-1;Predicted \"Predicted\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_path+",Predicted,-1,-1;Shape_Area \"Shape_Area\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_path+",Shape_Area,-1,-1;ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_path+",ls_asal,-1,-1;ls_tnh \"ls_tnh\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_path+",ls_tnh,-1,-1;indikator_perubahan \"indikator_perubahan\" true true false 254 Text 0 0 ,First,#,"+
-            peta_indikator_path+",indikator_perubahan,-1,-1;ls_dr_baru \"ls_dr_baru\" true true false 50 Double 0 0 ,First,#,"+
-            peta_update_path+",ls_asal,-1,-1;cluster \"cluster\" true true false 2 Short 0 0,First,#,"+
-            peta_indikator_update_path+",cluster,-1,-1",
+            peta_indikator_path+",OBJECTID,-1,-1;"+
+            
+            "NIB \"NIB\" true true false 5 Long 0 0 ,First,#,"+
+            peta_indikator_path+",NIB,-1,-1;"+
+            
+            "IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#,"+
+            peta_indikator_path+",IdBidang,-1,-1;"+
+            
+            "Predicted \"Predicted\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_path+",Predicted,-1,-1;"+
+            
+            "Shape_Area \"Shape_Area\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_path+",Shape_Area,-1,-1;"+
+            
+            "ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_path+",ls_asal,-1,-1;"+
+            
+            "ls_tnh \"ls_tnh\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_path+",ls_tnh,-1,-1;"+
+            
+            "indikator_perubahan \"indikator_perubahan\" true true false 254 Text 0 0 ,First,#,"+
+            peta_indikator_path+",indikator_perubahan,-1,-1;"+
+            
+            "ls_dr_baru \"ls_dr_baru\" true true false 50 Double 0 0 ,First,#,"+
+            peta_update_path+",ls_asal,-1,-1;"+
+            
+            "kelompok_perubahan \"kelompok_perubahan\" true true false 2 Short 0 0 ,Max,#,"+
+            peta_update_path+",kelompok_perubahan,-1,-1;"+
+            
+            "klaster_zona \"klaster_zona\" true true false 2 Short 0 0 ,Max,#,"+
+            peta_update_path+",klaster_zona,-1,-1",
+            
             "INTERSECT",
             "",
             ""
@@ -461,16 +487,40 @@ def myabs(asal,baru):
             peta_indikator_lama_path,
             "JOIN_ONE_TO_ONE",
             "KEEP_ALL",
+            
             "OBJECTID \"OBJECTID\" true true false 9 Long 0 9 ,First,#,"+
-            peta_indikator_path+",OBJECTID,-1,-1;NIB \"NIB\" true true false 5 Long 0 0 ,First,#,"+
-            peta_indikator_path+",NIB,-1,-1;IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#,"+
-            peta_indikator_path+",IdBidang,-1,-1;Predicted \"Predicted\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_path+",Predicted,-1,-1;Shape_Area \"Shape_Area\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_path+",Shape_Area,-1,-1;ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_path+",ls_asal,-1,-1;ls_tnh \"ls_tnh\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_path+",ls_tnh,-1,-1;indikator_perubahan \"indikator_perubahan\" true true false 254 Text 0 0 ,First,#,"+
-            peta_indikator_path+",indikator_perubahan,-1,-1;ls_dr_lama \"ls_dr_lama\" true true false 50 Double 0 0 ,First,#,"+
-            peta_lama_path+",ls_asal,-1,-1",
+            peta_indikator_path+",OBJECTID,-1,-1;"+
+            
+            "NIB \"NIB\" true true false 5 Long 0 0 ,First,#,"+
+            peta_indikator_path+",NIB,-1,-1;"+
+            
+            "IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#,"+
+            peta_indikator_path+",IdBidang,-1,-1;"+
+            
+            "Predicted \"Predicted\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_path+",Predicted,-1,-1;"+
+            
+            "Shape_Area \"Shape_Area\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_path+",Shape_Area,-1,-1;"+
+            
+            "ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_path+",ls_asal,-1,-1;"+
+            
+            "ls_tnh \"ls_tnh\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_path+",ls_tnh,-1,-1;"+
+            
+            "indikator_perubahan \"indikator_perubahan\" true true false 254 Text 0 0 ,First,#,"+
+            peta_indikator_path+",indikator_perubahan,-1,-1;"+
+            
+            "ls_dr_lama \"ls_dr_lama\" true true false 50 Double 0 0 ,First,#,"+
+            peta_lama_path+",ls_asal,-1,-1;"+
+            
+            "kelompok_perubahan \"kelompok_perubahan\" true true false 2 Short 0 0 ,Max,#,"+
+            peta_lama_path+",kelompok_perubahan,-1,-1;"+
+            
+            "klaster_zona \"klaster_zona\" true true false 2 Short 0 0 ,Max,#,"+
+            peta_lama_path+",klaster_zona,-1,-1",
+            
             "INTERSECT",
             "",
             ""
@@ -535,18 +585,43 @@ def get(b,toleransi):
             peta_indikator_akhir_path,
             "JOIN_ONE_TO_ONE",
             "KEEP_COMMON",
+
             "NIB \"NIB\" true true false 5 Long 0 0 ,First,#,"+
-            peta_indikator_lama_path+",NIB,-1,-1;IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#,"+
-            peta_indikator_lama_path+",IdBidang,-1,-1;ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_lama_path+",ls_asal,-1,-1;indikator_perubahan \"indikator_perubahan\" true true false 254 Text 0 0 ,First,#,"+
-            peta_indikator_lama_path+",indikator_perubahan,-1,-1;ls_dr_lama \"ls_dr_lama\" true true false 19 Double 0 0 ,First,#,"+
-            peta_lama_path+",ls_asal,-1,-1;sts_per_la \"sts_per_la\" true true false 254 Text 0 0 ,First,#,"+
-            peta_indikator_lama_path+",sts_persil,-1,-1;selisih_la \"selisih_la\" true true false 19 Double 0 0 ,First,#,"+
-            peta_indikator_lama_path+",selisih_ba,-1,-1;ls_dr_baru \"ls_dr_baru\" true true false 50 Double 0 0 ,First,#,"+
-            peta_indikator_update_path+",ls_dr_baru,-1,-1;sts_per_ba \"sts_per_ba\" true true false 50 Text 0 0 ,First,#,"+
-            peta_indikator_update_path+",sts_persil,-1,-1;selisih_up \"selisih_up\" true true false 50 Double 0 0 ,First,#,"+
-            peta_indikator_update_path+",selisih_ba,-1,-1;cluster \"cluster\" true true false 2 Short 0 0,First,#,"+
-            peta_indikator_update_path+",cluster,-1,-1",
+            peta_indikator_lama_path+",NIB,-1,-1;"+
+
+            "IdBidang \"IdBidang\" true true false 9 Long 0 9 ,First,#,"+
+            peta_indikator_lama_path+",IdBidang,-1,-1;"+
+
+            "ls_asal \"ls_asal\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_lama_path+",ls_asal,-1,-1;"+
+
+            "indikator_perubahan \"indikator_perubahan\" true true false 254 Text 0 0 ,First,#,"+
+            peta_indikator_lama_path+",indikator_perubahan,-1,-1;"+
+
+            "ls_dr_lama \"ls_dr_lama\" true true false 19 Double 0 0 ,First,#,"+
+            peta_lama_path+",ls_asal,-1,-1;"+
+
+            "sts_per_la \"sts_per_la\" true true false 254 Text 0 0 ,First,#,"+
+            peta_indikator_lama_path+",sts_persil,-1,-1;"+
+
+            "selisih_la \"selisih_la\" true true false 19 Double 0 0 ,First,#,"+
+            peta_indikator_lama_path+",selisih_ba,-1,-1;"+
+
+            "ls_dr_baru \"ls_dr_baru\" true true false 50 Double 0 0 ,First,#,"+
+            peta_indikator_update_path+",ls_dr_baru,-1,-1;"+
+
+            "sts_per_ba \"sts_per_ba\" true true false 50 Text 0 0 ,First,#,"+
+            peta_indikator_update_path+",sts_persil,-1,-1;"+
+
+            "selisih_up \"selisih_up\" true true false 50 Double 0 0 ,First,#,"+
+            peta_indikator_update_path+",selisih_ba,-1,-1;"+
+
+            "kelompok_perubahan \"kelompok_perubahan\" true true false 2 Short 0 0 ,Max,#,"+
+            peta_indikator_update_path+",kelompok_perubahan,-1,-1;"+
+
+            "klaster_zona \"klaster_zona\" true true false 2 Short 0 0 ,Max,#,"+
+            peta_indikator_update_path+",klaster_zona,-1,-1",
+
             "WITHIN",
             "",
             ""
@@ -615,10 +690,10 @@ def get(a,b):
 
         return
 
-class Set_Status_Perubahan_Persil(object):
+class Sesuaikan_Status_Perubahan_Persil(object):
 
     def __init__(self):
-        self.label="Set Status Perubahan Persil"
+        self.label="Sesuaikan Status Perubahan Persil"
         self.description=""
         self.canRunInBackground=False
 
@@ -664,13 +739,13 @@ class Set_Status_Perubahan_Persil(object):
 
         dataset_path=configs["project_config"]["dataset_path"]
 
-        status_per=os.path.join(dataset_path,"Indikator_Perubahan_Persil")
+        layer_indikator=os.path.join(dataset_path,"Indikator_Perubahan_Persil")
 
-        if not arcpy.Exists(status_per):
+        if not arcpy.Exists(layer_indikator):
             messages.addErrorMessage("== Layer Indikator_Perubahan_Persil tidak ditemukan ==")
             raise arcpy.ExecuteError
 
-        fields=[f.name for f in arcpy.ListFields(status_per)]
+        fields=[f.name for f in arcpy.ListFields(layer_indikator)]
 
         if "status_per" not in fields:
             messages.addErrorMessage("== Field status_per tidak ditemukan ==")
@@ -707,10 +782,10 @@ class Set_Status_Perubahan_Persil(object):
         return   
 
 # Bag 2
-class Persil_Cluster(object):
+class Menentukan_Perubahan_Mengelompok(object):
 
     def __init__(self):
-        self.label="Persil Cluster"
+        self.label="Menentukan Perubahan Mengelompok"
         self.description=""
         self.canRunInBackground=False
 
@@ -750,11 +825,11 @@ class Persil_Cluster(object):
             except Exception:
                 pass
 
-    def add_field_if_not_exists(self,feature_class,field_name,field_type):
+    def add_field_if_not_exists(self,feature_class,field_name,field_type,field_alias=None):
         field_names=[field.name for field in arcpy.ListFields(feature_class)]
 
         if field_name not in field_names:
-            arcpy.management.AddField(feature_class,field_name,field_type)
+            arcpy.management.AddField(feature_class,field_name,field_type, field_alias=field_alias)
 
     def execute(self,parameters,messages):
         messages.addMessage("== Proses dimulai ==")
@@ -777,15 +852,16 @@ class Persil_Cluster(object):
 
         self.add_field_if_not_exists(
             persil_path,
-            "clusternew",
-            "SHORT"
+            'kelompok_perubahan',
+            "SHORT",
+            'Kelompok Perubahan'
         )
 
-        messages.addMessage(f"== Update cluster {cluster_update} ==")
+        messages.addMessage(f"== Update Kelompok Perubahan {cluster_update} ==")
 
         updated_count=0
 
-        with arcpy.da.UpdateCursor( persil_name, ["clusternew"]) as cursor:
+        with arcpy.da.UpdateCursor( persil_name, ["kelompok_perubahan"]) as cursor:
 
             for row in cursor:
                 row[0]=cluster_update
@@ -801,10 +877,10 @@ class Persil_Cluster(object):
 
         return
     
-class Reset_Persil_Cluster(object):
+class Reset_Perubahan_Mengelompok(object):
 
     def __init__(self):
-        self.label="Reset Persil Cluster"
+        self.label="Reset Perubahan Mengelompok"
         self.description=""
         self.canRunInBackground=False
 
@@ -857,17 +933,17 @@ class Reset_Persil_Cluster(object):
 
         field_names=[field.name for field in arcpy.ListFields(persil_path)]
 
-        if "clusternew" not in field_names:
-            messages.addWarningMessage("Field clusternew tidak ditemukan")
+        if "kelompok_perubahan" not in field_names:
+            messages.addWarningMessage("Field kelompok_perubahan tidak ditemukan")
             return
 
-        messages.addMessage("== Reset cluster ==")
+        messages.addMessage("== Reset Kelompok Perubahan ==")
 
         updated_count=0
 
         with arcpy.da.UpdateCursor(
             persil_name,
-            ["clusternew"]
+            ["kelompok_perubahan"]
         ) as cursor:
 
             for row in cursor:
@@ -883,10 +959,10 @@ class Reset_Persil_Cluster(object):
 
         return
 
-class Generate_Peta_Persil_Cluster(object):
+class Simpan_Perubahan_Ke_Persil_Baru(object):
 
     def __init__(self):
-        self.label="Generate Peta Persil Cluster"
+        self.label="Simpan Perubahan Ke Persil Baru"
         self.description=""
         self.canRunInBackground=False
 
@@ -965,7 +1041,7 @@ class Generate_Peta_Persil_Cluster(object):
             f'IdBidang "IdBidang" true true false 9 Long 0 9,First,#,{peta_baru_path},IdBidang,-1,-1;'
             f'ls_asal "ls_asal" true true false 19 Double 0 0,First,#,{peta_baru_path},ls_asal,-1,-1;'
             f'status_per "status_per" true true false 50 Text 0 0,First,#,{indikator_path},status_per,-1,-1;'
-            f'clusternew "clusternew" true true false 2 Short 0 0,First,#,{indikator_path},clusternew,-1,-1'
+            f'kelompok_perubahan "kelompok_perubahan" true true false 2 Short 0 0,First,#,{indikator_path},kelompok_perubahan,-1,-1'
         )
         arcpy.analysis.SpatialJoin(
             peta_baru_path,
@@ -2644,5 +2720,647 @@ class Simpan_Bentuk_Persil(object):
         parameters[0].value=persil_path
 
         messages.addMessage("== Proses selesai ==")
+
+        return
+
+
+#  Uji Coba
+class Sinkronkan_Indikator_Persil(object):
+
+    def __init__(self):
+        self.label="Sinkronkan Indikator Persil"
+        self.description=""
+        self.canRunInBackground=False
+
+    def getParameterInfo(self):
+
+        output_layer=arcpy.Parameter(
+            displayName="Output Persil Baru",
+            name="output_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [output_layer]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self,parameters):
+        return
+
+    def updateMessages(self,parameters):
+        return
+
+    def delete_if_exists(self,path):
+
+        if arcpy.Exists(path):
+
+            try:
+                arcpy.management.Delete(path)
+
+            except Exception:
+                pass
+
+    def add_field_if_not_exists(
+        self,
+        feature_class,
+        field_name,
+        field_type,
+        precision=None
+    ):
+
+        fields=[field.name.lower() for field in arcpy.ListFields(feature_class)]
+
+        if field_name.lower() not in fields:
+
+            if precision:
+
+                arcpy.management.AddField(
+                    feature_class,
+                    field_name,
+                    field_type,
+                    field_precision=precision
+                )
+
+            else:
+
+                arcpy.management.AddField(
+                    feature_class,
+                    field_name,
+                    field_type
+                )
+
+    def execute(self,parameters,messages):
+
+        messages.addMessage("== Proses dimulai ==")
+
+        configs=persil.get_config_values()
+
+        dataset_path=configs["project_config"]["dataset_path"]
+
+        appdata=os.path.dirname(
+            os.path.dirname(
+                os.path.realpath(__file__)
+            )
+        )
+
+        peta_baru_path=os.path.join(
+            dataset_path,
+            "Persil_Baru"
+        )
+
+        indikator_path=os.path.join(
+            dataset_path,
+            "Indikator_Perubahan_Persil"
+        )
+
+        temp_join="in_memory\\temp_join"
+
+        persil_layer="Persil_Baru"
+
+        required_fc=[
+            peta_baru_path,
+            indikator_path
+        ]
+
+        for fc in required_fc:
+
+            if not arcpy.Exists(fc):
+
+                messages.addErrorMessage(
+                    f"Feature class {os.path.basename(fc)} tidak ditemukan"
+                )
+
+                raise arcpy.ExecuteError
+
+        self.delete_if_exists(temp_join)
+        self.delete_if_exists(persil_layer)
+
+        self.add_field_if_not_exists(
+            peta_baru_path,
+            "status_per",
+            "TEXT"
+        )
+
+        self.add_field_if_not_exists(
+            peta_baru_path,
+            "kelompok_perubahan",
+            "SHORT"
+        )
+
+        self.add_field_if_not_exists(
+            peta_baru_path,
+            "klaster_zona",
+            "SHORT"
+        )
+
+        self.add_field_if_not_exists(
+            peta_baru_path,
+            "PREDICTED",
+            "DOUBLE",
+            2
+        )
+
+        messages.addMessage("== Spatial Join indikator ==")
+
+        field_mapping=(
+            f'IdBidang "IdBidang" true true false 9 Long 0 9,First,#,{peta_baru_path},IdBidang,-1,-1;'
+            f'status_per "status_per" true true false 50 Text 0 0,First,#,{indikator_path},status_per,-1,-1;'
+            f'kelompok_perubahan "kelompok_perubahan" true true false 2 Short 0 0,First,#,{indikator_path},kelompok_perubahan,-1,-1;'
+            f'klaster_zona "klaster_zona" true true false 2 Short 0 0,First,#,{indikator_path},klaster_zona,-1,-1'
+        )
+
+        arcpy.analysis.SpatialJoin(
+            peta_baru_path,
+            indikator_path,
+            temp_join,
+            "JOIN_ONE_TO_ONE",
+            "KEEP_ALL",
+            field_mapping,
+            "CONTAINS"
+        )
+
+        messages.addMessage("== Build indikator dictionary ==")
+
+        indikator_dict={}
+
+        with arcpy.da.SearchCursor(
+            temp_join,
+            [
+                "IdBidang",
+                "status_per",
+                "kelompok_perubahan",
+                "klaster_zona"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                indikator_dict[row[0]]={
+                    "status_per":row[1],
+                    "kelompok_perubahan":row[2],
+                    "klaster_zona":row[3]
+                }
+
+        messages.addMessage("== Update Persil_Baru ==")
+
+        with arcpy.da.UpdateCursor(
+            peta_baru_path,
+            [
+                "IdBidang",
+                "status_per",
+                "kelompok_perubahan",
+                "klaster_zona",
+                "PREDICTED",
+                "OBJECTID"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                bidang_id=row[0]
+
+                if bidang_id in indikator_dict:
+
+                    indikator=indikator_dict[bidang_id]
+
+                    row[1]=indikator["status_per"]
+                    row[2]=indikator["kelompok_perubahan"]
+                    row[3]=indikator["klaster_zona"]
+
+                if not row[1]:
+                    row[1]="tetap"
+
+                if row[1]=="update":
+                    row[4]=None
+
+                rows.updateRow(row)
+
+        arcpy.management.MakeFeatureLayer(
+            peta_baru_path,
+            persil_layer
+        )
+
+        simbologi_path=os.path.join(
+            appdata,
+            "SimbologiPetaPersil.lyr"
+        )
+
+        if os.path.exists(simbologi_path):
+
+            arcpy.management.ApplySymbologyFromLayer(
+                persil_layer,
+                simbologi_path
+            )
+
+        parameters[0].value=persil_layer
+
+        try:
+
+            aprx=arcpy.mp.ArcGISProject("CURRENT")
+
+            current_map=aprx.activeMap
+
+            hidden_layers=[
+                "Indikator_Perubahan_Persil",
+                "Peta_Lama",
+                "Persil"
+            ]
+
+            for layer in current_map.listLayers():
+
+                if layer.name in hidden_layers:
+                    layer.visible=False
+
+        except Exception:
+            pass
+
+        self.delete_if_exists(temp_join)
+
+        messages.addMessage("== Proses selesai ==")
+
+        return
+    
+
+class Analisis_Bentuk_Persil_File(object):
+
+    def __init__(self):
+        self.label="Analisis Bentuk Persil File"
+        self.description=""
+        self.canRunInBackground=False
+
+    def getParameterInfo(self):
+
+        input_fc=arcpy.Parameter(
+            displayName="Input Polygon",
+            name="input_fc",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        field_id=arcpy.Parameter(
+            displayName="Field ID Bidang",
+            name="field_id",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        field_id.parameterDependencies=[input_fc.name]
+
+        output_fc=arcpy.Parameter(
+            displayName="Output Feature Class",
+            name="output_fc",
+            datatype="DEFeatureClass",
+            parameterType="Required",
+            direction="Output"
+        )
+
+        return[
+            input_fc,
+            field_id,
+            output_fc
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self,parameters):
+        return
+
+    def updateMessages(self,parameters):
+        return
+
+    def delete_if_exists(self,path):
+
+        if arcpy.Exists(path):
+
+            try:
+                arcpy.management.Delete(path)
+
+            except Exception:
+                pass
+
+    def add_field_if_not_exists(
+        self,
+        feature_class,
+        field_name,
+        field_type
+    ):
+
+        field_names=[
+            field.name.lower()
+            for field in arcpy.ListFields(feature_class)
+        ]
+
+        if field_name.lower() not in field_names:
+
+            arcpy.management.AddField(
+                feature_class,
+                field_name,
+                field_type
+            )
+
+    def calculate_azimuth(
+        self,
+        x_start,
+        y_start,
+        x_end,
+        y_end
+    ):
+
+        delta_y=y_end-y_start
+        delta_x=x_end-x_start
+
+        if delta_y==0:
+
+            if delta_x>=0:
+                azimuth=90
+
+            else:
+                azimuth=-90
+
+        else:
+
+            azimuth=math.atan(
+                delta_x/delta_y
+            )*(180/math.pi)
+
+        if azimuth<-45:
+            atrans=azimuth+180
+
+        elif azimuth>=-45 and azimuth<=45:
+            atrans=azimuth+90
+
+        else:
+            atrans=azimuth
+
+        return(
+            azimuth,
+            atrans
+        )
+
+    def execute(
+        self,
+        parameters,
+        messages
+    ):
+
+        import arcpy
+        import math
+
+        arcpy.env.overwriteOutput=True
+
+        messages.addMessage(
+            "== Proses dimulai =="
+        )
+
+        input_fc=parameters[0].valueAsText
+        field_id=parameters[1].valueAsText
+        output_fc=parameters[2].valueAsText
+
+        if not arcpy.Exists(input_fc):
+
+            messages.addErrorMessage(
+                "Input feature class tidak ditemukan"
+            )
+
+            raise arcpy.ExecuteError
+
+        temp_line="in_memory\\temp_line"
+        temp_split="in_memory\\temp_split"
+        temp_dissolve="in_memory\\temp_dissolve"
+
+        cleanup_items=[
+            temp_line,
+            temp_split,
+            temp_dissolve,
+            output_fc
+        ]
+
+        for item in cleanup_items:
+            self.delete_if_exists(item)
+
+        messages.addMessage(
+            "== Copy polygon =="
+        )
+
+        arcpy.management.CopyFeatures(
+            input_fc,
+            output_fc
+        )
+
+        messages.addMessage(
+            "== Polygon to line =="
+        )
+
+        arcpy.management.PolygonToLine(
+            output_fc,
+            temp_line,
+            "IGNORE_NEIGHBORS"
+        )
+
+        arcpy.management.SplitLine(
+            temp_line,
+            temp_split
+        )
+
+        field_definitions=[
+            ("LebarSisi","DOUBLE"),
+            ("XStart","DOUBLE"),
+            ("XEnd","DOUBLE"),
+            ("YStart","DOUBLE"),
+            ("YEnd","DOUBLE"),
+            ("Azimuth","DOUBLE"),
+            ("ATrans","DOUBLE")
+        ]
+
+        for field_name,field_type in field_definitions:
+
+            self.add_field_if_not_exists(
+                temp_split,
+                field_name,
+                field_type
+            )
+
+        arcpy.management.CalculateField(
+            temp_split,
+            "LebarSisi",
+            "!shape.length!",
+            "PYTHON3"
+        )
+
+        messages.addMessage(
+            "== Hitung azimuth =="
+        )
+
+
+        with arcpy.da.UpdateCursor(
+            temp_split,
+            [
+                "SHAPE@",
+                "XStart",
+                "XEnd",
+                "YStart",
+                "YEnd",
+                "Azimuth",
+                "ATrans"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                geometry=row[0]
+
+                x_start=geometry.firstPoint.X
+                y_start=geometry.firstPoint.Y
+                x_end=geometry.lastPoint.X
+                y_end=geometry.lastPoint.Y
+
+                azimuth,atrans=self.calculate_azimuth(
+                    x_start,
+                    y_start,
+                    x_end,
+                    y_end
+                )
+
+                row[1]=x_start
+                row[2]=x_end
+                row[3]=y_start
+                row[4]=y_end
+                row[5]=azimuth
+                row[6]=atrans
+
+                rows.updateRow(row)
+
+        messages.addMessage(
+            "== Dissolve =="
+        )
+
+        arcpy.management.Dissolve(
+            temp_split,
+            temp_dissolve,
+            [field_id],
+            [["ATrans","RANGE"]],
+            "MULTI_PART",
+            "DISSOLVE_LINES"
+        )
+
+        self.add_field_if_not_exists(
+            output_fc,
+            "bentuk",
+            "TEXT"
+        )
+
+        self.add_field_if_not_exists(
+            output_fc,
+            "s_bentuk",
+            "DOUBLE"
+        )
+
+        fields=[
+            field.name
+            for field in arcpy.ListFields(output_fc)
+        ]
+
+        if "Range_ATrans" in fields:
+
+            arcpy.management.DeleteField(
+                output_fc,
+                "Range_ATrans"
+            )
+
+        arcpy.management.JoinField(
+            output_fc,
+            field_id,
+            temp_dissolve,
+            field_id,
+            ["Range_ATrans"]
+        )
+
+        messages.addMessage(
+            "== Hitung bentuk persil =="
+        )
+
+        with arcpy.da.UpdateCursor(
+            output_fc,
+            [
+                "Range_ATrans",
+                "bentuk",
+                "s_bentuk"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                nilai=row[0]
+
+                if nilai is None:
+                    continue
+
+                if nilai<16.3:
+
+                    row[1]="Segi Empat Beraturan"
+                    row[2]=4
+
+                elif nilai>=16.3 and nilai<=58:
+
+                    row[1]="Segi Empat Tidak Beraturan"
+                    row[2]=3
+
+                else:
+
+                    row[1]="Segi Banyak Tidak Beraturan"
+                    row[2]=1
+
+                rows.updateRow(row)
+
+        arcpy.management.AddGeometryAttributes(
+            output_fc,
+            "POINT_COUNT"
+        )
+
+        with arcpy.da.UpdateCursor(
+            output_fc,
+            [
+                "bentuk",
+                "s_bentuk",
+                "PNT_COUNT"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                if row[2] and int(row[2])==4:
+
+                    row[0]="Segi Tiga"
+                    row[1]=2
+
+                    rows.updateRow(row)
+
+        fields=[
+            field.name
+            for field in arcpy.ListFields(output_fc)
+        ]
+
+        if "PNT_COUNT" in fields:
+
+            arcpy.management.DeleteField(
+                output_fc,
+                "PNT_COUNT"
+            )
+
+        arcpy.management.MakeFeatureLayer(
+            output_fc,
+            "Output_Bentuk_Persil"
+        )
+
+        parameters[2].value=output_fc
+
+        messages.addMessage(
+            "== Proses selesai =="
+        )
 
         return

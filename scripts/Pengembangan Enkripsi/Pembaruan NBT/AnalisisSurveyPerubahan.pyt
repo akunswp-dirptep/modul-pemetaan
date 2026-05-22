@@ -53,7 +53,6 @@ class Hitung_Jarak_Fasilitas(object):
     def delete_if_exists(self,path):
 
         if arcpy.Exists(path):
-
             try:
                 arcpy.management.Delete(path)
             except Exception:
@@ -73,26 +72,26 @@ class Hitung_Jarak_Fasilitas(object):
         configs=persil.get_config_values()
 
         dataset_path=configs["project_config"]["dataset_path"]
-        datasetfasilitas_path=configs["fasilitas_config"]["dataset_path"]
+        dataset_fasilitas_path=configs["fasilitas_config"]["dataset_path"]
         jaringanjalan_nd_path=configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
         nd_path=configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
 
         persil_nama="Persil_Layer"
         persil_path=os.path.join(dataset_path,persil_nama)
 
-        persilcentroid="PersilCentroidUpdate"
-        persilcentroid_path=os.path.join(dataset_path,persilcentroid)
+        persil_layer_centroid="Persil_Layer_Centroid"
+        persil_layer_centroid_path=os.path.join(dataset_path,persil_layer_centroid)
 
         dataset_template_path=os.path.dirname(jaringanjalan_nd_path)
 
-        self.delete_if_exists(persilcentroid)
-        self.delete_if_exists(persilcentroid_path)
+        self.delete_if_exists(persil_layer_centroid)
+        self.delete_if_exists(persil_layer_centroid_path)
 
         messages.addMessage("== Membuat centroid persil ==")
 
         arcpy.management.FeatureToPoint(
             persil_path,
-            persilcentroid_path,
+            persil_layer_centroid_path,
             "INSIDE"
         )
 
@@ -101,19 +100,18 @@ class Hitung_Jarak_Fasilitas(object):
         outNALayerName="hasil_na"
         impedance_attribute="P_Jalan"
 
-        arcpy.env.workspace=datasetfasilitas_path
-
-        list_fc=arcpy.ListFeatureClasses("*")
+        arcpy.env.workspace=dataset_fasilitas_path
+        list_fc=arcpy.ListFeatureClasses()
 
         if not list_fc:
             messages.addWarningMessage("== Tidak ada fasilitas ditemukan ==")
             return
 
         for fc in list_fc:
-
             fasilitas=fc
-            fasilitas_path=os.path.join(datasetfasilitas_path,fasilitas)
-            namafield=fc.replace(" ","")[:7]
+            fasilitas_path=os.path.join(dataset_fasilitas_path,fasilitas)
+            namafield=os.path.splitext(fasilitas)[0]
+            arcpy.AddMessage(namafield)
 
             messages.addMessage(f"== Hitung jarak fasilitas: {fasilitas} ==")
 
@@ -130,7 +128,7 @@ class Hitung_Jarak_Fasilitas(object):
             arcpy.na.AddLocations(
                 outNALayer,
                 "Incidents",
-                persilcentroid_path
+                persil_layer_centroid_path
             )
 
             arcpy.na.AddLocations(
@@ -140,6 +138,9 @@ class Hitung_Jarak_Fasilitas(object):
             )
 
             arcpy.na.Solve(outNALayer)
+            aprx=arcpy.mp.ArcGISProject("CURRENT")
+            m=aprx.activeMap
+            m.addLayer(outNALayer)
 
             incident_path=os.path.join(dataset_template_path,f"incident_{fasilitas}")
             route_path=os.path.join(dataset_template_path,f"route_{fasilitas}")

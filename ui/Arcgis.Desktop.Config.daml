@@ -2204,21 +2204,21 @@
 					<tooltip heading="Identifikasi Perubahan Persil">Menu untuk mengidentifikasi perubahan persil lama dengan persil baru.</tooltip>
 				</button>
 
-				<button id="ButtonTampilkanSimbologiPersil" caption="Tampilkan Simbologi Layer Identifikasi" smallImage="C:\PenilaianTanah\icons\hpusindikator.png" largeImage="C:\PenilaianTanah\icons\hpusindikator.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonTampilkanSimbologiPersil" caption="Tampilkan Simbologi Layer Identifikasi" smallImage="C:\PenilaianTanah\icons\simbologicekjeniszona.png" largeImage="C:\PenilaianTanah\icons\simbologicekjeniszona.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Tampilkan_Simbologi_Persil" name="Tampilkan Simbologi Layer Identifikasi" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Simbologi Layer Identifikasi">Menu untuk menampilkan simbologi persil.</tooltip>
 				</button>
 
-				<button id="ButtonPeriksaPerubahanPersil" caption="Periksa Perubahan Persil" smallImage="C:\PenilaianTanah\icons\updte.png" largeImage="C:\PenilaianTanah\icons\updte.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonPeriksaPerubahanPersil" caption="Periksa Perubahan Persil" smallImage="C:\PenilaianTanah\icons\periksaperubahan.png" largeImage="C:\PenilaianTanah\icons\periksaperubahan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Periksa_Perubahan_Persil" name="Periksa Perubahan Persil" xmlns=""/>
 					</args>
 					<tooltip heading="Periksa Perubahan Persil">Menu untuk memperbarui status perubahan persil berdasarkan toleransi luas.</tooltip>
 				</button>
 
-				<button id="ButtonSetStatusPerubahanPersil" caption="Sesuaikan Status Perubahan Persil" smallImage="C:\PenilaianTanah\icons\ststtus.png" largeImage="C:\PenilaianTanah\icons\ststtus.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonSetStatusPerubahanPersil" caption="Sesuaikan Status Perubahan Persil" smallImage="C:\PenilaianTanah\icons\updte.png" largeImage="C:\PenilaianTanah\icons\updte.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Sesuaikan_Status_Perubahan_Persil" name="Sesuaikan Status Perubahan Persil" xmlns=""/>
 					</args>

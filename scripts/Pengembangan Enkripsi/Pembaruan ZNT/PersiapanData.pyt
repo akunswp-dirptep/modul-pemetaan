@@ -638,8 +638,11 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         # NOZN tidak terbaca,
         arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
         arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
+
         if nomorzone != "NOZN":
             arcpy.management.DeleteField(zona_layer_temp_path, nomorzone)
+        
+        
 
         if jeniszona:
             if jeniszona != "JNSZN":

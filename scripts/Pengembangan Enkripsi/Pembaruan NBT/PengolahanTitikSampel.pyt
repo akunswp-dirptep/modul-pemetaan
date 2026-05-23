@@ -64,76 +64,14 @@ class Persiapan_Persil_Individual(object):
     def updateMessages(self, parameters):
         return
 
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
-
-        if field_name not in field_names:
-
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
-
-    def delete_if_exists(self, path):
-
-        if arcpy.Exists(path):
-
-            try:
-
-                arcpy.management.Delete(
-                    path
-                )
-
-            except Exception:
-
-                pass
-
     def execute(self, parameters, messages):
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
-
+        messages.addMessage( "== Proses dimulai ==" )
         configs = persil.get_config_values()
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =================================================
-        # APPDATA
-        # =================================================
-
-        # =================================================
-        # DATASET
-        # =================================================
-
+        dataset_path = configs["project_config"]["dataset_path"]
         persil_nama = "Persil_Layer"
-
-        persil_path = os.path.join(
-            dataset_path,
-            persil_nama
-        )
-
-        # =================================================
-        # ADD FIELD
-        # =================================================
+        persil_path = os.path.join( dataset_path, persil_nama )
 
         self.add_field_if_not_exists(
             persil_path,
@@ -159,137 +97,84 @@ class Persiapan_Persil_Individual(object):
             "DOUBLE"
         )
 
-        # =================================================
-        # UPDATE PERUBAHAN
-        # =================================================
-
-        messages.addMessage(
-            "== Update perubahan persil =="
-        )
+        messages.addMessage("== Update perubahan persil ==" )
 
         with arcpy.da.UpdateCursor(
-            persil_path,
-            [
-                "status_per",
-                "kelompok_perubahan",
-                "perubahan"
-            ]
+            persil_path,  ["status_per", "kelompok_perubahan",  "perubahan" ]
         ) as rows:
-
             for row in rows:
-                if row[0] == "update":
 
-                    if row[1]:
-                        row[2] = (
-                            "mengelompok"
-                        )
+                if row[0] == "update":
+                    if row[1] is not None or 0:
+                        row[2] = "mengelompok"
 
                     else:
-                        row[2] = (
-                            "menyebar"
-                        )
-
+                        row[2] = "menyebar"
                 rows.updateRow( row )
 
-        # =================================================
-        # UPDATE KELAS LUAS TANAH
-        # DAN LEBAR DEPAN
-        # =================================================
+        messages.addMessage( "== Update klasifikasi persil ==" )
 
-        messages.addMessage(
-            "== Update klasifikasi persil =="
-        )
-
-        with arcpy.da.UpdateCursor(
-            persil_path,
-            [
-                "ls_tnh",
-                "lb_dpn",
-                "ls_tnh_i",
-                "lb_dpn_i"
-            ]
-        ) as rows:
+        with arcpy.da.UpdateCursor(persil_path, ["ls_tnh", "lb_dpn", "ls_tnh_i", "lb_dpn_i"]) as rows:
 
             for row in rows:
 
-                value_lb_dpn = (
-                    row[1]
-                )
+                value_ls_tnh = row[0]
+                value_lb_dpn = row[1]
 
-
-                if row[0] is None:
-
+                # Klasifikasi luas tanah
+                if value_ls_tnh is None:
                     row[2] = 0
 
-                elif row[0] < 50:
-
+                elif value_ls_tnh < 50:
                     row[2] = 1
 
-                elif row[0] > 1000:
-
+                elif value_ls_tnh > 1000:
                     row[2] = 2
 
                 elif (
-                    row[0] >= 200
-                    and row[0] <= 1000
+                    value_ls_tnh >= 200
+                    and value_ls_tnh <= 1000
                 ):
-
                     row[2] = 3
 
                 elif (
-                    row[0] >= 50
-                    and row[0] < 100
+                    value_ls_tnh >= 50
+                    and value_ls_tnh < 100
                 ):
-
                     row[2] = 4
 
                 elif (
-                    row[0] >= 100
-                    and row[0] <= 200
+                    value_ls_tnh >= 100
+                    and value_ls_tnh <= 200
                 ):
-
                     row[2] = 5
 
-                # =========================================
-                # LEBAR DEPAN
-                # =========================================
+                # Klasifikasi lebar depan
+                if value_lb_dpn is None:
+                    row[3] = 0
 
-                if (
-                    value_lb_dpn is None
-                    or value_lb_dpn <= 0
-                ):
-
+                elif value_lb_dpn <= 0:
                     row[3] = 0
 
                 elif value_lb_dpn < 6:
-
                     row[3] = 1
 
                 elif (
                     value_lb_dpn > 6
                     and value_lb_dpn <= 10
                 ):
-
                     row[3] = 2
 
                 elif (
                     value_lb_dpn > 10
                     and value_lb_dpn <= 15
                 ):
-
                     row[3] = 3
 
                 elif value_lb_dpn > 15:
-
                     row[3] = 4
 
-                rows.updateRow(
-                    row
-                )
-
-        # =================================================
-        # COPY NILAI
-        # =================================================
+                rows.updateRow(row)
 
         messages.addMessage(
             "== Update nilai prediksi =="
@@ -316,6 +201,24 @@ class Persiapan_Persil_Individual(object):
 
         return
 
+    def add_field_if_not_exists( self,  feature_class, field_name, field_type ):
+
+        field_names = [ field.name  for field in arcpy.ListFields( feature_class)]
+        if field_name not in field_names:
+            arcpy.management.AddField(
+                feature_class,
+                field_name,
+                field_type
+            )
+
+    def delete_if_exists(self, path):
+
+        if arcpy.Exists(path):
+            try:
+                arcpy.management.Delete( path )
+            except Exception:
+                pass
+    
 class Hitung_Persil_Individual(object):
 
     def __init__(self):
@@ -323,10 +226,6 @@ class Hitung_Persil_Individual(object):
         self.label = "Hitung Individual"
         self.description = ""
         self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
 
     def getParameterInfo(self):
 
@@ -338,46 +237,7 @@ class Hitung_Persil_Individual(object):
             direction="Input"
         )
 
-        try:
-
-            configs = persil.get_config_values()
-
-            dataset_path = (
-                configs["project_config"]["dataset_path"]
-            )
-
-            persil_path = os.path.join(
-                dataset_path,
-                "Persil_Baru"
-            )
-
-            list_tsi = []
-
-            with arcpy.da.SearchCursor(
-                persil_path,
-                ["IdBidang"],
-                "perubahan = 'menyebar'"
-            ) as rows:
-
-                for row in rows:
-
-                    list_tsi.append(
-                        str(row[0])
-                    )
-
-            list_tsi.sort()
-
-            penilaian.filter.type = (
-                "ValueList"
-            )
-
-            penilaian.filter.list = (
-                list_tsi
-            )
-
-        except Exception:
-
-            pass
+        penilaian.filter.type = "ValueList"
 
         return [penilaian]
 
@@ -385,44 +245,207 @@ class Hitung_Persil_Individual(object):
         return True
 
     def updateParameters(self, parameters):
+
+        penilaian = parameters[0]
+
+        try:
+
+            configs = persil.get_config_values()
+
+            dataset_path = configs["project_config"]["dataset_path"]
+
+            persil_path = os.path.join(dataset_path, "Persil_Layer")
+
+            list_tsi = []
+
+            with arcpy.da.SearchCursor(persil_path, ["IdBidang"], "perubahan = 'menyebar'") as rows:
+
+                for row in rows:
+                    list_tsi.append(str(row[0]))
+
+            list_tsi.sort()
+
+            penilaian.filter.list = list_tsi
+
+        except Exception:
+            pass
+
         return
 
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
+    def execute(self, parameters, messages):
+
+        messages.addMessage("== Proses dimulai ==")
+
+        penilaian = parameters[0].valueAsText
+        configs = persil.get_config_values()
+        dataset_path = configs["project_config"]["dataset_path"]
+        persil_name = "Persil_Layer"
+
+        persil_path = os.path.join(dataset_path, persil_name)
+        ada_seleksi = len(arcpy.Describe(persil_name).FIDSet)
+
+        if ada_seleksi <= 0:
+            messages.addErrorMessage( "== Tidak ada data pembanding dipilih ==")
+            raise arcpy.ExecuteError
+
+        pembanding_layers = self.get_selected_pembanding(
+            persil_name,
+            persil_path,
+            messages
+        )
+
+        objek_layer = "objek"
+        self.delete_if_exists(objek_layer)
+
+        arcpy.management.MakeFeatureLayer(
+            persil_path,
+            objek_layer,
+            f"IdBidang = {penilaian}"
+        )
+
+        objek = self.get_data_row(objek_layer)
+
+        pembanding1 = self.get_data_row(pembanding_layers[0])
+        pembanding2 = self.get_data_row(pembanding_layers[1])
+        pembanding3 = self.get_data_row(pembanding_layers[2])
+
+        pembanding_list = [
+            pembanding1,
+            pembanding2,
+            pembanding3
+        ]
+
+        for i, pembanding in enumerate(pembanding_list, start=1):
+
+            if objek["s_zonasi"] != pembanding["s_zonasi"]:
+
+                messages.addErrorMessage(
+                    f"== Pembanding {i} memiliki zonasi berbeda =="
+                )
+
+                raise arcpy.ExecuteError
+
+        hasil1 = self.calculate_penyesuaian(objek, pembanding1)
+        hasil2 = self.calculate_penyesuaian(objek, pembanding2)
+        hasil3 = self.calculate_penyesuaian(objek, pembanding3)
+
+        hasil_list = [
+            hasil1,
+            hasil2,
+            hasil3
+        ]
+
+        for i, hasil in enumerate(hasil_list, start=1):
+
+            if hasil["persentase"] > 10:
+
+                messages.addErrorMessage(
+                    f"== Pembanding {i} memiliki persentase lebih dari 10% =="
+                )
+
+                raise arcpy.ExecuteError
+
+        total_nol = (
+            hasil1["nilai_nol"]
+            + hasil2["nilai_nol"]
+            + hasil3["nilai_nol"]
+        )
+
+        bobot1 = (hasil1["nilai_nol"] / total_nol) * 100
+        bobot2 = (hasil2["nilai_nol"] / total_nol) * 100
+        bobot3 = (hasil3["nilai_nol"] / total_nol) * 100
+
+        nilai_akhir = (
+            (hasil1["nilai"] * bobot1 / 100)
+            + (hasil2["nilai"] * bobot2 / 100)
+            + (hasil3["nilai"] * bobot3 / 100)
+        )
+
+        self.add_field_if_not_exists(
+            persil_path,
+            "data_pembanding",
+            "TEXT"
+        )
+
+        list_data_pembanding = (
+            f"{pembanding1['OBJECTID']} ; "
+            f"{pembanding2['OBJECTID']} ; "
+            f"{pembanding3['OBJECTID']}"
+        )
+
+        with arcpy.da.UpdateCursor(
+            persil_path,
+            [
+                "IdBidang",
+                "data_pembanding",
+                "NILAI_LAMA",
+                "perubahan"
+            ],
+            f"IdBidang = {penilaian}"
+        ) as rows:
+
+            for row in rows:
+
+                row[1] = list_data_pembanding
+                row[2] = nilai_akhir
+                row[3] = "individual"
+
+                rows.updateRow(row)
+
+        messages.addMessage(
+            f"Data yang akan dinilai memiliki zonasi: {objek['zonasi']}"
+        )
+
+        for i, pembanding in enumerate(pembanding_list, start=1):
+
+            hasil = hasil_list[i - 1]
+
+            messages.addMessage(
+                (
+                    f"Pembanding {i}: "
+                    f"zonasi={pembanding['zonasi']} | "
+                    f"persentase={hasil['persentase']}% | "
+                    f"OBJECTID={pembanding['OBJECTID']}"
+                )
+            )
+
+        arcpy.management.CalculateField(
+            persil_path,
+            "IdBidang",
+            "!OBJECTID!",
+            "PYTHON3"
+        )
+
+        self.delete_if_exists(objek_layer)
+
+        for layer in pembanding_layers:
+            self.delete_if_exists(layer)
+
+        messages.addMessage("== Proses selesai ==")
+
+        return
 
     def delete_if_exists(self, path):
 
         if arcpy.Exists(path):
 
             try:
-
-                arcpy.management.Delete(
-                    path
-                )
+                arcpy.management.Delete(path)
 
             except Exception:
-
                 pass
 
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
 
-        fields = [
-            f.name
-            for f in arcpy.ListFields(
-                feature_class
-            )
+        field_names = [
+            field.name
+            for field in arcpy.ListFields(feature_class)
         ]
 
-        if field_name not in fields:
+        if field_name not in field_names:
 
             arcpy.management.AddField(
                 feature_class,
@@ -430,16 +453,7 @@ class Hitung_Persil_Individual(object):
                 field_type
             )
 
-    # =====================================================
-    # GET SELECTED PEMBANDING
-    # =====================================================
-
-    def get_selected_pembanding(
-        self,
-        persil_layer,
-        persil_path,
-        messages
-    ):
+    def get_selected_pembanding(self, persil_layer, persil_path, messages):
 
         list_pembanding = []
 
@@ -458,36 +472,20 @@ class Hitung_Persil_Individual(object):
         if len(list_pembanding) != 3:
 
             messages.addErrorMessage(
-                (
-                    "== Jumlah data pembanding "
-                    "harus tepat 3 =="
-                )
+                "== Jumlah data pembanding harus tepat 3 =="
             )
 
             raise arcpy.ExecuteError
 
-        # =============================================
-        # CREATE LAYER PEMBANDING
-        # =============================================
-
         pembanding_layers = []
 
-        for i, item in enumerate(
-            list_pembanding,
-            start=1
-        ):
+        for i, item in enumerate(list_pembanding, start=1):
 
-            layer_name = (
-                f"pembanding_{i}"
-            )
+            layer_name = f"pembanding_{i}"
 
-            self.delete_if_exists(
-                layer_name
-            )
+            self.delete_if_exists(layer_name)
 
-            where_clause = (
-                f"OBJECTID = {item['OBJECTID']}"
-            )
+            where_clause = f"OBJECTID = {item['OBJECTID']}"
 
             arcpy.management.MakeFeatureLayer(
                 persil_path,
@@ -495,17 +493,11 @@ class Hitung_Persil_Individual(object):
                 where_clause
             )
 
-            pembanding_layers.append(
-                layer_name
-            )
+            pembanding_layers.append(layer_name)
 
         return pembanding_layers
 
-
-    def get_data_row(
-        self,
-        layer_name
-    ):
+    def get_data_row(self, layer_name):
 
         fields = [
             "OBJECTID",
@@ -521,10 +513,7 @@ class Hitung_Persil_Individual(object):
             "NILAI_LAMA"
         ]
 
-        with arcpy.da.SearchCursor(
-            layer_name,
-            fields
-        ) as rows:
+        with arcpy.da.SearchCursor(layer_name, fields) as rows:
 
             for row in rows:
 
@@ -544,15 +533,7 @@ class Hitung_Persil_Individual(object):
 
         return None
 
-    # =====================================================
-    # CALCULATE PENYESUAIAN
-    # =====================================================
-
-    def calculate_penyesuaian(
-        self,
-        objek,
-        pembanding
-    ):
+    def calculate_penyesuaian(self, objek, pembanding):
 
         ls_tnh = (
             (objek["ls_tnh_i"] - pembanding["ls_tnh_i"])
@@ -600,346 +581,14 @@ class Hitung_Persil_Individual(object):
             kls_jln
         ]
 
-        nilai_nol = (
-            komponen.count(0)
-        )
+        nilai_nol = komponen.count(0)
 
         return {
             "persentase": persentase,
             "nilai": nilai,
             "nilai_nol": nilai_nol
         }
-
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-
-    def execute(self, parameters, messages):
-
-        import os
-        import arcpy
-
-        arcpy.env.overwriteOutput = True
-        arcpy.env.outputZFlag = "Disabled"
-        arcpy.env.outputMFlag = "Disabled"
-
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =================================================
-        # PARAMETER
-        # =================================================
-
-        penilaian = (
-            parameters[0].valueAsText
-        )
-
-        # =================================================
-        # CONFIG
-        # =================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        persil = (
-            "Persil_Baru"
-        )
-
-        persil_path = os.path.join(
-            dataset_path,
-            persil
-        )
-
-        # =================================================
-        # VALIDASI SELEKSI
-        # =================================================
-
-        ada_seleksi = len(
-            arcpy.Describe(
-                persil
-            ).FIDSet
-        )
-
-        if ada_seleksi <= 0:
-
-            messages.addErrorMessage(
-                "== Tidak ada data pembanding dipilih =="
-            )
-
-            raise arcpy.ExecuteError
-
-        # =================================================
-        # CREATE PEMBANDING
-        # =================================================
-
-        pembanding_layers = (
-            self.get_selected_pembanding(
-                persil,
-                persil_path,
-                messages
-            )
-        )
-
-        # =================================================
-        # CREATE OBJECT LAYER
-        # =================================================
-
-        objek_layer = (
-            "objek"
-        )
-
-        self.delete_if_exists(
-            objek_layer
-        )
-
-        arcpy.management.MakeFeatureLayer(
-            persil_path,
-            objek_layer,
-            f"IdBidang = {penilaian}"
-        )
-
-        # =================================================
-        # GET DATA
-        # =================================================
-
-        objek = self.get_data_row(
-            objek_layer
-        )
-
-        pembanding1 = self.get_data_row(
-            pembanding_layers[0]
-        )
-
-        pembanding2 = self.get_data_row(
-            pembanding_layers[1]
-        )
-
-        pembanding3 = self.get_data_row(
-            pembanding_layers[2]
-        )
-
-        # =================================================
-        # VALIDASI ZONASI
-        # =================================================
-
-        pembanding_list = [
-            pembanding1,
-            pembanding2,
-            pembanding3
-        ]
-
-        for i, pembanding in enumerate(
-            pembanding_list,
-            start=1
-        ):
-
-            if (
-                objek["s_zonasi"]
-                != pembanding["s_zonasi"]
-            ):
-
-                messages.addErrorMessage(
-                    (
-                        f"== Pembanding {i} "
-                        "memiliki zonasi berbeda =="
-                    )
-                )
-
-                raise arcpy.ExecuteError
-
-        # =================================================
-        # HITUNG PENYESUAIAN
-        # =================================================
-
-        hasil1 = self.calculate_penyesuaian(
-            objek,
-            pembanding1
-        )
-
-        hasil2 = self.calculate_penyesuaian(
-            objek,
-            pembanding2
-        )
-
-        hasil3 = self.calculate_penyesuaian(
-            objek,
-            pembanding3
-        )
-
-        hasil_list = [
-            hasil1,
-            hasil2,
-            hasil3
-        ]
-
-        # =================================================
-        # VALIDASI PERSENTASE
-        # =================================================
-
-        for i, hasil in enumerate(
-            hasil_list,
-            start=1
-        ):
-
-            if hasil["persentase"] > 10:
-
-                messages.addErrorMessage(
-                    (
-                        f"== Pembanding {i} "
-                        "memiliki persentase "
-                        "lebih dari 10% =="
-                    )
-                )
-
-                raise arcpy.ExecuteError
-
-        # =================================================
-        # HITUNG BOBOT
-        # =================================================
-
-        total_nol = (
-            hasil1["nilai_nol"]
-            + hasil2["nilai_nol"]
-            + hasil3["nilai_nol"]
-        )
-
-        bobot1 = (
-            hasil1["nilai_nol"]
-            / total_nol
-        ) * 100
-
-        bobot2 = (
-            hasil2["nilai_nol"]
-            / total_nol
-        ) * 100
-
-        bobot3 = (
-            hasil3["nilai_nol"]
-            / total_nol
-        ) * 100
-
-        nilai_akhir = (
-            (hasil1["nilai"] * bobot1 / 100)
-            + (hasil2["nilai"] * bobot2 / 100)
-            + (hasil3["nilai"] * bobot3 / 100)
-        )
-
-        # =================================================
-        # FIELD
-        # =================================================
-
-        self.add_field_if_not_exists(
-            persil_path,
-            "data_pembanding",
-            "TEXT"
-        )
-
-        # =================================================
-        # UPDATE DATA
-        # =================================================
-
-        list_data_pembanding = (
-            f"{pembanding1['OBJECTID']} ; "
-            f"{pembanding2['OBJECTID']} ; "
-            f"{pembanding3['OBJECTID']}"
-        )
-
-        with arcpy.da.UpdateCursor(
-            persil_path,
-            [
-                "IdBidang",
-                "data_pembanding",
-                "NILAI_LAMA",
-                "perubahan"
-            ],
-            f"IdBidang = {penilaian}"
-        ) as rows:
-
-            for row in rows:
-
-                row[1] = (
-                    list_data_pembanding
-                )
-
-                row[2] = (
-                    nilai_akhir
-                )
-
-                row[3] = (
-                    "individual"
-                )
-
-                rows.updateRow(
-                    row
-                )
-
-        # =================================================
-        # MESSAGE
-        # =================================================
-
-        messages.addMessage(
-            (
-                f"Data yang akan dinilai "
-                f"memiliki zonasi: "
-                f"{objek['zonasi']}"
-            )
-        )
-
-        for i, pembanding in enumerate(
-            pembanding_list,
-            start=1
-        ):
-
-            hasil = hasil_list[i - 1]
-
-            messages.addMessage(
-                (
-                    f"Pembanding {i}: "
-                    f"zonasi={pembanding['zonasi']} | "
-                    f"persentase={hasil['persentase']}% | "
-                    f"OBJECTID={pembanding['OBJECTID']}"
-                )
-            )
-
-        # =================================================
-        # UPDATE IDBIDANG
-        # =================================================
-
-        arcpy.management.CalculateField(
-            persil_path,
-            "IdBidang",
-            "!OBJECTID!",
-            "PYTHON3"
-        )
-
-        # =================================================
-        # CLEANUP
-        # =================================================
-
-        self.delete_if_exists(
-            objek_layer
-        )
-
-        for layer in pembanding_layers:
-
-            self.delete_if_exists(
-                layer
-            )
-
-        # =================================================
-        # FINISH
-        # =================================================
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
-        return
-
+    
 class Reset_Persil_Individual(object):
 
     def __init__(self):
@@ -947,10 +596,6 @@ class Reset_Persil_Individual(object):
         self.label = "Reset Persil Individual"
         self.description = ""
         self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
 
     def getParameterInfo(self):
 
@@ -973,52 +618,14 @@ class Reset_Persil_Individual(object):
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
-    def delete_if_exists(self, path):
-
-        if arcpy.Exists(path):
-
-            try:
-
-                arcpy.management.Delete(
-                    path
-                )
-
-            except Exception:
-
-                pass
-
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-
     def execute(self, parameters, messages):
 
-        import os
-        import arcpy
-
-        arcpy.env.overwriteOutput = True
-
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
+        messages.addMessage("== Proses dimulai ==")
 
         configs = persil.get_config_values()
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =================================================
-        # APPDATA
-        # =================================================
+        dataset_path =  configs["project_config"]["dataset_path"]
+        
 
         appdata = os.path.dirname(
             os.path.dirname(
@@ -1026,28 +633,14 @@ class Reset_Persil_Individual(object):
             )
         )
 
-        # =================================================
-        # DATASET
-        # =================================================
-
-        persil = (
-            "Persil_Baru"
-        )
+        persil_name = "Persil_Layer"
 
         persil_path = os.path.join(
             dataset_path,
-            persil
+            persil_name
         )
 
-        # =================================================
-        # VALIDASI SELEKSI
-        # =================================================
-
-        ada_seleksi = len(
-            arcpy.Describe(
-                persil
-            ).FIDSet
-        )
+        ada_seleksi = len( arcpy.Describe( persil_name).FIDSet)
 
         if ada_seleksi <= 0:
 
@@ -1057,16 +650,12 @@ class Reset_Persil_Individual(object):
 
             return
 
-        # =================================================
-        # RESET NILAI
-        # =================================================
-
         messages.addMessage(
             "== Reset nilai individual =="
         )
 
         with arcpy.da.UpdateCursor(
-            persil,
+            persil_name,
             [
                 "NILAI_LAMA",
                 "perubahan"
@@ -1078,58 +667,44 @@ class Reset_Persil_Individual(object):
                 row[0] = None
                 row[1] = "menyebar"
 
-                rows.updateRow(
-                    row
-                )
+                rows.updateRow(row)
 
-        # =================================================
-        # REFRESH LAYER
-        # =================================================
-
-        self.delete_if_exists(
-            persil
-        )
+        self.delete_if_exists(persil)
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
-            persil
+            persil_name
         )
-
-        # =================================================
-        # APPLY SYMBOLOGY
-        # =================================================
 
         simbologi_path = os.path.join(
             appdata,
             "Simbologi_PersilIndividual.lyrx"
         )
 
-        if os.path.exists(
-            simbologi_path
-        ):
+        if os.path.exists(simbologi_path):
 
             arcpy.management.ApplySymbologyFromLayer(
-                persil,
+                persil_name,
                 simbologi_path
             )
 
-        # =================================================
-        # OUTPUT
-        # =================================================
-
-        parameters[0].value = (
-            persil
-        )
-
-        # =================================================
-        # FINISH
-        # =================================================
+        parameters[0].value = persil_name
 
         messages.addMessage(
             "== Proses selesai =="
         )
 
         return
+
+    def delete_if_exists(self, path):
+
+        if arcpy.Exists(path):
+
+            try:
+                arcpy.management.Delete(path)
+
+            except Exception:
+                pass
 
 class Generate_Titik_Indeks(object):
 
@@ -1138,10 +713,6 @@ class Generate_Titik_Indeks(object):
         self.label = "Generate Titik Indeks"
         self.description = ""
         self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
 
     def getParameterInfo(self):
 
@@ -1175,64 +746,9 @@ class Generate_Titik_Indeks(object):
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
-    def delete_if_exists(self, path):
-
-        if arcpy.Exists(path):
-
-            try:
-
-                arcpy.management.Delete(
-                    path
-                )
-
-            except Exception:
-
-                pass
-
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
-
-        if field_name not in field_names:
-
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
-
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-
     def execute(self, parameters, messages):
 
-        import os
-        import arcpy
-
-        arcpy.env.overwriteOutput = True
-
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
+        messages.addMessage("== Proses dimulai ==")
 
         configs = persil.get_config_values()
 
@@ -1240,28 +756,20 @@ class Generate_Titik_Indeks(object):
             configs["project_config"]["dataset_path"]
         )
 
-        # =================================================
-        # APPDATA
-        # =================================================
-
         appdata = os.path.dirname(
             os.path.dirname(
                 os.path.realpath(__file__)
             )
         )
 
-        # =================================================
-        # DATASET
-        # =================================================
-
         persil_path = os.path.join(
             dataset_path,
-            "Persil_Baru"
+            "Persil_Layer"
         )
 
         sampel_path = os.path.join(
             dataset_path,
-            "Titik_Sampel_Update"
+            "Titik_Sampel"
         )
 
         indeks_path = os.path.join(
@@ -1274,33 +782,12 @@ class Generate_Titik_Indeks(object):
             "temp_identity"
         )
 
-        # =================================================
-        # CLEAN TEMP
-        # =================================================
+        self.delete_if_exists(identity_output)
+        self.delete_if_exists(indeks_path)
+        self.delete_if_exists("Titik_Indeks")
+        self.delete_if_exists("Titik_Sampel_Update")
 
-        self.delete_if_exists(
-            identity_output
-        )
-
-        self.delete_if_exists(
-            indeks_path
-        )
-
-        self.delete_if_exists(
-            "Titik_Indeks"
-        )
-
-        self.delete_if_exists(
-            "Titik_Sampel_Update"
-        )
-
-        # =================================================
-        # IDENTITY
-        # =================================================
-
-        messages.addMessage(
-            "== Proses identity =="
-        )
+        messages.addMessage("== Proses identity ==")
 
         arcpy.analysis.Identity(
             sampel_path,
@@ -1308,33 +795,19 @@ class Generate_Titik_Indeks(object):
             identity_output
         )
 
-        # =================================================
-        # ADD FIELD
-        # =================================================
-
         self.add_field_if_not_exists(
             identity_output,
             "indeks",
             "DOUBLE"
         )
 
-        # =================================================
-        # CALCULATE INDEKS
-        # =================================================
-
-        messages.addMessage(
-            "== Hitung indeks =="
-        )
+        messages.addMessage("== Hitung indeks ==")
 
         code_block = """
 def doSomething(a, b):
 
     if a and b:
-
-        return round(
-            100 * (a / b),
-            2
-        )
+        return round(100 * (a / b), 2)
 
     return None
 """
@@ -1347,13 +820,7 @@ def doSomething(a, b):
             code_block
         )
 
-        # =================================================
-        # SORT
-        # =================================================
-
-        messages.addMessage(
-            "== Sorting indeks =="
-        )
+        messages.addMessage("== Sorting indeks ==")
 
         arcpy.management.Sort(
             identity_output,
@@ -1364,32 +831,16 @@ def doSomething(a, b):
             ]
         )
 
-        # =================================================
-        # DELETE CLUSTER
-        # =================================================
+        messages.addMessage("== Hapus data cluster ==")
 
-        messages.addMessage(
-            "== Hapus data cluster =="
-        )
-
-        with arcpy.da.UpdateCursor(
-            indeks_path,
-            ["clusternew"]
-        ) as cursor:
-
+        with arcpy.da.UpdateCursor(indeks_path, ["kelompok_perubahan"]) as cursor:
             for row in cursor:
-
                 if row[0]:
-
                     cursor.deleteRow()
 
-        # =================================================
-        # DELETE UNUSED FIELD
-        # =================================================
-
         delete_fields = [
-            "FID_Titik_Sampel_Update",
-            "FID_Persil_Baru",
+            "FID_Titik_Sampel",
+            "FID_Persil_Layer",
             "NIB",
             "ls_asal",
             "ls_tnh",
@@ -1422,9 +873,7 @@ def doSomething(a, b):
 
         existing_fields = [
             field.name
-            for field in arcpy.ListFields(
-                indeks_path
-            )
+            for field in arcpy.ListFields(indeks_path)
         ]
 
         valid_delete_fields = [
@@ -1444,10 +893,6 @@ def doSomething(a, b):
                 valid_delete_fields
             )
 
-        # =================================================
-        # CREATE LAYER
-        # =================================================
-
         arcpy.management.MakeFeatureLayer(
             indeks_path,
             "Titik_Indeks"
@@ -1455,56 +900,54 @@ def doSomething(a, b):
 
         arcpy.management.MakeFeatureLayer(
             sampel_path,
-            "Titik_Sampel_Update"
+            "Titik_Sampel"
         )
-
-        # =================================================
-        # APPLY SYMBOLOGY
-        # =================================================
 
         simbologi_path = os.path.join(
             appdata,
             "Simbologi_Titik_Indeks.lyrx"
         )
 
-        if os.path.exists(
-            simbologi_path
-        ):
+        if os.path.exists(simbologi_path):
 
             arcpy.management.ApplySymbologyFromLayer(
                 "Titik_Indeks",
                 simbologi_path
             )
 
-        # =================================================
-        # OUTPUT
-        # =================================================
+        parameters[0].value = "Titik_Indeks"
+        parameters[1].value = "Titik_Sampel"
 
-        parameters[0].value = (
-            "Titik_Indeks"
-        )
+        self.delete_if_exists(identity_output)
 
-        parameters[1].value = (
-            "Titik_Sampel_Update"
-        )
-
-        # =================================================
-        # CLEAN TEMP
-        # =================================================
-
-        self.delete_if_exists(
-            identity_output
-        )
-
-        # =================================================
-        # FINISH
-        # =================================================
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
+
+    def delete_if_exists(self, path):
+
+        if arcpy.Exists(path):
+
+            try:
+                arcpy.management.Delete(path)
+
+            except Exception:
+                pass
+
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+
+        field_names = [
+            field.name
+            for field in arcpy.ListFields(feature_class)
+        ]
+
+        if field_name not in field_names:
+
+            arcpy.management.AddField(
+                feature_class,
+                field_name,
+                field_type
+            )
 
 class Deteksi_Outlier_Indeks(object):
 
@@ -1513,10 +956,6 @@ class Deteksi_Outlier_Indeks(object):
         self.label = "Deteksi Outlier Indeks"
         self.description = ""
         self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
 
     def getParameterInfo(self):
 
@@ -1539,125 +978,15 @@ class Deteksi_Outlier_Indeks(object):
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
-
-        fields = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
-
-        if field_name not in fields:
-
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
-
-    def delete_field_if_exists(
-        self,
-        feature_class,
-        field_name
-    ):
-
-        fields = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
-
-        if field_name in fields:
-
-            arcpy.management.DeleteField(
-                feature_class,
-                field_name
-            )
-
-    def calculate_boxplot_values(
-        self,
-        data_list
-    ):
-
-        import numpy
-
-        q1 = numpy.percentile(
-            data_list,
-            25
-        )
-
-        median = numpy.percentile(
-            data_list,
-            50
-        )
-
-        q3 = numpy.percentile(
-            data_list,
-            75
-        )
-
-        iqr = q3 - q1
-
-        lower_bound = (
-            q1 - (1.5 * iqr)
-        )
-
-        upper_bound = (
-            q3 + (1.5 * iqr)
-        )
-
-        return (
-            q1,
-            median,
-            q3,
-            lower_bound,
-            upper_bound
-        )
-
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-
     def execute(self, parameters, messages):
 
-        import os
-        import arcpy
-        import numpy
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
-        arcpy.env.outputZFlag = "Disabled"
-        arcpy.env.outputMFlag = "Disabled"
-
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
-
-        configs = (
-            persil.get_config_values()
-        )
+        configs = persil.get_config_values()
 
         dataset_path = (
             configs["project_config"]["dataset_path"]
         )
-
-        # =================================================
-        # APPDATA
-        # =================================================
 
         appdata = os.path.dirname(
             os.path.dirname(
@@ -1665,35 +994,18 @@ class Deteksi_Outlier_Indeks(object):
             )
         )
 
-        # =================================================
-        # DATASET
-        # =================================================
-
         titik_indeks = os.path.join(
             dataset_path,
             "Titik_Indeks"
         )
 
-        # =================================================
-        # VALIDASI DATA
-        # =================================================
-
-        if not arcpy.Exists(
-            titik_indeks
-        ):
+        if not arcpy.Exists(titik_indeks):
 
             messages.addErrorMessage(
-                (
-                    "Feature class "
-                    "Titik_Indeks tidak ditemukan"
-                )
+                "Feature class Titik_Indeks tidak ditemukan"
             )
 
             raise arcpy.ExecuteError
-
-        # =================================================
-        # FIELD OUTLIER
-        # =================================================
 
         self.add_field_if_not_exists(
             titik_indeks,
@@ -1701,7 +1013,6 @@ class Deteksi_Outlier_Indeks(object):
             "TEXT"
         )
 
-        # RESET VALUE
         arcpy.management.CalculateField(
             titik_indeks,
             "outlier",
@@ -1709,13 +1020,7 @@ class Deteksi_Outlier_Indeks(object):
             "PYTHON3"
         )
 
-        # =================================================
-        # GET LIST ZONASI
-        # =================================================
-
-        messages.addMessage(
-            "== Membaca zonasi =="
-        )
+        messages.addMessage("== Membaca zonasi ==")
 
         zonasi_dict = {}
 
@@ -1745,28 +1050,13 @@ class Deteksi_Outlier_Indeks(object):
             zonasi_dict.keys()
         )
 
-        # =================================================
-        # PROSES OUTLIER
-        # =================================================
-
         for s_zonasi in list_zonasi:
 
-            nama_zonasi = (
-                zonasi_dict[
-                    s_zonasi
-                ]
-            )
+            nama_zonasi = zonasi_dict[s_zonasi]
 
             messages.addMessage(
-                (
-                    f"== Proses zonasi: "
-                    f"{nama_zonasi} =="
-                )
+                f"== Proses zonasi: {nama_zonasi} =="
             )
-
-            # =============================================
-            # GET DATA
-            # =============================================
 
             where_clause = (
                 f"s_zonasi = {s_zonasi}"
@@ -1783,45 +1073,9 @@ class Deteksi_Outlier_Indeks(object):
                 for row in rows:
 
                     if row[0] is not None:
+                        data.append(row[0])
 
-                        data.append(
-                            row[0]
-                        )
-
-            # =============================================
-            # VALIDASI JUMLAH SAMPEL
-            # =============================================
-
-            if len(data) < 10:
-
-                self.delete_field_if_exists(
-                    titik_indeks,
-                    "outlier"
-                )
-
-                error_message = (
-                    "Titik Sampel kurang "
-                    f"dari 10 untuk zona "
-                    f"{nama_zonasi}"
-                )
-
-                messages.addErrorMessage(
-                    error_message
-                )
-
-                raise arcpy.ExecuteError
-
-            # =============================================
-            # SORTING
-            # =============================================
-
-            data_sorted = sorted(
-                data
-            )
-
-            # =============================================
-            # BOXPLOT
-            # =============================================
+            data_sorted = sorted(data)
 
             (
                 q1,
@@ -1850,10 +1104,6 @@ class Deteksi_Outlier_Indeks(object):
                 )
             )
 
-            # =============================================
-            # UPDATE OUTLIER
-            # =============================================
-
             with arcpy.da.UpdateCursor(
                 titik_indeks,
                 [
@@ -1868,7 +1118,6 @@ class Deteksi_Outlier_Indeks(object):
                     indeks = row[0]
 
                     if indeks is None:
-
                         continue
 
                     if (
@@ -1876,34 +1125,21 @@ class Deteksi_Outlier_Indeks(object):
                         or indeks > upper_bound
                     ):
 
-                        row[1] = (
-                            "Indeks Outlier"
-                        )
+                        row[1] = "Indeks Outlier"
 
                     else:
-
                         row[1] = None
 
-                    rows.updateRow(
-                        row
-                    )
+                    rows.updateRow(row)
 
-        # =================================================
-        # CREATE LAYER
-        # =================================================
-
-        if arcpy.Exists(
-            "Titik_Indeks"
-        ):
+        if arcpy.Exists("Titik_Indeks"):
 
             try:
-
                 arcpy.management.Delete(
                     "Titik_Indeks"
                 )
 
             except Exception:
-
                 pass
 
         arcpy.management.MakeFeatureLayer(
@@ -1911,41 +1147,76 @@ class Deteksi_Outlier_Indeks(object):
             "Titik_Indeks"
         )
 
-        # =================================================
-        # APPLY SYMBOLOGY
-        # =================================================
-
         simbologi_path = os.path.join(
             appdata,
             "Simbologi_Titik_Indeks_Outlier.lyrx"
         )
 
-        if os.path.exists(
-            simbologi_path
-        ):
+        if os.path.exists(simbologi_path):
 
             arcpy.management.ApplySymbologyFromLayer(
                 "Titik_Indeks",
                 simbologi_path
             )
 
-        # =================================================
-        # OUTPUT
-        # =================================================
+        parameters[0].value = "Titik_Indeks"
 
-        parameters[0].value = (
-            "Titik_Indeks"
-        )
-
-        # =================================================
-        # FINISH
-        # =================================================
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage("== Proses selesai ==")
 
         return
+
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+
+        fields = [
+            field.name
+            for field in arcpy.ListFields(feature_class)
+        ]
+
+        if field_name not in fields:
+
+            arcpy.management.AddField(
+                feature_class,
+                field_name,
+                field_type
+            )
+
+    def delete_field_if_exists(self, feature_class, field_name):
+
+        fields = [
+            field.name
+            for field in arcpy.ListFields(feature_class)
+        ]
+
+        if field_name in fields:
+
+            arcpy.management.DeleteField(
+                feature_class,
+                field_name
+            )
+
+    def calculate_boxplot_values(self, data_list):
+
+        import numpy
+
+        q1 = numpy.percentile(data_list, 25)
+        median = numpy.percentile(data_list, 50)
+        q3 = numpy.percentile(data_list, 75)
+
+        iqr = q3 - q1
+
+        lower_bound = q1 - (1.5 * iqr)
+        upper_bound = q3 + (1.5 * iqr)
+
+        return (
+            q1,
+            median,
+            q3,
+            lower_bound,
+            upper_bound
+        )
+
+
+# Mengelompokkan
 
 class Set_Cluster_Persil(object):
 
@@ -1954,10 +1225,6 @@ class Set_Cluster_Persil(object):
         self.label = "Set Cluster Persil"
         self.description = ""
         self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
 
     def getParameterInfo(self):
 
@@ -1980,88 +1247,25 @@ class Set_Cluster_Persil(object):
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
-
-        if field_name not in field_names:
-
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
-
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-
     def execute(self, parameters, messages):
 
-        import arcpy
-        import os
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
+        cluster_update = parameters[0].value
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
+        persil_nama = "Persil_Layer"
 
-        # =================================================
-        # PARAMETER
-        # =================================================
-
-        cluster_update = (
-            parameters[0].value
-        )
-
-        # =================================================
-        # DATASET
-        # =================================================
-
-        persil = (
-            "Persil_Baru"
-        )
-
-        # =================================================
-        # VALIDASI FEATURE CLASS
-        # =================================================
-
-        if not arcpy.Exists(
-            persil
-        ):
+        if not arcpy.Exists(persil_nama):
 
             messages.addErrorMessage(
-                (
-                    "Feature layer "
-                    "Persil_Baru "
-                    "tidak ditemukan"
-                )
+                "Feature layer Persil_nama tidak ditemukan"
             )
 
             raise arcpy.ExecuteError
 
-        # =================================================
-        # VALIDASI SELEKSI
-        # =================================================
-
         ada_seleksi = len(
             arcpy.Describe(
-                persil
+                persil_nama
             ).FIDSet
         )
 
@@ -2073,31 +1277,23 @@ class Set_Cluster_Persil(object):
 
             return
 
-        # =================================================
-        # VALIDASI FIELD
-        # =================================================
-
         self.add_field_if_not_exists(
-            persil,
-            "clusternew",
+            persil_nama,
+            "kelompok_perubahan",
             "SHORT"
         )
 
         self.add_field_if_not_exists(
-            persil,
+            persil_nama,
             "status_per",
             "TEXT"
         )
 
         self.add_field_if_not_exists(
-            persil,
+            persil_nama,
             "perubahan",
             "TEXT"
         )
-
-        # =================================================
-        # UPDATE DATA
-        # =================================================
 
         messages.addMessage(
             "== Update cluster persil =="
@@ -2107,7 +1303,7 @@ class Set_Cluster_Persil(object):
             persil,
             [
                 "status_per",
-                "clusternew",
+                "kelompok_perubahan",
                 "perubahan"
             ]
         ) as rows:
@@ -2118,24 +1314,14 @@ class Set_Cluster_Persil(object):
                 row[1] = cluster_update
                 row[2] = "mengelompok"
 
-                rows.updateRow(
-                    row
-                )
-
-        # =================================================
-        # CALCULATE FIELD
-        # =================================================
+                rows.updateRow(row)
 
         arcpy.management.CalculateField(
             persil,
-            "clusternew",
+            "kelompok_perubahan",
             cluster_update,
             "PYTHON3"
         )
-
-        # =================================================
-        # FINISH
-        # =================================================
 
         messages.addMessage(
             "== Proses selesai =="
@@ -2143,17 +1329,28 @@ class Set_Cluster_Persil(object):
 
         return
 
-class Periksa_Titik_Sampel_Cluster(object):
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+
+        field_names = [
+            field.name
+            for field in arcpy.ListFields(feature_class)
+        ]
+
+        if field_name not in field_names:
+
+            arcpy.management.AddField(
+                feature_class,
+                field_name,
+                field_type
+            )
+
+class Periksa_Titik_Sampel_Kelompok_Perubahan(object):
 
     def __init__(self):
 
         self.label = "Periksa Titik Sampel Cluster"
         self.description = ""
         self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
 
     def getParameterInfo(self):
 
@@ -2168,63 +1365,23 @@ class Periksa_Titik_Sampel_Cluster(object):
     def updateMessages(self, parameters):
         return
 
-    # =====================================================
-    # HELPER
-    # =====================================================
-
-    def delete_if_exists(self, path):
-
-        if arcpy.Exists(path):
-
-            try:
-
-                arcpy.management.Delete(
-                    path
-                )
-
-            except Exception:
-
-                pass
-
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-
     def execute(self, parameters, messages):
 
-        import os
-        import arcpy
+        messages.addMessage("== Proses dimulai ==")
 
-        arcpy.env.overwriteOutput = True
+        configs = persil.get_config_values()
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
-
-        configs = (
-            persil.get_config_values()
-        )
-
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
-
-        # =================================================
-        # DATASET
-        # =================================================
+        dataset_path = configs["project_config"]["dataset_path"]
+        
 
         persil_path = os.path.join(
             dataset_path,
-            "Persil_Baru"
+            "Persil_Layer"
         )
 
         sampel_path = os.path.join(
             dataset_path,
-            "Titik_Sampel_Update"
+            "Titik_Sampel"
         )
 
         identity_path = os.path.join(
@@ -2232,53 +1389,25 @@ class Periksa_Titik_Sampel_Cluster(object):
             "temp_identity_cluster"
         )
 
-        # =================================================
-        # VALIDASI INPUT
-        # =================================================
-
-        if not arcpy.Exists(
-            persil_path
-        ):
+        if not arcpy.Exists(persil_path):
 
             messages.addErrorMessage(
-                (
-                    "Feature class "
-                    "Persil_Baru "
-                    "tidak ditemukan"
-                )
+                "Feature class Persil_Layer tidak ditemukan"
             )
 
             raise arcpy.ExecuteError
 
-        if not arcpy.Exists(
-            sampel_path
-        ):
+        if not arcpy.Exists(sampel_path):
 
             messages.addErrorMessage(
-                (
-                    "Feature class "
-                    "Titik_Sampel_Update "
-                    "tidak ditemukan"
-                )
+                "Feature class Titik_Sampel_Update tidak ditemukan"
             )
 
             raise arcpy.ExecuteError
 
-        # =================================================
-        # CLEAN TEMP
-        # =================================================
+        self.delete_if_exists(identity_path)
 
-        self.delete_if_exists(
-            identity_path
-        )
-
-        # =================================================
-        # IDENTITY
-        # =================================================
-
-        messages.addMessage(
-            "== Membuat identity =="
-        )
+        messages.addMessage("== Membuat identity ==")
 
         arcpy.analysis.Identity(
             sampel_path,
@@ -2286,37 +1415,22 @@ class Periksa_Titik_Sampel_Cluster(object):
             identity_path
         )
 
-        # =================================================
-        # GET LIST CLUSTER
-        # =================================================
-
         list_cluster = []
 
         with arcpy.da.SearchCursor(
             identity_path,
-            [
-                "clusternew"
-            ],
+            ["kelompok_perubahan"],
             "perubahan = 'mengelompok'"
         ) as rows:
 
             for row in rows:
 
                 if row[0] is not None:
-
-                    list_cluster.append(
-                        row[0]
-                    )
+                    list_cluster.append(row[0])
 
         unique_cluster = sorted(
-            list(
-                set(list_cluster)
-            )
+            list(set(list_cluster))
         )
-
-        # =================================================
-        # VALIDASI CLUSTER
-        # =================================================
 
         messages.addMessage(
             "== Periksa jumlah titik sampel =="
@@ -2327,7 +1441,7 @@ class Periksa_Titik_Sampel_Cluster(object):
             titik_list = []
 
             where_clause = (
-                f"clusternew = {cluster_id}"
+                f"kelompok_perubahan = {cluster_id}"
             )
 
             with arcpy.da.SearchCursor(
@@ -2337,24 +1451,15 @@ class Periksa_Titik_Sampel_Cluster(object):
             ) as rows:
 
                 for row in rows:
+                    titik_list.append(row[0])
 
-                    titik_list.append(
-                        row[0]
-                    )
-
-            jumlah_titik = len(
-                titik_list
-            )
-
-            # =============================================
-            # WARNING
-            # =============================================
+            jumlah_titik = len(titik_list)
 
             if jumlah_titik > 3:
 
                 messages.addWarningMessage(
                     (
-                        f"Cluster [{cluster_id}] "
+                        f"Kelompok [{cluster_id}] "
                         "memiliki titik sampel "
                         "lebih dari 3."
                     )
@@ -2364,7 +1469,7 @@ class Periksa_Titik_Sampel_Cluster(object):
 
                 messages.addWarningMessage(
                     (
-                        f"Cluster [{cluster_id}] "
+                        f"Kelompok [{cluster_id}] "
                         "memiliki titik sampel "
                         "kurang dari 3."
                     )
@@ -2374,22 +1479,12 @@ class Periksa_Titik_Sampel_Cluster(object):
 
                 messages.addMessage(
                     (
-                        f"Cluster [{cluster_id}] "
+                        f"Kelompok [{cluster_id}] "
                         "memiliki 3 titik sampel."
                     )
                 )
 
-        # =================================================
-        # CLEAN TEMP
-        # =================================================
-
-        self.delete_if_exists(
-            identity_path
-        )
-
-        # =================================================
-        # FINISH
-        # =================================================
+        self.delete_if_exists(identity_path)
 
         messages.addMessage(
             "== Proses selesai =="
@@ -2397,6 +1492,16 @@ class Periksa_Titik_Sampel_Cluster(object):
 
         return
 
+    def delete_if_exists(self, path):
+
+        if arcpy.Exists(path):
+
+            try:
+                arcpy.management.Delete(path)
+
+            except Exception:
+                pass
+            
 class Hitung_Statistik_Cluster(object):
 
     def __init__(self):

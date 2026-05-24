@@ -806,6 +806,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         ("LETAK", "TEXT", 50),
         ("ELEVASI", "TEXT", 50),
         ("KLSJLN", "TEXT", 50),
+        ("ZONASI", "TEXT", 50),
 
         ("JKCBD", "DOUBLE"),
         ("JKKES", "DOUBLE"),
@@ -1177,6 +1178,14 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 "Skoring Elevasi"
             )
         )
+        validation_errors.extend(
+            self.validate_skoring(
+                dest_temp_path,
+                "S_ZONASI",
+                constant.SKORING_ZONASI,
+                "Skoring Zonasi"
+            )
+        )
 
         validation_errors.extend(
             self.validate_skoring(
@@ -1229,6 +1238,12 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             in constant.SKORING_ELEVASI.items()
         }
 
+        reverse_zonasi = {
+            v: k
+            for k, v
+            in constant.SKORING_ZONASI.items()
+        }
+        
         reverse_kelas_jalan = {
             v: k
             for k, v
@@ -1240,7 +1255,6 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         with arcpy.da.UpdateCursor(
             dest_temp_path,
             [
-
                 "S_BENTUK",
                 "BENTUK",
 
@@ -1251,7 +1265,10 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 "ELEVASI",
 
                 "S_KLS_JLN",
-                "KLSJLN"
+                "KLSJLN",
+
+                "S_ZONASI",
+                "ZONASI"
             ]
         ) as cursor:
 
@@ -1261,6 +1278,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 row[3] = reverse_letak.get(row[2])
                 row[5] = reverse_elevasi.get(row[4])
                 row[7] = reverse_kelas_jalan.get(row[6])
+                row[9] = reverse_zonasi.get(row[8])
 
                 cursor.updateRow(row)
 

@@ -1390,7 +1390,7 @@ class Update_Luas_Tanah(object):
 
         self.add_field_if_not_exists(
             peta_persil_path,
-            "ls_tnh",
+            "LUASM2",
             "DOUBLE"
         )
 
@@ -1398,7 +1398,7 @@ class Update_Luas_Tanah(object):
 
         arcpy.management.CalculateField(
             peta_persil_path,
-            "ls_tnh",
+            "LUASM2",
             "!shape.area!",
             "PYTHON3"
         )

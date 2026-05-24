@@ -26,11 +26,16 @@ class Toolbox:
 
 
 class Generate_Konfigurasi_Zonasi(object):
+
     def __init__(self):
 
         self.label = "Generate Konfigurasi Zonasi"
         self.description = ""
         self.canRunInBackground = False
+
+    # =====================================================
+    # PARAMETER
+    # =====================================================
 
     def getParameterInfo(self):
 
@@ -44,6 +49,10 @@ class Generate_Konfigurasi_Zonasi(object):
 
         return [output_persil]
 
+    # =====================================================
+    # LICENSE
+    # =====================================================
+
     def isLicensed(self):
         return True
 
@@ -53,69 +62,240 @@ class Generate_Konfigurasi_Zonasi(object):
     def updateMessages(self, parameters):
         return
 
+    # =====================================================
+    # UTIL
+    # =====================================================
+
     def delete_if_exists(self, path):
+
         if arcpy.Exists(path):
+
             try:
                 arcpy.management.Delete(path)
+
             except:
                 pass
 
+    def add_field_if_not_exists(
+        self,
+        fc,
+        field_name,
+        field_type
+    ):
 
-    def execute(self,parameters,messages):
+        fields = [
+            f.name
+            for f in arcpy.ListFields(fc)
+        ]
 
-        messages.addMessage("== Proses dimulai ==")
+        if field_name not in fields:
+
+            arcpy.management.AddField(
+                fc,
+                field_name,
+                field_type
+            )
+
+    # =====================================================
+    # EXECUTE
+    # =====================================================
+
+    def execute(self, parameters, messages):
+
+        messages.addMessage(
+            "== Proses dimulai =="
+        )
+
         configs = persil.get_config_values()
 
-        dataset_path=configs["project_config"]["dataset_path"]
-        persil_nama="Persil_Baru"
-        persil_path=os.path.join(
+        dataset_path = configs[
+            "project_config"
+        ]["dataset_path"]
+
+        ws_path = configs[
+            "project_config"
+        ]["ws_path"]
+
+        # =====================================================
+        # PERSIL
+        # =====================================================
+
+        persil_name = "Persil_Layer"
+
+        persil_path = os.path.join(
             dataset_path,
-            persil_nama
+            persil_name
         )
-        self.delete_if_exists(persil)
+
+        # =====================================================
+        # VALIDASI FIELD
+        # =====================================================
+
+        self.add_field_if_not_exists(
+            persil_path,
+            "min_lb_jln",
+            "DOUBLE"
+        )
+
+        # =====================================================
+        # REFRESH LAYER
+        # =====================================================
+
+        self.delete_if_exists(
+            persil_name
+        )
+
         arcpy.management.MakeFeatureLayer(
             persil_path,
-            persil_nama
+            persil_name
         )
-        parameters[0].value= persil_nama
+
+        # =====================================================
+        # HITUNG MINIMUM PER ZONASI
+        # =====================================================
+
+        messages.addMessage(
+            "== Hitung minimum lebar jalan zonasi =="
+        )
+
+        zonasi_dict = {}
+
+        with arcpy.da.SearchCursor(
+            persil_name,
+            [
+                "ZONASI",
+                "s_zonasi",
+                "LBRJLN"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                zonasi = row[0]
+                s_zonasi = row[1]
+                lb_jalan = row[2]
+
+                if not zonasi:
+                    continue
+
+                try:
+                    lb_jalan = float(lb_jalan)
+
+                except:
+                    lb_jalan = 0
+
+                # =========================================
+                # INIT
+                # =========================================
+
+                if zonasi not in zonasi_dict:
+
+                    zonasi_dict[zonasi] = {
+                        "s_zonasi": int(
+                            s_zonasi or 0
+                        ),
+                        "min_lb_jln": lb_jalan
+                    }
+
+                # =========================================
+                # UPDATE MINIMUM
+                # =========================================
+
+                else:
+
+                    if (
+                        lb_jalan <
+                        zonasi_dict[
+                            zonasi
+                        ]["min_lb_jln"]
+                    ):
+
+                        zonasi_dict[
+                            zonasi
+                        ]["min_lb_jln"] = (
+                            lb_jalan
+                        )
+
+        # =====================================================
+        # UPDATE KE PERSIL
+        # =====================================================
+
+        messages.addMessage(
+            "== Update min_lb_jln ke persil =="
+        )
+
+        with arcpy.da.UpdateCursor(
+            persil_name,
+            [
+                "ZONASI",
+                "min_lb_jln"
+            ]
+        ) as rows:
+
+            for row in rows:
+
+                zonasi = row[0]
+
+                if zonasi in zonasi_dict:
+
+                    row[1] = zonasi_dict[
+                        zonasi
+                    ]["min_lb_jln"]
+
+                    rows.updateRow(row)
+
+        # =====================================================
+        # SIMPAN JSON
+        # =====================================================
+
         messages.addMessage(
             "== Generate konfigurasi zonasi =="
         )
-        listzona={}
-        with arcpy.da.SearchCursor(
-            persil_nama,
-            ["zonasi","s_zonasi","min_lb_jln"]
-        ) as rows:
-            for row in rows:
-                zonasi=row[0]
-                if zonasi:
-                    listzona[zonasi]={
-                        "s_zonasi":int(row[1] or 0),
-                        "min_lb_jln":int(row[2] or 0)
-                    }
 
-        zonasi_config_path=os.path.join(
-            configs["project_config"]["ws_path"],
+        zonasi_config_path = os.path.join(
+            ws_path,
             "zonasiupdate.json"
         )
 
-        if os.path.exists(zonasi_config_path):
-            os.remove(zonasi_config_path)
-        with open(zonasi_config_path, "w+",  encoding="utf-8" ) as f:
+        if os.path.exists(
+            zonasi_config_path
+        ):
+
+            os.remove(
+                zonasi_config_path
+            )
+
+        with open(
+            zonasi_config_path,
+            "w+",
+            encoding="utf-8"
+        ) as f:
+
             json.dump(
-                listzona,
+                zonasi_dict,
                 f,
                 indent=4,
                 ensure_ascii=False
             )
+
+        # =====================================================
+        # OUTPUT
+        # =====================================================
+
+        parameters[0].value = (
+            persil_name
+        )
+
         messages.addMessage(
             f"== Konfigurasi tersimpan: {zonasi_config_path} =="
         )
 
-        messages.addMessage("== Proses selesai ==")
+        messages.addMessage(
+            "== Proses selesai =="
+        )
 
         return
-
+    
 class Deklarasi_Zonasi_Update(object):
 
     def __init__(self):
@@ -435,7 +615,7 @@ class Edit_Zonasi_Update(object):
 
         dataset_path=configs["project_config"]["dataset_path"]
 
-        persil_edit="Persil_Baru"
+        persil_edit="Persil_Layer"
 
         persil_edit_path=os.path.join(
             dataset_path,
@@ -449,7 +629,7 @@ class Edit_Zonasi_Update(object):
         )
 
         required_fields=[
-            "zonasi",
+            "ZONASI",
             "s_zonasi",
             "min_lb_jln",
             "status_per"
@@ -495,7 +675,7 @@ class Edit_Zonasi_Update(object):
         with arcpy.da.UpdateCursor(
             persil_edit,
             [
-                "zonasi",
+                "ZONASI",
                 "s_zonasi",
                 "min_lb_jln",
                 "status_per"

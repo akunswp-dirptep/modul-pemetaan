@@ -366,10 +366,6 @@ class Perbaharui_Simbologi_Lebar_Jalan(object):
             )
 
         messages.addMessage("== Update kategori lebar jalan ==")
-        edit=arcpy.da.Editor(os.path.dirname(dataset_path))
-
-        edit.startEditing(False,False)
-        edit.startOperation()
 
         with arcpy.da.UpdateCursor(
             jaringanjalan_path,
@@ -408,9 +404,6 @@ class Perbaharui_Simbologi_Lebar_Jalan(object):
 
                 rows.updateRow(row)
 
-        edit.stopOperation()
-        edit.stopEditing(True)
-
         if arcpy.Exists(jaringanjalan):
             try:
                 arcpy.management.Delete(jaringanjalan)
@@ -421,6 +414,14 @@ class Perbaharui_Simbologi_Lebar_Jalan(object):
             jaringanjalan_path,
             jaringanjalan
         )
+        
+        simbologi_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Lebar_Jaringan_Jalan.lyrx"
+        if os.path.exists(simbologi_path):
+
+            arcpy.management.ApplySymbologyFromLayer(
+                jaringanjalan,
+                simbologi_path
+            )
 
         parameters[0].value=jaringanjalan
 

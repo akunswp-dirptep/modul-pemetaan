@@ -3,18 +3,17 @@
   "version" : "3.4.0",
   "build" : 55405,
   "layers" : [
-    "CIMPATH=Map/Jaringan_Jalan3.json"
+    "CIMPATH=Map/Jaringan_Jalan.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "Jaringan_Jalan",
-      "uRI" : "CIMPATH=Map/Jaringan_Jalan3.json",
+      "uRI" : "CIMPATH=Map/Jaringan_Jalan.json",
       "sourceModifiedTime" : {
-        "type" : "TimeInstant",
-        "start" : -62135596800000
+        "type" : "TimeInstant"
       },
-      "metadataURI" : "CIMPATH=Metadata/d405cadadfe41e51b7f96bbc874ca17d.xml",
+      "metadataURI" : "CIMPATH=Metadata/92cde4575be4b4eb0e79120633369e2e.xml",
       "useSourceMetadata" : false,
       "description" : "Jaringan_Jalan",
       "layerElevation" : {
@@ -368,7 +367,7 @@
         },
         "defaultSymbolPatch" : "Default",
         "fields" : [
-          "SimLJln2"
+          "simbologi_jalan"
         ],
         "groups" : [
           {
@@ -376,7 +375,7 @@
             "classes" : [
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Lebar Jalan = 0",
+                "label" : "0 m",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -418,49 +417,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "0 < Lebar Jalan <= 1.5",
-                "patch" : "Default",
-                "symbol" : {
-                  "type" : "CIMSymbolReference",
-                  "symbol" : {
-                    "type" : "CIMLineSymbol",
-                    "symbolLayers" : [
-                      {
-                        "type" : "CIMSolidStroke",
-                        "enable" : true,
-                        "capStyle" : "Round",
-                        "joinStyle" : "Round",
-                        "lineStyle3D" : "Strip",
-                        "miterLimit" : 10,
-                        "width" : 1,
-                        "height3D" : 1,
-                        "anchor3D" : "Center",
-                        "color" : {
-                          "type" : "CIMRGBColor",
-                          "values" : [
-                            255,
-                            167,
-                            127,
-                            100
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                },
-                "values" : [
-                  {
-                    "type" : "CIMUniqueValue",
-                    "fieldValues" : [
-                      "1.5"
-                    ]
-                  }
-                ],
-                "visible" : true
-              },
-              {
-                "type" : "CIMUniqueValueClass",
-                "label" : "1.5 < Lebar Jalan  <= 3",
+                "label" : "0.1 – 3 m",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -502,7 +459,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "3 < Lebar Jalan <= 5",
+                "label" : "3.1 – 5 m",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -544,7 +501,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "5 < Lebar Jalan <= 8",
+                "label" : "5.1 – 8 m",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -586,7 +543,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Lebar Jalan > 8",
+                "label" : "> 8 m",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -627,7 +584,7 @@
                 "visible" : true
               }
             ],
-            "heading" : "Lebar Jalan"
+            "heading" : "simbologi_jalan"
           }
         ],
         "useDefaultSymbol" : true,
@@ -641,8 +598,8 @@
   "binaryReferences" : [
     {
       "type" : "CIMBinaryReference",
-      "uRI" : "CIMPATH=Metadata/d405cadadfe41e51b7f96bbc874ca17d.xml",
-      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\">\r\n\t<Esri>\r\n\t\t<CreaDate>20260524</CreaDate>\r\n\t\t<CreaTime>07482000</CreaTime>\r\n\t\t<ArcGISFormat>1.0</ArcGISFormat>\r\n\t\t<SyncOnce>TRUE</SyncOnce>\r\n\t</Esri>\r\n\t<dataIdInfo>\r\n\t\t<idCitation>\r\n\t\t\t<resTitle>Jaringan_Jalan</resTitle>\r\n\t\t</idCitation>\r\n\t\t<idAbs>Jaringan_Jalan</idAbs>\r\n\t\t<idCredit>\r\n\t\t</idCredit>\r\n\t\t<idPurp>\r\n\t\t</idPurp>\r\n\t\t<resConst>\r\n\t\t\t<Consts>\r\n\t\t\t\t<useLimit>\r\n\t\t\t\t</useLimit>\r\n\t\t\t</Consts>\r\n\t\t</resConst>\r\n\t</dataIdInfo>\r\n</metadata>\r\n"
+      "uRI" : "CIMPATH=Metadata/92cde4575be4b4eb0e79120633369e2e.xml",
+      "data" : "<?xml version=\"1.0\"?>\r\n<metadata xml:lang=\"en\"><Esri><CreaDate>20260524</CreaDate><CreaTime>11070400</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce></Esri><dataIdInfo><idCitation><resTitle>Jaringan_Jalan</resTitle></idCitation><idAbs>Jaringan_Jalan</idAbs><idCredit></idCredit><idPurp></idPurp><resConst><Consts><useLimit></useLimit></Consts></resConst></dataIdInfo></metadata>\r\n"
     }
   ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",

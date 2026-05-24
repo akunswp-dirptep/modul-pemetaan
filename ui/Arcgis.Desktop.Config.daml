@@ -367,6 +367,7 @@
 					smallImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png">
 					<menu refID="pengolahan_data_dasar_persil_pembaruan_nbt" />
 					<menu refID="pengolahan_jaringan_jalan_pembaruan_nbt" />
+					<menu refID='analisis_persil_dan_jalan_pembaruan_nbt' />
 					<menu refID="pengolahan_zonasi_pembaruan_nbt" />
 
 				</menu>
@@ -375,20 +376,17 @@
 					<button refID="identifikasi_perubahan_persil" />
 					<separator/>
 
-					<button refID="ButtonPersilCluster" size="Medium"/>
+					<button refID="ButtonMenentukanPerubahanMengelompok" size="Medium"/>
 					<button refID="ButtonResetPersilCluster" size="Medium"/>
-					<button refID="ButtonGeneratePetaPersilCluster" size="Medium"/>
+					<button refID="ButtonMemasukkanDataKePersilLayer" size="Medium"/>
 
 					<separator/>
 
-					<button refID="ButtonGeneratePetaAkhir" size="Medium"/>
 					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
 
 					<separator/>
-
 					<button refID="ButtonAnalisisBentukPersil" size="Medium"/>
 					<button refID="ButtonEditBentukPersil" size="Medium"/>
-					<button refID="ButtonSimpanBentukPersil" size="Medium"/>
 				</menu>
 				<!--  -->
 				<menu id="identifikasi_perubahan_persil" caption="Identifikasi Perubahan" >        
@@ -400,17 +398,20 @@
 				<!--  -->
 				
 				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Jaringan Jalan">
-					<button refID="ButtonPersiapanJaringanJalanPembaruan" size="Medium"/>
 					<button refID="ButtonSetAtributJaringanJalan" size="Medium"/>
-					<button refID="ButtonHapusJaringanJalanTerpilih" size="Medium"/>
 					<button refID="ButtonValidasiTopologiJaringanJalan" size="Medium"/>
 					<button refID="ButtonUpdateSimbologiLebarJalan" size="Medium"/>
-					<button refID="ButtonSetLebarJalan" size="Medium"/>
 					<button refID="ButtonDeteksiOutlierJaringanJalan" size="Medium"/>
 					<button refID="ButtonSetOutlierLebarJalan" size="Medium"/>
-					<button refID="ButtonUpdateSimbologiKelasJalan" size="Medium"/>
-					<button refID="ButtonSetKelasJalan" size="Medium"/>
+					<button refID="ButtonTampilkanSimbologiKelasJalan" size="Medium"/>
+					
 				</menu>
+				<menu id="analisis_persil_dan_jalan_pembaruan_nbt" caption="Analisis Persil Dengan Jalan">
+					<button refID="ButtonUpdateKelasDanLebarJalanPersil" size="Medium"/>
+					<button refID='ButtonBuatNertworkDataset' size="Medium" />
+				</menu>
+
+
 				<menu id="pengolahan_zonasi_pembaruan_nbt" caption="Zonasi">
 					<button refID="ButtonGenerateKonfigurasiZonasi" size="Medium"/>
 					<button refID="ButtonDeklarasiZonasiUpdate" size="Medium"/>
@@ -2224,49 +2225,42 @@
 					</args>
 					<tooltip heading="Sesuaikan Status Perubahan Persil">Menu untuk mengubah status perubahan persil menjadi tetap atau update.</tooltip>
 				</button>
-				<button id="ButtonPersilCluster" caption="Menentukan Perubahan Mengelompok" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonMenentukanPerubahanMengelompok" caption="Menentukan Perubahan Mengelompok" smallImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" largeImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Menentukan_Perubahan_Mengelompok" name="Menentukan Perubahan Mengelompok" xmlns=""/>
 					</args>
 					<tooltip heading="Menentukan Perubahan Mengelompok">Menu untuk mengelompokkan persil perubahan kelompok-kelompok perubahan.</tooltip>
 				</button>
 
-				<button id="ButtonResetPersilCluster" caption="Reset Perubahan Mengelompok" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonResetPersilCluster" caption="Reset Perubahan Mengelompok" smallImage="C:\PenilaianTanah\icons\undo.png" largeImage="C:\PenilaianTanah\icons\undo.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Reset_Perubahan_Mengelompok" name="Reset Perubahan Mengelompok" xmlns=""/>
 					</args>
 					<tooltip heading="Reset Perubahan Mengelompok">Menu untuk menghapus cluster pada persil yang dipilih.</tooltip>
 				</button>
 
-				<button id="ButtonGeneratePetaPersilCluster" caption="Simpan Perubahan Ke Persil Baru" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonMemasukkanDataKePersilLayer" caption="Simpan Perubahan Ke Persil Layer" smallImage="C:\PenilaianTanah\icons\memasukkan.png" largeImage="C:\PenilaianTanah\icons\memasukkan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Simpan_Perubahan_Ke_Persil_Baru" name="Simpan Perubahan Ke Persil Baru" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Simpan_Perubahan_Ke_Persil_Layer" name="Simpan Perubahan Ke Persil Layer" xmlns=""/>
 					</args>
-					<tooltip heading="Simpan Perubahan Ke Persil Baru">Menu untuk menyimpan perubahan ke peta persil baru.</tooltip>
+					<tooltip heading="Simpan Perubahan Ke Persil Layer">Menu untuk menyimpan perubahan ke peta persil layer.</tooltip>
 				</button>
 
-				<button id="ButtonGeneratePetaAkhir" caption="Generate Peta Akhir" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Generate_Peta_Akhir" name="Generate Peta Akhir" xmlns=""/>
-					</args>
-					<tooltip heading="Generate Peta Akhir">Menu untuk menghasilkan peta akhir berdasarkan hasil analisis persil.</tooltip>
-				</button>
-
-				<button id="ButtonUpdateLuasTanah" caption="Update Luas Tanah" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUpdateLuasTanah" caption="Update Luas Tanah" smallImage="C:\PenilaianTanah\icons\area.png" largeImage="C:\PenilaianTanah\icons\area.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Update_Luas_Tanah" name="Update Luas Tanah" xmlns=""/>
 					</args>
 					<tooltip heading="Update Luas Tanah">Menu untuk menghitung ulang luas tanah pada peta akhir.</tooltip>
 				</button>
 
-				<button id="ButtonAnalisisBentukPersil" caption="Analisis Bentuk Persil" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonAnalisisBentukPersil" caption="Analisis Bentuk Persil" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Analisis_Bentuk_Persil" name="Analisis Bentuk Persil" xmlns=""/>
 					</args>
 					<tooltip heading="Analisis Bentuk Persil">Menu untuk menganalisis bentuk geometris persil perubahan.</tooltip>
 				</button>
 
-				<button id="ButtonEditBentukPersil" caption="Edit Bentuk Persil" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonEditBentukPersil" caption="Edit Bentuk Persil" smallImage="C:\PenilaianTanah\icons\good1.png" largeImage="C:\PenilaianTanah\icons\good1.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Edit_Bentuk_Persil" name="Edit Bentuk Persil" xmlns=""/>
 					</args>
@@ -2280,12 +2274,6 @@
 					<tooltip heading="Simpan Bentuk Persil">Menu untuk menyimpan hasil analisis bentuk persil ke layer persil baru.</tooltip>
 				</button>
 			<!-- Pengolahan Jaringan Jalan -->
-				<button id="ButtonPersiapanJaringanJalanPembaruan" caption="Masukkan Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Persiapan_Jaringan_Jalan_Update" name="Pengolahan Jaringan Jalan" xmlns=""/>
-					</args>
-					<tooltip heading="Masukkan Jaringan Jalan">Menu untuk menginput data jaringan jalan.</tooltip>
-				</button>
 
 				<button id="ButtonSetAtributJaringanJalan" caption="Set Atribut Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
@@ -2294,69 +2282,58 @@
 					<tooltip heading="Set Atribut Jaringan Jalan">Menu untuk mengatur atribut jaringan jalan.</tooltip>
 				</button>
 
-				<button id="ButtonHapusJaringanJalanTerpilih" caption="Hapus Jaringan Jalan Terpilih" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Hapus_Jaringan_Jalan_Terpilih" name="Hapus Jaringan Jalan Terpilih" xmlns=""/>
-					</args>
-					<tooltip heading="Hapus Jaringan Jalan Terpilih">Menu untuk menghapus jaringan jalan terpilih.</tooltip>
-				</button>
 
-				<button id="ButtonValidasiTopologiJaringanJalan" caption="Validasi Topologi Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonValidasiTopologiJaringanJalan" caption="Validasi Topologi Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\check.png" largeImage="C:\PenilaianTanah\icons\check.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Validasi_Topologi_Jaringan_Jalan" name="Validasi Topologi Jaringan Jalan" xmlns=""/>
 					</args>
 					<tooltip heading="Validasi Topologi Jaringan Jalan">Menu untuk validasi topologi jaringan jalan.</tooltip>
 				</button>
 
-				<button id="ButtonUpdateSimbologiLebarJalan" caption="Update Simbologi Lebar Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUpdateSimbologiLebarJalan" caption="Perbaharui Simbologi Lebar Jalan" smallImage="C:\PenilaianTanah\icons\lbrjln.png" largeImage="C:\PenilaianTanah\icons\lbrjln.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Update_Simbologi_Lebar_Jalan" name="Update Simbologi Lebar Jalan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Perbaharui_Simbologi_Lebar_Jalan" name="Perbaharui Simbologi Lebar Jalan" xmlns=""/>
 					</args>
-					<tooltip heading="Update Simbologi Lebar Jalan">Menu untuk update simbologi lebar jalan.</tooltip>
+					<tooltip heading="Perbaharui Simbologi Lebar Jalan">Menu untuk memperbaharui simbologi lebar jalan.</tooltip>
 				</button>
 
-				<button id="ButtonSetLebarJalan" caption="Set Lebar Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Set_Lebar_Jalan" name="Set Lebar Jalan" xmlns=""/>
-					</args>
-					<tooltip heading="Set Lebar Jalan">Menu untuk mengatur lebar jalan.</tooltip>
-				</button>
-
-				<button id="ButtonDeteksiOutlierJaringanJalan" caption="Deteksi Outlier Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonDeteksiOutlierJaringanJalan" caption="Deteksi Outlier Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\outlier_jalan.png" largeImage="C:\PenilaianTanah\icons\outlier_jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Deteksi_Outlier_Jaringan_Jalan" name="Deteksi Outlier Jaringan Jalan" xmlns=""/>
 					</args>
 					<tooltip heading="Deteksi Outlier Jaringan Jalan">Menu untuk mendeteksi outlier jaringan jalan.</tooltip>
 				</button>
 
-				<button id="ButtonSetOutlierLebarJalan" caption="Set Outlier Lebar Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonSetOutlierLebarJalan" caption="Set Outlier Lebar Jalan" smallImage="C:\PenilaianTanah\icons\edit.png" largeImage="C:\PenilaianTanah\icons\edit.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Set_Outlier_Lebar_Jalan" name="Set Outlier Lebar Jalan" xmlns=""/>
 					</args>
 					<tooltip heading="Set Outlier Lebar Jalan">Menu untuk set outlier lebar jalan.</tooltip>
 				</button>
 
-				<button id="ButtonUpdateSimbologiKelasJalan" caption="Update Simbologi Kelas Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonTampilkanSimbologiKelasJalan" caption="Tampilkan Simbologi Kelas Jalan" smallImage="C:\PenilaianTanah\icons\kelasjalan.png" largeImage="C:\PenilaianTanah\icons\kelasjalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Update_Simbologi_Kelas_Jalan" name="Update Simbologi Kelas Jalan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Tampilkan_Simbologi_Kelas_Jalan" name="Tampilkan Simbologi Kelas Jalan" xmlns=""/>
 					</args>
-					<tooltip heading="Update Simbologi Kelas Jalan">Menu untuk update simbologi kelas jalan.</tooltip>
-				</button>
-
-				<button id="ButtonSetKelasJalan" caption="Set Kelas Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
-					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Set_Kelas_Jalan" name="Set Kelas Jalan" xmlns=""/>
-					</args>
-					<tooltip heading="Set Kelas Jalan">Menu untuk mengatur kelas jalan.</tooltip>
+					<tooltip heading="Tampilkan Simbologi Kelas Jalan">Menu untuk menampilkan simbologi kelas jalan.</tooltip>
 				</button>
 			
-			<!-- Analisis Persil dan Jaringan Jalan (Tools Sementara)-->
-				<button id="ButtonUpdateKelasDanLebarJalanPersil" caption="Update Kelas dan Lebar Jalan Persil" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+			<!-- Analisis Persil dan Jaringan Jalan-->
+				<button id="ButtonBuatNertworkDataset" caption="Buat Network Dataset" smallImage="C:\PenilaianTanah\icons\network.png" largeImage="C:\PenilaianTanah\icons\network.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\AnalisisPersilDenganJaringanJalan.pyt\Update_Kelas_dan_Lebar_Jalan_Persil_File" name="Update Kelas dan Lebar Jalan Persil" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\AnalisisPersilDenganJaringanJalan.pyt\Build_Network_Dataset_Jaringan_Jalan" name="Buat Network Dataset" xmlns=""/>
 					</args>
-					<tooltip heading="Update Kelas dan Lebar Jalan Persil">Menu untuk memperbaharui kelas jalan dan lebar jalan pada persil berdasarkan jaringan jalan terdekat.</tooltip>
+					<tooltip heading="Buat Network Dataset">Menu untuk membuat Network Dataset berdasarkan jaringan jalan </tooltip>
 				</button>
+
+				
+				<button id="ButtonUpdateKelasDanLebarJalanPersil" caption="Sinkronisasi Kelas dan Lebar Jalan" smallImage="C:\PenilaianTanah\icons\klsdanlbr.png" largeImage="C:\PenilaianTanah\icons\klsdanlbr.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\AnalisisPersilDenganJaringanJalan.pyt\Sinkronisasi_Kelas_Dan_Lebar_Jalan_Dengan_Persil" name="Sinkronisasi Kelas dan Lebar Jalan" xmlns=""/>
+					</args>
+					<tooltip heading="Sinkronisasi Kelas dan Lebar Jalan">Menu untuk memperbaharui kelas jalan dan lebar jalan pada persil berdasarkan jaringan jalan terdekat.</tooltip>
+				</button>
+
 				<button id="ButtonUpdateLetakPersil" caption="Update Letak Persil" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 				<args>
 					<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\AnalisisPersilDenganJaringanJalan.pyt\Update_Letak_Persil_File" name="Update Letak Persil" xmlns=""/>

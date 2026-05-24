@@ -1630,7 +1630,10 @@ class Masukkan_Data_Jaringan_Jalan(object):
         configs=persil.get_config_values()
         dataset_path=configs["project_config"]["dataset_path"]
         jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        jaringan_jalan="Jaringan_Jalan"     
+        jaringan_jalan="Jaringan_Jalan"
+        topologi_jaringan_jalan_path=os.path.join(dataset_path,'Topologi_Jaringan_Jalan')
+        if arcpy.Exists(topologi_jaringan_jalan_path):
+            arcpy.management.Delete(topologi_jaringan_jalan_path)
 
 
         with arcpy.da.SearchCursor(in_jaringan_jalan, interest_fields) as cursor:
@@ -1728,6 +1731,7 @@ class Masukkan_Data_Jaringan_Jalan(object):
                 jaringan_jalan_path,
                 delete_fields
             )
+        simbologi_path=r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Kelas_Jaringan_Jalan.lyrx"
 
         if arcpy.Exists(jaringan_jalan):
             try:
@@ -1739,6 +1743,10 @@ class Masukkan_Data_Jaringan_Jalan(object):
             jaringan_jalan_path,
             jaringan_jalan
         )
+        arcpy.management.ApplySymbologyFromLayer(
+            jaringan_jalan,
+            simbologi_path
+            )
 
         arcpy.SetParameter(3, jaringan_jalan)
 
@@ -2501,6 +2509,8 @@ class Masukkan_Data_Risiko(object):
 
         return
 
+
+# ===========================
 
 class Buat_Workspace_Pembaruan_NBT_OLD(object):
     def __init__(self):

@@ -630,7 +630,7 @@ class Edit_Zonasi_Update(object):
 
         required_fields=[
             "ZONASI",
-            "s_zonasi",
+            "S_ZONASI",
             "min_lb_jln",
             "status_per"
         ]
@@ -676,7 +676,7 @@ class Edit_Zonasi_Update(object):
             persil_edit,
             [
                 "ZONASI",
-                "s_zonasi",
+                "S_ZONASI",
                 "min_lb_jln",
                 "status_per"
             ]

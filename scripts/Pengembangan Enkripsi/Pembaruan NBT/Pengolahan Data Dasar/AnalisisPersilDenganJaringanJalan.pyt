@@ -5745,7 +5745,7 @@ class Set_Kelas_Jalan_Persil(object):
 
         required_fields = [
             "KLSJLN",
-            "s_kls_jln"
+            "S_KLS_JLN"
         ]
 
         missing_fields = []
@@ -5799,7 +5799,7 @@ class Set_Kelas_Jalan_Persil(object):
             persil_layer,
             [
                 "KLSJLN",
-                "s_kls_jln"
+                "S_KLS_JLN"
             ]
         ) as rows:
 
@@ -5971,10 +5971,10 @@ class Perbaharui_Letak_Persil(object):
         field_id='IdBidang'
 
         field_letak='LETAK'
-        field_s_letak='s_letak'
+        field_s_letak='S_LETAK'
 
         field_lb_jln='LBRJLN'
-        field_s_kls_jln='s_kls_jln'
+        field_s_kls_jln='S_KLS_JLN'
         field_lb_dpn='LBRDPN'
 
 

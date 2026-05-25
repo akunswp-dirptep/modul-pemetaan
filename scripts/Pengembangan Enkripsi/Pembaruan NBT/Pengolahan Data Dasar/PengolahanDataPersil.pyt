@@ -964,9 +964,10 @@ class Reset_Perubahan_Mengelompok(object):
 class Simpan_Perubahan_Ke_Persil_Layer(object):
 
     def __init__(self):
-        self.label="Simpan Perubahan Ke Persil Layer"
-        self.description=""
-        self.canRunInBackground=False
+
+        self.label = "Simpan Perubahan Ke Persil Layer"
+        self.description = ""
+        self.canRunInBackground = False
 
     def getParameterInfo(self):
 
@@ -996,26 +997,40 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
     def isLicensed(self):
         return True
 
-    def updateParameters(self,parameters):
+    def updateParameters(self, parameters):
         return
 
-    def updateMessages(self,parameters):
+    def updateMessages(self, parameters):
         return
 
-    def delete_if_exists(self,path):
+    def delete_if_exists(self, path):
+
         if arcpy.Exists(path):
+
             try:
+
                 arcpy.management.Delete(path)
+
             except Exception:
                 pass
 
-    def add_field_if_not_exists(self,feature_class,field_name,field_type,precision=None):
+    def add_field_if_not_exists(
+        self,
+        feature_class,
+        field_name,
+        field_type,
+        precision=None
+    ):
 
-        fields=[field.name for field in arcpy.ListFields(feature_class)]
+        fields = [
+            field.name.upper()
+            for field in arcpy.ListFields(feature_class)
+        ]
 
-        if field_name not in fields:
+        if field_name.upper() not in fields:
 
             if precision:
+
                 arcpy.management.AddField(
                     feature_class,
                     field_name,
@@ -1024,43 +1039,134 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
                 )
 
             else:
+
                 arcpy.management.AddField(
                     feature_class,
                     field_name,
                     field_type
                 )
 
-    def execute(self,parameters,messages):
+    def execute(self, parameters, messages):
 
-        messages.addMessage("== Proses dimulai ==")
+        messages.addMessage(
+            "== Proses dimulai =="
+        )
+
         simpan_ke_layer = parameters[0].value
-        configs=persil.get_config_values()
-        dataset_path=configs["project_config"]["dataset_path"]
-        peta_baru_path=os.path.join(dataset_path,"Persil_Baru")
-        indikator_path=os.path.join(dataset_path,"Indikator_Perubahan_Persil")
-        peta_persil_path=os.path.join('in_memory',"Peta_Persil")
-        peta_persil="Peta_Persil"
-        required_fc=[ peta_baru_path, indikator_path ]
+
+        configs = persil.get_config_values()
+
+        dataset_path = configs[
+            "project_config"
+        ]["dataset_path"]
+
+        peta_baru_path = os.path.join(
+            dataset_path,
+            "Persil_Baru"
+        )
+
+        indikator_path = os.path.join(
+            dataset_path,
+            "Indikator_Perubahan_Persil"
+        )
+
+        peta_lama_path = os.path.join(
+            dataset_path,
+            "Persil_Layer"
+        )
+
+        peta_persil_path = os.path.join(
+            "in_memory",
+            "Peta_Persil"
+        )
+
+        centroid_path = os.path.join(
+            "in_memory",
+            "Persil_Lama_Centroid"
+        )
+
+        erase_path = os.path.join(
+            "in_memory",
+            "Peta_Erase"
+        )
+
+        peta_akhir_path = os.path.join(
+            dataset_path,
+            "Persil_Layer_Temp"
+        )
+
+        peta_akhir_layer = (
+            "Peta_Layer_Temp"
+        )
+
+        temp_persil = (
+            "temp_persil"
+        )
+
+        cleanup_items = [
+
+            peta_persil_path,
+            centroid_path,
+            erase_path,
+            peta_akhir_path,
+            peta_akhir_layer,
+            temp_persil
+        ]
+
+        for item in cleanup_items:
+
+            self.delete_if_exists(item)
+
+        required_fc = [
+
+            peta_baru_path,
+            indikator_path,
+            peta_lama_path
+        ]
 
         for fc in required_fc:
+
             if not arcpy.Exists(fc):
-                messages.addErrorMessage(f"Feature class {os.path.basename(fc)} tidak ditemukan")
+
+                messages.addErrorMessage(
+                    f"Feature class "
+                    f"{os.path.basename(fc)} "
+                    f"tidak ditemukan"
+                )
+
                 raise arcpy.ExecuteError
 
-        if arcpy.Exists(peta_persil_path):
-            arcpy.management.Delete(peta_persil_path)
+        # =====================================================
+        # Spatial Join
+        # =====================================================
 
-        self.delete_if_exists(peta_persil_path)
-        self.delete_if_exists(peta_persil)
-
-        messages.addMessage("== Spatial Join Persil ==")
-        field_mapping=(
-            f'NIB "NIB" true true false 5 Long 0 0,First,#,{peta_baru_path},NIB,-1,-1;'
-            f'IdBidang "IdBidang" true true false 9 Long 0 9,First,#,{peta_baru_path},IdBidang,-1,-1;'
-            f'ls_asal "ls_asal" true true false 19 Double 0 0,First,#,{peta_baru_path},ls_asal,-1,-1;'
-            f'status_per "status_per" true true false 50 Text 0 0,First,#,{indikator_path},status_per,-1,-1;'
-            f'kelompok_perubahan "kelompok_perubahan" true true false 2 Short 0 0,First,#,{indikator_path},kelompok_perubahan,-1,-1'
+        messages.addMessage(
+            "== Spatial Join Persil =="
         )
+
+        field_mapping = (
+
+            f'ID "ID" true true false 50 Text 0 0,'
+            f'First,#,{peta_baru_path},ID,-1,-1;'
+
+            f'NIB "NIB" true true false 5 Long 0 0,'
+            f'First,#,{peta_baru_path},NIB,-1,-1;'
+
+            f'IDBIDANG "IDBIDANG" true true false 9 Long 0 9,'
+            f'First,#,{peta_baru_path},IDBIDANG,-1,-1;'
+
+            f'ls_asal "ls_asal" true true false 19 Double 0 0,'
+            f'First,#,{peta_baru_path},ls_asal,-1,-1;'
+
+            f'status_per "status_per" true true false 50 Text 0 0,'
+            f'First,#,{indikator_path},status_per,-1,-1;'
+
+            f'kelompok_perubahan '
+            f'"kelompok_perubahan" '
+            f'true true false 2 Short 0 0,'
+            f'First,#,{indikator_path},kelompok_perubahan,-1,-1'
+        )
+
         arcpy.analysis.SpatialJoin(
             peta_baru_path,
             indikator_path,
@@ -1071,142 +1177,138 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
             "CONTAINS"
         )
 
-        self.add_field_if_not_exists(
-            peta_persil_path,
-            "PREDICTED",
-            "DOUBLE",
-            2
+        # =====================================================
+        # Tambah Field
+        # =====================================================
+
+        existing_fields = [
+            f.name.upper()
+            for f in arcpy.ListFields(peta_persil_path)
+        ]
+
+        if "KLSTRZ" not in existing_fields:
+
+            arcpy.management.AddField(
+                peta_persil_path,
+                "KLSTRZ",
+                "SHORT"
+            )
+
+        # =====================================================
+        # Sinkronisasi Data
+        # =====================================================
+
+        messages.addMessage(
+            "== Sinkronisasi atribut =="
         )
 
-        messages.addMessage("== Copy field PREDICTED ==")
-        predicted_dict={}
-        with arcpy.da.SearchCursor(
-            peta_baru_path,
-            ["IdBidang","PREDICTED"]
-        ) as rows:
-            for row in rows:
-                predicted_dict[row[0]]=row[1]
         with arcpy.da.UpdateCursor(
             peta_persil_path,
-            ["IdBidang","NILAIBD","status_per"]
+            [
+                "OBJECTID",
+                "IDBIDANG",
+                "status_per",
+                "kelompok_perubahan",
+                "KLSTRZ"
+            ],
+            sql_clause=(
+                None,
+                "ORDER BY OBJECTID"
+            )
         ) as rows:
-            for row in rows:
-                bidang_id=row[0]
-                if bidang_id in predicted_dict:
-                    row[1]=predicted_dict[bidang_id]
-                if row[2]=="update":
-                    row[1]=None
+
+            for nomor, row in enumerate(
+                rows,
+                start=1
+            ):
+
+                status_per = row[2]
+                kelompok = row[3]
+
+                # =========================================
+                # Recalculate IDBIDANG
+                # =========================================
+
+                row[1] = nomor
+
+                # =========================================
+                # Status Default
+                # =========================================
+
+                if not status_per:
+
+                    row[2] = "tetap"
+
+                # =========================================
+                # kelompok_perubahan
+                # =========================================
+
+                if kelompok == 0:
+
+                    row[3] = None
+                    kelompok = None
+
+                # =========================================
+                # KLSTRZ
+                # =========================================
+
+                if kelompok in [None, 0]:
+
+                    row[4] = 1
+
+                else:
+
+                    row[4] = None
+
                 rows.updateRow(row)
+        # =====================================================
+        # Hapus Field Duplikat
+        # =====================================================
 
-        messages.addMessage("== Update status default ==")
-
-        with arcpy.da.UpdateCursor(
-            peta_persil_path,
-            ["status_per","IdBidang","OBJECTID"]
-        ) as rows:
-
-            for row in rows:
-
-                if not row[0]:
-                    row[0]="tetap"
-                    row[1]=row[2]
-
-                    rows.updateRow(row)
-
-        self.delete_if_exists(peta_persil)
-
-        arcpy.management.MakeFeatureLayer(
-            peta_persil_path,
-            peta_persil
+        messages.addMessage(
+            "== Membersihkan field duplikat =="
         )
 
+        duplicate_fields = []
 
-        messages.addMessage(  "== Proses dimulai ==" )
+        duplicate_candidates = [
 
-        configs = persil.get_config_values()
-        dataset_path =  configs["project_config"]["dataset_path"]
-        daftar_variabel_path = configs["project_config"]["daftar_variabel_path"]
-
-        with open(daftar_variabel_path, "r") as f:
-
-            json_conf = (json.load(f))
-            variable_config = json_conf['daftar_variabel']
-
-        field_str_type = [
-            "bentuk",
-            "letak",
-            "kls_jln",
-            "elvasi",
-            "zonasi"
+            "IDBIDANG_1",
+            "IDBIDANG1",
+            "IDBIDANG12",
+            "IDBID",
+            "IDBID_1",
+            "IdBidang"
         ]
 
-        fields_dont_delete = []
+        for field in arcpy.ListFields(
+            peta_persil_path
+        ):
 
-        for item in variable_config:
+            if field.name.upper() in [
 
-            # Extract field_name from list format [display_name, field_name]
-            field_name = ( item[1]   if isinstance(item, list) and len(item) > 1  else None )
+                x.upper()
+                for x in duplicate_candidates
+            ]:
 
-            if not field_name:
-                continue
-
-            fields_dont_delete.append( field_name )
-
-            if ( field_name.lower()  in field_str_type ):
-
-                fields_dont_delete.append( f"s_{field_name}" )
-
-        peta_persil_path = os.path.join( 'in_memory',  "Peta_Persil" )
-
-        peta_lama_path = os.path.join( dataset_path,  "Persil_Layer" )
-
-        centroid_path = os.path.join( 'in_memory', "Persil_Lama_Centroid" )
-
-        erase_path = os.path.join( 'in_memory',  "Peta_Erase" )
-
-        peta_akhir_path = os.path.join( dataset_path,  "Persil_Layer_Temp")
-
-        peta_akhir_layer = "Peta_Layer_Temp"
-
-        # =================================================
-        # VALIDASI
-        # =================================================
-
-        required_fc = [
-            peta_persil_path,
-            peta_lama_path
-        ]
-
-        for fc in required_fc:
-
-            if not arcpy.Exists(fc):
-
-                messages.addErrorMessage(
-                    (
-                        f"Feature class "
-                        f"{os.path.basename(fc)} "
-                        f"tidak ditemukan"
-                    )
+                duplicate_fields.append(
+                    field.name
                 )
 
-                raise arcpy.ExecuteError
+        if duplicate_fields:
 
-        # =================================================
-        # CLEANUP
-        # =================================================
-
-        cleanup_items = [
-            centroid_path,
-            erase_path,
-            peta_akhir_path,
-            peta_akhir_layer
-        ]
-
-        for item in cleanup_items:
-
-            self.delete_if_exists(
-                item
+            arcpy.management.DeleteField(
+                peta_persil_path,
+                duplicate_fields
             )
+
+        # =====================================================
+        # Centroid
+        # =====================================================
+
+        messages.addMessage(
+            "== Membuat centroid persil lama =="
+        )
 
         arcpy.management.FeatureToPoint(
             peta_lama_path,
@@ -1214,17 +1316,9 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
             "INSIDE"
         )
 
-        # =================================================
-        # SELECT UPDATE
-        # =================================================
-
-        temp_persil = (
-            "temp_persil"
-        )
-
-        self.delete_if_exists(
-            temp_persil
-        )
+        # =====================================================
+        # Select Update
+        # =====================================================
 
         arcpy.management.MakeFeatureLayer(
             peta_persil_path,
@@ -1237,9 +1331,9 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
             "status_per = 'update'"
         )
 
-        # =================================================
-        # ERASE
-        # =================================================
+        # =====================================================
+        # Erase
+        # =====================================================
 
         messages.addMessage(
             "== Erase centroid =="
@@ -1251,12 +1345,44 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
             erase_path
         )
 
-        # =================================================
-        # SPATIAL JOIN
-        # =================================================
-
+        # =====================================================
+        # Spatial Join Final
+        # =====================================================
         messages.addMessage(
-            "== Spatial Join =="
+            "== Membersihkan field duplicate =="
+        )
+
+        erase_delete_fields = []
+
+        for field in arcpy.ListFields(
+            erase_path
+        ):
+
+            field_upper = field.name.upper()
+
+            if field_upper in [
+
+                "KLSTRZ",
+                "PREDICTED",
+                "IDBIDANG",
+                "IDBIDANG_1",
+                "IDBID",
+                "NIB"
+
+            ]:
+
+                erase_delete_fields.append(
+                    field.name
+                )
+
+        if erase_delete_fields:
+
+            arcpy.management.DeleteField(
+                erase_path,
+                erase_delete_fields
+            )
+        messages.addMessage(
+            "== Spatial Join Final =="
         )
 
         arcpy.analysis.SpatialJoin(
@@ -1269,19 +1395,27 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
             "INTERSECT"
         )
 
-        #  Hapus Field Gabungan
+        # =====================================================
+        # Hapus Join Field
+        # =====================================================
 
         join_delete_fields = []
 
-        fields = arcpy.ListFields( peta_akhir_path )
+        for field in arcpy.ListFields(
+            peta_akhir_path
+        ):
 
-        for field in fields:
+            field_lower = field.name.lower()
 
-            if (field.name.lower().startswith( "join_")  or
-                field.name.lower().startswith("target_")
+            if (
+                field_lower.startswith("join_")
+                or
+                field_lower.startswith("target_")
             ):
 
-                join_delete_fields.append(field.name)
+                join_delete_fields.append(
+                    field.name
+                )
 
         if join_delete_fields:
 
@@ -1289,10 +1423,15 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
                 peta_akhir_path,
                 join_delete_fields
             )
-        
+
+        # =====================================================
+        # Simpan Output
+        # =====================================================
+
         if simpan_ke_layer:
+
             self.delete_if_exists(
-            peta_akhir_layer
+                peta_akhir_layer
             )
 
             arcpy.management.MakeFeatureLayer(
@@ -1300,24 +1439,79 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
                 peta_akhir_layer
             )
 
-            arcpy.SetParameter(1, peta_akhir_layer)
+            arcpy.SetParameter(
+                1,
+                peta_akhir_layer
+            )
+
         else:
-            persil_path = os.path.join(dataset_path,"Persil_Layer")
-            if arcpy.Exists(persil_path):
-                arcpy.management.Delete(persil_path)
+
+            persil_path = os.path.join(
+                dataset_path,
+                "Persil_Layer"
+            )
+
+            if arcpy.Exists(
+                persil_path
+            ):
+
+                arcpy.management.Delete(
+                    persil_path
+                )
 
             arcpy.management.CopyFeatures(
                 peta_akhir_path,
-                persil_path,
+                persil_path
             )
-            arcpy.SetParameter(1, "Persil_Layer")
-    
+            messages.addMessage(
+                "== Rebuild IDBIDANG =="
+            )
+
+            existing_fields = [
+                f.name.upper()
+                for f in arcpy.ListFields(persil_path)
+            ]
+
+            if "IDBIDANG" not in existing_fields:
+
+                arcpy.management.AddField(
+                    persil_path,
+                    "IDBIDANG",
+                    "LONG"
+                )
+
+            with arcpy.da.UpdateCursor(
+                persil_path,
+                ["OBJECTID", "IDBIDANG"],
+                sql_clause=(None, "ORDER BY OBJECTID")
+            ) as rows:
+
+                for nomor, row in enumerate(
+                    rows,
+                    start=1
+                ):
+
+                    row[1] = nomor
+
+                    rows.updateRow(row)
+            arcpy.SetParameter(
+                1,
+                "Persil_Layer"
+            )
+
+        # =====================================================
+        # Cleanup
+        # =====================================================
 
         self.delete_if_exists(
             temp_persil
         )
+
+        messages.addMessage(
+            "== Proses selesai =="
+        )
+
         return
- 
 
 
 class Update_Luas_Tanah(object):
@@ -1590,7 +1784,22 @@ class Analisis_Bentuk_Persil(object):
                 row[6]=atrans
 
                 rows.updateRow(row)
+        split_fields = [
 
+        field.name.upper()
+            for field in arcpy.ListFields(temp_split)
+        ]
+
+        messages.addMessage(
+            f"Field temp_split: {split_fields}"
+        )
+
+        if "IDBIDANG" not in split_fields:
+
+            raise Exception(
+                "Field IDBIDANG tidak ditemukan "
+                "di temp_split"
+            )
         messages.addMessage(
             "== Dissolve =="
         )
@@ -1598,7 +1807,7 @@ class Analisis_Bentuk_Persil(object):
         arcpy.management.Dissolve(
             temp_split,
             temp_dissolve,
-            ['IdBidang'],
+            ['IDBIDANG'],
             [["ATrans","RANGE"]],
             "MULTI_PART",
             "DISSOLVE_LINES"
@@ -1606,13 +1815,13 @@ class Analisis_Bentuk_Persil(object):
 
         self.add_field_if_not_exists(
             temp_polygon,
-            "bentuk",
+            "BENTUK",
             "TEXT"
         )
 
         self.add_field_if_not_exists(
             temp_polygon,
-            "s_bentuk",
+            "S_BENTUK",
             "DOUBLE"
         )
 
@@ -1630,9 +1839,9 @@ class Analisis_Bentuk_Persil(object):
 
         arcpy.management.JoinField(
             temp_polygon,
-            'IdBidang',
+            'IDBIDANG',
             temp_dissolve,
-            'IdBidang',
+            'IDBIDANG',
             ["Range_ATrans"]
         )
 
@@ -1644,8 +1853,8 @@ class Analisis_Bentuk_Persil(object):
             temp_polygon,
             [
                 "Range_ATrans",
-                "bentuk",
-                "s_bentuk"
+                "BENTUK",
+                "S_BENTUK"
             ]
         ) as rows:
 
@@ -1681,8 +1890,8 @@ class Analisis_Bentuk_Persil(object):
         with arcpy.da.UpdateCursor(
             temp_polygon,
             [
-                "bentuk",
-                "s_bentuk",
+                "BENTUK",
+                "S_BENTUK",
                 "PNT_COUNT"
             ]
         ) as rows:
@@ -1713,9 +1922,9 @@ class Analisis_Bentuk_Persil(object):
         with arcpy.da.SearchCursor(
             temp_polygon,
             [
-                "IdBidang",
-                "bentuk",
-                "s_bentuk"
+                "IDBIDANG",
+                "BENTUK",
+                "S_BENTUK"
             ]
         ) as rows:
 
@@ -1729,9 +1938,9 @@ class Analisis_Bentuk_Persil(object):
         with arcpy.da.UpdateCursor(
             input_fc,
             [
-                "IdBidang",
+                "IDBIDANG",
                 "BENTUK",
-                "s_bentuk"
+                "S_BENTUK"
             ],
             "status_per = 'update'"
         ) as rows:
@@ -1971,7 +2180,7 @@ class Edit_Bentuk_Persil(object):
 
         required_fields = [
             "BENTUK",
-            "s_bentuk"
+            "S_BENTUK"
         ]
 
         missing_fields = [
@@ -2015,7 +2224,7 @@ class Edit_Bentuk_Persil(object):
             persil_update,
             [
                 "BENTUK",
-                "s_bentuk"
+                "S_BENTUK"
             ]
         ) as rows:
 
@@ -2182,13 +2391,6 @@ class Sinkronkan_Indikator_Persil(object):
             peta_baru_path,
             "klaster_zona",
             "SHORT"
-        )
-
-        self.add_field_if_not_exists(
-            peta_baru_path,
-            "PREDICTED",
-            "DOUBLE",
-            2
         )
 
         messages.addMessage("== Spatial Join indikator ==")

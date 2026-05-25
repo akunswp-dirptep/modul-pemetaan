@@ -47,7 +47,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         if berkas_list is not None:
             can_show = 0
             for berkas in berkas_list:
-                if berkas[1] is True:
+                if berkas[1] is True and '03/' in berkas[0] or '04/' in berkas[0]:
                     berkas_show.append(f"{berkas[0]}")
                     can_show += 1
             if can_show == 0:
@@ -944,22 +944,33 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         last_sample_id (int): Nilai last_sample_id terbaru
         workspace_dir (str): Directory workspace (optional)
         """
-        
-        # Jika workspace_dir tidak provided, cari dari layer zona
+
+        # Jika workspace_dir tidak provided, cari dari config
         if not workspace_dir:
             configs = persil.get_config_values()
-            arcpy.AddMessage(configs)
-            workspace_dir = configs['project_config']['ws_dir']
-        
-        config_path = os.path.join(workspace_dir,'project_config.json')
-        
+            workspace_dir = configs['project_config']['ws_path']
+
+        config_path = os.path.join(workspace_dir, 'project_config.json')
+
         # Load existing config atau buat baru
-        config_data = None
         if os.path.exists(config_path):
-            config_data= persil.get_config_values()
-        
+            config_data = persil.get_config_values()
+        else:
+            config_data = {
+                "project_config": {}
+            }
+
         # Update last_sample_id
         config_data['project_config']['last_sample_id'] = last_sample_id
+
+        # Simpan kembali ke file JSON
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config_data, f, indent=4, ensure_ascii=False)
+
+        arcpy.AddMessage(
+            f"Project config berhasil diperbarui. "
+            f"last_sample_id = {last_sample_id}"
+        )
         
         # setup_project_config(
         #     config_path= config_path,

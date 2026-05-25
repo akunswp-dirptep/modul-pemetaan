@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 import sys
-import arcpy, os, math
+import arcpy, os, requests, zipfile, csv
 
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
@@ -10,6 +10,11 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from nbtutils import constant, persil
+from zntutils.document import validate_document_type, get_credentials
+from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id, setup_user_data
+from zntutils.constant import PREFERRED_BERKAS_ID, CREDENTIAL_KEY, PREFERRED_SERVER_KEY, AUTH_KEY, NAMA_PROVINSI, KAB_KOTA
+from zntutils.upload_utils import upload_feature_layer_to_sipenta
+
 
 class Toolbox:
     def __init__(self):
@@ -19,7 +24,7 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Hitung_Jarak_Fasilitas]
+        self.tools = [Hitung_Jarak_Fasilitas, Upload_Basis_Data, Hitung_Resiko_Persil]
 
 
 class Hitung_Jarak_Fasilitas(object):
@@ -110,7 +115,7 @@ class Hitung_Jarak_Fasilitas(object):
         for fc in list_fc:
             fasilitas=fc
             fasilitas_path=os.path.join(dataset_fasilitas_path,fasilitas)
-            namafield=os.path.splitext(fasilitas)[0]
+            namafield='JK'+ os.path.splitext(fasilitas)[0]
             arcpy.AddMessage(namafield)
 
             messages.addMessage(f"== Hitung jarak fasilitas: {fasilitas} ==")
@@ -234,4 +239,404 @@ class Hitung_Jarak_Fasilitas(object):
         parameters[0].value=persil_nama
 
         messages.addMessage("== Proses selesai ==")
+        return
+
+class Upload_Basis_Data(object):
+    def __init__(self):
+        self.label = "Upload Basis Data"
+        self.description = ""
+        self.canRunInBackground = False
+
+
+    def getParameterInfo(self):
+        berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
+        berkas_show = []
+        can_show = 0
+        if berkas_list is not None:
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+
+        fl = arcpy.Parameter(
+            displayName="Persil_Layer (Feature Layer)",
+            name="fl",
+            datatype="GPFeatureLayer",  
+            parameterType="Required",
+            direction="Input") 
+
+        berkas = arcpy.Parameter(
+            displayName="Berkas",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+               
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        if berkas_list and can_show > 0:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '04/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]           
+        elif berkas_list and can_show == 0:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+        
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
+
+        penjelasan.value = (
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
+        params = [fl, berkas, penjelasan]
+        return params
+        
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+
+        return   
+    
+    def updateParameters(self, parameters):
+            """Modify the values and properties of parameters before internal
+            validation is performed.  This method is called whenever a parameter
+            has been changed."""
+
+            shapefile_path = parameters[0]
+            berkas = parameters[1]
+            penjelasan = parameters[2]
+
+            is_login = get_user_data(CREDENTIAL_KEY)
+
+            if is_login is None:
+                shapefile_path.enabled = False
+                berkas.enabled = False
+                penjelasan.enabled = True
+            else:
+                shapefile_path.enabled = True
+                berkas.enabled = True
+                penjelasan.enabled = False
+            
+            return
+   
+    def execute(self, parameters, messages):
+        user_data = get_user_data(CREDENTIAL_KEY)
+
+        berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
+
+        if berkas_list is None:
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan NBT.")
+            return
+        
+        fl_path = parameters[0].valueAsText
+        berkas_value = parameters[1].valueAsText
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        token = user_data.get(AUTH_KEY, None)
+
+        validate_document_type(
+            document_id=berkas_value,
+            target='Pembaruan NBT')
+        
+        upload_feature_layer_to_sipenta(
+            nomor_berkas=berkas_value,
+            token=token,
+            param="pembaruan_nbt_basis_data_penilaian_bidang_tanah",
+            in_feature="Persil_Layer",
+            feature_layer=fl_path,
+            use_production=use_production)
+
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
+        return
+
+class Hitung_Resiko_Persil(object):
+
+    def __init__(self):
+
+        self.label = "Hitung Resiko Persil"
+        self.description = ""
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+
+        output_persil = arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [output_persil]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    # =====================================================
+    # HELPER
+    # =====================================================
+
+    def delete_if_exists(self, path):
+
+        if arcpy.Exists(path):
+
+            try:
+
+                arcpy.management.Delete(
+                    path
+                )
+
+            except Exception:
+
+                pass
+
+    def add_field_if_not_exists(
+        self,
+        feature_class,
+        field_name,
+        field_type="SHORT"
+    ):
+
+        field_names = [
+            field.name
+            for field in arcpy.ListFields(
+                feature_class
+            )
+        ]
+
+        if field_name not in field_names:
+
+            arcpy.management.AddField(
+                feature_class,
+                field_name,
+                field_type
+            )
+
+    # =====================================================
+    # EXECUTE
+    # =====================================================
+
+    def execute(self, parameters, messages):
+
+        messages.addMessage(
+            "== Proses mulai =="
+        )
+
+        # =================================================
+        # LOAD CONFIG
+        # =================================================
+
+        configs = persil.get_config_values()
+
+        dataset_path = (
+            configs["project_config"]["dataset_path"]
+        )
+
+        datasetresiko_path = (
+            configs["resiko_config"]["dataset_path"]
+        )
+
+        # =================================================
+        # DATASET
+        # =================================================
+
+        persil = (
+            "Persil_Layer"
+        )
+
+        persil_path = os.path.join(
+            dataset_path,
+            persil
+        )
+
+        persilcentroid = (
+            "PersilCentroidUpdate"
+        )
+
+        persilcentroid_path = os.path.join(
+            dataset_path,
+            persilcentroid
+        )
+
+        # =================================================
+        # PERSIAPAN
+        # =================================================
+
+        messages.addMessage(
+            "== Persiapan =="
+        )
+
+        self.delete_if_exists(
+            persilcentroid
+        )
+
+        self.delete_if_exists(
+            persilcentroid_path
+        )
+
+        # =================================================
+        # CREATE CENTROID
+        # =================================================
+
+        arcpy.management.FeatureToPoint(
+            persil_path,
+            persilcentroid_path,
+            "INSIDE"
+        )
+
+        # =================================================
+        # LIST RESIKO
+        # =================================================
+
+        arcpy.env.workspace = (
+            datasetresiko_path
+        )
+
+        list_fc = arcpy.ListFeatureClasses(
+            "*"
+        )
+
+        if not list_fc:
+
+            messages.addWarningMessage(
+                "== Tidak ada layer resiko ditemukan =="
+            )
+
+            return
+
+        # =================================================
+        # LOOP RESIKO
+        # =================================================
+
+        for fc in list_fc:
+
+            resiko = fc
+
+            resiko_path = os.path.join(
+                datasetresiko_path,
+                resiko
+            )
+
+            namafield = (
+                fc.replace(" ", "")[:7]
+            )
+
+            messages.addMessage(
+                f"== Cari persil dalam resiko: {resiko} =="
+            )
+
+            # =============================================
+            # VALIDASI FIELD
+            # =============================================
+
+            self.add_field_if_not_exists(
+                persil_path,
+                namafield,
+                "SHORT"
+            )
+
+            # =============================================
+            # RESET VALUE
+            # =============================================
+
+            arcpy.management.CalculateField(
+                persil_path,
+                namafield,
+                "0",
+                "PYTHON3"
+            )
+
+            # =============================================
+            # TEMP LAYER
+            # =============================================
+
+            temp_lyr = "temp"
+
+            self.delete_if_exists(
+                temp_lyr
+            )
+
+            arcpy.management.MakeFeatureLayer(
+                persil_path,
+                temp_lyr
+            )
+
+            # =============================================
+            # SELECT BY LOCATION
+            # =============================================
+
+            arcpy.management.SelectLayerByLocation(
+                temp_lyr,
+                "INTERSECT",
+                resiko_path
+            )
+
+            # =============================================
+            # UPDATE VALUE
+            # =============================================
+
+            arcpy.management.CalculateField(
+                temp_lyr,
+                namafield,
+                "1",
+                "PYTHON3"
+            )
+
+            # =============================================
+            # CLEAN TEMP
+            # =============================================
+
+            self.delete_if_exists(
+                temp_lyr
+            )
+
+        # =================================================
+        # REFRESH OUTPUT
+        # =================================================
+
+        self.delete_if_exists(
+            persil
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            persil_path,
+            persil
+        )
+
+        # =================================================
+        # OUTPUT
+        # =================================================
+
+        parameters[0].value = (
+            persil
+        )
+
+        # =================================================
+        # FINISH
+        # =================================================
+
+        messages.addMessage(
+            "== Proses selesai =="
+        )
+
         return

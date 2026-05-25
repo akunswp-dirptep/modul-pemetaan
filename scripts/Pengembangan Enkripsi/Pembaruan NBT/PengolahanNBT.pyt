@@ -1375,7 +1375,6 @@ class Hitung_Indeks_Rata_Rata(object):
 
         return
     
-
 class Hitung_Nilai_Prediksi(object):
 
     def __init__(self):

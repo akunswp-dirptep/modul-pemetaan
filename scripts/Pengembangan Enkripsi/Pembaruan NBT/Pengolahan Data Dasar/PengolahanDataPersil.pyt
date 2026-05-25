@@ -1088,7 +1088,7 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
                 predicted_dict[row[0]]=row[1]
         with arcpy.da.UpdateCursor(
             peta_persil_path,
-            ["IdBidang","PREDICTED","status_per"]
+            ["IdBidang","NILAIBD","status_per"]
         ) as rows:
             for row in rows:
                 bidang_id=row[0]

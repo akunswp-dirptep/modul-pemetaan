@@ -428,6 +428,9 @@
 				<menu id="analisis_survey_perubahan" caption="Analisis Survey Perubahan" extendedCaption="Analisis Survey Perubahan" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\survei_perubahan.png"
 					smallImage="C:\PenilaianTanah\icons\survei_perubahan.png">
+					<button refID="ButtonHitungJarakFasilitas" size="Medium"/>
+					<button refID="ButtonHitungRisiko" size="Medium"/>
+					<button refID="ButtonUploadBasisData" size="Medium" />
 
 				</menu>
 				<menu id="pengolahan_titik_sampel_pembaruan_nbt" caption="Pengolahan Titik Sampel" extendedCaption="Pengolahan Titik Sampel" keytip="TA"         
@@ -441,10 +444,20 @@
 					<button refID="ButtonResetPersilIndividual" />
 					<button refID='ButtonGenerateTitikIndeks' />
 					<button refID='ButtonDeteksiOutlierIndeks' />
+					<button refID='ButtonPeriksaTitikSampelKelompokPerubahan' />
+					<button refID='ButtonHitungStatistikCluster' />
+					<button refID='ButtonHitungIndividualCluster' />
+					<button refID='ButtonPengembalianCluster' />
+					
 				</menu>
+
 				<menu id="pengolahan_pembaruan_nbt" caption="Pengolahan NBT" extendedCaption="Pengolahan NBT" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\perhitungan_nbt.png"
 					smallImage="C:\PenilaianTanah\icons\perhitungan_nbt.png">
+					<button refID='ButtonGenerateTitikIndeksNonCluster' />
+					<button refID='ButtonDeteksiOutlierIndeks' />
+					<button refID='ButtonHitungIndeksRataRata' />
+					<button refID='ButtonHitungNilaiPrediksi' />
 
 				</menu>
 				
@@ -2422,7 +2435,60 @@
 					</args>
 					<tooltip heading="Edit Informasi Zonasi Pada Persil">Menu untuk edit informasi zonasi pada persil.</tooltip>
 				</button>
+			<!-- Analisis Survey Lingkungan dan Fasilitas -->
+				<button id="ButtonHitungJarakFasilitas" caption="Hitung Jarak Fasilitas" smallImage="C:\PenilaianTanah\icons\zonasi.png" largeImage="C:\PenilaianTanah\icons\zonasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Hitung_Jarak_Fasilitas" name="Hitung Jarak Fasilitas" xmlns=""/>
+					</args>
+					<tooltip heading="Hitung Jarak Fasilitas">Menu untuk menghitung jarak fasilitas dari persil.</tooltip>
+				</button>
+				<button 
+					id="ButtonHitungRisiko"
+					caption="Hitung Risiko"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Hitung_Resiko_Persil"
+							name="Hitung Risiko Persil"
+							xmlns=""
+						/>
+					</args>
 
+					<tooltip heading="Hitung Risiko Persil">
+						Menu untuk menghitung tingkat risiko persil berdasarkan hasil analisis perubahan dan parameter penilaian.
+					</tooltip>
+				</button>
+
+				<button
+					id="ButtonUploadBasisData"
+					caption="Upload Basis Data"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Upload_Basis_Data"
+							name="Upload Basis Data"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Upload Basis Data">
+						Menu untuk mengunggah basis data hasil pengolahan ke server atau sistem penyimpanan terintegrasi.
+					</tooltip>
+				</button>
 		
 			<!-- Pengolahan Titik Sampel  -->
 				<button id="ButtonMenarikTitikSampelNBTDariSipenta" caption="Ambil Titik Sampel Dari Sipenta" smallImage="C:\PenilaianTanah\icons\scatter.png" largeImage="C:\PenilaianTanah\icons\scatter.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
@@ -2479,7 +2545,173 @@
 					<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Periksa_Titik_Sampel_Kelompok_Perubahan" name="Periksa Titik Sampel Cluster" xmlns=""/>
 				</args>
 				<tooltip heading="Periksa Titik Sampel Cluster">Menu untuk memeriksa jumlah titik sampel pada setiap cluster perubahan.</tooltip>
-			</button>
+				</button>
+				<button
+					id="ButtonHitungStatistikCluster"
+					caption="Hitung Statistik Cluster"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Hitung_Statistik_Cluster"
+							name="Hitung Statistik Cluster"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Hitung Statistik Cluster">
+						Menu untuk menghitung statistik nilai pada setiap cluster perubahan persil, termasuk rata-rata, standar deviasi, dan persentase deviasi.
+					</tooltip>
+				</button>
+				<button
+					id="ButtonHitungIndividualCluster"
+					caption="Hitung Individual Cluster"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Hitung_Individual_Cluster"
+							name="Hitung Individual Cluster"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Hitung Individual Cluster">
+						Menu untuk menghitung nilai persil individual berdasarkan penyesuaian terhadap data pembanding dalam satu cluster.
+					</tooltip>
+				</button>
+
+				<button
+					id="ButtonPengembalianCluster"
+					caption="Pengembalian Cluster"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Pengembalian_Cluster"
+							name="Pengembalian Cluster"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Pengembalian Cluster">
+						Menu untuk mengembalikan status dan hasil penilaian cluster ke kondisi awal sebelum proses individual cluster dilakukan.
+					</tooltip>
+				</button>
+			<!-- Pengolahan NBT  -->
+				<button
+					id="ButtonGenerateTitikIndeksNonCluster"
+					caption="Generate Titik Indeks Non Cluster"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanNBT.pyt\Generate_Titik_Indeks_Non_Cluster"
+							name="Generate Titik Indeks Non Cluster"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Generate Titik Indeks Non Cluster">
+						Menu untuk menghasilkan titik indeks dari data sampel non-cluster berdasarkan nilai indeks perubahan persil.
+					</tooltip>
+				</button>
+
+				<button
+					id="ButtonDeteksiOutlierIndeks"
+					caption="Deteksi Outlier Indeks"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanNBT.pyt\Deteksi_Outlier_Indeks"
+							name="Deteksi Outlier Indeks"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Deteksi Outlier Indeks">
+						Menu untuk mendeteksi nilai indeks yang termasuk outlier berdasarkan metode boxplot pada setiap zonasi.
+					</tooltip>
+				</button>
+
+				<button
+					id="ButtonHitungIndeksRataRata"
+					caption="Hitung Indeks Rata-Rata"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanNBT.pyt\Hitung_Indeks_Rata_Rata"
+							name="Hitung Indeks Rata-Rata"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Hitung Indeks Rata-Rata">
+						Menu untuk menghitung indeks rata-rata tiap zonasi berdasarkan data indeks valid yang bukan outlier.
+					</tooltip>
+				</button>
+
+				<button
+					id="ButtonHitungNilaiPrediksi"
+					caption="Hitung Nilai Prediksi"
+					smallImage="C:\PenilaianTanah\icons\zonasi.png"
+					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanNBT.pyt\Hitung_Nilai_Prediksi"
+							name="Hitung Nilai Prediksi"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Hitung Nilai Prediksi">
+						Menu untuk menghitung nilai prediksi persil berdasarkan indeks rata-rata dan parameter penilaian.
+					</tooltip>
+				</button>
 
 		
 		<!--  -->

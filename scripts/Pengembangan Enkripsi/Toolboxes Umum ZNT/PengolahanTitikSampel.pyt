@@ -861,6 +861,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
             else:
                 raise Exception(f"HTTP Error: {e}")
+        
         except requests.exceptions.RequestException as e:
             arcpy.AddError(f"Error dalam pemanggilan API: {str(e)}")
             raise arcpy.ExecuteError

@@ -29,7 +29,7 @@ class Toolbox:
                       Generate_Titik_Indeks,
                       Deteksi_Outlier_Indeks,
                       Set_Cluster_Persil,
-                      Periksa_Titik_Sampel_Cluster,
+                      Periksa_Titik_Sampel_Kelompok_Perubahan,
                       Hitung_Statistik_Cluster,
                       Hitung_Individual_Cluster,
                       Pengembalian_Cluster]
@@ -114,7 +114,7 @@ class Persiapan_Persil_Individual(object):
 
         messages.addMessage( "== Update klasifikasi persil ==" )
 
-        with arcpy.da.UpdateCursor(persil_path, ["ls_tnh", "lb_dpn", "ls_tnh_i", "lb_dpn_i"]) as rows:
+        with arcpy.da.UpdateCursor(persil_path, ["LUASM2", "LBRDPN", "ls_tnh_i", "lb_dpn_i"]) as rows:
 
             for row in rows:
 
@@ -179,17 +179,25 @@ class Persiapan_Persil_Individual(object):
         messages.addMessage(
             "== Update nilai prediksi =="
         )
+        field_names = [f.name for f in arcpy.ListFields(persil_path)]
 
+        if "NILAIBD_LAMA" not in field_names:
+
+            arcpy.management.AddField(
+                persil_path,
+                "NILAIBD_LAMA",
+                "LONG"
+            )
         arcpy.management.CalculateField(
             persil_path,
-            "NILAI_LAMA",
-            "!PREDICTED!",
+            "NILAIBD_LAMA",
+            "!NILAIBD!",
             "PYTHON3"
         )
 
         arcpy.management.CalculateField(
             persil_path,
-            "PREDICTED",
+            "NILAIBD",
             "None",
             "PYTHON3"
         )
@@ -381,7 +389,7 @@ class Hitung_Persil_Individual(object):
             [
                 "IdBidang",
                 "data_pembanding",
-                "NILAI_LAMA",
+                "NILAIBD_LAMA",
                 "perubahan"
             ],
             f"IdBidang = {penilaian}"
@@ -501,16 +509,16 @@ class Hitung_Persil_Individual(object):
 
         fields = [
             "OBJECTID",
-            "ls_tnh",
-            "lb_dpn",
+            "LUASM2",
+            "LBRDPN",
             "s_bentuk",
             "s_letak",
             "s_kls_jln",
             "ls_tnh_i",
             "lb_dpn_i",
             "s_zonasi",
-            "zonasi",
-            "NILAI_LAMA"
+            "ZONASI",
+            "NILAIBD_LAMA"
         ]
 
         with arcpy.da.SearchCursor(layer_name, fields) as rows:
@@ -815,7 +823,7 @@ def doSomething(a, b):
         arcpy.management.CalculateField(
             identity_output,
             "indeks",
-            "doSomething(!nilai!, !NILAI_LAMA!)",
+            "doSomething(!nilai!, !NILAIBD_LAMA!)",
             "PYTHON3",
             code_block
         )
@@ -1581,27 +1589,14 @@ class Hitung_Statistik_Cluster(object):
 
     def execute(self, parameters, messages):
 
-        import os
-        import arcpy
-        import arcpy.mp
-
-        arcpy.env.overwriteOutput = True
-
         messages.addMessage(
             "== Proses dimulai =="
         )
 
-        # =================================================
-        # LOAD CONFIG
-        # =================================================
 
-        configs = (
-            persil.get_config_values()
-        )
+        configs = persil.get_config_values()
 
-        dataset_path = (
-            configs["project_config"]["dataset_path"]
-        )
+        dataset_path = configs["project_config"]["dataset_path"]
 
         # =================================================
         # APPDATA
@@ -1619,12 +1614,12 @@ class Hitung_Statistik_Cluster(object):
 
         persil_path = os.path.join(
             dataset_path,
-            "Persil_Baru"
+            "Persil_Layer"
         )
 
         sampel_path = os.path.join(
             dataset_path,
-            "Titik_Sampel_Update"
+            "Titik_Sampel"
         )
 
         identity_path = os.path.join(
@@ -1648,7 +1643,7 @@ class Hitung_Statistik_Cluster(object):
             messages.addErrorMessage(
                 (
                     "Feature class "
-                    "Persil_Baru "
+                    "Persil_Layer "
                     "tidak ditemukan"
                 )
             )
@@ -1662,7 +1657,7 @@ class Hitung_Statistik_Cluster(object):
             messages.addErrorMessage(
                 (
                     "Feature class "
-                    "Titik_Sampel_Update "
+                    "Titik_Sampel "
                     "tidak ditemukan"
                 )
             )
@@ -1751,7 +1746,7 @@ class Hitung_Statistik_Cluster(object):
 
         with arcpy.da.SearchCursor(
             identity_path,
-            ["clusternew"],
+            ["kelompok_perubahan"],
             "perubahan = 'mengelompok'"
         ) as rows:
 
@@ -1797,13 +1792,13 @@ class Hitung_Statistik_Cluster(object):
 
             messages.addMessage(
                 (
-                    f"== Proses Cluster "
+                    f"== Proses Kelompok Perubahan"
                     f"{cluster_id} =="
                 )
             )
 
             cluster_layer = (
-                f"cluster_{counter}"
+                f"cKelompok Perubahan_{counter}"
             )
 
             dissolve_output = os.path.join(
@@ -1826,7 +1821,7 @@ class Hitung_Statistik_Cluster(object):
             arcpy.management.MakeFeatureLayer(
                 identity_path,
                 cluster_layer,
-                f"clusternew = {cluster_id}"
+                f"kelompok_perubahan = {cluster_id}"
             )
 
             # =============================================
@@ -1846,7 +1841,7 @@ class Hitung_Statistik_Cluster(object):
             arcpy.management.Dissolve(
                 cluster_layer,
                 dissolve_output,
-                ["clusternew"],
+                ["kelompok_perubahan"],
                 statistic_fields,
                 "MULTI_PART",
                 "DISSOLVE_LINES"
@@ -1858,7 +1853,7 @@ class Hitung_Statistik_Cluster(object):
 
             with arcpy.da.UpdateCursor(
                 dissolve_output,
-                ["clusternew"]
+                ["kelompok_perubahan"]
             ) as cursor:
 
                 for row in cursor:
@@ -1875,13 +1870,13 @@ class Hitung_Statistik_Cluster(object):
             # =============================================
 
             where_intersect = (
-                f"clusternew = {cluster_id}"
+                f"kelompok_perubahan = {cluster_id}"
             )
 
             with arcpy.da.SearchCursor(
                 temp_intersect,
                 [
-                    "FID_Persil_Baru",
+                    "FID_Persil_Layer",
                     "nilai"
                 ],
                 where_intersect
@@ -1898,7 +1893,7 @@ class Hitung_Statistik_Cluster(object):
 
                     with arcpy.da.UpdateCursor(
                         persil_path,
-                        ["PREDICTED"],
+                        ["NILAIBD"],
                         where_update
                     ) as update_rows:
 
@@ -1922,7 +1917,7 @@ class Hitung_Statistik_Cluster(object):
                 [
                     "MEAN_nilai",
                     "STD_nilai",
-                    "clusternew"
+                    "kelompok_perubahan"
                 ]
             ) as rows:
 
@@ -1940,12 +1935,12 @@ class Hitung_Statistik_Cluster(object):
                 with arcpy.da.UpdateCursor(
                     persil_path,
                     [
-                        "clusternew",
-                        "PREDICTED",
+                        "kelompok_perubahan",
+                        "NILAIBD",
                         "MEAN_nilai",
                         "STD_nilai"
                     ],
-                    f"clusternew = {cluster_id}"
+                    f"kelompok_perubahan = {cluster_id}"
                 ) as rows:
 
                     for row in rows:
@@ -2012,7 +2007,7 @@ def doSomething(a, b):
             persil_path,
             [
                 "perubahan",
-                "PREDICTED"
+                "NILAIBD"
             ]
         ) as cursor:
 
@@ -2031,13 +2026,13 @@ def doSomething(a, b):
         # =================================================
 
         if arcpy.Exists(
-            "Persil_Baru"
+            "Persil_Layer"
         ):
 
             try:
 
                 arcpy.management.Delete(
-                    "Persil_Baru"
+                    "Persil_Layer"
                 )
 
             except Exception:
@@ -2046,7 +2041,7 @@ def doSomething(a, b):
 
         arcpy.management.MakeFeatureLayer(
             persil_path,
-            "Persil_Baru"
+            "Persil_Layer"
         )
 
         # =================================================
@@ -2063,7 +2058,7 @@ def doSomething(a, b):
         ):
 
             arcpy.management.ApplySymbologyFromLayer(
-                "Persil_Baru",
+                "Persil_Layer",
                 simbologi_path
             )
 
@@ -2072,7 +2067,7 @@ def doSomething(a, b):
         # =================================================
 
         parameters[0].value = (
-            "Persil_Baru"
+            "Persil_Layer"
         )
 
         # =================================================
@@ -2093,7 +2088,7 @@ def doSomething(a, b):
 
                 if (
                     layer.name
-                    == "Titik_Sampel_Update"
+                    == "Titik_Sampel"
                 ):
 
                     layer.visible = True
@@ -2118,9 +2113,7 @@ def doSomething(a, b):
         # FINISH
         # =================================================
 
-        messages.addMessage(
-            "== Proses selesai =="
-        )
+        messages.addMessage( "== Proses selesai ==")
 
         return
 

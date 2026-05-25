@@ -1,1 +1,5 @@
-
+outlier_u_klsjln_3,Start Time: Monday, 25 May 2026 10:29:02
+WARNING 000853: The default neighborhood search threshold was 2026,0629 meters.
+ERROR 000906: Zero variance:  all of the values for your input field are likely the same.
+Failed to execute (ClustersOutliers).
+Failed at Monday, 25 May 2026 10:29:03 (Elapsed Time: 1,78 seconds)

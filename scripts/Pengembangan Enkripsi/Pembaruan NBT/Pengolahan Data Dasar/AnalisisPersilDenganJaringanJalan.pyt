@@ -6435,7 +6435,7 @@ class Perbaharui_Lebar_Depan_Persil(object):
         simpan_temp.value = False
 
         hanya_update = arcpy.Parameter(
-            displayName="Hanya status_per='update'",
+            displayName="Sinkronisasi Data Persil Terbaru",
             name="hanya_update",
             datatype="GPBoolean",
             parameterType="Optional",
@@ -7082,7 +7082,7 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         simpan_temp.value = False
 
         hanya_update = arcpy.Parameter(
-            displayName="Hanya status_per='update'",
+            displayName="Sinkronisasi Data Persil Terbaru",
             name="hanya_update",
             datatype="GPBoolean",
             parameterType="Optional",
@@ -7594,7 +7594,7 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
             arcpy.management.CalculateField(
                 lyr,
                 namafield_,
-                "!lb_jln!",
+                "!LBRJLN!",
                 "PYTHON3"
             )
 

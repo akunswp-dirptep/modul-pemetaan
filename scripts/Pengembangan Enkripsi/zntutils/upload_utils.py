@@ -261,5 +261,138 @@ def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feat
         arcpy.AddError(str(e))
     return
 
+def upload_json_data_to_sipenta(nomor_berkas, token, param, in_feature, json_data, use_production=True):
+    zipname = None
+    arcpy.AddMessage('Mempersiapkan folder sementara untuk upload...')
+
+    try:
+        if os.path.exists(path):
+            shutil.rmtree(path)
+        os.makedirs(path)
+    except Exception as e:
+        arcpy.AddError(f"Terdapat kesalahan saat membuat folder sementara: {str(e)}")
+        return
+
+    try:
+        zipname = os.path.join(path, in_feature + ".zip")
+        with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file in shapefile_components:
+                zipf.write(file, basename(file))
+    except Exception as e:
+        arcpy.AddError(f"Terdapat kesalahan saat membuat file zip: {str(e)}")
+        return
+    try:
+
+        arcpy.AddMessage(
+            "Mengupload file ke server..."
+        )
+
+        # Konfigurasi URL
+        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/upload"
+        
+
+        url = (
+            prod_url
+            if use_production
+            else test_url
+        )
+
+        # Persiapan Header
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        # Persiapan Pengiriman Data
+        data = {
+            "no_berkas": str(nomor_berkas),
+            "param": str(param)
+        }
+
+        # Persiapan File Upload
+        with open(zipname, "rb") as zip_file:
+
+            files = {
+                "file": (
+                    f"{in_feature}.zip",
+                    zip_file,
+                    "application/zip"
+                )
+            }
+
+            # Proses Upload
+            response = requests.post(
+                url,
+                headers=headers,
+                data=data,
+                files=files
+            )
+
+            response.raise_for_status()
+
+        arcpy.AddMessage(
+            "File berhasil diupload ke modul tatausaha SIPENTA."
+        )
+
+    # HTTP Error
+    except requests.exceptions.HTTPError as e:
+
+        response = e.response
+
+        message = ""
+
+        try:
+
+            error_json = response.json()
+
+            message = error_json.get(
+                "message",
+                ""
+            )
+
+        except Exception:
+            pass
+
+        # Token Expired
+        if (
+            response.status_code == 403
+            and "expired" in message.lower()
+        ):
+
+            clear_user_data()
+
+            raise Exception(
+                "Token Anda kadaluarsa, "
+                "silakan login ulang."
+            )
+
+        # Forbidden
+        elif response.status_code == 403:
+
+            raise Exception(
+                "Akses ditolak (403). "
+                "Periksa hak akses atau token."
+            )
+
+        # Error Lain
+        else:
+
+            raise Exception(
+                f"HTTP Error {response.status_code}: "
+                f"{message or str(e)}"
+            )
+
+    # Request Error
+    except requests.exceptions.RequestException as e:
+
+        arcpy.AddError(
+            f"Error during file upload: {str(e)}"
+        )
+
+    # Error Umum
+    except Exception as e:
+
+        arcpy.AddError(str(e))
+    return
 
 

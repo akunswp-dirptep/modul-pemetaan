@@ -53,6 +53,7 @@
 					<menu refID="analisis_survey_perubahan" size="Medium" />
 					<menu refID="pengolahan_titik_sampel_pembaruan_nbt" size="Medium" />
 					<menu refID="pengolahan_pembaruan_nbt" size="Medium" />
+					<menu refID="layout_dan_upload_pembaruan_nbt" size="Medium" />
 
 
 					<toolPalette refID="ToolPalette13" size="large"/>
@@ -457,6 +458,13 @@
 					<button refID='ButtonHitungNilaiPrediksi' />
 
 				</menu>
+
+				<menu id="layout_dan_upload_pembaruan_nbt" caption="Layout dan Upload" extendedCaption="Layout dan Upload" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\analysis1.png"
+					smallImage="C:\PenilaianTanah\icons\analysis1.png">
+					<button refID='ButtonUploadTitikSampel' />
+
+				</menu>
 				
 			<!--  -->
 				<menu id="menu4_1" caption="Persiapan" extendedCaption="Persiapan" keytip="TA"         
@@ -725,7 +733,7 @@
 					<button refID="ButtonLabelTitikZona"/>
 					<button refID="menu_pemisahan_titik_zona_pembaruan_znt" />
 					<button refID="menu_penyesuaian_titik_dan_zona_pembaruan_znt" />
-					<button refID="menu_zona_parsial_pembaruan_znt" />
+					<button refID="ButtonZonaParsial" />
 					<button refID="ButtonPeriksaKesesuaianTitikdanZona"/>
 					<button refID="ButtonHitungIndeksNilaiTanah" />
 					<button refID="ButtonSinkronisasiDataTitikSampelKeSipenta" />
@@ -2475,8 +2483,8 @@
 				<button
 					id="ButtonUploadBasisData"
 					caption="Upload Basis Data"
-					smallImage="C:\PenilaianTanah\icons\zonasi.png"
-					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					smallImage="C:\PenilaianTanah\icons\folder.png"
+					largeImage="C:\PenilaianTanah\icons\folder.png"
 					isCustomCommand="true"
 					assembly=""
 					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
@@ -2509,32 +2517,32 @@
 					</args>
 					<tooltip heading="Tampilkan Simbologi Titik Sampel">Menu untuk mengaplikasikan simbologi pada titik sampel.</tooltip>
 				</button>
-				<button id="ButtonRekomendasiPersilPembanding" caption="Rekomendasi Pembanding" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonRekomendasiPersilPembanding" caption="Rekomendasi Pembanding" smallImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" largeImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Rekomendasi_Pembanding" name="Rekomendasi Pembanding" xmlns=""/>
 					</args>
 					<tooltip heading="Rekomendasi Pembanding">Menu untuk mencari rekomendasi bidang pembanding berdasarkan zonasi dan radius pencarian.</tooltip>
 				</button>
-				<button id="ButtonPerhitunganPersilIndividual" caption="Hitung Persil Individual" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonPerhitunganPersilIndividual" caption="Hitung Persil Individual" smallImage="C:\PenilaianTanah\icons\individual11.png" largeImage="C:\PenilaianTanah\icons\individual11.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Hitung_Persil_Individual" name="Hitung Persil Individual" xmlns=""/>
 					</args>
 					<tooltip heading="Hitung Persil Individual">Menu untuk mengaplikasikan simbologi pada titik sampel.</tooltip>
 				</button>
-				<button id="ButtonResetPersilIndividual" caption="Reset Persil Individual" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonResetPersilIndividual" caption="Reset Persil Individual" smallImage="C:\PenilaianTanah\icons\undo.png" largeImage="C:\PenilaianTanah\icons\undo.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Reset_Persil_Individual" name="Reset Persil Individual" xmlns=""/>
 					</args>
 					<tooltip heading="Reset Persil Individual">Menu untuk mereset hasil penilaian individual pada persil terpilih.</tooltip>
 				</button>
 
-				<button id="ButtonGenerateTitikIndeks" caption="Generate Titik Indeks" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonGenerateTitikIndeks" caption="Hitung Indeks Titik Sampel" smallImage="C:\PenilaianTanah\icons\TitikZona.png" largeImage="C:\PenilaianTanah\icons\TitikZona.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Generate_Titik_Indeks" name="Generate Titik Indeks" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Generate_Titik_Indeks" name="Hitung Indeks Titik Sampel" xmlns=""/>
 					</args>
-					<tooltip heading="Generate Titik Indeks">Menu untuk menghasilkan titik indeks berdasarkan data sampel dan persil.</tooltip>
+					<tooltip heading="Hitung Indeks Titik Sampel">Menu untuk menghasilkan titik indeks berdasarkan data sampel dan persil.</tooltip>
 				</button>
-				<button id="ButtonDeteksiOutlierIndeks" caption="Deteksi Outlier Indeks" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonDeteksiOutlierIndeks" caption="Deteksi Outlier Indeks" smallImage="C:\PenilaianTanah\icons\check1.png" largeImage="C:\PenilaianTanah\icons\check1.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Deteksi_Outlier_Indeks" name="Deteksi Outlier Indeks" xmlns=""/>
 					</args>
@@ -2546,17 +2554,17 @@
 					</args>
 					<tooltip heading="Set Cluster Persil">Menu untuk mengubah nilai cluster pada persil terpilih.</tooltip>
 				</button>
-				<button id="ButtonPeriksaTitikSampelKelompokPerubahan" caption="Periksa Titik Sampel Cluster" smallImage="C:\PenilaianTanah\icons\scatter1.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonPeriksaTitikSampelKelompokPerubahan" caption="Periksa Titik Sampel Kelompok" smallImage="C:\PenilaianTanah\icons\periksaperubahan.png" largeImage="C:\PenilaianTanah\icons\periksaperubahan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 				<args>
-					<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Periksa_Titik_Sampel_Kelompok_Perubahan" name="Periksa Titik Sampel Cluster" xmlns=""/>
+					<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Periksa_Titik_Sampel_Kelompok_Perubahan" name="Periksa Titik Sampel Kelompok" xmlns=""/>
 				</args>
-				<tooltip heading="Periksa Titik Sampel Cluster">Menu untuk memeriksa jumlah titik sampel pada setiap cluster perubahan.</tooltip>
+				<tooltip heading="Periksa Titik Sampel Kelompok">Menu untuk memeriksa jumlah titik sampel pada setiap kelompok perubahan.</tooltip>
 				</button>
 				<button
 					id="ButtonHitungStatistikCluster"
-					caption="Hitung Statistik Cluster"
-					smallImage="C:\PenilaianTanah\icons\zonasi.png"
-					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					caption="Hitung Nilai Tanah Kelompok"
+					smallImage="C:\PenilaianTanah\icons\maths.png"
+					largeImage="C:\PenilaianTanah\icons\maths.png"
 					isCustomCommand="true"
 					assembly=""
 					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
@@ -2566,13 +2574,13 @@
 					<args>
 						<params
 							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Hitung_Statistik_Cluster"
-							name="Hitung Statistik Cluster"
+							name="Hitung Nilai Tanah Kelompok"
 							xmlns=""
 						/>
 					</args>
 
-					<tooltip heading="Hitung Statistik Cluster">
-						Menu untuk menghitung statistik nilai pada setiap cluster perubahan persil, termasuk rata-rata, standar deviasi, dan persentase deviasi.
+					<tooltip heading="Hitung Nilai Tanah Kelompok">
+						Menu untuk menghitung statistik nilai pada setiap kelompok perubahan persil, termasuk rata-rata, standar deviasi, dan persentase deviasi.
 					</tooltip>
 				</button>
 				<button
@@ -2674,8 +2682,8 @@
 				<button
 					id="ButtonHitungIndeksRataRata"
 					caption="Hitung Indeks Rata-Rata"
-					smallImage="C:\PenilaianTanah\icons\zonasi.png"
-					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					smallImage="C:\PenilaianTanah\icons\average.png"
+					largeImage="C:\PenilaianTanah\icons\average.png"
 					isCustomCommand="true"
 					assembly=""
 					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
@@ -2698,8 +2706,8 @@
 				<button
 					id="ButtonHitungNilaiPrediksi"
 					caption="Hitung Nilai Prediksi"
-					smallImage="C:\PenilaianTanah\icons\zonasi.png"
-					largeImage="C:\PenilaianTanah\icons\zonasi.png"
+					smallImage="C:\PenilaianTanah\icons\average.png"
+					largeImage="C:\PenilaianTanah\icons\average.png"
 					isCustomCommand="true"
 					assembly=""
 					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
@@ -2716,6 +2724,30 @@
 
 					<tooltip heading="Hitung Nilai Prediksi">
 						Menu untuk menghitung nilai prediksi persil berdasarkan indeks rata-rata dan parameter penilaian.
+					</tooltip>
+				</button>
+			<!-- Layout dan Upload -->
+				<button
+					id="ButtonUploadTitikSampel"
+					caption="Upload Titik Sampel"
+					smallImage="C:\PenilaianTanah\icons\folder.png"
+					largeImage="C:\PenilaianTanah\icons\folder.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\LayoutDanUpload.pyt\Upload_Titik_Sampel"
+							name="Upload Titik Sampel"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Upload Titik Sampel">
+						Menu untuk mengupload titik sampel yang akan digunakan.
 					</tooltip>
 				</button>
 

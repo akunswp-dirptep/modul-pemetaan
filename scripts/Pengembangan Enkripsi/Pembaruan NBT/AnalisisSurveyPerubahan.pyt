@@ -11,7 +11,7 @@ if parent_dir not in sys.path:
 
 from nbtutils import constant, persil
 from zntutils.document import validate_document_type, get_credentials
-from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id, setup_user_data
+from zntutils.system_utils import get_user_data, clear_user_data, get_all_berkas_id, setup_user_data
 from zntutils.constant import PREFERRED_BERKAS_ID, CREDENTIAL_KEY, PREFERRED_SERVER_KEY, AUTH_KEY, NAMA_PROVINSI, KAB_KOTA
 from zntutils.upload_utils import upload_feature_layer_to_sipenta
 

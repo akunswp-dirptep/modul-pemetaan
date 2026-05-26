@@ -67,7 +67,7 @@ SKORING_ZONASI = {
 }
 
 SKORING_BENTUK_PERSIL = {
-    "Segitiga": 1,
+    "Segi Tiga": 1,
     "Segi Banyak Tidak Beraturan": 2,
     "Segi Empat Tidak Beraturan": 3,
     "Segi Empat Beraturan": 4,

@@ -1878,7 +1878,7 @@ class Analisis_Bentuk_Persil(object):
                 else:
 
                     row[1]="Segi Banyak Tidak Beraturan"
-                    row[2]=1
+                    row[2]=2
 
                 rows.updateRow(row)
 
@@ -1901,7 +1901,7 @@ class Analisis_Bentuk_Persil(object):
                 if row[2] and int(row[2])==4:
 
                     row[0]="Segi Tiga"
-                    row[1]=2
+                    row[1]=1
 
                     rows.updateRow(row)
 

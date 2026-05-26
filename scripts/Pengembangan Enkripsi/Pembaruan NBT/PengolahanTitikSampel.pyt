@@ -1973,7 +1973,7 @@ class Periksa_Titik_Sampel_Kelompok_Perubahan(object):
 
     def __init__(self):
 
-        self.label = "Periksa Titik Sampel Cluster"
+        self.label = "Periksa Titik Sampel Kelompok Perubahan"
         self.description = ""
         self.canRunInBackground = False
 
@@ -2131,7 +2131,7 @@ class Hitung_Statistik_Cluster(object):
 
     def __init__(self):
 
-        self.label = "Hitung Statistik Cluster"
+        self.label = "Hitung Statistik Kelompok Perubahan"
         self.description = ""
         self.canRunInBackground = False
 

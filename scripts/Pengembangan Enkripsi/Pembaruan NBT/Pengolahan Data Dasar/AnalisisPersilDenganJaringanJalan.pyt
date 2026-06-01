@@ -44,7 +44,8 @@ class Toolbox:
                       Tampilkan_Simbologi_Persil,
                       Perbaharui_Letak_Persil,
                       Perbaharui_Lebar_Depan_Persil,
-                      Perbaharui_Jarak_Kelas_Jalan]
+                      Perbaharui_Jarak_Kelas_Jalan,
+                      Optimasi_Perbaharui_Lebar_Depan_Persil]
 
 
 class Load_Persil_dan_Jaringan_Jalan(object):
@@ -6401,663 +6402,7 @@ def get(v):
         messages.addMessage("== Proses selesai ==")
 
         return
-
-class Perbaharui_Lebar_Depan_Persil(object):
-
-    def __init__(self):
-
-        self.label = "Hitung Lebar Depan Persil"
-        self.description = ""
-        self.canRunInBackground = False
-
-    # =====================================================
-    # PARAMETER
-    # =====================================================
-
-    def getParameterInfo(self):
-
-        radius = arcpy.Parameter(
-            displayName="Radius Near",
-            name="near_radius",
-            datatype="GPDouble",
-            parameterType="Optional",
-            direction="Input"
-        )
-        radius.value = 30
-
-        simpan_temp = arcpy.Parameter(
-            displayName="Simpan ke Temporary Layer",
-            name="simpan_temp",
-            datatype="GPBoolean",
-            parameterType="Optional",
-            direction="Input"
-        )
-        simpan_temp.value = False
-
-        hanya_update = arcpy.Parameter(
-            displayName="Sinkronisasi Data Persil Terbaru",
-            name="hanya_update",
-            datatype="GPBoolean",
-            parameterType="Optional",
-            direction="Input"
-        )
-        hanya_update.value = True
-
-        output = arcpy.Parameter(
-            displayName="Output Persil",
-            name="output_persil",
-            datatype="GPFeatureLayer",
-            parameterType="Derived",
-            direction="Output"
-        )
-
-        return [
-            radius,
-            simpan_temp,
-            hanya_update,
-            output
-        ]
-
-    # =====================================================
-    # LICENSE
-    # =====================================================
-
-    def isLicensed(self):
-        return True
-
-    def updateParameters(self, parameters):
-        return
-
-    def updateMessages(self, parameters):
-        return
-
-    # =====================================================
-    # UTIL
-    # =====================================================
-
-    def delete_if_exists(self, path):
-
-        if arcpy.Exists(path):
-
-            try:
-                arcpy.management.Delete(path)
-
-            except:
-                pass
-
-    def add_field_if_not_exists(
-        self,
-        fc,
-        name,
-        typ
-    ):
-
-        fields = [
-            f.name
-            for f in arcpy.ListFields(fc)
-        ]
-
-        if name not in fields:
-
-            arcpy.management.AddField(
-                fc,
-                name,
-                typ
-            )
-
-    def remove_field_if_exists(
-        self,
-        fc,
-        name
-    ):
-
-        fields = [
-            f.name
-            for f in arcpy.ListFields(fc)
-        ]
-
-        if name in fields:
-
-            arcpy.management.DeleteField(
-                fc,
-                name
-            )
-
-    # =====================================================
-    # EXECUTE
-    # =====================================================
-
-    def execute(self, parameters, messages):
-
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        # =====================================================
-        # CONFIG
-        # =====================================================
-
-        configs = persil.get_config_values()
-
-        dataset_path = configs[
-            'project_config'
-        ]['dataset_path']
-
-        # =====================================================
-        # PARAMETER
-        # =====================================================
-
-        near_radius = (
-            parameters[0].valueAsText
-            or "30"
-        )
-
-        simpan_temp = parameters[1].value
-
-        hanya_update = parameters[2].value
-
-        # =====================================================
-        # PATH
-        # =====================================================
-
-        persil_fc = os.path.join(
-            dataset_path,
-            'Persil_Layer'
-        )
-
-        jalan = os.path.join(
-            dataset_path,
-            "Jaringan_Jalan"
-        )
-
-        temp_output_name = (
-            "Analisis_Persil_Dengan_Jalan_Temp"
-        )
-
-        temp_output_fc = os.path.join(
-            dataset_path,
-            temp_output_name
-        )
-
-        # =====================================================
-        # TEMP OUTPUT
-        # =====================================================
-
-        if simpan_temp:
-
-            self.delete_if_exists(
-                temp_output_fc
-            )
-
-            messages.addMessage(
-                "== Membuat temporary layer =="
-            )
-
-            arcpy.management.CopyFeatures(
-                persil_fc,
-                temp_output_fc
-            )
-
-            update_fc = temp_output_fc
-
-        else:
-
-            update_fc = persil_fc
-
-        # =====================================================
-        # FEATURE LAYER
-        # =====================================================
-
-        persil_layer = "persil_input"
-
-        self.delete_if_exists(
-            persil_layer
-        )
-
-        arcpy.management.MakeFeatureLayer(
-            update_fc,
-            persil_layer
-        )
-
-        # =====================================================
-        # FILTER UPDATE
-        # =====================================================
-
-        if hanya_update:
-
-            messages.addMessage(
-                "== Seleksi status_per='update' =="
-            )
-
-            arcpy.management.SelectLayerByAttribute(
-                persil_layer,
-                "NEW_SELECTION",
-                "UPPER(status_per) = 'UPDATE'"
-            )
-
-        # =====================================================
-        # VALIDASI JUMLAH
-        # =====================================================
-
-        jumlah = int(
-            arcpy.management.GetCount(
-                persil_layer
-            )[0]
-        )
-
-        if jumlah == 0:
-
-            messages.addWarningMessage(
-                "== Tidak ada feature yang diproses =="
-            )
-
-            return
-
-        # =====================================================
-        # FIELD
-        # =====================================================
-
-        field_id = 'IdBidang'
-
-        field_kelas = 'kls_jln'
-        field_lebar = 's_kls_jln'
-
-        field_lb_dpn = 'LBRDPN'
-
-        # =====================================================
-        # TEMP
-        # =====================================================
-
-        gdb_path = arcpy.env.scratchGDB
-
-        line = os.path.join(
-            "in_memory",
-            "persil_line"
-        )
-
-        split = os.path.join(
-            "in_memory",
-            "persil_split"
-        )
-
-        midpoint = os.path.join(
-            "in_memory",
-            "midpoint"
-        )
-
-        join_line = os.path.join(
-            "in_memory",
-            "join_line"
-        )
-
-        join_spatial = os.path.join(
-            gdb_path,
-            "join_spatial"
-        )
-
-        centroid = os.path.join(
-            "in_memory",
-            "centroid"
-        )
-
-        # =====================================================
-        # PERSIAPAN JALAN
-        # =====================================================
-
-        messages.addMessage(
-            "== Persiapan jalan =="
-        )
-
-        self.add_field_if_not_exists(
-            jalan,
-            "IdJalan",
-            "LONG"
-        )
-
-        oid_jalan = arcpy.Describe(
-            jalan
-        ).OIDFieldName
-
-        arcpy.management.CalculateField(
-            jalan,
-            "IdJalan",
-            f"!{oid_jalan}!",
-            "PYTHON3"
-        )
-
-        # =====================================================
-        # POLYGON TO LINE
-        # =====================================================
-
-        messages.addMessage(
-            "== Polygon to line =="
-        )
-
-        self.delete_if_exists(line)
-
-        arcpy.management.PolygonToLine(
-            persil_layer,
-            line,
-            "IGNORE_NEIGHBORS"
-        )
-
-        self.delete_if_exists(split)
-
-        arcpy.management.SplitLine(
-            line,
-            split
-        )
-
-        self.add_field_if_not_exists(
-            split,
-            "LebarSisi",
-            "DOUBLE"
-        )
-
-        arcpy.management.CalculateField(
-            split,
-            "LebarSisi",
-            "!shape.length!",
-            "PYTHON3"
-        )
-
-        # =====================================================
-        # MIDPOINT
-        # =====================================================
-
-        messages.addMessage(
-            "== Midpoint sisi =="
-        )
-
-        self.delete_if_exists(
-            midpoint
-        )
-
-        arcpy.management.FeatureToPoint(
-            split,
-            midpoint,
-            "INSIDE"
-        )
-
-        self.add_field_if_not_exists(
-            midpoint,
-            "X",
-            "DOUBLE"
-        )
-
-        self.add_field_if_not_exists(
-            midpoint,
-            "Y",
-            "DOUBLE"
-        )
-
-        arcpy.management.CalculateField(
-            midpoint,
-            "X",
-            "!Shape.firstPoint.X!",
-            "PYTHON3"
-        )
-
-        arcpy.management.CalculateField(
-            midpoint,
-            "Y",
-            "!Shape.firstPoint.Y!",
-            "PYTHON3"
-        )
-
-        for fld in [
-            "NEAR_DIST",
-            "NEAR_FID",
-            "NEAR_X",
-            "NEAR_Y",
-            "NEAR_ANGLE"
-        ]:
-
-            self.remove_field_if_exists(
-                midpoint,
-                fld
-            )
-
-        # =====================================================
-        # NEAR
-        # =====================================================
-
-        messages.addMessage(
-            "== Near jalan =="
-        )
-
-        arcpy.analysis.Near(
-            midpoint,
-            jalan,
-            f"{near_radius} Meters",
-            "LOCATION",
-            "ANGLE"
-        )
-
-        self.add_field_if_not_exists(
-            midpoint,
-            "IdJoin",
-            "LONG"
-        )
-
-        oid_mid = arcpy.Describe(
-            midpoint
-        ).OIDFieldName
-
-        arcpy.management.CalculateField(
-            midpoint,
-            "IdJoin",
-            f"!{oid_mid}!",
-            "PYTHON3"
-        )
-
-        sr = arcpy.Describe(
-            midpoint
-        ).spatialReference
-
-        # =====================================================
-        # JOIN LINE
-        # =====================================================
-
-        messages.addMessage(
-            "== Konstruksi garis =="
-        )
-
-        self.delete_if_exists(
-            join_line
-        )
-
-        arcpy.management.XYToLine(
-            midpoint,
-            join_line,
-            "X",
-            "Y",
-            "NEAR_X",
-            "NEAR_Y",
-            "GEODESIC",
-            "IdJoin",
-            sr
-        )
-
-        arcpy.management.JoinField(
-            join_line,
-            "IdJoin",
-            midpoint,
-            "IdJoin",
-            [
-                field_id,
-                "LebarSisi",
-                "NEAR_DIST"
-            ]
-        )
-
-        # =====================================================
-        # SPATIAL JOIN
-        # =====================================================
-
-        messages.addMessage(
-            "== Spatial join jalan =="
-        )
-
-        self.delete_if_exists(
-            join_spatial
-        )
-
-        arcpy.analysis.SpatialJoin(
-            join_line,
-            jalan,
-            join_spatial,
-            "JOIN_ONE_TO_ONE",
-            "KEEP_ALL",
-            match_option="INTERSECT"
-        )
-
-        # =====================================================
-        # FRONTAGE TERBAIK
-        # =====================================================
-
-        messages.addMessage(
-            "== Seleksi frontage terbaik =="
-        )
-
-        kandidat_dict = {}
-
-        with arcpy.da.SearchCursor(
-            join_spatial,
-            [
-                field_id,
-                field_kelas,
-                field_lebar,
-                "LebarSisi",
-                "NEAR_DIST"
-            ]
-        ) as rows:
-
-            for row in rows:
-
-                idbid = row[0]
-
-                kelas = row[1]
-                lb_jln = row[2]
-                lb_sisi = row[3]
-                near = row[4]
-
-                if near is None:
-                    continue
-
-                try:
-                    kelas = float(kelas)
-                except:
-                    kelas = 1
-
-                try:
-                    lb_jln = float(lb_jln)
-                except:
-                    lb_jln = 0
-
-                try:
-                    lb_sisi = float(lb_sisi)
-                except:
-                    lb_sisi = 0
-
-                score = (
-                    (kelas * 1000000)
-                    + (lb_jln * 1000)
-                    - near
-                )
-
-                kandidat = [
-                    score,
-                    kelas,
-                    lb_jln,
-                    near,
-                    lb_sisi
-                ]
-
-                if idbid not in kandidat_dict:
-
-                    kandidat_dict[idbid] = kandidat
-
-                else:
-
-                    if kandidat[0] > kandidat_dict[idbid][0]:
-
-                        kandidat_dict[idbid] = kandidat
-
-        # =====================================================
-        # UPDATE
-        # =====================================================
-
-        messages.addMessage(
-            "== Update lebar depan =="
-        )
-
-        with arcpy.da.UpdateCursor(
-            persil_layer,
-            [
-                field_id,
-                field_lb_dpn,
-            ]
-        ) as rows:
-
-            for row in rows:
-
-                idbid = row[0]
-
-                lb_dpn = 0
-
-                if idbid in kandidat_dict:
-
-                    lb_dpn = kandidat_dict[idbid][4]
-
-                row[1] = lb_dpn
-
-                rows.updateRow(row)
-
-        # =====================================================
-        # CLEAN
-        # =====================================================
-
-        messages.addMessage(
-            "== Bersih-bersih =="
-        )
-
-        for fld in [
-            "NEAR_DIST",
-            "NEAR_FID"
-        ]:
-
-            self.remove_field_if_exists(
-                update_fc,
-                fld
-            )
-
-        # =====================================================
-        # OUTPUT
-        # =====================================================
-
-        if simpan_temp:
-            output_name = temp_output_name
-        else:
-            output_name = "Persil_Layer"
-
-        self.delete_if_exists(
-            output_name
-        )
-
-        arcpy.management.MakeFeatureLayer(
-            update_fc,
-            output_name
-        )
-
-        parameters[3].value = output_name
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
-        return
-
+    
 class Perbaharui_Jarak_Kelas_Jalan(object):
 
     def __init__(self):
@@ -8226,11 +7571,11 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
 
         return
 
-class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
+class Perbaharui_Lebar_Depan_Persil(object):
 
     def __init__(self):
 
-        self.label = "Hitung Lebar Depan Persil"
+        self.label = "Optimasi Perbaharui Lebar Depan Persil"
         self.description = ""
         self.canRunInBackground = False
 
@@ -8347,162 +7692,57 @@ class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
         hanya_update = parameters[2].value
 
         # 3. Mempersiapkan path untuk dataset dan output sementara
+        gdb_path = arcpy.env.scratchGDB
+
+        field_id = 'IDBIDANG'
+        field_kelas = 's_kls_jln'
+        field_lebar = 'lb_jln'
+        field_lb_dpn = 'LBRDPN'
 
         persil_fc = os.path.join(dataset_path, 'Persil_Layer')
+        jalan = os.path.join(dataset_path,"Jaringan_Jalan")
 
-        jalan = os.path.join(
-            dataset_path,
-            "Jaringan_Jalan"
-        )
+        temp_output_name = "Analisis_Persil_Dengan_Jalan_Temp"        
+        temp_output_fc = os.path.join(dataset_path, temp_output_name )
+        line = os.path.join("in_memory", "persil_line")
+        split = os.path.join("in_memory", "persil_split")
+        midpoint = os.path.join( "in_memory", "midpoint")
 
-        temp_output_name = (
-            "Analisis_Persil_Dengan_Jalan_Temp"
-        )
 
-        temp_output_fc = os.path.join(
-            dataset_path,
-            temp_output_name
-        )
-
-        # =====================================================
-        # TEMP OUTPUT
-        # =====================================================
-
+        # 4. Membuat layer sementara jika opsi simpan_temp diaktifkan, jika tidak maka langsung menggunakan feature class persil_fc untuk diupdate
         if simpan_temp:
-
-            self.delete_if_exists(
-                temp_output_fc
-            )
-
-            messages.addMessage(
-                "== Membuat temporary layer =="
-            )
-
-            arcpy.management.CopyFeatures(
-                persil_fc,
-                temp_output_fc
-            )
-
+            self.delete_if_exists(temp_output_fc)
+            messages.addMessage("== Membuat temporary layer ==")
+            arcpy.management.CopyFeatures(persil_fc, temp_output_fc )
             update_fc = temp_output_fc
-
         else:
-
             update_fc = persil_fc
 
-        # =====================================================
-        # FEATURE LAYER
-        # =====================================================
+        #  5. Mempersiapkan feeature layer yang akan diolah, jika opsi hanya_update diaktifkan maka dilakukan seleksi terlebih dahulu untuk mengambil data persil yang berstatus update saja
 
         persil_layer = "persil_input"
-
-        self.delete_if_exists(
-            persil_layer
-        )
-
-        arcpy.management.MakeFeatureLayer(
-            update_fc,
-            persil_layer
-        )
-
-        # =====================================================
-        # FILTER UPDATE
-        # =====================================================
+        self.delete_if_exists(persil_layer)
+        arcpy.management.MakeFeatureLayer(update_fc, persil_layer )
 
         if hanya_update:
-
-            messages.addMessage(
-                "== Seleksi status_per='update' =="
-            )
-
+            messages.addMessage( "== Seleksi status_per='update' ==" )
             arcpy.management.SelectLayerByAttribute(
                 persil_layer,
                 "NEW_SELECTION",
                 "UPPER(status_per) = 'UPDATE'"
             )
 
-        # =====================================================
-        # VALIDASI JUMLAH
-        # =====================================================
+        # 6. Validasi jumlah data yang akan diproses, jika tidak ada maka proses dihentikan
 
-        jumlah = int(
-            arcpy.management.GetCount(
-                persil_layer
-            )[0]
-        )
-
+        jumlah = int(arcpy.management.GetCount(persil_layer)[0])
         if jumlah == 0:
-
-            messages.addWarningMessage(
-                "== Tidak ada feature yang diproses =="
-            )
-
+            messages.addWarningMessage("== Tidak ada feature yang diproses ==")
             return
 
-        # =====================================================
-        # FIELD
-        # =====================================================
+        #  7. Mempersiapkan IdJalan
 
-        field_id = 'IdBidang'
-
-        field_kelas = 'kls_jln'
-        field_lebar = 's_kls_jln'
-
-        field_lb_dpn = 'LBRDPN'
-
-        # =====================================================
-        # TEMP
-        # =====================================================
-
-        gdb_path = arcpy.env.scratchGDB
-
-        line = os.path.join(
-            "in_memory",
-            "persil_line"
-        )
-
-        split = os.path.join(
-            "in_memory",
-            "persil_split"
-        )
-
-        midpoint = os.path.join(
-            "in_memory",
-            "midpoint"
-        )
-
-        join_line = os.path.join(
-            "in_memory",
-            "join_line"
-        )
-
-        join_spatial = os.path.join(
-            gdb_path,
-            "join_spatial"
-        )
-
-        centroid = os.path.join(
-            "in_memory",
-            "centroid"
-        )
-
-        # =====================================================
-        # PERSIAPAN JALAN
-        # =====================================================
-
-        messages.addMessage(
-            "== Persiapan jalan =="
-        )
-
-        self.add_field_if_not_exists(
-            jalan,
-            "IdJalan",
-            "LONG"
-        )
-
-        oid_jalan = arcpy.Describe(
-            jalan
-        ).OIDFieldName
-
+        self.add_field_if_not_exists(jalan, "IdJalan", "LONG")
+        oid_jalan = arcpy.Describe(jalan).OIDFieldName
         arcpy.management.CalculateField(
             jalan,
             "IdJalan",
@@ -8510,59 +7750,36 @@ class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
             "PYTHON3"
         )
 
-        # =====================================================
-        # POLYGON TO LINE
-        # =====================================================
-
-        messages.addMessage(
-            "== Polygon to line =="
-        )
-
+        # 8. Mengubah polygon persil menjadi garis, kemudian memecah garis menjadi sisi-sisi, dan menghitung panjang sisi
+        messages.addMessage("== Polygon to line ==")
         self.delete_if_exists(line)
-
         arcpy.management.PolygonToLine(
             persil_layer,
             line,
             "IGNORE_NEIGHBORS"
         )
-
         self.delete_if_exists(split)
-
         arcpy.management.SplitLine(
             line,
             split
         )
-
         self.add_field_if_not_exists(
             split,
             "LebarSisi",
             "DOUBLE"
         )
-
         arcpy.management.CalculateField(
             split,
             "LebarSisi",
             "!shape.length!",
             "PYTHON3"
         )
+        # 9. Menghitung titik tengah dari setiap sisi, dan menambahkan field X dan Y untuk menyimpan koordinat titik tengah
 
-        # =====================================================
-        # MIDPOINT
-        # =====================================================
+        messages.addMessage("== Midpoint sisi ==")
+        self.delete_if_exists(midpoint)
 
-        messages.addMessage(
-            "== Midpoint sisi =="
-        )
-
-        self.delete_if_exists(
-            midpoint
-        )
-
-        arcpy.management.FeatureToPoint(
-            split,
-            midpoint,
-            "INSIDE"
-        )
+        arcpy.management.FeatureToPoint(split, midpoint, "INSIDE")
 
         self.add_field_if_not_exists(
             midpoint,
@@ -8590,26 +7807,10 @@ class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
             "PYTHON3"
         )
 
-        for fld in [
-            "NEAR_DIST",
-            "NEAR_FID",
-            "NEAR_X",
-            "NEAR_Y",
-            "NEAR_ANGLE"
-        ]:
 
-            self.remove_field_if_exists(
-                midpoint,
-                fld
-            )
+        # 10. Melakukan Analisis Near dari titik tengah sisi ke jaringan jalan dengan radius yang ditentukan, dan menyimpan jarak, FID jalan terdekat, koordinat X dan Y jalan terdekat, serta sudut antara sisi dengan jalan terdekat
 
-        # =====================================================
-        # NEAR
-        # =====================================================
-
-        messages.addMessage(
-            "== Near jalan =="
-        )
+        messages.addMessage("== Analisis Jalan Terdekat ==")
 
         arcpy.analysis.Near(
             midpoint,
@@ -8625,10 +7826,7 @@ class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
             "LONG"
         )
 
-        oid_mid = arcpy.Describe(
-            midpoint
-        ).OIDFieldName
-
+        oid_mid = arcpy.Describe(midpoint).OIDFieldName
         arcpy.management.CalculateField(
             midpoint,
             "IdJoin",
@@ -8636,96 +7834,46 @@ class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
             "PYTHON3"
         )
 
-        sr = arcpy.Describe(
-            midpoint
-        ).spatialReference
-
-        # =====================================================
-        # JOIN LINE
-        # =====================================================
-
-        messages.addMessage(
-            "== Konstruksi garis =="
-        )
-
-        self.delete_if_exists(
-            join_line
-        )
-
-        arcpy.management.XYToLine(
-            midpoint,
-            join_line,
-            "X",
-            "Y",
-            "NEAR_X",
-            "NEAR_Y",
-            "GEODESIC",
-            "IdJoin",
-            sr
-        )
+        sr = arcpy.Describe(midpoint).spatialReference
+        
+        #  11. Melakukan Join_Field untuk menggabungkan informasi kelas jalan dan lebar jalan dari layer jalan ke layer midpoint berdasarkan FID jalan terdekat yang disimpan di field NEAR_FID
+        for fld in [field_kelas, field_lebar]:
+            self.remove_field_if_exists(midpoint,fld)
 
         arcpy.management.JoinField(
-            join_line,
-            "IdJoin",
             midpoint,
-            "IdJoin",
-            [
-                field_id,
-                "LebarSisi",
-                "NEAR_DIST"
-            ]
-        )
-
-        # =====================================================
-        # SPATIAL JOIN
-        # =====================================================
-
-        messages.addMessage(
-            "== Spatial join jalan =="
-        )
-
-        self.delete_if_exists(
-            join_spatial
-        )
-
-        arcpy.analysis.SpatialJoin(
-            join_line,
+            "NEAR_FID",
             jalan,
-            join_spatial,
-            "JOIN_ONE_TO_ONE",
-            "KEEP_ALL",
-            match_option="INTERSECT"
+            oid_jalan,
+            [field_kelas, field_lebar]
         )
 
-        # =====================================================
-        # FRONTAGE TERBAIK
-        # =====================================================
-
-        messages.addMessage(
-            "== Seleksi frontage terbaik =="
-        )
-
+        # 12. Dilakukan Filter Jalan Terbaik dimana jalan dengan kelas yang lebih tinggi dianggap sebagai jalan depan
+        messages.addMessage("== Seleksi frontage terbaik ==")
         kandidat_dict = {}
 
         with arcpy.da.SearchCursor(
-            join_spatial,
+            midpoint,
             [
                 field_id,
                 field_kelas,
                 field_lebar,
                 "LebarSisi",
-                "NEAR_DIST"
+                "NEAR_DIST",
+                "NEAR_FID"
             ]
         ) as rows:
-
             for row in rows:
 
                 idbid = row[0]
-
                 kelas = row[1]
                 lb_jln = row[2]
                 lb_sisi = row[3]
                 near = row[4]
+                near_fid = row[5]
+
+                if near_fid == -1:
+                    continue
 
                 if near is None:
                     continue
@@ -8733,7 +7881,7 @@ class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
                 try:
                     kelas = float(kelas)
                 except:
-                    kelas = 1
+                    kelas = 0
 
                 try:
                     lb_jln = float(lb_jln)
@@ -8745,37 +7893,27 @@ class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
                 except:
                     lb_sisi = 0
 
-                score = (
-                    (kelas * 1000000)
-                    + (lb_jln * 1000)
-                    - near
-                )
-
-                kandidat = [
-                    score,
-                    kelas,
-                    lb_jln,
-                    near,
-                    lb_sisi
-                ]
+                # NEED REVIEW: Apakah logika scoring sudah benar? Apakah bobot kelas jalan sudah sesuai dengan kebutuhan? Apakah perlu menambahkan faktor lain dalam scoring seperti sudut antara sisi dengan jalan terdekat?
+                score = (kelas * 1000000)  + (lb_jln * 1000) - near
+                kandidat = [score, kelas,  lb_jln,  near, lb_sisi ]
 
                 if idbid not in kandidat_dict:
-
                     kandidat_dict[idbid] = kandidat
 
                 else:
-
                     if kandidat[0] > kandidat_dict[idbid][0]:
-
                         kandidat_dict[idbid] = kandidat
+        count = 0
+        for idbid, kandidat in kandidat_dict.items():
+            if count < 10:
+                count += 1
+                messages.addMessage(f"IdBidang: {idbid}, Score: {kandidat[0]}, Kelas: {kandidat[1]}, Lebar Jalan: {kandidat[2]}, Jarak Near: {kandidat[3]}, Lebar Sisi: {kandidat[4]}")
+            else:
+                break
 
-        # =====================================================
-        # UPDATE
-        # =====================================================
-
-        messages.addMessage(
-            "== Update lebar depan =="
-        )
+        # 13. Update field lebar depan di layer persil dengan nilai lebar jalan dari kandidat terbaik yang sudah dipilih
+        
+        messages.addMessage( "== Perbaharui Lebar Depan ==")
 
         with arcpy.da.UpdateCursor(
             persil_layer,
@@ -8784,42 +7922,16 @@ class Optimasi_Perbaharui_Lebar_Depan_Persil(object):
                 field_lb_dpn,
             ]
         ) as rows:
-
             for row in rows:
-
                 idbid = row[0]
-
                 lb_dpn = 0
-
                 if idbid in kandidat_dict:
-
                     lb_dpn = kandidat_dict[idbid][4]
-
                 row[1] = lb_dpn
 
                 rows.updateRow(row)
 
-        # =====================================================
-        # CLEAN
-        # =====================================================
-
-        messages.addMessage(
-            "== Bersih-bersih =="
-        )
-
-        for fld in [
-            "NEAR_DIST",
-            "NEAR_FID"
-        ]:
-
-            self.remove_field_if_exists(
-                update_fc,
-                fld
-            )
-
-        # =====================================================
-        # OUTPUT
-        # =====================================================
+        # 14. Menampilkan output, jika opsi simpan_temp diaktifkan maka akan menampilkan layer sementara, jika tidak maka akan menampilkan layer persil yang sudah diupdate
 
         if simpan_temp:
             output_name = temp_output_name

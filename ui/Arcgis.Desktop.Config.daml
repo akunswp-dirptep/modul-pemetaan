@@ -356,13 +356,14 @@
 					smallImage="C:\PenilaianTanah\icons\persiapan.png">
 					<button refID="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" size="Medium"/>
 					<button refID="ButtonUploadPetaLokasiKegiatanPembaruanNBT" size="Medium"/>
-					<button refID="ButtonBuatWorkspacePembaruanNBT" size="Medium"/>
+					<menu refID="workspace_pembaruan_nbt" size="Medium"/>
 					<button refID="ButtonMasukkanDataNBTSebelumnya" size="Medium"/>
 					<button refID="ButtonMasukkanDataJaringanJalan" size="Medium"/>
 					<button refID="ButtonMasukkanDataFasilitas" size="Medium"/>
 					<button refID="ButtonMasukkanDataRisiko" size="Mediun" />
 
 				</menu>
+				
 				<menu id="pengolahan_data_dasar_pembaruan_nbt" caption="Identifikasi Perubahan" extendedCaption="Pengolahan Data Dasar" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png"
 					smallImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png">
@@ -407,6 +408,14 @@
 					<button refID="ButtonTampilkanSimbologiKelasJalan" size="Medium"/>
 					
 				</menu>
+				<menu id="workspace_pembaruan_nbt" caption="Persiapan Workspace">
+					<button refID="ButtonBuatWorkspacePembaruanNBT" size="Medium"/>
+					<button refID="ButtonImportWorkspaceNBT" size="Medium"/>
+
+
+					
+				</menu>
+
 				<menu id="analisis_persil_dan_jalan_pembaruan_nbt" caption="Analisis Persil Dengan Jalan">
 					
 					<button refID='ButtonBuatNertworkDataset' size="Medium" />
@@ -2198,6 +2207,12 @@
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Buat_Workspace_Pembaruan_NBT" name="Buat Workspace" xmlns=""/>
 					</args>
 					<tooltip heading="Buat Workspace">Menu untuk mMembuat Workspace Pembaruan NBT.</tooltip>
+				</button>
+				<button id="ButtonImportWorkspaceNBT" caption="Import Workspace" smallImage="C:\PenilaianTanah\icons\workspace.png" largeImage="C:\PenilaianTanah\icons\workspace.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\Workspace.pyt\Import_Workspace" name="Import Workspace" xmlns=""/>
+					</args>
+					<tooltip heading="Import Workspace">Menu untuk mengimpor Workspace  NBT.</tooltip>
 				</button>
 				<button id="ButtonMasukkanDataNBTSebelumnya" caption="Masukkan Data NBT Sebelumnya" smallImage="C:\PenilaianTanah\icons\location.png" largeImage="C:\PenilaianTanah\icons\location.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>

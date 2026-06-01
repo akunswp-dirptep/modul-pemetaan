@@ -1,9 +1,4 @@
 ﻿import arcpy, os, sys, requests, json, datetime
-from urllib.parse import urlparse, unquote
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import time
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -13,7 +8,6 @@ script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
-
 
 from nbtutils import persil
 from zntutils import sample_point as samplepoint
@@ -830,7 +824,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         
         # URL untuk testing dan produksi
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
-        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
     
         url = prod_url if use_production else test_url
 

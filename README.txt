@@ -1,5 +1,5 @@
-Version: 6.x - Jayawijaya
-Published: xx/04/2025
+Version: 6.0.1 - Jayawijaya
+Published: 27/05/2026
 Created by: Direktorat Penilaian Tanah dan Ekonomi Pertanahan Kementerian ATR/BPN
 
 Perubahan Struktur Project
@@ -8,6 +8,7 @@ Perubahan Struktur Project
 
 Penambahan Fitur
  - Menambahkan Fitur Baru, Login Pemeta, Login SSO dan Logout Pemeta
+ - Menambahkan Fitur Baru untuk memilih Basemap dari Sumber Online
  
 Penyesuaian Fitur:
  - Memindahkan Validasi Kelengkapan File Shapefile

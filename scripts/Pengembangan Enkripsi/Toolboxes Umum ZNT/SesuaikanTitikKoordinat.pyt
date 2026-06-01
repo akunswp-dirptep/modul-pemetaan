@@ -281,7 +281,7 @@ class Sesuaikan_Titik_Koordinat(object):
         
         # URL untuk testing dan produksi
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
-        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
     
         url = prod_url if use_production else test_url
 
@@ -574,7 +574,7 @@ class Sesuaikan_Titik_Koordinat(object):
         dict: Response dari server setelah upload
         """
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/sync/geser-titik"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/sync/geser-titik"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/sync/geser-titik"
         
         url = prod_url if use_production else test_url
 

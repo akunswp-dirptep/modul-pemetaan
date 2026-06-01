@@ -326,7 +326,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         
         # URL untuk testing dan produksi
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
-        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
     
         url = prod_url if self.use_production else test_url
 
@@ -520,7 +520,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         dict: Response dari server setelah upload
         """
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/sync/pembanding"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/sync/pembanding"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/sync/pembanding"
         
         url = prod_url if self.use_production else test_url
 
@@ -700,7 +700,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         dict: Response dari server setelah upload
         """
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/sync/tidak-digunakan"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/sync/tidak-digunakan"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/sync/tidak-digunakan"
         
         url = prod_url if self.use_production else test_url
 
@@ -832,7 +832,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         dict: Response dari server setelah upload
         """
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/sync/ganti-zoning"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/sync/ganti-zoning"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/sync/ganti-zoning"
         
         url = prod_url if self.use_production else test_url
 

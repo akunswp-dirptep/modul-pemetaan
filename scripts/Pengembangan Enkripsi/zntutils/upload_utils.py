@@ -43,7 +43,7 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
     try:
         arcpy.AddMessage('Mengupload file ke server...')
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/upload"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/upload"
         url = prod_url if use_production else test_url
 
         headers = {
@@ -148,16 +148,9 @@ def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feat
         )
 
         # Konfigurasi URL
-        test_url = (
-            "https://belajar.atrbpn.go.id/"
-            "sipenta/tatausaha-2/api/pemetaan/upload"
-        )
-
-        prod_url = (
-            "https://sipenta.atrbpn.go.id/"
-            "tatausaha-2/api/pemetaan/upload"
-        )
-
+        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload"
+        
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/upload"
         url = (
             prod_url
             if use_production
@@ -274,14 +267,6 @@ def upload_json_data_to_sipenta(nomor_berkas, token, param, in_feature, json_dat
         return
 
     try:
-        zipname = os.path.join(path, in_feature + ".zip")
-        with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for file in shapefile_components:
-                zipf.write(file, basename(file))
-    except Exception as e:
-        arcpy.AddError(f"Terdapat kesalahan saat membuat file zip: {str(e)}")
-        return
-    try:
 
         arcpy.AddMessage(
             "Mengupload file ke server..."
@@ -289,7 +274,7 @@ def upload_json_data_to_sipenta(nomor_berkas, token, param, in_feature, json_dat
 
         # Konfigurasi URL
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha-2/api/pemetaan/upload"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/upload"
         
 
         url = (

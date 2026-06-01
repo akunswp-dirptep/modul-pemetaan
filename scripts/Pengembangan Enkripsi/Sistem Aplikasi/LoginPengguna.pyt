@@ -25,7 +25,7 @@ class Toolbox:
 class Login_Pemeta_Nilai_Tanah:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Akun Pemeta Nilai Tanah"
+        self.label = "Login Pemeta Nilai Tanah"
         self.description = ""
 
     def getParameterInfo(self):
@@ -306,7 +306,7 @@ class Login_Pemeta_Nilai_Tanah:
         
         # URL untuk testing dan produksi
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/login/3/pemeta"
-        prod_url = f"https://sipentan.go.id/tatausaha-2/login/3/pemeta"
+        prod_url = f"https://sipentan.go.id/tatausaha/login/3/pemeta"
     
         # url = prod_url if use_production else test_url
         url = prod_url if use_production else test_url

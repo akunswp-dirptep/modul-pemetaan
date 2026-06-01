@@ -9,7 +9,7 @@
 				<tab id="PentabitMenu" caption="Nilai Bidang Tanah">
 					<!-- <group refID="nbt_1"/> -->
 					<!-- <group refID="nbt_qc"/> -->
-					<group refID="nbt_2"/>
+					<!-- <group refID="nbt_2"/> -->
 					<group refID="pembaruan_nbt"/>
 					<!-- <group refID="backup_gdb_nbt"/> -->
 					<!-- <group refID="nbt_layout"/> -->
@@ -54,6 +54,7 @@
 					<menu refID="pengolahan_titik_sampel_pembaruan_nbt" size="Medium" />
 					<menu refID="pengolahan_pembaruan_nbt" size="Medium" />
 					<menu refID="layout_dan_upload_pembaruan_nbt" size="Medium" />
+					<menu refID="menu_backup_dan_ekspor_hasil_nbt" size="Medium" />
 
 
 					<toolPalette refID="ToolPalette13" size="large"/>
@@ -462,7 +463,15 @@
 				<menu id="layout_dan_upload_pembaruan_nbt" caption="Layout dan Upload" extendedCaption="Layout dan Upload" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\analysis1.png"
 					smallImage="C:\PenilaianTanah\icons\analysis1.png">
+					<button refID="ButtonTampilkanSimbologiPersilLayer" size="Medium"/>
 					<button refID='ButtonUploadTitikSampel' />
+
+				</menu>
+				<menu id="menu_backup_dan_ekspor_hasil_nbt" caption="Backup dan Ekspor Hasil" extendedCaption="Backup dan Ekspor Hasil" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\uploads.png"
+					smallImage="C:\PenilaianTanah\icons\uploads.png">
+					<tooltip heading="Backup dan Ekspor Hasil Pengolahan">Backup dan Ekspor Hasil Perhitungan Nilai Bidang Tanah.</tooltip>
+					<button refID="ButtonEksporGeodatabaseNBT" />
 
 				</menu>
 				
@@ -2150,17 +2159,17 @@
 
 		
 		<!-- Button Sistem Aplikasi -->
-				<button id="ButtonLoginPemeta" caption="Akun Pemeta Nilai Tanah" smallImage="C:\PenilaianTanah\icons\logo_login_SSO.png" largeImage="C:\PenilaianTanah\icons\logo_login_SSO.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonLoginPemeta" caption="Login Pemeta Nilai Tanah" smallImage="C:\PenilaianTanah\icons\logo_login_SSO.png" largeImage="C:\PenilaianTanah\icons\logo_login_SSO.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\LoginPengguna.pyt\Login_Pemeta_Nilai_Tanah" name="Akun Pemeta Nilai Tanah" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\LoginPengguna.pyt\Login_Pemeta_Nilai_Tanah" name="Login Pemeta Nilai Tanah" xmlns=""/>
 					</args>
-					<tooltip heading="Akun Pemeta Nilai Tanah">Menu untuk Login Pemeta Nilai Tanah ke dalam aplikasi penilaian tanah</tooltip>
+					<tooltip heading="Login Pemeta Nilai Tanah">Menu untuk Login Pemeta Nilai Tanah ke dalam aplikasi penilaian tanah</tooltip>
 				</button>
-				<button id="ButtonCekPembaruanAplikasi" caption="Informasi Pembaruan" smallImage="C:\PenilaianTanah\icons\penilaian_tanah.ico" largeImage="C:\PenilaianTanah\icons\penilaian_tanah.ico" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonCekPembaruanAplikasi" caption="Cek Pembaruan Aplikasi" smallImage="C:\PenilaianTanah\icons\penilaian_tanah.ico" largeImage="C:\PenilaianTanah\icons\penilaian_tanah.ico" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\AplikasiPenilaianTanah.pyt\Catatan_Aplikasi" name="Informasi Pembaruan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\AplikasiPenilaianTanah.pyt\Catatan_Aplikasi" name="Cek Pembaruan Aplikasi" xmlns=""/>
 					</args>
-					<tooltip heading="Informasi Pembaruan"></tooltip>
+					<tooltip heading="Cek Pembaruan Aplikasi"></tooltip>
 				</button>
 		<!-- Button Pembaruan NBT (Restorasi) -->
 			<!-- Menu Persiapan Data -->
@@ -2517,6 +2526,12 @@
 					</args>
 					<tooltip heading="Tampilkan Simbologi Titik Sampel">Menu untuk mengaplikasikan simbologi pada titik sampel.</tooltip>
 				</button>
+				<button id="ButtonPersiapkanData" caption="Rekomendasi Pembanding" smallImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" largeImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Rekomendasi_Pembanding" name="Rekomendasi Pembanding" xmlns=""/>
+					</args>
+					<tooltip heading="Rekomendasi Pembanding">Menu untuk mencari rekomendasi bidang pembanding berdasarkan zonasi dan radius pencarian.</tooltip>
+				</button>
 				<button id="ButtonRekomendasiPersilPembanding" caption="Rekomendasi Pembanding" smallImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" largeImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Rekomendasi_Pembanding" name="Rekomendasi Pembanding" xmlns=""/>
@@ -2748,6 +2763,53 @@
 
 					<tooltip heading="Upload Titik Sampel">
 						Menu untuk mengupload titik sampel yang akan digunakan.
+					</tooltip>
+				</button>
+				<button
+					id="ButtonTampilkanSimbologiPersilLayer"
+					caption="Tampilkan Simbologi Persil"
+					smallImage="C:\PenilaianTanah\icons\folder.png"
+					largeImage="C:\PenilaianTanah\icons\folder.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\LayoutDanUpload.pyt\Tampilkan_Simbologi_Persil"
+							name="Tampilkan Simbologi Persil"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Tampilkan Simbologi Persil">
+						Menu untuk menampilkan simbologi persil yang akan digunakan.
+					</tooltip>
+				</button>
+			<!-- Backup dan Ekspor Hasil -->
+				<button
+					id="ButtonEksporGeodatabaseNBT"
+					caption="Ekspor Geodatabase"
+					smallImage="C:\PenilaianTanah\icons\folder.png"
+					largeImage="C:\PenilaianTanah\icons\folder.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\BackupDanEksporHasil.pyt\Ekspor_Geodatabase"
+							name="Ekspor Geodatabase"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Ekspor Geodatabase">
+						Menu untuk meng ekspor geodatabase yang akan digunakan.
 					</tooltip>
 				</button>
 

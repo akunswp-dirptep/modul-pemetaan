@@ -844,7 +844,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
 
 
         field_id_perubahan = arcpy.Parameter(
-            displayName="Field ID Perubahan",
+            displayName="Field ID",
             name="field_id_perubahan",
             datatype="Field",
             parameterType="Optional",
@@ -856,6 +856,19 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         ]
 
         field_id_perubahan.enabled = False
+        field_kelompok_perubahan = arcpy.Parameter(
+            displayName="Field Kelompok Perubahan",
+            name="field_kelompok_perubahan",
+            datatype="Field",
+            parameterType="Optional",
+            direction="Input"
+        )
+
+        field_kelompok_perubahan.parameterDependencies = [
+            nbt_awal.name
+        ]
+
+        field_kelompok_perubahan.enabled = False
 
         output_lama = arcpy.Parameter(
             displayName="Output Peta Lama",
@@ -871,6 +884,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             gunakan_data_perubahan,
             field_perubahan,
             field_id_perubahan,
+            field_kelompok_perubahan,
             output_lama
         ]
 
@@ -881,14 +895,17 @@ class Masukkan_Data_NBT_Sebelumnya(object):
 
             parameters[3].enabled = True
             parameters[4].enabled = True
+            parameters[5].enabled = True
 
         else:
 
             parameters[3].enabled = False
             parameters[4].enabled = False
+            parameters[5].enabled = False
 
             parameters[3].value = None
             parameters[4].value = None
+            parameters[5].value = None
         nbt_layer = parameters[0].valueAsText
         daftar_variabel = parameters[1]
 
@@ -958,7 +975,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
 
         field_perubahan = parameters[3].valueAsText
         field_id_perubahan = parameters[4].valueAsText
-
+        field_kelompok_perubahan = parameters[5].valueAsText
         configs = persil.get_config_values()
 
         dataset_path = configs["project_config"]["dataset_path"]
@@ -1119,7 +1136,8 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             protected_fields.add(field_perubahan.upper())
         if field_id_perubahan:
             protected_fields.add(field_id_perubahan.upper())
-
+        if field_kelompok_perubahan:
+            protected_fields.add(field_kelompok_perubahan.upper())
         geometry_fields = {
             "SHAPE",
             "SHAPE_LENGTH",
@@ -1134,13 +1152,9 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         for field in fields_data:
 
             field_name = field.name
-
             is_protected = (
-
                 field.type in ["Geometry", "OID"]
-
-                or field_name.upper in geometry_fields
-
+                or field_name.upper() in geometry_fields
                 or field_name.upper() in protected_fields
             )
 
@@ -1190,13 +1204,40 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                         0,
                         "PYTHON3"
                     )
+        prov = configs['project_config']['provinsi']
+        kab_kota = configs['project_config']['kab_kota']
+        tahun = configs['project_config']['tahun_penilaian']
+        field_from_project = [
+
+            ['WADMPR', 'TEXT', prov, 'WADMPR',],
+            ['WADMKK', 'TEXT', kab_kota, 'WADMKK',],
+            ['THNNILAI', 'SHORT', tahun, 'THNNILAI'],
+            ['KLSTRZ', 'SHORT', 1, 'KLASTER ZONASI']
+        ]
         existing_fields = [
             f.name.upper()
             for f in arcpy.ListFields(dest_temp_path)
         ]
+        for field_name, field_type, field_value, field_alias in field_from_project:
+
+            if field_name.upper() not in existing_fields:
+
+                arcpy.management.AddField(
+                    dest_temp_path,
+                    field_name,
+                    field_type,
+                    field_alias=field_alias
+                )
+
+            arcpy.management.CalculateField(
+                dest_temp_path,
+                field_name,
+                repr(field_value),
+                "PYTHON3"
+            )
+
 
         if "STATUS_PER" not in existing_fields:
-
             arcpy.management.AddField(
                 dest_temp_path,
                 "status_per",
@@ -1205,8 +1246,17 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 field_alias="Status Perubahan"
             )
 
-        if field_perubahan:
+        if "KELOMPOK_PERUBAHAN" not in existing_fields:
+            arcpy.management.AddField(
+                dest_temp_path,
+                "kelompok_perubahan",
+                "LONG",
+                field_length=50,
+                field_alias="Kelompok Perubahan"
+            )
+                
 
+        if field_perubahan:
             fields_cursor = [
                 field_perubahan,
                 "status_per"
@@ -1231,7 +1281,41 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                         row[1] = None
 
                     cursor.updateRow(row)
-                
+
+        if field_kelompok_perubahan:
+            fields_cursor = [
+                field_kelompok_perubahan,
+                "kelompok_perubahan",
+                "KLSTRZ"
+            ]
+
+            mapping_kelompok = {}
+            counter = 1
+
+            with arcpy.da.UpdateCursor(
+                dest_temp_path,
+                fields_cursor
+            ) as cursor:
+
+                for row in cursor:
+
+                    nilai = row[0]
+
+                    # Jika kosong -> None
+                    if nilai is None or str(nilai).strip() == "" or nilai == 0:
+                        row[1] = None
+
+                    else:
+                        # Jika belum ada di mapping, buat nomor baru
+                        if nilai not in mapping_kelompok:
+                            mapping_kelompok[nilai] = counter
+                            counter += 1
+
+                        # Isi nomor kelompok
+                        row[1] = mapping_kelompok[nilai]
+                        row[2] = None
+
+                    cursor.updateRow(row)
         if field_id_perubahan:
 
             with arcpy.da.UpdateCursor(
@@ -1367,42 +1451,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         existing_field_names = [
             f.name.lower()
             for f in arcpy.ListFields(dest_temp_path)
-        ]
-        prov = configs['project_config']['provinsi']
-        kab_kota = configs['project_config']['kab_kota']
-        tahun = configs['project_config']['tahun_penilaian']
-
-        field_from_project = [
-
-            ['WADMPR', 'TEXT', prov, 'WADMPR',],
-            ['WADMKK', 'TEXT', kab_kota, 'WADMKK',],
-            ['THNNILAI', 'SHORT', tahun, 'THNNILAI'],
-            ['KLSTRZ', 'SHORT', 1, 'KLASTER ZONASI']
-        ]
-
-        for field_name, field_type, field_value, field_alias in field_from_project:
-
-            existing_fields = [
-                f.name.upper()
-                for f in arcpy.ListFields(dest_temp_path)
-            ]
-
-            if field_name.upper() not in existing_fields:
-
-                arcpy.management.AddField(
-                    dest_temp_path,
-                    field_name,
-                    field_type,
-                    field_alias=field_alias
-                )
-
-            arcpy.management.CalculateField(
-                dest_temp_path,
-                field_name,
-                repr(field_value),
-                "PYTHON3"
-            )
-        
+        ]        
         
         if "ls_asal" not in existing_field_names:
 
@@ -1422,6 +1471,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
 
             "ID",
             "status_per",
+            "kelompok_perubahan",
 
             "WADMPR",
             "WADMKK",
@@ -1471,12 +1521,6 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             persil_layer,
             ordered_fields
         )
-        if "STATUS_PER" in existing_field_names:
-            arcpy.management.AlterField(
-                persil_layer,
-                "STATUS_PER",
-                new_field_alias="Status Perubahan"
-            )
 
         # Reorder IDBIDANG berdasarkan OBJECTID
         with arcpy.da.UpdateCursor(
@@ -1492,7 +1536,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 cursor.updateRow(row)
 
         arcpy.SetParameter(
-            5,
+            6,
             persil_layer
         )
 
@@ -1630,11 +1674,11 @@ class Masukkan_Data_NBT_Sebelumnya(object):
 
         existing_fields = arcpy.ListFields(input_fc)
 
-        system_fields = {
-            "OBJECTID",
-            "FID",
-            "SHAPE"
+        keep_fields_name = {
+            'status_per' : 'STATUS PERUBAHAN',
+            'kelompok_perubahan' : 'KELOMPOK PERUBAHAN',
         }
+
 
         existing_field_names = [
             f.name
@@ -1671,8 +1715,12 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             )
 
             output_field = field_map.outputField
-            output_field.name = field_name.upper()
-            output_field.aliasName = field_name.upper()
+            if field_name.lower() in keep_fields_name:
+                output_field.name = field_name
+                output_field.aliasName = keep_fields_name[field_name.lower()]
+            else:
+                output_field.name = field_name.upper()
+                output_field.aliasName = field_name.upper()
 
             field_map.outputField = output_field
 

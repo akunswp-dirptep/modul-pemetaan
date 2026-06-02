@@ -653,9 +653,9 @@ KAB_KOTA = {
     ],
 }
 
-VERSION_NUMBER = '6.0.1'
+VERSION_NUMBER = '6.0.2'
 VERSION_NAME = 'Aceh Barat Daya'
-VERSION_ID = 'sapi-tidur-berenang-696666-32b'
+VERSION_ID = 'hidup-rusa-bebek-02062026-6gg'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
 UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"

@@ -2130,39 +2130,100 @@ class Masukkan_Data_Fasilitas(object):
         max_distance=5
     ):
 
-        messages.addMessage(
-            f"== Membaca centroid {source_fc} =="
+        scratch_gdb = arcpy.env.scratchGDB
+
+        source_point = os.path.join(
+            scratch_gdb,
+            "tmp_source_centroid"
         )
 
-        source_centroids = []
+        target_point = os.path.join(
+            scratch_gdb,
+            "tmp_target_centroid"
+        )
 
-        with arcpy.da.SearchCursor(
-            source_fc,
-            ["OID@", "SHAPE@", source_field]
-        ) as cursor:
+        join_result = os.path.join(
+            scratch_gdb,
+            "tmp_spatial_join"
+        )
 
-            for row in cursor:
+        # =====================================================
+        # CLEANUP
+        # =====================================================
 
-                oid = row[0]
-                geom = row[1]
-                nilai = row[2]
+        for fc in [
+            source_point,
+            target_point,
+            join_result
+        ]:
 
-                if not geom:
-                    continue
-
-                centroid_geom = arcpy.PointGeometry(
-                    geom.centroid,
-                    geom.spatialReference
-                )
-
-                source_centroids.append({
-                    "oid": oid,
-                    "centroid": centroid_geom,
-                    "nilai": nilai
-                })
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)
 
         messages.addMessage(
-            f"== {len(source_centroids)} centroid dibaca =="
+            "== Membuat centroid source =="
+        )
+
+        arcpy.management.FeatureToPoint(
+            source_fc,
+            source_point,
+            "INSIDE"
+        )
+
+        messages.addMessage(
+            "== Membuat centroid target =="
+        )
+
+        arcpy.management.FeatureToPoint(
+            target_fc,
+            target_point,
+            "INSIDE"
+        )
+
+        messages.addMessage(
+            "== Spatial Join (Closest) =="
+        )
+
+        field_mappings = arcpy.FieldMappings()
+
+        field_mappings.addTable(target_point)
+
+        field_mappings.addTable(source_point)
+
+        arcpy.analysis.SpatialJoin(
+            target_features=target_point,
+            join_features=source_point,
+            out_feature_class=join_result,
+            join_operation="JOIN_ONE_TO_ONE",
+            join_type="KEEP_ALL",
+            field_mapping=field_mappings,
+            match_option="CLOSEST",
+            search_radius=f"{max_distance} Meters"
+        )
+
+        messages.addMessage(
+            "== Membaca hasil join =="
+        )
+
+        value_dict = {}
+
+        with arcpy.da.SearchCursor(
+            join_result,
+            [
+                "TARGET_FID",
+                source_field
+            ]
+        ) as rows:
+
+            for target_oid, nilai in rows:
+
+                if nilai is None:
+                    continue
+
+                value_dict[target_oid] = nilai
+
+        messages.addMessage(
+            f"== {len(value_dict)} pasangan ditemukan =="
         )
 
         updated = 0
@@ -2170,47 +2231,21 @@ class Masukkan_Data_Fasilitas(object):
 
         with arcpy.da.UpdateCursor(
             target_fc,
-            ["OID@", "SHAPE@", target_field]
-        ) as cursor:
+            [
+                "OID@",
+                target_field
+            ]
+        ) as rows:
 
-            for row in cursor:
+            for row in rows:
 
-                oid_target = row[0]
-                geom_target = row[1]
+                oid = row[0]
 
-                if not geom_target:
+                if oid in value_dict:
 
-                    skipped += 1
-                    continue
+                    row[1] = value_dict[oid]
 
-                centroid_target = arcpy.PointGeometry(
-                    geom_target.centroid,
-                    geom_target.spatialReference
-                )
-
-                nearest_distance = float("inf")
-
-                nearest_value = None
-
-                for item in source_centroids:
-
-                    dist = centroid_target.distanceTo(
-                        item["centroid"]
-                    )
-
-                    if dist < nearest_distance:
-
-                        nearest_distance = dist
-                        nearest_value = item["nilai"]
-
-                if (
-                    nearest_value is not None and
-                    nearest_distance <= max_distance
-                ):
-
-                    row[2] = nearest_value
-
-                    cursor.updateRow(row)
+                    rows.updateRow(row)
 
                     updated += 1
 
@@ -2225,6 +2260,19 @@ class Masukkan_Data_Fasilitas(object):
         messages.addMessage(
             f"== {skipped} bidang dilewati =="
         )
+
+        # =====================================================
+        # CLEANUP
+        # =====================================================
+
+        for fc in [
+            source_point,
+            target_point,
+            join_result
+        ]:
+
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)
     # =====================================================
     # EXECUTE
     # =====================================================

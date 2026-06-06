@@ -31,7 +31,7 @@ class Toolbox:
                       Tambah_Fasilitas,
                       Tambah_Resiko,
                       Hitung_Jarak_Fasilitas,
-                      Hitung_Resiko_Persil,
+                      Hitung_Resiko_Persil
                       ]
 
 
@@ -540,7 +540,7 @@ class Hitung_Jarak_Fasilitas(object):
 
     def getParameterInfo(self):
 
-        output_persil=arcpy.Parameter(
+        output_persil = arcpy.Parameter(
             displayName="Output Persil",
             name="output_persil",
             datatype="GPFeatureLayer",
@@ -548,7 +548,11 @@ class Hitung_Jarak_Fasilitas(object):
             direction="Output"
         )
 
-        return[output_persil]
+        return [
+
+            output_persil
+        ]
+
 
     def isLicensed(self):
         return True
@@ -1027,3 +1031,5 @@ class Hitung_Resiko_Persil(object):
         )
 
         return
+
+ 

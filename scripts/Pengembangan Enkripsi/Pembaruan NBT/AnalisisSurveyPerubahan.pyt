@@ -24,7 +24,7 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Ambil_LBT_Dari_Sipenta, Hitung_Jarak_Fasilitas, Upload_Basis_Data, Hitung_Resiko_Persil]
+        self.tools = [Ambil_LBT_Dari_Sipenta, Hitung_Jarak_Fasilitas, Upload_Basis_Data, Hitung_Resiko_Persil, Optimasi_Hitung_Jarak_Fasilitas]
 
 
 class Ambil_LBT_Dari_Sipenta(object):
@@ -307,7 +307,7 @@ class Ambil_LBT_Dari_Sipenta(object):
 
         prod_url = (
             "https://sipenta.atrbpn.go.id/"
-            "tatausaha-2/api/"
+            "tatausaha/api/"
             f"pemetaan/data-lbt/?no_berkas={nomor_berkas}"
         )
 
@@ -1048,3 +1048,333 @@ class Hitung_Resiko_Persil(object):
         )
 
         return
+
+class Optimasi_Hitung_Jarak_Fasilitas(object):
+
+    def __init__(self):
+
+        self.label = "Optimasi Hitung Jarak Fasilitas"
+        self.description = ""
+        self.canRunInBackground = False
+
+
+    def getParameterInfo(self):
+
+        simpan_temp = arcpy.Parameter(
+            displayName="Simpan ke Temporary Layer",
+            name="simpan_temp",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input"
+        )
+        simpan_temp.value = False
+
+        hanya_update = arcpy.Parameter(
+            displayName="Sinkronisasi Data Persil Terbaru",
+            name="hanya_update",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input"
+        )
+        hanya_update.value = True
+
+        output_persil = arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [
+            simpan_temp,
+            hanya_update,
+            output_persil
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def delete_if_exists(self, path):
+
+        if arcpy.Exists(path):
+
+            try:
+                arcpy.management.Delete(path)
+
+            except:
+                pass
+
+    def add_field_if_not_exists(
+        self,
+        feature_class,
+        field_name,
+        field_type
+    ):
+
+        field_names = [
+            field.name
+            for field in arcpy.ListFields(
+                feature_class
+            )
+        ]
+
+        if field_name not in field_names:
+
+            arcpy.management.AddField(
+                feature_class,
+                field_name,
+                field_type
+            )
+
+    def execute(self, parameters, messages):
+
+        messages.addMessage("== Proses mulai ==")
+
+        # 1. Mengambil Konfigurasi dari config file
+        configs = persil.get_config_values()
+        dataset_path = configs["project_config"]["dataset_path"]
+        jaringanjalan_path = configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        nd_path = configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
+        jaringanjalan_nd_path = configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
+
+        # 2. Mengambil nilai parameter
+
+        simpan_temp = parameters[0].value
+        hanya_update = parameters[1].value
+
+        # 3. Mempersiapkan path untuk dataset dan output sementara
+
+        persil_fc = os.path.join(dataset_path,"Persil_Layer")
+        temp_output_name = "Analisis_Persil_Dengan_Fasilitas_Temp"
+        temp_output_fc = os.path.join(dataset_path, temp_output_name)
+
+
+        if simpan_temp:
+            self.delete_if_exists(temp_output_fc)
+            messages.addMessage("== Membuat layer sementara ==")
+            arcpy.management.CopyFeatures(persil_fc,temp_output_fc)
+            update_fc = temp_output_fc
+
+        else:
+            update_fc = persil_fc
+
+        # 4. Menentukan layer untuk analisis, jika hanya_update maka lakukan seleksi pada layer persil_input, jika tidak maka gunakan seluruh data persil
+
+        persil_layer = "persil_input"
+
+        self.delete_if_exists(
+            persil_layer
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            update_fc,
+            persil_layer
+        )
+
+        if hanya_update:
+            arcpy.management.SelectLayerByAttribute(
+                persil_layer,
+                "NEW_SELECTION",
+                "UPPER(status_per) = 'UPDATE'"
+            )
+
+        # 5. Validasi jumlah feature yang akan diproses
+
+        jumlah = int(arcpy.management.GetCount(persil_layer)[0])
+
+        if jumlah == 0:
+            messages.addWarningMessage("== Tidak ada feature yang diproses ==")
+            return
+
+        persilcentroid = ("Centroid_Persil")
+        gdb_temp = arcpy.env.scratchGDB
+        persilcentroid_path = os.path.join(gdb_temp, persilcentroid)
+
+        # 6. Membuat centroid dari persil untuk digunakan sebagai titik awal dalam analisis jaringan dan menyimpan mapping OID dengan IDBIDANG untuk memudahkan update hasil analisis jaringan ke layer persil setelahnya
+
+        messages.addMessage("== Membuat centroid persil ==")
+
+        arcpy.management.FeatureToPoint(
+            persil_layer,
+            persilcentroid_path,
+            "INSIDE"
+        )
+        oid_to_idbidang = {}
+
+        oid_field = arcpy.Describe(persilcentroid_path).OIDFieldName
+
+        with arcpy.da.SearchCursor(persilcentroid_path, [oid_field, "IDBIDANG"]) as rows:
+
+            for oid, idbidang in rows:
+                oid_to_idbidang[oid] = idbidang
+
+        # 7. Persiapan field pada jaringan jalan untuk analisis jaringan
+
+        messages.addMessage("== Persiapan field jalan ==")
+
+        self.add_field_if_not_exists(
+            jaringanjalan_path,
+            "P_Jalan",
+            "DOUBLE"
+        )
+
+        arcpy.management.CalculateField(
+            jaringanjalan_path,
+            "P_Jalan",
+            "!shape.length!",
+            "PYTHON3"
+        )
+
+        outNALayerName = "hasil_analisis"
+        impedance_attribute = "P_Jalan"
+
+        dataset_template_path = os.path.dirname(jaringanjalan_nd_path)
+        dataset_fasilitas_path = os.path.join(os.path.dirname(dataset_path), "fasilitas")
+        arcpy.AddMessage(dataset_fasilitas_path)
+
+        # 7. Melakukan iterasi untuk setiap fasilitas yang ada di dataset fasilitas, kemudian melakukan analisis jaringan untuk mencari jarak terdekat dari centroid persil ke fasilitas tersebut, dan menyimpan hasilnya ke field yang sudah disiapkan
+
+        arcpy.env.workspace = (dataset_fasilitas_path)
+
+        list_fc = arcpy.ListFeatureClasses("*")
+
+        list_fasilitas = []
+        for fc in list_fc:
+
+            temp_path = os.path.join(dataset_fasilitas_path, fc )
+            jumlah_fc = int(arcpy.management.GetCount(temp_path)[0])
+
+            if jumlah_fc > 0:
+                list_fasilitas.append(fc)
+
+        arcpy.AddMessage(f"== Fasilitas yang diproses: {list_fasilitas} ==")
+        hasilNAObject = arcpy.na.MakeClosestFacilityLayer(
+                    nd_path,
+                    outNALayerName,
+                    impedance_attribute,
+                    "TRAVEL_TO",
+                    default_cutoff=500000,
+                    default_number_facilities_to_find=1
+                )
+            
+
+        outNALayer = hasilNAObject.getOutput(0)
+        arcpy.na.AddLocations(
+                outNALayer,
+                "Incidents",
+                persilcentroid_path
+            )
+        
+        jarak_dict = {}
+        daftar_nama_field = []
+        for fasilitas in list_fasilitas:
+            # 8. Melakukan analisis jaringan untuk mencari jarak terdekat dari centroid persil ke kelas jalan tersebut, dan menyimpan hasilnya ke field yang sudah disiapkan
+            messages.addMessage(f"== Hitung jarak fasilitas: {fasilitas} ==")
+
+            fasilitas_path = os.path.join(dataset_fasilitas_path,  fasilitas)
+            nama_field_target = 'JK' + fasilitas
+            daftar_nama_field.append(nama_field_target)
+
+            arcpy.na.AddLocations(
+                outNALayer,
+                "Facilities",
+                fasilitas_path,
+                append="CLEAR"
+            )
+
+            solve_result = arcpy.na.Solve(outNALayer)
+            if solve_result.getMessages(1): # 1 adalah kode untuk Warning
+                messages.addWarningMessage(f"Peringatan Solve NA: {solve_result.getMessages(1)}")
+
+            incident_path = os.path.join(dataset_template_path, f"incident_{fasilitas}" )
+            route_path = os.path.join(dataset_template_path, f"route_{fasilitas}")
+
+            self.delete_if_exists(incident_path)
+            self.delete_if_exists(route_path)
+
+            for lyr in outNALayer.listLayers():
+
+                if lyr.isGroupLayer:
+                    continue
+                if lyr.name == "Incidents":
+                    arcpy.management.CopyFeatures(lyr,  incident_path)
+
+                elif lyr.name == "Routes":
+
+                    arcpy.management.CopyFeatures(lyr,route_path)
+
+            # 9. Mengambil nilai Total_P_Jalan untuk masing-masing incidentID
+
+            arcpy.management.JoinField(
+                incident_path,
+                "OBJECTID",
+                route_path,
+                "IncidentID",
+                ["Total_P_Jalan"]
+            )
+
+            # 10. Menyimpan data panjang rute dengan mapping ObjectID incident ke IDBIDANG untuk memudahkan update hasil analisis jaringan ke layer persil setelahnya
+
+            with arcpy.da.SearchCursor(
+                incident_path,
+                ["OBJECTID", "Total_P_Jalan"]
+            ) as rows:
+
+                for incident_oid, jarak in rows:
+
+                    idbidang = oid_to_idbidang.get(incident_oid)
+                    if idbidang is not None:
+                        if idbidang not in jarak_dict:
+                            jarak_dict[idbidang] = {}
+                        jarak_dict[idbidang][nama_field_target] = jarak
+        # 11. Melakukan update data panjang rute ke field yang sudah disiapkan di layer persil dengan mapping IDBIDANG
+        field_to_update = ["IDBIDANG"] + daftar_nama_field
+
+        with arcpy.da.UpdateCursor(
+            persil_layer,
+            field_to_update
+        ) as rows:
+
+            for row in rows:
+
+                data = jarak_dict.get(row[0], {})
+
+                for i, field_name in enumerate(
+                    daftar_nama_field,
+                    start=1
+                ):
+                    row[i] = data.get(field_name)
+
+                rows.updateRow(row)
+
+
+        # 12. Menampilkan output, jika opsi simpan_temp diaktifkan maka akan menampilkan layer sementara, jika tidak maka akan menampilkan layer persil yang sudah diupdate
+        if simpan_temp:
+            output_name = temp_output_name
+        else:
+            output_name = "Persil_Layer"
+
+        self.delete_if_exists(
+            output_name
+        )
+
+        arcpy.management.MakeFeatureLayer(
+            update_fc,
+            output_name
+        )
+
+        parameters[2].value = output_name
+
+        messages.addMessage(
+            "== Proses selesai =="
+        )
+
+        return
+   

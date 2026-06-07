@@ -22,7 +22,7 @@ class Toolbox:
 
         # List of tool classes associated with this toolbox
         self.tools = [Identifikasi_Perubahan_Persil, 
-                    Periksa_Perubahan_Persil,
+                      Periksa_Perubahan_Persil,
                       Sesuaikan_Status_Perubahan_Persil,
                       Menentukan_Perubahan_Mengelompok,
                       Reset_Perubahan_Mengelompok,
@@ -1613,7 +1613,7 @@ class Update_Luas_Tanah(object):
 class Analisis_Bentuk_Persil(object):
 
     def __init__(self):
-        self.label="Analisis Bentuk Persil Tes"
+        self.label="Analisis Bentuk Persil"
         self.description=""
         self.canRunInBackground=False
 

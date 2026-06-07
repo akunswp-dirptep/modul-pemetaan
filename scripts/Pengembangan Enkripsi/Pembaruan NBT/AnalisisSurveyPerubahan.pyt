@@ -24,49 +24,30 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Ambil_LBT_Dari_Sipenta, Hitung_Jarak_Fasilitas, Upload_Basis_Data, Hitung_Resiko_Persil]
-
+        self.tools = [Ambil_LBT_Dari_Sipenta, 
+                      Konversi_JSON_LBT,
+                      Hitung_Jarak_Fasilitas, 
+                      Upload_Basis_Data, 
+                      Hitung_Resiko_Persil]
 
 class Ambil_LBT_Dari_Sipenta(object):
 
     def __init__(self):
-
         self.label = "Ambil LBT Dari Sipenta"
-
-        self.description = (
-            "Mengambil layer LBT "
-            "dari SIPENTA"
-        )
-
+        self.description = "Mengambil layer LBT dari SIPENTA"
         self.canRunInBackground = False
 
     def getParameterInfo(self):
-
         berkas_list = get_all_berkas_id()
-
         berkas_show = []
 
         if berkas_list is not None:
-
             for berkas in berkas_list:
-
-                if (
-                    berkas[1] is True
-                    and (
-                        '03/' in berkas[0]
-                        or '04/' in berkas[0]
-                    )
-                ):
-
-                    berkas_show.append(
-                        f"{berkas[0]}"
-                    )
+                if berkas[1] is True and ('03/' in berkas[0] or '04/' in berkas[0]):
+                    berkas_show.append(f"{berkas[0]}")
 
         if len(berkas_show) == 0:
-
-            berkas_show = [
-                "Tidak ada berkas"
-            ]
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
         berkas = arcpy.Parameter(
             displayName="Nomor Berkas",
@@ -75,13 +56,10 @@ class Ambil_LBT_Dari_Sipenta(object):
             parameterType="Required",
             direction="Input"
         )
-
         berkas.filter.type = "ValueList"
-
         berkas.filter.list = berkas_show
 
         if len(berkas_show) > 0:
-
             berkas.value = berkas_show[0]
 
         output_fasilitas = arcpy.Parameter(
@@ -111,63 +89,60 @@ class Ambil_LBT_Dari_Sipenta(object):
             parameterType="Derived",
             direction="Output"
         )
-
-        return [
-            berkas,
-            output_fasilitas,
-            output_jalan,
-            output_zona,
-            output_resiko
-        ]
+        
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
+        
+        penjelasan.value = (
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
+        
+        return [berkas, output_fasilitas, output_jalan, output_zona, output_resiko, penjelasan]
 
     def isLicensed(self):
         return True
 
     def updateParameters(self, parameters):
+        # Opsional: Bisa ditambahkan logika mengunci input jika belum login
+        # seperti pada class Upload_Peta_Rencana_Lokasi_Kegiatan_AOI
+        berkas = parameters[0]
+        penjelasan = parameters[5]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            berkas.enabled = False
+            penjelasan.enabled = True
+        else:
+            berkas.enabled = True
+            penjelasan.enabled = False
         return
 
     def updateMessages(self, parameters):
         return
 
     def execute(self, parameters, messages):
-
-        user_data = get_user_data(
-            CREDENTIAL_KEY
-        )
+        user_data = get_user_data(CREDENTIAL_KEY)
 
         if user_data is None:
-
-            messages.addErrorMessage(
-                "Silakan login terlebih dahulu."
-            )
-
+            messages.addErrorMessage("Silakan login terlebih dahulu.")
             raise arcpy.ExecuteError
 
-        token = user_data.get(
-            AUTH_KEY,
-            None
-        )
-
-        nomor_berkas = (
-            parameters[0].valueAsText
-        )
-
-        server = get_user_data(
-            PREFERRED_SERVER_KEY
-        )
-
-        use_production = (
-            True
-            if server == "Produksi"
-            or server is None
-            else False
-        )
+        token = user_data.get(AUTH_KEY, None)
+        nomor_berkas = parameters[0].valueAsText
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server is None else False
 
         configs = self.get_config_values()
+        dataset_path = configs["dataset_path"]
 
-        dataset_path = (
-            configs["dataset_path"]
-        )
+        arcpy.AddMessage(token)
 
         api_data = self.call_lbt_api(
             token=token,
@@ -175,15 +150,11 @@ class Ambil_LBT_Dari_Sipenta(object):
             use_production=use_production
         )
 
-        if not api_data["success"]:
-
-            messages.addErrorMessage(
-                "API mengembalikan status gagal."
-            )
-
+        if not api_data.get("success"):
+            messages.addErrorMessage("API mengembalikan status gagal.")
             raise arcpy.ExecuteError
 
-        data = api_data["data"]
+        data = api_data.get("data", {})
 
         layers = {
             "fasilitas": "LBT_Fasilitas",
@@ -200,241 +171,304 @@ class Ambil_LBT_Dari_Sipenta(object):
         }
 
         for api_key, fc_name in layers.items():
-
             geojson = data.get(api_key)
 
             if not geojson:
-
-                messages.addWarningMessage(
-                    f"{fc_name} tidak ditemukan."
-                )
-
+                messages.addWarningMessage(f"{fc_name} tidak ditemukan.")
                 continue
 
-            features = geojson.get(
-                "features",
-                []
-            )
-
+            features = geojson.get("features", [])
             if len(features) == 0:
-
-                messages.addWarningMessage(
-                    f"{fc_name} kosong."
-                )
-
+                messages.addWarningMessage(f"{fc_name} kosong.")
                 continue
 
-            json_path = os.path.join(
-                configs["ws_dir"],
-                f"{fc_name}.json"
-            )
+            json_path = os.path.join(configs["ws_dir"], f"{fc_name}.json")
 
-            with open(
-                json_path,
-                "w",
-                encoding="utf-8"
-            ) as f:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(geojson, f, ensure_ascii=False)
 
-                json.dump(
-                    geojson,
-                    f,
-                    ensure_ascii=False
-                )
-
-            output_fc = os.path.join(
-                dataset_path,
-                fc_name
-            )
+            output_fc = os.path.join(dataset_path, fc_name)
 
             if arcpy.Exists(output_fc):
+                arcpy.management.Delete(output_fc)
 
-                arcpy.management.Delete(
-                    output_fc
-                )
-
-            messages.addMessage(
-                f"Membuat {fc_name}..."
-            )
-
-            arcpy.conversion.JSONToFeatures(
-                json_path,
-                output_fc
-            )
+            messages.addMessage(f"Membuat {fc_name}...")
+            arcpy.conversion.JSONToFeatures(json_path, output_fc)
 
             try:
-
-                arcpy.management.Delete(
-                    json_path
-                )
-
+                arcpy.management.Delete(json_path)
             except Exception:
                 pass
 
             try:
-
-                arcpy.management.MakeFeatureLayer(
-                    output_fc,
-                    fc_name
-                )
-
-                arcpy.SetParameter(
-                    parameter_index[fc_name],
-                    fc_name
-                )
-
+                arcpy.management.MakeFeatureLayer(output_fc, fc_name)
+                arcpy.SetParameter(parameter_index[fc_name], fc_name)
             except Exception:
                 pass
 
-        messages.addMessage("")
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
+        messages.addMessage("\n== Proses selesai ==")
         return
 
-    def call_lbt_api(
-        self,
-        token,
-        nomor_berkas,
-        use_production=True
-    ):
+    def call_lbt_api(self, token, nomor_berkas, use_production=True):
+        # HAPUS parameter ?no_berkas dari string URL
+        # token='Cdv3IZgk8HPy_cDhcYcMjpZUz2Ra9cZUNRv4DlZwngiVVB9IAV1LvyAf6Mscj6dyd_e9SPNS73z8oSvbii58ZCLixigyhe6Y5GZrMbdaa5knTsyOGQsZDUT_Cirzi_7wsNThtZAlblF5m3WY3sNGZqRIYq2hJMCzmV_azBTlzF-ypSRiCMRkcg'
+        # nomor_berkas = '04/2026/0016'
+        token = 'FPmpuYt7NuNUne-zPzHUE_JMlcFTL7DteyeeozdEEqvsgEeOMS36grbsWszrMF53utuTK4Xw0tapGOPfXZiumFYN0iGEqNJs0_LAKRRlSQ_2A7e-okBsg7tQT4vZC9zlNoEVEDV2rqhOwbgMKSs4BODvieDj--GWiYpuHMi-z6bcfij-GzU3s4AjTsq6WAOaeu4aZWtGxIlAPz1dyIRaRSBEuB3KlmyktUuX9o_NNyNtKGRMax1jqxspDU2UD50VHNHUm6Uiyv3UKiWdrWfphLS_-qJQSwQPzKr9AG7UfbdJxZHk1nPtWY74Xp4kxHcYPYOvUjgWCLaLeeXDm__H3i17hfRH53uOh2otrE0C-w'
+        test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-lbt/"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-lbt/"
 
-        test_url = (
-            "https://belajar.atrbpn.go.id/"
-            "sipenta/tatausaha-2/api/"
-            f"pemetaan/data-lbt/?no_berkas={nomor_berkas}"
-        )
-
-        prod_url = (
-            "https://sipenta.atrbpn.go.id/"
-            "tatausaha/api/"
-            f"pemetaan/data-lbt/?no_berkas={nomor_berkas}"
-        )
-
-        url = (
-            prod_url
-            if use_production
-            else test_url
-        )
+        url = prod_url if use_production else test_url
+        # url = test_url
+        arcpy.AddMessage(url)
 
         try:
-
-            arcpy.AddMessage(
-                "Mengambil data LBT..."
-            )
-
+            arcpy.AddMessage("Mengambil data LBT...")
+            
+            # Tambahkan User-Agent untuk menghindari blokir WAF/Cloudflare
             headers = {
-                "Authorization":
-                f"Bearer {token}"
+                "Authorization": f"Bearer {token}",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
-
+            
+            # Gunakan argumen 'params' bawaan requests
+            payload = {
+                "no_berkas": nomor_berkas
+            }
+            
             response = requests.get(
-                url,
-                headers=headers,
+                url, 
+                headers=headers, 
+                params=payload, # requests akan merakit URL dengan aman
                 timeout=60
             )
-
+            
             response.raise_for_status()
-
+            
             data = response.json()
-
             if not data:
-
-                arcpy.AddError(
-                    "Server tidak mengirim data."
-                )
-
+                arcpy.AddError("Server tidak mengirim data.")
+                
             return data
 
+        # ... (sisa kode error handling tetap sama) ...
+
         except requests.exceptions.HTTPError as e:
-
             response = e.response
-
             try:
-
                 error_json = response.json()
-
-                message = error_json.get(
-                    "message",
-                    ""
-                )
-
+                message = error_json.get("message", "")
             except Exception:
-
                 message = ""
 
-            if (
-                response.status_code == 403
-                and "expired"
-                in message.lower()
-            ):
-
+            if response.status_code == 403 and "expired" in message.lower():
                 clear_user_data()
-
-                raise Exception(
-                    "Token kadaluarsa. "
-                    "Silakan login ulang."
-                )
-
+                raise Exception("Token kadaluarsa. Silakan login ulang.")
             elif response.status_code == 403:
-
-                raise Exception(
-                    "Akses ditolak (403)."
-                )
-
+                raise Exception("Akses ditolak (403).")
             else:
-
-                raise Exception(
-                    f"HTTP Error: {e}"
-                )
+                raise Exception(f"HTTP Error: {e}")
 
         except requests.exceptions.RequestException as e:
-
-            arcpy.AddError(
-                f"Error API: {str(e)}"
-            )
-
+            arcpy.AddError(f"Error API: {str(e)}")
             raise arcpy.ExecuteError
 
     def get_config_values(self):
+        persil_path = persil.is_persil_layer_comply(show_path_message=False)
+        
+        # Menggabungkan pemanggilan os.path.dirname agar lebih ringkas
+        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(persil_path)))
+        config_path = os.path.join(ws_dir, "project_config.json")
 
-        persil_path = (
-            persil.is_persil_layer_comply(
-                show_path_message=False
-            )
-        )
-
-        ws_dir = os.path.dirname(
-            os.path.dirname(
-                os.path.dirname(
-                    persil_path
-                )
-            )
-        )
-
-        config_path = os.path.join(
-            ws_dir,
-            "project_config.json"
-        )
-
-        with open(
-            config_path,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
+        with open(config_path, "r", encoding="utf-8") as f:
             configs = json.load(f)
 
-        dataset_path = (
-            configs["project_config"]
-            ["dataset_path"]
+        dataset_path = configs["project_config"]["dataset_path"]
+
+        return {
+            "ws_dir": ws_dir,
+            "dataset_path": dataset_path
+        }    
+
+class Konversi_JSON_LBT(object):
+    # HAPUS JIKA TOOLS SUDAH BERFUNGSI
+    # Tools ini dibuat sebagai alternatif sementara jika pemanggilan sampel bermasalah
+    
+    def __init__(self):
+        self.label = "Ambil LBT Dari File JSON" 
+        self.description = "Mengonversi layer LBT dari file JSON lokal"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        file_json = arcpy.Parameter(
+            displayName="File JSON LBT",
+            name="file_json",
+            datatype="DEFile", # DEFile lebih direkomendasikan untuk input file di ArcPy
+            parameterType="Required",
+            direction="Input"
         )
+        # Cara penulisan filter list untuk file extension di ArcPy
+        file_json.filter.list = ["json"]
+
+        output_fasilitas = arcpy.Parameter(
+            name="LBT_Fasilitas",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        output_jalan = arcpy.Parameter(
+            name="LBT_Jalan",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        output_zona = arcpy.Parameter(
+            name="LBT_Zona",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        output_resiko = arcpy.Parameter(
+            name="LBT_Resiko",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        
+        penjelasan.value = (
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
+        
+        return [file_json, output_fasilitas, output_jalan, output_zona, output_resiko, penjelasan]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        file_json = parameters[0]
+        penjelasan = parameters[5]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            file_json.enabled = False
+            penjelasan.enabled = True
+        else:
+            file_json.enabled = True
+            penjelasan.enabled = False
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        file_path = parameters[0].valueAsText
+        configs = self.get_config_values()
+        dataset_path = configs["dataset_path"]
+
+        # MEMBACA FILE JSON
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                json_content = json.load(f)
+        except Exception as e:
+            messages.addErrorMessage(f"Gagal membaca file JSON: {str(e)}")
+            raise arcpy.ExecuteError
+
+        # Ambil key "data" dari dalam file JSON
+        data = json_content.get("data", {})
+
+        if not data:
+             messages.addWarningMessage("Struktur file JSON tidak dikenali (tidak menemukan key 'data'). Pastikan ini dari respon API SIPENTA.")
+             return
+
+        layers = {
+            "fasilitas": "LBT_Fasilitas",
+            "jalan": "LBT_Jalan",
+            "zona": "LBT_Zona",
+            "resiko": "LBT_Resiko"
+        }
+
+        parameter_index = {
+            "LBT_Fasilitas": 1,
+            "LBT_Jalan": 2,
+            "LBT_Zona": 3,
+            "LBT_Resiko": 4
+        }
+
+        for api_key, fc_name in layers.items():
+            geojson = data.get(api_key)
+
+            if not geojson:
+                messages.addWarningMessage(f"{fc_name} tidak ditemukan dalam JSON.")
+                continue
+
+            features = geojson.get("features", [])
+            if len(features) == 0:
+                messages.addWarningMessage(f"{fc_name} kosong.")
+                continue
+
+            # Tulis ulang menjadi geojson sementara agar ArcPy bisa mengubahnya ke Feature Class
+            json_temp_path = os.path.join(configs["ws_dir"], f"{fc_name}.json")
+
+            with open(json_temp_path, "w", encoding="utf-8") as f:
+                json.dump(geojson, f, ensure_ascii=False)
+
+            output_fc = os.path.join(dataset_path, fc_name)
+
+            if arcpy.Exists(output_fc):
+                arcpy.management.Delete(output_fc)
+
+            messages.addMessage(f"Membuat {fc_name}...")
+            
+            try:
+                arcpy.conversion.JSONToFeatures(json_temp_path, output_fc)
+            except Exception as e:
+                 messages.addErrorMessage(f"Gagal mengonversi JSON {fc_name}: {str(e)}")
+                 continue
+
+            # Bersihkan file temp json
+            try:
+                arcpy.management.Delete(json_temp_path)
+            except Exception:
+                pass
+
+            try:
+                arcpy.management.MakeFeatureLayer(output_fc, fc_name)
+                arcpy.SetParameter(parameter_index[fc_name], fc_name)
+            except Exception:
+                pass
+
+        messages.addMessage("\n== Proses selesai ==")
+        return
+
+    def get_config_values(self):
+        persil_path = persil.is_persil_layer_comply(show_path_message=False)
+        
+        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(persil_path)))
+        config_path = os.path.join(ws_dir, "project_config.json")
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            configs = json.load(f)
+
+        dataset_path = configs["project_config"]["dataset_path"]
 
         return {
             "ws_dir": ws_dir,
             "dataset_path": dataset_path
         }
-    
+
 class Upload_Basis_Data(object):
     def __init__(self):
         self.label = "Upload Basis Data"

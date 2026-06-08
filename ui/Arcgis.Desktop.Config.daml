@@ -400,7 +400,7 @@
 				<!--  -->
 				
 				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Jaringan Jalan">
-					<button refID="ButtonSetAtributJaringanJalan" size="Medium"/>
+					<menu refID="sesuaikan_atribut_jaringan_jalan" size="Medium"/>
 					<button refID="ButtonValidasiTopologiJaringanJalan" size="Medium"/>
 					<button refID="ButtonUpdateSimbologiLebarJalan" size="Medium"/>
 					<button refID="ButtonDeteksiOutlierJaringanJalan" size="Medium"/>
@@ -410,10 +410,13 @@
 				</menu>
 				<menu id="workspace_pembaruan_nbt" caption="Persiapan Workspace">
 					<button refID="ButtonBuatWorkspacePembaruanNBT" size="Medium"/>
-					<button refID="ButtonImportWorkspaceNBT" size="Medium"/>
+					<button refID="ButtonImportWorkspaceNBT" size="Medium"/>					
+				</menu>
 
-
-					
+				<menu id="sesuaikan_atribut_jaringan_jalan" caption="Sesuaikan Atribut Jaringan Jalan">
+					<button refID="ButtonSetAtributJaringanJalan" size="Medium"/>
+					<button refID="ButtonSesuaikanAtributKelasJalan" size="Medium"/>		
+					<button refID="ButtonSesuaikanAtributLebarJalan" size="Medium"/>				
 				</menu>
 
 				<menu id="analisis_persil_dan_jalan_pembaruan_nbt" caption="Analisis Persil Dengan Jalan">
@@ -439,6 +442,8 @@
 					largeImage="C:\PenilaianTanah\icons\survei_perubahan.png"
 					smallImage="C:\PenilaianTanah\icons\survei_perubahan.png">
 					<button refID="ButtonAmbilLBTDariSipenta" size="Medium" />
+					<button refID="ButtonCekKesesuaianZonasi" size="Medium" />
+					<button refID="ButtonSetujuiFasilitas" size="Medium" />
 					<button refID="ButtonHitungJarakFasilitas" size="Medium"/>
 					<button refID="ButtonHitungRisiko" size="Medium"/>
 					<button refID="ButtonUploadBasisData" size="Medium" />
@@ -2318,13 +2323,26 @@
 				</button>
 			<!-- Pengolahan Jaringan Jalan -->
 
-				<button id="ButtonSetAtributJaringanJalan" caption="Set Atribut Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonSetAtributJaringanJalan" caption="Sesuaikan Kelas dan Lebar Jalan" smallImage="C:\PenilaianTanah\icons\jalan.png" largeImage="C:\PenilaianTanah\icons\jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Set_Atribut_Jaringan_Jalan" name="Set Atribut Jaringan Jalan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Sesuaikan_Kelas_dan_Lebar_Jalan" name="Sesuaikan Kelas dan Lebar Jalan" xmlns=""/>
 					</args>
-					<tooltip heading="Set Atribut Jaringan Jalan">Menu untuk mengatur atribut jaringan jalan.</tooltip>
+					<tooltip heading="Sesuaikan Kelas dan Lebar Jalan">Menu untuk mengatur atribut jaringan jalan.</tooltip>
 				</button>
 
+				<button id="ButtonSesuaikanAtributKelasJalan" caption="Sesuaikan Kelas Jalan" smallImage="C:\PenilaianTanah\icons\kelas_jalan.png" largeImage="C:\PenilaianTanah\icons\kelas_jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Sesuaikan_Atribut_Kelas_Jalan" name="Sesuaikan Kelas Jalan" xmlns=""/>
+					</args>
+					<tooltip heading="Sesuaikan Kelas Jalan">Menu untuk mengatur atribut kelas jaringan jalan.</tooltip>
+				</button>
+
+				<button id="ButtonSesuaikanAtributLebarJalan" caption="Sesuaikan Lebar Jalan" smallImage="C:\PenilaianTanah\icons\lebar.png" largeImage="C:\PenilaianTanah\icons\lebar.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Sesuaikan_Atribut_Lebar_Jalan" name="Sesuaikan Lebar Jalan" xmlns=""/>
+					</args>
+					<tooltip heading="Sesuaikan Lebar Jalan">Menu untuk mengatur atribut lebar jaringan jalan.</tooltip>
+				</button>
 
 				<button id="ButtonValidasiTopologiJaringanJalan" caption="Validasi Topologi Jaringan Jalan" smallImage="C:\PenilaianTanah\icons\check.png" largeImage="C:\PenilaianTanah\icons\check.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
@@ -2475,6 +2493,26 @@
 						Menu untuk mengambil layer LBT berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
 					</tooltip>
 				</button>
+
+				<button id="ButtonCekKesesuaianZonasi" caption="Periksa Kesesuaian Zonasi" smallImage="C:\PenilaianTanah\icons\cekzone.png" largeImage="C:\PenilaianTanah\icons\cekzone.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Periksa_Kesesuaian_Zonasi" name="Periksa Kesesuaian Zonasi" xmlns=""/>
+					</args>
+					<tooltip heading="Periksa Kesesuaian Zonasi">
+						Tool untuk memeriksa kesesuaian zonasi antara data sampel zonasi dengan nilai zonasi pada Persil Layer
+					</tooltip>
+				</button>
+
+				<button id="ButtonSetujuiFasilitas" caption="Setujui Sampel Fasilitas" smallImage="C:\PenilaianTanah\icons\selection.png" largeImage="C:\PenilaianTanah\icons\selection.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Setujui_Sampel_Fasilitas" name="Setujui Sampel Fasilitas" xmlns=""/>
+					</args>
+					<tooltip heading="Setujui Sampel Fasilitas">
+						Tool untuk menyetujui sampel fasilitas kedalam layer-layer fasilitas pada workspace
+					</tooltip>
+				</button>
+
+
 				<button id="ButtonHitungJarakFasilitas" caption="Hitung Jarak Fasilitas" smallImage="C:\PenilaianTanah\icons\jkfasil.png" largeImage="C:\PenilaianTanah\icons\jkfasil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Hitung_Jarak_Fasilitas" name="Hitung Jarak Fasilitas" xmlns=""/>

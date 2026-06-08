@@ -11,11 +11,6 @@ if gp_dir not in sys.path:
     sys.path.insert(0, gp_dir)
 
 from nbtutils import constant, persil
-from zntutils.document import validate_document_type, get_credentials
-from zntutils.system_utils import get_user_data, renew_user_data, get_all_berkas_id, setup_user_data
-from zntutils.constant import PREFERRED_BERKAS_ID, CREDENTIAL_KEY, PREFERRED_SERVER_KEY, AUTH_KEY, NAMA_PROVINSI, KAB_KOTA
-from zntutils.upload_utils import upload_shapefile_to_sipenta
-from zntutils import zona_layer
 
 
 class Toolbox:
@@ -26,7 +21,9 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Set_Atribut_Jaringan_Jalan,
+        self.tools = [Sesuaikan_Kelas_dan_Lebar_Jalan,
+                      Sesuaikan_Atribut_Kelas_Jalan,
+                      Sesuaikan_Atribut_Lebar_Jalan,
                       Validasi_Topologi_Jaringan_Jalan,
                       Perbaharui_Simbologi_Lebar_Jalan,
                       Deteksi_Outlier_Jaringan_Jalan,
@@ -35,10 +32,10 @@ class Toolbox:
                       ]
 
     
-class Set_Atribut_Jaringan_Jalan(object):
+class Sesuaikan_Kelas_dan_Lebar_Jalan(object):
 
     def __init__(self):
-        self.label = "Set Atribut Jaringan Jalan"
+        self.label = "Sesuaikan Kelas dan Lebar Jalan"
         self.description = ""
         self.canRunInBackground = False
 
@@ -240,7 +237,215 @@ class Set_Atribut_Jaringan_Jalan(object):
         messages.addMessage("== Proses selesai ==")
 
         return
-    
+
+class Sesuaikan_Atribut_Kelas_Jalan(object):
+
+    def __init__(self):
+        self.label = "Set Atribut Kelas Jalan"
+        self.description = "Mengupdate atribut khusus untuk Kelas Jalan"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        kls_jln = arcpy.Parameter(
+            displayName="Kelas Jalan",
+            name="kls_jln",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        kls_jln.filter.list = [
+            "Arteri Primer", "Arteri Sekunder", "Kolektor Primer",
+            "Kolektor Sekunder", "Lokal Primer", "Lokal Sekunder", "Setapak"
+        ]
+
+        sts_jalan = arcpy.Parameter(
+            displayName="Status Jalan",
+            name="sts_jalan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        sts_jalan.filter.list = ["Tetap", "Update", "Hapus"]
+
+        return [kls_jln, sts_jalan]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        kls_jln = parameters[0].valueAsText
+        sts_jalan = parameters[1].valueAsText
+
+        configs = persil.get_config_values()
+        jaringan_jalan = configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        jaringan_jalan_layer = "Jaringan_Jalan"
+
+        arcpy.AddMessage(f'Jaringan Jalan: {jaringan_jalan}')
+
+        kelas_jalan_config = configs["jaringan_jalan_config"]["skoring"]["kelas_jalan"]
+        s_kls_jln = kelas_jalan_config.get(kls_jln, 0)
+
+        # =====================================================
+        # VALIDASI SELEKSI
+        # =====================================================
+        desc = arcpy.Describe(jaringan_jalan_layer)
+        if not desc.FIDSet:
+            messages.addWarningMessage("== Tidak ada fitur jaringan jalan yang dipilih ==")
+            return
+
+        # =====================================================
+        # VALIDASI FIELD
+        # =====================================================
+        sampel_fields = [f.name for f in arcpy.ListFields(jaringan_jalan_layer)]
+        required_fields = ["status_jal", "kls_jln", "s_kls_jln"]
+        missing_fields = [f for f in required_fields if f not in sampel_fields]
+
+        if len(missing_fields) > 0:
+            messages.addErrorMessage(
+                "== Field berikut tidak ditemukan: {} ==".format(", ".join(missing_fields))
+            )
+            raise arcpy.ExecuteError
+
+        messages.addMessage("== Mengupdate atribut Kelas Jalan pada fitur terpilih ==")
+
+        # =====================================================
+        # UPDATE HANYA FEATURE TERPILIH
+        # =====================================================
+        fields = ["kls_jln", "s_kls_jln", "status_jal"]
+        jumlah_update = 0
+
+        with arcpy.da.UpdateCursor(jaringan_jalan_layer, fields) as cursor:
+            for row in cursor:
+                row[0] = kls_jln
+                row[1] = s_kls_jln
+                row[2] = sts_jalan
+                cursor.updateRow(row)
+                jumlah_update += 1
+
+        messages.addMessage(f"== {jumlah_update} fitur jaringan jalan berhasil diperbarui ==")
+        messages.addMessage("== Proses selesai ==")
+        return
+
+class Sesuaikan_Atribut_Lebar_Jalan(object):
+
+    def __init__(self):
+        self.label = "Set Atribut Lebar Jalan"
+        self.description = "Mengupdate atribut khusus untuk Lebar Jalan dan Simbologi"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        lb_jalan = arcpy.Parameter(
+            displayName="Lebar Jalan",
+            name="lb_jalan",
+            datatype="GPDouble",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        sts_jalan = arcpy.Parameter(
+            displayName="Status Jalan",
+            name="sts_jalan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        sts_jalan.filter.list = ["Tetap", "Update", "Hapus"]
+
+        return [lb_jalan, sts_jalan]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        lb_jalan = parameters[0].value
+        sts_jalan = parameters[1].valueAsText
+
+        configs = persil.get_config_values()
+        jaringan_jalan = configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        jaringan_jalan_layer = "Jaringan_Jalan"
+
+        arcpy.AddMessage(f'Jaringan Jalan: {jaringan_jalan}')
+
+        # =====================================================
+        # SIMBOLOGI
+        # =====================================================
+        if lb_jalan == 0:
+            simbologi_jalan = "0"
+        elif lb_jalan <= 1.5:
+            simbologi_jalan = "1.5"
+        elif lb_jalan <= 3:
+            simbologi_jalan = "3"
+        elif lb_jalan <= 5:
+            simbologi_jalan = "5"
+        elif lb_jalan <= 8:
+            simbologi_jalan = "8"
+        else:
+            simbologi_jalan = "8+"
+
+        # =====================================================
+        # VALIDASI SELEKSI
+        # =====================================================
+        desc = arcpy.Describe(jaringan_jalan_layer)
+        if not desc.FIDSet:
+            messages.addWarningMessage("== Tidak ada fitur jaringan jalan yang dipilih ==")
+            return
+
+        # =====================================================
+        # VALIDASI FIELD
+        # =====================================================
+        sampel_fields = [f.name for f in arcpy.ListFields(jaringan_jalan_layer)]
+        required_fields = ["status_jal", "lb_jln"]
+        missing_fields = [f for f in required_fields if f not in sampel_fields]
+
+        if len(missing_fields) > 0:
+            messages.addErrorMessage(
+                "== Field berikut tidak ditemukan: {} ==".format(", ".join(missing_fields))
+            )
+            raise arcpy.ExecuteError
+
+        # =====================================================
+        # TAMBAH FIELD JIKA BELUM ADA
+        # =====================================================
+        if "simbologi_jalan" not in sampel_fields:
+            arcpy.management.AddField(
+                jaringan_jalan,
+                "simbologi_jalan",
+                "TEXT"
+            )
+
+        messages.addMessage("== Mengupdate atribut Lebar Jalan pada fitur terpilih ==")
+
+        # =====================================================
+        # UPDATE HANYA FEATURE TERPILIH
+        # =====================================================
+        fields = ["lb_jln", "simbologi_jalan", "status_jal"]
+        jumlah_update = 0
+
+        with arcpy.da.UpdateCursor(jaringan_jalan_layer, fields) as cursor:
+            for row in cursor:
+                row[0] = lb_jalan
+                row[1] = simbologi_jalan
+                row[2] = sts_jalan
+                cursor.updateRow(row)
+                jumlah_update += 1
+
+        messages.addMessage(f"== {jumlah_update} fitur jaringan jalan berhasil diperbarui ==")
+        messages.addMessage("== Proses selesai ==")
+        return
+
+
 class Validasi_Topologi_Jaringan_Jalan(object):
 
     def __init__(self):

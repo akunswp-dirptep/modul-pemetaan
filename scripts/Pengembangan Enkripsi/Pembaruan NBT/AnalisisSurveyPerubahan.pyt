@@ -25,6 +25,8 @@ class Toolbox:
 
         # List of tool classes associated with this toolbox
         self.tools = [Ambil_LBT_Dari_Sipenta, 
+                      Periksa_Kesesuaian_Zonasi,
+                      Setujui_Sampel_Fasilitas,
                       Konversi_JSON_LBT,
                       Hitung_Jarak_Fasilitas, 
                       Upload_Basis_Data, 
@@ -215,7 +217,7 @@ class Ambil_LBT_Dari_Sipenta(object):
         # nomor_berkas = '04/2026/0016'
         token = 'FPmpuYt7NuNUne-zPzHUE_JMlcFTL7DteyeeozdEEqvsgEeOMS36grbsWszrMF53utuTK4Xw0tapGOPfXZiumFYN0iGEqNJs0_LAKRRlSQ_2A7e-okBsg7tQT4vZC9zlNoEVEDV2rqhOwbgMKSs4BODvieDj--GWiYpuHMi-z6bcfij-GzU3s4AjTsq6WAOaeu4aZWtGxIlAPz1dyIRaRSBEuB3KlmyktUuX9o_NNyNtKGRMax1jqxspDU2UD50VHNHUm6Uiyv3UKiWdrWfphLS_-qJQSwQPzKr9AG7UfbdJxZHk1nPtWY74Xp4kxHcYPYOvUjgWCLaLeeXDm__H3i17hfRH53uOh2otrE0C-w'
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-lbt/"
-        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-lbt/"
+        prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-lbt"
 
         url = prod_url if use_production else test_url
         # url = test_url
@@ -227,8 +229,10 @@ class Ambil_LBT_Dari_Sipenta(object):
             # Tambahkan User-Agent untuk menghindari blokir WAF/Cloudflare
             headers = {
                 "Authorization": f"Bearer {token}",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                "Accept": "application/json",
             }
+            
+            arcpy.AddMessage(headers)
             
             # Gunakan argumen 'params' bawaan requests
             payload = {
@@ -240,6 +244,7 @@ class Ambil_LBT_Dari_Sipenta(object):
                 headers=headers, 
                 params=payload, # requests akan merakit URL dengan aman
                 timeout=60
+                # verify=True
             )
             
             response.raise_for_status()
@@ -289,6 +294,263 @@ class Ambil_LBT_Dari_Sipenta(object):
             "dataset_path": dataset_path
         }    
 
+class Periksa_Kesesuaian_Zonasi(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Periksa Kesesuaian Zonasi"
+        self.description = "Tool ini digunakan untuk memeriksa kesesuaian zonasi antara Persil Layer dan Titik Survey LBT Zonasi."
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        penjelasan = arcpy.Parameter(
+            displayName="Apa yang dilakukan tool ini?",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        
+        penjelasan.value =(
+            "Tool ini digunakan untuk memeriksa kesesuaian jenis zona\n"
+            "antara Persil Layer dan Titik Survey LBT Zonasi.\n"
+            "\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year))
+        
+        output_zl = arcpy.Parameter(
+            name="output_pl",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [penjelasan, output_zl]
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        self.config_dan_paths = persil.get_config_values()
+        ds_path = self.config_dan_paths["project_config"]['dataset_path']
+
+        ts_path = os.path.join(ds_path, "LBT_Zona")
+        zl_path = os.path.join(ds_path, "Persil_Layer")
+
+        identity_layers = []
+
+        # Identity Titik Sampel
+        arcpy.analysis.Identity(ts_path, zl_path, "identity_ts")
+        identity_layers.append("identity_ts")
+
+        # Dictionary penyimpanan
+        listbidang = {}
+        listtitiklbt = {}
+
+        # MAPPING: Penyetaraan field nama_penggunaan ke field ZONASI
+        mapping_zonasi = {
+            "Kawasan Industri": "Industri",
+            "Perdagangan dan Jasa": "Perdagangan dan Jasa",
+            "Permukiman Mewah": "Permukiman Mewah",
+            "Permukiman Sedang": "Permukiman Menengah",
+            "Permukiman Sederhana": "Permukiman Sederhana",
+            "Pertanian / Perkebunan": "Pertanian"
+        }
+
+        for identity_fc in identity_layers:
+            with arcpy.da.SearchCursor(
+                identity_fc,
+                ["IDBIDANG", "ZONASI", "nama_penggunaan"]
+            ) as cursor:
+
+                for idbidang, zonasi_persil, hasil_lbt in cursor:
+                    # Pastikan idbidang valid
+                    if idbidang is None:
+                        continue
+
+                    # Menyimpan zonasi asli dari persil layer
+                    if idbidang not in listbidang:
+                        listbidang[idbidang] = set()
+                    if zonasi_persil:
+                        listbidang[idbidang].add(zonasi_persil)
+
+                    # Menyimpan zonasi dari lbt yang sudah disetarakan
+                    if idbidang not in listtitiklbt:
+                        listtitiklbt[idbidang] = set()
+
+                    if hasil_lbt is not None:
+                        # Gunakan .get() untuk mencari di mapping. 
+                        # Jika tidak ada (misal: "Lainnya"), ubah jadi "Sempadan dan Lindung"
+                        zonasi_setara = mapping_zonasi.get(hasil_lbt, "Sempadan dan Lindung")
+                        listtitiklbt[idbidang].add(zonasi_setara)
+
+        # Hapus field lama jika ada
+        field_names = [f.name for f in arcpy.ListFields(zl_path)]
+
+        if "JENISSAMPEL" in field_names:
+            arcpy.management.DeleteField(zl_path, "JENISSAMPEL")
+
+        if "BEDA_ZONA" in field_names:
+            arcpy.management.DeleteField(zl_path, "BEDA_ZONA")
+
+        # Tambah field baru
+        arcpy.management.AddField(zl_path, "JENISSAMPEL", "TEXT")
+        arcpy.management.AddField(zl_path, "BEDA_ZONA", "TEXT")
+
+        # Cek kunci (key) primary field (menyesuaikan antara NOZN atau IDBIDANG)
+        key_field = "NOZN" if "NOZN" in field_names else "IDBIDANG"
+
+        # Update hasil pemeriksaan
+        with arcpy.da.UpdateCursor(
+            zl_path,
+            [key_field, "BEDA_ZONA", "JENISSAMPEL"]
+        ) as cursor:
+
+            for row in cursor:
+                id_polygon = row[0]
+
+                # Ambil data dari dictionary yang sudah dikumpulkan
+                zl_type = set(listbidang.get(id_polygon, []))
+                titiksampel = set(listtitiklbt.get(id_polygon, []))
+
+                # Perbandingan
+                if zl_type == titiksampel:
+                    row[1] = "Zona Sama"
+                else:
+                    row[1] = "Zona Beda"
+
+                # Pengisian sampel
+                if titiksampel:
+                    row[2] = ", ".join(map(str, sorted(titiksampel)))
+                else:
+                    row[2] = "Tidak ada Jenis Zona Titik Sampel"
+
+                cursor.updateRow(row)
+
+        # Tampilkan layer hasil
+        arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
+
+        # PENTING: Variabel sim_path belum didefinisikan sebelumnya, Anda perlu mendefinisikan lokasi symbology-nya 
+        # contoh: sim_path = os.path.join(ds_path, "style_zonasi.lyrx")
+        # arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+
+        arcpy.SetParameter(1, "Persil_Layer")
+
+        # Cleanup temporary identity
+        for fc in identity_layers:
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and added to the display."""
+        return
+
+class Setujui_Sampel_Fasilitas(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Setujui Sampel Fasilitas"
+        self.description = "Memasukkan data titik dari LBT_Fasilitas ke layer fasilitas yang dipilih. Hanya memindahkan geometri (titik) tanpa membawa atribut."
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        
+        # 1. Parameter Input: Layer LBT Fasilitas
+        input_lbt = arcpy.Parameter(
+            displayName="Layer Input (LBT_Fasilitas)",
+            name="input_lbt",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+        # Filter agar tool hanya menerima layer berjenis Point
+        input_lbt.filter.list = ["Point"]
+
+        # 2. Parameter Target: Dropdown Layer Fasilitas
+        target_fasilitas = arcpy.Parameter(
+            displayName="Pilih Layer Fasilitas Tujuan",
+            name="target_fasilitas",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        target_fasilitas.filter.type = "ValueList"
+
+        return [input_lbt, target_fasilitas]
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal validation."""
+
+        target_fasilitas = parameters[1]
+                # Mengisi dropdown secara dinamis dari dataset_fasilitas
+        try:
+            # Mengambil path dari konfigurasi (sesuaikan jika cara pemanggilannya berbeda)
+            self.config_dan_paths = persil.get_config_values()
+            ds_path = self.config_dan_paths["project_config"]['gdb_path']
+            fasilitas_workspace = os.path.join(ds_path, 'fasilitas')
+            
+            # Set workspace dan ambil list semua layer berjenis Point
+            arcpy.env.workspace = fasilitas_workspace
+            fc_list = arcpy.ListFeatureClasses(feature_type="Point")
+            
+            if fc_list:
+                target_fasilitas.filter.list = fc_list
+            else:
+                target_fasilitas.filter.list = ["Tidak ada layer Fasilitas ditemukan"]
+        except Exception as e:
+            target_fasilitas.filter.list = ["Gagal memuat daftar layer Fasilitas"]
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        input_lbt = parameters[0].valueAsText
+        target_name = parameters[1].valueAsText
+
+        # Construct ulang path karena getParameterInfo dieksekusi di fase awal UI
+        self.config_dan_paths = persil.get_config_values()
+        ds_path =self.config_dan_paths["project_config"]['gdb_path']
+        target_path = os.path.join(ds_path, 'fasilitas', target_name)
+
+        if not arcpy.Exists(target_path):
+            arcpy.AddError("Layer tujuan '{}' tidak ditemukan di path: {}".format(target_name, target_path))
+            return
+
+        jumlah_titik = 0
+
+        # Membaca input dan memasukkan ke output (Hanya Geometri)
+        # Token "SHAPE@" merepresentasikan bentuk titik itu sendiri
+        with arcpy.da.SearchCursor(input_lbt, ["SHAPE@"]) as search_cursor:
+            with arcpy.da.InsertCursor(target_path, ["SHAPE@"]) as insert_cursor:
+                for row in search_cursor:
+                    geometry = row[0]
+                    if geometry is not None:
+                        # Insert geometri ke layer tujuan, atribut lain otomatis kosong/null
+                        insert_cursor.insertRow([geometry])
+                        jumlah_titik += 1
+
+        arcpy.AddMessage("Berhasil mendistribusikan {} titik ke layer {}.".format(jumlah_titik, target_name))
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and added to the display."""
+        return
+    
 class Konversi_JSON_LBT(object):
     # HAPUS JIKA TOOLS SUDAH BERFUNGSI
     # Tools ini dibuat sebagai alternatif sementara jika pemanggilan sampel bermasalah

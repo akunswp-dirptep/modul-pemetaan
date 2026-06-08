@@ -23,423 +23,18 @@ class Toolbox:
 
         # List of tool classes associated with this toolbox
         self.tools = [Build_Network_Dataset_Jaringan_Jalan,
-                      Optimasi_Build_Network_Dataset_Jaringan_Jalan,
                       Set_Lebar_Jalan_Persil,
                       Set_Kelas_Jalan_Persil,
                       Sinkronisasi_Kelas_Dan_Lebar_Jalan_Dengan_Persil,
                       Tampilkan_Simbologi_Persil,
                       Perbaharui_Letak_Persil,
                       Perbaharui_Lebar_Depan_Persil,
-                      Perbaharui_Jarak_Kelas_Jalan,
-                      Optimasi_Perbaharui_Jarak_Kelas_Jalan
+                      Perbaharui_Jarak_Kelas_Jalan
                       ]
 
 
 #  Terpilih
 class Build_Network_Dataset_Jaringan_Jalan(object):
-
-    def __init__(self):
-        self.label = "Build Network Dataset Jaringan Jalan"
-        self.description = ""
-        self.canRunInBackground = False
-
-    def getParameterInfo(self):
-
-        output_nd = arcpy.Parameter(
-            displayName="Output Network Dataset",
-            name="output_nd",
-            datatype="DENetworkDataset",
-            parameterType="Derived",
-            direction="Output"
-        )
-
-        output_jalan_nd = arcpy.Parameter(
-            displayName="Output Jaringan Jalan ND",
-            name="output_jalan_nd",
-            datatype="GPFeatureLayer",
-            parameterType="Derived",
-            direction="Output"
-        )
-
-        output_junction = arcpy.Parameter(
-            displayName="Output Junction ND",
-            name="output_junction",
-            datatype="GPFeatureLayer",
-            parameterType="Derived",
-            direction="Output"
-        )
-
-        return [
-            output_nd,
-            output_jalan_nd,
-            output_junction
-        ]
-
-    def isLicensed(self):
-        return True
-
-    def updateParameters(self, parameters):
-        return
-
-    def updateMessages(self, parameters):
-        return
-
-    def execute(self, parameters, messages):
-
-
-        messages.addMessage("== Proses dimulai ==")
-        configs = persil.get_config_values()
-        dataset_path = configs["project_config"]["dataset_path"]
-
-        gdb_path = configs["project_config"]["gdb_path"]
-        jaringan_jalan = 'Jaringan_Jalan'
-
-        jaringanjalan_path = configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-
-        nd_path = configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
-
-        jaringanjalan_nd_path = configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
-        junction_path = os.path.join(dataset_path, "Junction")
-
-        junction_nd_path = os.path.join( os.path.dirname(jaringanjalan_nd_path), "JaringanJalan_ND_Junctions")
-        junction_diss_path = os.path.join( dataset_path, "junction_diss")
-        junction_final_path = os.path.join( dataset_path, "JunctionFinal")
-
-        messages.addMessage( "== Bersih-bersih network dataset ==")
-
-        try:
-            arcpy.management.DeleteRows(jaringanjalan_nd_path)
-
-        except:
-            pass
-
-        messages.addMessage( "== Validasi kelas jalan =="  )
-        temp_jalan = "temp_jalan"
-
-        if arcpy.Exists(temp_jalan ):
-            try:
-                arcpy.management.Delete( temp_jalan )
-            except:
-                pass
-
-        kls_jln=arcpy.AddFieldDelimiters(jaringanjalan_path,"kls_jln")
-        s_kls_jln=arcpy.AddFieldDelimiters(jaringanjalan_path,"s_kls_jln")
-
-        where_clause=f"{kls_jln} IS NULL OR {s_kls_jln} IS NULL"
-
-        arcpy.management.MakeFeatureLayer(
-            jaringanjalan_path,
-            temp_jalan,
-            where_clause
-        )
-
-        arcpy.management.CalculateField(
-            temp_jalan,
-            "kls_jln",
-            '"Setapak"',
-            "PYTHON3"
-        )
-
-        arcpy.management.CalculateField(
-            temp_jalan,
-            "s_kls_jln",
-            "1",
-            "PYTHON3"
-        )
-
-        if arcpy.Exists(temp_jalan):
-            arcpy.management.Delete( temp_jalan)
-
-        oid_field_name = arcpy.Describe(jaringanjalan_path).OIDFieldName
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                jaringanjalan_path
-            )
-        ]
-
-        if "IdJalan" not in field_names:
-            arcpy.management.AddField(
-                jaringanjalan_path,
-                "IdJalan",
-                "LONG"
-            )
-
-        if "P_Jalan" not in field_names:
-            arcpy.management.AddField(
-                jaringanjalan_path,
-                "P_Jalan",
-                "DOUBLE"
-            )
-
-        arcpy.management.CalculateField(
-            jaringanjalan_path,
-            "P_Jalan",
-            "!shape.length!",
-            "PYTHON3"
-        )
-
-        arcpy.management.CalculateField(
-            jaringanjalan_path,
-            "IdJalan",
-            "!" + oid_field_name + "!",
-            "PYTHON3"
-        )
-
-        field_names_nd = [field.name   for field in arcpy.ListFields(jaringanjalan_nd_path)]
-
-        if "IdJalan" not in field_names_nd:
-            arcpy.management.AddField(
-                jaringanjalan_nd_path,
-                "IdJalan",
-                "LONG"
-            )
-
-        messages.addMessage( "== Append data jaringan jalan ke ND ==" )
-
-        arcpy.management.Append(
-            [jaringanjalan_path],
-            jaringanjalan_nd_path,
-            "NO_TEST"
-        )
-
-
-        messages.addMessage( "== Build network dataset ==" )
-        arcpy.na.BuildNetwork(nd_path )
-
-        delete_layers = [
-            "JaringanJalan_ND",
-            "JaringanJalanForND",
-            "JaringanJalan_ND_Junctions"
-        ]
-
-        for lyr in delete_layers:
-            if arcpy.Exists(lyr):
-                try:
-                    arcpy.management.Delete( lyr)
-                except:
-                    pass
-
-        messages.addMessage( "== Olah junction ==" )
-
-        delete_items = [
-            junction_path,
-            junction_diss_path
-        ]
-
-        for item in delete_items:
-            if arcpy.Exists(item):
-                try:
-                    arcpy.management.Delete(item)
-                except:
-                    pass
-
-        arcpy.analysis.Intersect([jaringanjalan_path, junction_nd_path],
-            junction_path,
-            "ALL",
-            "",
-            "INPUT"
-        )
-
-        arcpy.management.Dissolve(
-            junction_path,
-            junction_diss_path,
-            ["FID_JaringanJalan_ND_Junctions"],
-            [["FID_Jaringan_Jalan", "COUNT"]],
-            "MULTI_PART",
-            "DISSOLVE_LINES"
-        )
-
-        arcpy.management.MakeFeatureLayer(
-            junction_diss_path,
-            "temp_jalan",
-            "COUNT_FID_Jaringan_Jalan = 1"
-        )
-
-        arcpy.management.MakeFeatureLayer(
-            junction_path,
-            "temp_jalan2"
-        )
-
-        arcpy.management.SelectLayerByLocation(
-            "temp_jalan2",
-            "INTERSECT",
-            "temp_jalan",
-            selection_type="NEW_SELECTION"
-        )
-
-        arcpy.management.DeleteFeatures(
-            "temp_jalan2"
-        )
-
-        arcpy.management.Delete(
-            "temp_jalan"
-        )
-
-        arcpy.management.Delete(
-            "temp_jalan2"
-        )
-
-        # =====================================================
-        # JUNCTION FINAL
-        # =====================================================
-
-        if arcpy.Exists(
-            junction_final_path
-        ):
-
-            try:
-                arcpy.management.Delete(
-                    junction_final_path
-                )
-            except:
-                pass
-
-        arcpy.management.Dissolve(
-            junction_path,
-            junction_final_path,
-            ["FID_JaringanJalan_ND_Junctions"],
-            [
-                ["s_kls_jln", "MAX"],
-                ["lb_jln", "MAX"]
-            ],
-            "MULTI_PART",
-            "DISSOLVE_LINES"
-        )
-
-        # =====================================================
-        # DATASET KELAS JALAN
-        # =====================================================
-
-        messages.addMessage(
-            "== Bagi junction berdasarkan kelas jalan =="
-        )
-
-        ds_kelas_jalan = os.path.join(
-            gdb_path,
-            "kelas_jalan"
-        )
-
-        if not arcpy.Exists(
-            ds_kelas_jalan
-        ):
-
-            arcpy.management.CreateFeatureDataset(
-                gdb_path,
-                "kelas_jalan",
-                arcpy.Describe(
-                    jaringanjalan_path
-                ).spatialReference
-            )
-
-        # =====================================================
-        # EXPORT PER KELAS
-        # =====================================================
-
-        kelas_configs = [
-            (7, "JunctionKls7"),
-            (6, "JunctionKls6"),
-            (5, "JunctionKls5"),
-            (4, "JunctionKls4"),
-            (3, "JunctionKls3"),
-            (2, "JunctionKls2"),
-            (1, "JunctionKls1")
-        ]
-
-        for nilai, nama_fc in kelas_configs:
-
-            out_fc = os.path.join(
-                ds_kelas_jalan,
-                nama_fc
-            )
-
-            if arcpy.Exists(
-                out_fc
-            ):
-
-                try:
-                    arcpy.management.Delete(
-                        out_fc
-                    )
-                except:
-                    pass
-
-            temp_layer = (
-                "temp_" + nama_fc
-            )
-
-            where_clause = (
-                "MAX_s_kls_jln = {}".format(
-                    nilai
-                )
-            )
-
-            arcpy.management.MakeFeatureLayer(
-                junction_final_path,
-                temp_layer,
-                where_clause
-            )
-
-            arcpy.management.CopyFeatures(
-                temp_layer,
-                out_fc
-            )
-
-            arcpy.management.Delete(
-                temp_layer
-            )
-
-        # =====================================================
-        # CREATE ND LAYER
-        # =====================================================
-
-        arcpy.na.MakeNetworkDatasetLayer(
-            nd_path,
-            "JaringanJalan_ND"
-        )
-
-        # =====================================================
-        # ADD TO CURRENT MAP
-        # =====================================================
-
-        aprx = arcpy.mp.ArcGISProject(
-            "CURRENT"
-        )
-
-        current_map = aprx.activeMap
-
-        current_map.addDataFromPath(
-            jaringanjalan_nd_path
-        )
-
-        current_map.addDataFromPath(
-            junction_nd_path
-        )
-
-        # =====================================================
-        # OUTPUT PARAMETER
-        # =====================================================
-
-        parameters[0].value = (
-            nd_path
-        )
-
-        parameters[1].value = (
-            jaringanjalan_nd_path
-        )
-
-        parameters[2].value = (
-            junction_nd_path
-        )
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
-        return
-
-class Optimasi_Build_Network_Dataset_Jaringan_Jalan(object):
 
     def __init__(self):
         self.label = "Optimasi Build Network Dataset Jaringan Jalan"
@@ -2849,14 +2444,11 @@ class Sinkronisasi_Kelas_Dan_Lebar_Jalan_Dengan_Persil(object):
 class Perbaharui_Jarak_Kelas_Jalan(object):
 
     def __init__(self):
-
-        self.label = "Optimasi Hitung Jarak Kelas Jalan"
+        self.label = "Hitung Jarak Kelas Jalan Utama Ke Persil"
         self.description = ""
         self.canRunInBackground = False
 
-
     def getParameterInfo(self):
-
         simpan_temp = arcpy.Parameter(
             displayName="Simpan ke Temporary Layer",
             name="simpan_temp",
@@ -2875,6 +2467,26 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         )
         hanya_update.value = True
 
+        # --- BARU: Parameter Pemilihan Kelas Jalan ---
+        pilihan_kelas_jalan = arcpy.Parameter(
+            displayName="Pilih Kelas Jalan yang Dihitung",
+            name="pilihan_kelas_jalan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+            multiValue=True
+        )
+        pilihan_kelas_jalan.filter.type = "ValueList"
+        pilihan_kelas_jalan.filter.list = [
+            "Semuanya",
+            "Arteri Primer",
+            "Arteri Sekunder",
+            "Kolektor Primer",
+            "Kolektor Sekunder"
+        ]
+        pilihan_kelas_jalan.value = ["Semuanya"]
+        # ----------------------------------------------
+
         output_persil = arcpy.Parameter(
             displayName="Output Persil",
             name="output_persil",
@@ -2886,6 +2498,7 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         return [
             simpan_temp,
             hanya_update,
+            pilihan_kelas_jalan, # Tambahkan ke list parameter
             output_persil
         ]
 
@@ -2899,39 +2512,18 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         return
 
     def delete_if_exists(self, path):
-
         if arcpy.Exists(path):
-
             try:
                 arcpy.management.Delete(path)
-
             except:
                 pass
 
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
-
-        field_names = [
-            field.name
-            for field in arcpy.ListFields(
-                feature_class
-            )
-        ]
-
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+        field_names = [field.name for field in arcpy.ListFields(feature_class)]
         if field_name not in field_names:
-
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
+            arcpy.management.AddField(feature_class, field_name, field_type)
 
     def execute(self, parameters, messages):
-
         messages.addMessage("== Proses mulai ==")
 
         # 1. Mengambil Konfigurasi dari config file
@@ -2942,96 +2534,69 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         jaringanjalan_nd_path = configs["jaringan_jalan_config"]["path"]["JaringanJalanForND"]
 
         # 2. Mengambil nilai parameter
-
         simpan_temp = parameters[0].value
         hanya_update = parameters[1].value
+        
+        # --- BARU: Ekstraksi list pilihan kelas jalan ---
+        pilihan_kelas_text = parameters[2].valueAsText
+        if pilihan_kelas_text:
+            # Karena multivalue dipisah semicolon, formatnya bisa jadi 'Item 1';'Item 2'
+            pilihan_list = [p.strip("'") for p in pilihan_kelas_text.split(";")]
+        else:
+            pilihan_list = ["Semuanya"]
 
         # 3. Mempersiapkan path untuk dataset dan output sementara
-
-        persil_fc = os.path.join(dataset_path,"Persil_Layer")
+        persil_fc = os.path.join(dataset_path, "Persil_Layer")
         temp_output_name = "Analisis_Persil_Dengan_Jalan_Temp"
         temp_output_fc = os.path.join(dataset_path, temp_output_name)
-
 
         if simpan_temp:
             self.delete_if_exists(temp_output_fc)
             messages.addMessage("== Membuat layer sementara ==")
-            arcpy.management.CopyFeatures(persil_fc,temp_output_fc)
+            arcpy.management.CopyFeatures(persil_fc, temp_output_fc)
             update_fc = temp_output_fc
-
         else:
             update_fc = persil_fc
 
-        # 4. Menentukan layer untuk analisis, jika hanya_update maka lakukan seleksi pada layer persil_input, jika tidak maka gunakan seluruh data persil
-
+        # 4. Menentukan layer untuk analisis
         persil_layer = "persil_input"
-
-        self.delete_if_exists(
-            persil_layer
-        )
-
-        arcpy.management.MakeFeatureLayer(
-            update_fc,
-            persil_layer
-        )
+        self.delete_if_exists(persil_layer)
+        arcpy.management.MakeFeatureLayer(update_fc, persil_layer)
 
         if hanya_update:
             arcpy.management.SelectLayerByAttribute(
-                persil_layer,
-                "NEW_SELECTION",
-                "UPPER(status_per) = 'UPDATE'"
+                persil_layer, "NEW_SELECTION", "UPPER(status_per) = 'UPDATE'"
             )
 
-        # 5. Validasi jumlah feature yang akan diproses
-
+        # 5. Validasi jumlah feature
         jumlah = int(arcpy.management.GetCount(persil_layer)[0])
-
         if jumlah == 0:
             messages.addWarningMessage("== Tidak ada feature yang diproses ==")
             return
 
-        persilcentroid = ("Centroid_Persil")
+        persilcentroid = "Centroid_Persil"
         gdb_temp = arcpy.env.scratchGDB
         persilcentroid_path = os.path.join(gdb_temp, persilcentroid)
 
-        # 6. Membuat centroid dari persil untuk digunakan sebagai titik awal dalam analisis jaringan dan menyimpan mapping OID dengan IDBIDANG untuk memudahkan update hasil analisis jaringan ke layer persil setelahnya
-
+        # 6. Membuat centroid dari persil
         messages.addMessage("== Membuat centroid persil ==")
-
-        arcpy.management.FeatureToPoint(
-            persil_layer,
-            persilcentroid_path,
-            "INSIDE"
-        )
+        arcpy.management.FeatureToPoint(persil_layer, persilcentroid_path, "INSIDE")
+        
         oid_to_idbidang = {}
-
         oid_field = arcpy.Describe(persilcentroid_path).OIDFieldName
 
         with arcpy.da.SearchCursor(persilcentroid_path, [oid_field, "IDBIDANG"]) as rows:
-
             for oid, idbidang in rows:
                 oid_to_idbidang[oid] = idbidang
 
-        # 7. Persiapan field pada jaringan jalan untuk analisis jaringan
-
+        # 7. Persiapan field pada jaringan jalan
         messages.addMessage("== Persiapan field jalan ==")
-
-        self.add_field_if_not_exists(
-            jaringanjalan_path,
-            "P_Jalan",
-            "DOUBLE"
-        )
-
-        arcpy.management.CalculateField(
-            jaringanjalan_path,
-            "P_Jalan",
-            "!shape.length!",
-            "PYTHON3"
-        )
+        self.add_field_if_not_exists(jaringanjalan_path, "P_Jalan", "DOUBLE")
+        arcpy.management.CalculateField(jaringanjalan_path, "P_Jalan", "!shape.length!", "PYTHON3")
 
         outNALayerName = "hasil_kelas"
         impedance_attribute = "P_Jalan"
-
+        
         namafield = {
             4: 'JKKOLS',
             5: 'JKKOLP',
@@ -3039,53 +2604,76 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
             7: 'JKATRP'
         }
 
-
         dataset_template_path = os.path.dirname(jaringanjalan_nd_path)
         dataset_kelas_jalan_path = os.path.join(os.path.dirname(dataset_path), "kelas_jalan")
 
-        # 7. Melakukan iterasi untuk setiap kelas jalan yang ada di dataset kelas jalan, kemudian melakukan analisis jaringan untuk mencari jarak terdekat dari centroid persil ke kelas jalan tersebut, dan menyimpan hasilnya ke field yang sudah disiapkan
+        # --- MODIFIKASI: Mapping Pilihan ke Nama Feature Class ---
+        mapping_pilihan = {
+            "Kolektor Sekunder": "JunctionKls4",
+            "Kolektor Primer": "JunctionKls5",
+            "Arteri Sekunder": "JunctionKls6",
+            "Arteri Primer": "JunctionKls7"
+        }
+        
+        # Buat reverse mapping untuk kemudahan menampilkan pesan error
+        reverse_mapping = {v: k for k, v in mapping_pilihan.items()}
 
-        arcpy.env.workspace = (dataset_kelas_jalan_path)
+        requested_fc = []
+        if "Semuanya" in pilihan_list:
+            requested_fc = list(mapping_pilihan.values())
+        else:
+            for p in pilihan_list:
+                if p in mapping_pilihan:
+                    requested_fc.append(mapping_pilihan[p])
 
-        list_fc = arcpy.ListFeatureClasses("*")
+        # 8. Filter Feature Class yang Tersedia
+        arcpy.env.workspace = dataset_kelas_jalan_path
+        list_fc = arcpy.ListFeatureClasses("*") or []
 
         list_kelas_jalan = []
-        for fc in list_fc:
+        for req_fc in requested_fc:
+            nama_jalan_human = reverse_mapping.get(req_fc, req_fc)
+            if req_fc in list_fc:
+                temp_path = os.path.join(dataset_kelas_jalan_path, req_fc)
+                jumlah_fc = int(arcpy.management.GetCount(temp_path)[0])
+                
+                if jumlah_fc > 0:
+                    list_kelas_jalan.append(req_fc)
+                else:
+                    messages.addWarningMessage(f"Jalan {nama_jalan_human} tersedia namun kosong/tidak ada feature.")
+            else:
+                # Kasih peringatan jika jalan tidak tersedia
+                messages.addWarningMessage(f"Peringatan: Jalan {nama_jalan_human} tidak tersedia di dalam dataset.")
 
-            if any(kls in fc for kls in ("JunctionKls1", "JunctionKls2", "JunctionKls3")):
-                continue
+        if not list_kelas_jalan:
+            messages.addErrorMessage("Tidak ada satupun kelas jalan valid yang bisa dihitung. Membatalkan proses.")
+            return
 
-            temp_path = os.path.join( dataset_kelas_jalan_path,    fc )
-            jumlah_fc = int(arcpy.management.GetCount(temp_path )[0])
+        arcpy.AddMessage(f"== Kelas jalan yang akan diproses: {list_kelas_jalan} ==")
 
-            if jumlah_fc > 0:
-                list_kelas_jalan.append(fc)
-
-        arcpy.AddMessage(f"== Kelas jalan yang diproses: {list_kelas_jalan} ==")
+        # 9. Setup Network Analysis (Closest Facility)
         hasilNAObject = arcpy.na.MakeClosestFacilityLayer(
-                    nd_path,
-                    outNALayerName,
-                    impedance_attribute,
-                    "TRAVEL_TO",
-                    default_cutoff=500000,
-                    default_number_facilities_to_find=1
-                )
-            
+            nd_path,
+            outNALayerName,
+            impedance_attribute,
+            "TRAVEL_TO",
+            default_cutoff=500000,
+            default_number_facilities_to_find=1
+        )
 
         outNALayer = hasilNAObject.getOutput(0)
         arcpy.na.AddLocations(
-                outNALayer,
-                "Incidents",
-                persilcentroid_path
-            )
+            outNALayer,
+            "Incidents",
+            persilcentroid_path
+        )
         
         jarak_dict = {}
         for kelas_jalan in list_kelas_jalan:
-            # 8. Melakukan analisis jaringan untuk mencari jarak terdekat dari centroid persil ke kelas jalan tersebut, dan menyimpan hasilnya ke field yang sudah disiapkan
             messages.addMessage(f"== Hitung jarak kelas_jalan: {kelas_jalan} ==")
 
-            kelas_jalan_path = os.path.join(dataset_kelas_jalan_path,  kelas_jalan)
-            kls = kelas_jalan.replace("JunctionKls","" )
+            kelas_jalan_path = os.path.join(dataset_kelas_jalan_path, kelas_jalan)
+            kls = kelas_jalan.replace("JunctionKls", "")
             nama_field_target = namafield[int(kls)]
 
             arcpy.na.AddLocations(
@@ -3096,28 +2684,24 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
             )
 
             solve_result = arcpy.na.Solve(outNALayer)
-            if solve_result.getMessages(1): # 1 adalah kode untuk Warning
+            if solve_result.getMessages(1):
                 messages.addWarningMessage(f"Peringatan Solve NA: {solve_result.getMessages(1)}")
 
-            incident_path = os.path.join(dataset_template_path, f"incident_{kelas_jalan}" )
+            incident_path = os.path.join(dataset_template_path, f"incident_{kelas_jalan}")
             route_path = os.path.join(dataset_template_path, f"route_{kelas_jalan}")
 
             self.delete_if_exists(incident_path)
             self.delete_if_exists(route_path)
 
             for lyr in outNALayer.listLayers():
-
                 if lyr.isGroupLayer:
                     continue
                 if lyr.name == "Incidents":
-                    arcpy.management.CopyFeatures(lyr,  incident_path)
-
+                    arcpy.management.CopyFeatures(lyr, incident_path)
                 elif lyr.name == "Routes":
+                    arcpy.management.CopyFeatures(lyr, route_path)
 
-                    arcpy.management.CopyFeatures(lyr,route_path)
-
-            # 9. Mengambil nilai Total_P_Jalan untuk masing-masing incidentID
-
+            # Join untuk mendapatkan jarak rute
             arcpy.management.JoinField(
                 incident_path,
                 "OBJECTID",
@@ -3126,265 +2710,42 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
                 ["Total_P_Jalan"]
             )
 
-            # 10. Menyimpan data panjang rute dengan mapping ObjectID incident ke IDBIDANG untuk memudahkan update hasil analisis jaringan ke layer persil setelahnya
-
-            with arcpy.da.SearchCursor(
-                incident_path,
-                ["OBJECTID", "Total_P_Jalan"]
-            ) as rows:
-
+            # 10. Menyimpan data panjang rute
+            with arcpy.da.SearchCursor(incident_path, ["OBJECTID", "Total_P_Jalan"]) as rows:
                 for incident_oid, jarak in rows:
-
                     idbidang = oid_to_idbidang.get(incident_oid)
                     if idbidang is not None:
                         if idbidang not in jarak_dict:
                             jarak_dict[idbidang] = {}
                         jarak_dict[idbidang][nama_field_target] = jarak
-        # 11. Melakukan update data panjang rute ke field yang sudah disiapkan di layer persil dengan mapping IDBIDANG
+
+        # 11. Update ke persil
         with arcpy.da.UpdateCursor(
             persil_layer,
-            [
-                "IDBIDANG",
-                "JKKOLS",
-                "JKKOLP",
-                "JKATRS",
-                "JKATRP"
-            ]
+            ["IDBIDANG", "JKKOLS", "JKKOLP", "JKATRS", "JKATRP"]
         ) as rows:
             for row in rows:
-
-                data = jarak_dict.get(row[0],{})
-            
-                row[1] = data.get("JKKOLS")
-                row[2] = data.get("JKKOLP")
-                row[3] = data.get("JKATRS")
-                row[4] = data.get("JKATRP")
+                data = jarak_dict.get(row[0], {})
+                
+                # Hanya update data yang memiliki isi / didapatkan dari dict (sisanya tetap atau none)
+                if "JKKOLS" in data: row[1] = data["JKKOLS"]
+                if "JKKOLP" in data: row[2] = data["JKKOLP"]
+                if "JKATRS" in data: row[3] = data["JKATRS"]
+                if "JKATRP" in data: row[4] = data["JKATRP"]
 
                 rows.updateRow(row)
 
-
-        # 12. Menampilkan output, jika opsi simpan_temp diaktifkan maka akan menampilkan layer sementara, jika tidak maka akan menampilkan layer persil yang sudah diupdate
+        # 12. Menampilkan output
         if simpan_temp:
             output_name = temp_output_name
         else:
             output_name = "Persil_Layer"
 
-        self.delete_if_exists(
-            output_name
-        )
-
-        arcpy.management.MakeFeatureLayer(
-            update_fc,
-            output_name
-        )
-
-        parameters[2].value = output_name
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
-        return
-    
-
-class Optimasi_Perbaharui_Jarak_Kelas_Jalan(object):
-
-    def __init__(self):
-        self.label = "Optimasi Hitung Jarak Kelas Jalan"
-        self.description = "Alat untuk menghitung jarak terdekat dari persil ke berbagai kelas jalan."
-        self.canRunInBackground = False
-
-    def getParameterInfo(self):
-        simpan_temp = arcpy.Parameter(
-            displayName="Simpan ke Temporary Layer",
-            name="simpan_temp",
-            datatype="GPBoolean",
-            parameterType="Optional",
-            direction="Input"
-        )
-        simpan_temp.value = False
-
-        hanya_update = arcpy.Parameter(
-            displayName="Sinkronisasi Data Persil Terbaru",
-            name="hanya_update",
-            datatype="GPBoolean",
-            parameterType="Optional",
-            direction="Input"
-        )
-        hanya_update.value = True
-
-        output_persil = arcpy.Parameter(
-            displayName="Output Persil",
-            name="output_persil",
-            datatype="GPFeatureLayer",
-            parameterType="Derived",
-            direction="Output"
-        )
-
-        return [simpan_temp, hanya_update, output_persil]
-
-    def isLicensed(self):
-        return True
-
-    def updateParameters(self, parameters):
-        return
-
-    def updateMessages(self, parameters):
-        return
-
-    def delete_if_exists(self, path):
-        if arcpy.Exists(path):
-            try:
-                arcpy.management.Delete(path)
-            except Exception as e:
-                # Menangkap exception spesifik lebih baik daripada bare except
-                arcpy.AddWarning(f"Gagal menghapus {path}: {str(e)}")
-
-    def add_field_if_not_exists(self, feature_class, field_name, field_type):
-        field_names = [field.name.lower() for field in arcpy.ListFields(feature_class)]
-        if field_name.lower() not in field_names:
-            arcpy.management.AddField(feature_class, field_name, field_type)
-
-    def execute(self, parameters, messages):
-        messages.addMessage("== Proses mulai ==")
-
-        # 1. Mengambil Konfigurasi
-        configs = persil.get_config_values()
-        dataset_path = configs["project_config"]["dataset_path"]
-        jaringanjalan_path = configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
-        nd_path = configs["jaringan_jalan_config"]["path"]["JaringanJalan_ND"]
-        
-        simpan_temp = parameters[0].value
-        hanya_update = parameters[1].value
-
-        persil_fc = os.path.join(dataset_path, "Persil_Layer")
-        temp_output_name = "Analisis_Persil_Dengan_Jalan_Temp"
-        temp_output_fc = os.path.join(dataset_path, temp_output_name)
-
-        # 2. Persiapan Data Persil
-        if simpan_temp:
-            self.delete_if_exists(temp_output_fc)
-            messages.addMessage("== Membuat layer sementara ==")
-            arcpy.management.CopyFeatures(persil_fc, temp_output_fc)
-            update_fc = temp_output_fc
-        else:
-            update_fc = persil_fc
-
-        persil_layer = "persil_input"
-        self.delete_if_exists(persil_layer)
-        arcpy.management.MakeFeatureLayer(update_fc, persil_layer)
-
-        if hanya_update:
-            arcpy.management.SelectLayerByAttribute(
-                persil_layer, "NEW_SELECTION", "UPPER(status_per) = 'UPDATE'"
-            )
-
-        jumlah = int(arcpy.management.GetCount(persil_layer)[0])
-        if jumlah == 0:
-            messages.addWarningMessage("== Tidak ada feature yang diproses ==")
-            return
-
-        # OPTIMASI: Menggunakan workspace memory untuk proses sementara agar jauh lebih cepat
-        persilcentroid_path = r"memory\Centroid_Persil"
-        self.delete_if_exists(persilcentroid_path)
-
-        messages.addMessage("== Membuat centroid persil ==")
-        arcpy.management.FeatureToPoint(persil_layer, persilcentroid_path, "INSIDE")
-
-        # Mapping OID ke IDBIDANG
-        oid_to_idbidang = {}
-        oid_field = arcpy.Describe(persilcentroid_path).OIDFieldName
-        with arcpy.da.SearchCursor(persilcentroid_path, [oid_field, "IDBIDANG"]) as rows:
-            for oid, idbidang in rows:
-                oid_to_idbidang[oid] = idbidang
-
-        # 3. Persiapan Jalan
-        messages.addMessage("== Persiapan field jalan ==")
-        self.add_field_if_not_exists(jaringanjalan_path, "P_Jalan", "DOUBLE")
-        arcpy.management.CalculateField(jaringanjalan_path, "P_Jalan", "!shape.length!", "PYTHON3")
-
-        # 4. Setup Network Analyst
-        outNALayerName = "hasil_kelas"
-        impedance_attribute = "P_Jalan"
-        namafield = {4: 'JKKOLS', 5: 'JKKOLP', 6: 'JKATRS', 7: 'JKATRP'}
-        dataset_kelas_jalan_path = os.path.join(os.path.dirname(dataset_path), "kelas_jalan")
-
-        arcpy.env.workspace = dataset_kelas_jalan_path
-        list_fc = arcpy.ListFeatureClasses("*")
-        list_kelas_jalan = [
-            fc for fc in list_fc 
-            if not any(kls in fc for kls in ("JunctionKls1", "JunctionKls2", "JunctionKls3")) 
-            and int(arcpy.management.GetCount(os.path.join(dataset_kelas_jalan_path, fc))[0]) > 0
-        ]
-
-        messages.addMessage(f"== Kelas jalan yang diproses: {list_kelas_jalan} ==")
-
-        hasilNAObject = arcpy.na.MakeClosestFacilityLayer(
-            nd_path, outNALayerName, impedance_attribute, "TRAVEL_TO",
-            default_cutoff=500000, default_number_facilities_to_find=1
-        )
-        outNALayer = hasilNAObject.getOutput(0)
-        
-        # Ekstrak sublayer secara dinamis agar kompatibel dengan berbagai versi ArcGIS Pro
-        sublayer_names = arcpy.na.GetNAClassNames(outNALayer)
-        facilities_layer_name = sublayer_names["Facilities"]
-        incidents_layer_name = sublayer_names["Incidents"]
-        routes_layer_name = sublayer_names["CFRoutes"]
-
-        arcpy.na.AddLocations(outNALayer, incidents_layer_name, persilcentroid_path)
-
-        jarak_dict = {}
-
-        # 5. Eksekusi Analisis Jaringan
-        for kelas_jalan in list_kelas_jalan:
-            messages.addMessage(f"== Hitung jarak kelas_jalan: {kelas_jalan} ==")
-            kelas_jalan_path = os.path.join(dataset_kelas_jalan_path, kelas_jalan)
-            
-            kls_str = kelas_jalan.replace("JunctionKls", "")
-            if not kls_str.isdigit() or int(kls_str) not in namafield:
-                continue # Skip jika nama kelas jalan tidak sesuai format dictionary namafield
-            
-            nama_field_target = namafield[int(kls_str)]
-
-            arcpy.na.AddLocations(outNALayer, facilities_layer_name, kelas_jalan_path, append="CLEAR")
-            solve_result = arcpy.na.Solve(outNALayer, "SKIP")
-            
-            if solve_result.getMessages(1):
-                messages.addWarningMessage(f"Peringatan Solve NA: {solve_result.getMessages(1)}")
-
-            # OPTIMASI: Langsung akses sublayer Routes di memori tanpa CopyFeatures atau JoinField!
-            routes_sublayer = outNALayer.listLayers(routes_layer_name)[0]
-            
-            with arcpy.da.SearchCursor(routes_sublayer, ["IncidentID", "Total_P_Jalan"]) as rows:
-                for incident_id, jarak in rows:
-                    idbidang = oid_to_idbidang.get(incident_id)
-                    if idbidang is not None:
-                        if idbidang not in jarak_dict:
-                            jarak_dict[idbidang] = {}
-                        jarak_dict[idbidang][nama_field_target] = jarak
-
-        # 6. Update Persil
-        messages.addMessage("== Memperbarui data persil ==")
-        with arcpy.da.UpdateCursor(
-            persil_layer, ["IDBIDANG", "JKKOLS", "JKKOLP", "JKATRS", "JKATRP"]
-        ) as rows:
-            for row in rows:
-                data = jarak_dict.get(row[0])
-                if data:  # OPTIMASI: Hanya perbarui jika ada data rute yang ditemukan
-                    if "JKKOLS" in data: row[1] = data["JKKOLS"]
-                    if "JKKOLP" in data: row[2] = data["JKKOLP"]
-                    if "JKATRS" in data: row[3] = data["JKATRS"]
-                    if "JKATRP" in data: row[4] = data["JKATRP"]
-                    rows.updateRow(row)
-
-        # Membersihkan memori sementara
-        self.delete_if_exists(persilcentroid_path)
-
-        # 7. Output Final
-        output_name = temp_output_name if simpan_temp else "Persil_Layer"
         self.delete_if_exists(output_name)
         arcpy.management.MakeFeatureLayer(update_fc, output_name)
-        parameters[2].value = output_name
+
+        # Pastikan index param sesuai (output pindah ke index ke-3 karena parameter baru ada di index 2)
+        parameters[3].value = output_name
 
         messages.addMessage("== Proses selesai ==")
-        return
+        return    

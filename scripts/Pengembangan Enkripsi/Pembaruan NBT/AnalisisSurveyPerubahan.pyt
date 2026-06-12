@@ -215,7 +215,6 @@ class Ambil_LBT_Dari_Sipenta(object):
         # HAPUS parameter ?no_berkas dari string URL
         # token='Cdv3IZgk8HPy_cDhcYcMjpZUz2Ra9cZUNRv4DlZwngiVVB9IAV1LvyAf6Mscj6dyd_e9SPNS73z8oSvbii58ZCLixigyhe6Y5GZrMbdaa5knTsyOGQsZDUT_Cirzi_7wsNThtZAlblF5m3WY3sNGZqRIYq2hJMCzmV_azBTlzF-ypSRiCMRkcg'
         # nomor_berkas = '04/2026/0016'
-        token = 'FPmpuYt7NuNUne-zPzHUE_JMlcFTL7DteyeeozdEEqvsgEeOMS36grbsWszrMF53utuTK4Xw0tapGOPfXZiumFYN0iGEqNJs0_LAKRRlSQ_2A7e-okBsg7tQT4vZC9zlNoEVEDV2rqhOwbgMKSs4BODvieDj--GWiYpuHMi-z6bcfij-GzU3s4AjTsq6WAOaeu4aZWtGxIlAPz1dyIRaRSBEuB3KlmyktUuX9o_NNyNtKGRMax1jqxspDU2UD50VHNHUm6Uiyv3UKiWdrWfphLS_-qJQSwQPzKr9AG7UfbdJxZHk1nPtWY74Xp4kxHcYPYOvUjgWCLaLeeXDm__H3i17hfRH53uOh2otrE0C-w'
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-lbt/"
         prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-lbt"
 
@@ -243,8 +242,8 @@ class Ambil_LBT_Dari_Sipenta(object):
                 url, 
                 headers=headers, 
                 params=payload, # requests akan merakit URL dengan aman
-                timeout=60
-                # verify=True
+                timeout=60,
+                verify=True
             )
             
             response.raise_for_status()

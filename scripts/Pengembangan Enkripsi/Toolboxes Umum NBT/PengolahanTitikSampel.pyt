@@ -824,7 +824,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         
         # URL untuk testing dan produksi
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
-        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-survey?no_berkas={nomor_berkas}"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/data-survey"
     
         url = prod_url if use_production else test_url
 
@@ -832,9 +832,23 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             # Mengambil data dari API
             arcpy.AddMessage("Mengambil data Titik Sampel...")
             headers = {
-                    "Authorization": f"Bearer {token}"
-                }
-            response = requests.get(url, headers=headers, timeout=60)  
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+                
+            }
+
+            payload = {
+                "no_berkas": nomor_berkas
+            }
+            arcpy.AddMessage(headers)
+            
+            response = requests.get(
+                url, 
+                headers=headers, 
+                params=payload, # requests akan merakit URL dengan aman
+                timeout=60,
+                verify=True
+            )
             response.raise_for_status()  # Akan raise exception untuk HTTP error
             
             data = response.json()

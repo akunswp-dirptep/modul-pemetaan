@@ -106,7 +106,7 @@ class Tampilkan_Simbologi_Persil(object):
             'Lebar Jalan': ['Simbologi_Lebar_Jalan.lyrx', 'Simbologi_Lebar_Jalan_Dan_Status_Pembaruan.lyrx'],
             'Lebar Depan': ['Simbologi_Lebar_Depan.lyrx', 'Simbologi_Lebar_Depan_Dan_Status_Pembaruan.lyrx'],
             'Tipe Hak': ['Simbologi_Tipe_Hak.lyrx', 'Simbologi_Tipe_Hak_Dan_Status_Pembaruan.lyrx'],
-            'Zonasi': ['Simbologi_Zonasi.lyrx', 'Simbologi_Zonasi_Dan_Status_Pembaruan.lyrx']
+            'Zonasi': [r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Zonasi_Persil_Layer.lyrx", 'Simbologi_Zonasi_Dan_Status_Pembaruan.lyrx']
         }
 
         simbology_path = mapping_simbology.get(pilihan_atribut, [None])[0] if pilihan_simbologi == 'Hanya Atribut' else mapping_simbology.get(pilihan_atribut, [None])[1]

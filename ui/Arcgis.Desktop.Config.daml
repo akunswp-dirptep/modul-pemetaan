@@ -437,6 +437,7 @@
 					<button refID="ButtonGenerateKonfigurasiZonasi" size="Medium"/>
 					<button refID="ButtonDeklarasiZonasiUpdate" size="Medium"/>
 					<button refID="ButtonEditZonasiUpdate" size="Medium"/>
+					<button refID="ButtonSeleksiZonasiTerisolasi" size="Medium" />
 				</menu>
 				<menu id="analisis_survey_perubahan" caption="Analisis Survey Perubahan" extendedCaption="Analisis Survey Perubahan" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\survei_perubahan.png"
@@ -456,6 +457,7 @@
 					<button refID="ButtonMenarikTitikSampelNBTDariSipenta" />
 					<button refID="ButtonTampilkanSimbologiTitikSampelNBT" />
 					<button refID="ButtonPersiapkanDataPersilUntukPerhitungan" />
+					<button refID="ButtonHitungOtomatisPersilIndividual" />
 					<button refID='ButtonRekomendasiPersilPembanding' />
 					<button refID="ButtonPersiapanPersilIndividual" />
 					<button refID="ButtonPerhitunganPersilIndividual" />
@@ -2484,6 +2486,14 @@
 					</args>
 					<tooltip heading="Edit Informasi Zonasi Pada Persil">Menu untuk edit informasi zonasi pada persil.</tooltip>
 				</button>
+
+				<button id="ButtonSeleksiZonasiTerisolasi" caption="Seleksi Zona Terisolasi" smallImage="C:\PenilaianTanah\icons\zonasi.png" largeImage="C:\PenilaianTanah\icons\zonasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanZonasi.pyt\Seleksi_Zonasi_Terisolasi" name="Seleksi Zona Terisolasi" xmlns=""/>
+					</args>
+					<tooltip heading="Seleksi Zona Terisolasi">Menu untuk edit informasi zonasi pada persil.</tooltip>
+				</button>
+
 			<!-- Analisis Survey Lingkungan dan Fasilitas -->
 				<button id="ButtonAmbilLBTDariSipenta" caption="Ambil LBT Dari Sipenta" smallImage="C:\PenilaianTanah\icons\maps.png" largeImage="C:\PenilaianTanah\icons\maps.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
@@ -2586,6 +2596,14 @@
 					</args>
 					<tooltip heading="Persiapkan Persil Untuk Perhitungan">Menu untuk mempersiapkan data persil untuk perhitungan.</tooltip>
 				</button>
+
+				<button id="ButtonHitungOtomatisPersilIndividual" caption="Hitung Persil Individual Otomatis" smallImage="C:\PenilaianTanah\icons\peta1.png" largeImage="C:\PenilaianTanah\icons\peta1.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Hitung_Persil_Individual_Otomatis" name="Hitung Persil Individual Otomatis" xmlns=""/>
+					</args>
+					<tooltip heading="Hitung Persil Individual Otomatis">Menu untuk mempersiapkan data persil untuk perhitungan.</tooltip>
+				</button>
+
 				<button id="ButtonRekomendasiPersilPembanding" caption="Rekomendasi Pembanding" smallImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" largeImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Rekomendasi_Pembanding" name="Rekomendasi Pembanding" xmlns=""/>

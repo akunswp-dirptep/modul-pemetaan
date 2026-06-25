@@ -122,8 +122,8 @@ class Perhitungan_Indeks_Titik_Sampel_Keseluruhan:
         # Mendefinisikan path untuk feature classes yang akan digunakan
         zl = os.path.join(self.dataset_path, "Zona_Layer")      
         ts = os.path.join(self.dataset_path, "Titik_Sampel")    
-        hi = os.path.join(self.dataset_path, "Hitung_Indeks")    
-        tzt = os.path.join(self.dataset_path, "Titik_Zona_Temp") 
+        hi = os.path.join("in_memory", "Hitung_Indeks")    
+        tzt = os.path.join("in_memory", "Titik_Zona_Temp") 
 
         with arcpy.da.SearchCursor(zl, ['NILAIZN_LAMA']) as cursor:
             for row in cursor:

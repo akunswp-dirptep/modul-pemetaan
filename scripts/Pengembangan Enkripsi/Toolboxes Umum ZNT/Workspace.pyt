@@ -223,10 +223,10 @@ class Buat_Workspace(object):
         added to the display."""
         return
 
+
 class Import_Workspace(object):
 
     def __init__(self):
-
         self.label = "Import Workspace"
         self.description = "Tool untuk mengimpor workspace data ZNT."
     
@@ -243,7 +243,8 @@ class Import_Workspace(object):
             name="output_path",
             datatype="DEFolder",
             parameterType="Required",
-            direction="Input")
+            direction="Input"
+        )
         
         output_zl_path = arcpy.Parameter(
             name="output_zl_path",
@@ -301,6 +302,103 @@ class Import_Workspace(object):
             os.remove(legacy_config_path)
             arcpy.AddMessage(f"File config.json lama dihapus: {legacy_config_path}")
     
+    def map_legacy_fields(self, fc_path):
+        """
+        Melakukan mapping field dari format lama ke format baru pada feature class.
+        """
+        field_mapping = {
+            "Nomor_Entry": "no_sampel",
+            "No_Identifikasi": "no_identifikasi",
+            "Surveyor": "nama_surveyor",
+            "Tanggal_Pelaksanaan": "tgl_pelaksanaan",
+            "Kd_Jenis_Bangunan": "kode_jenis_bangunan",
+            "Alamat": "alamat",
+            "Kelurahan": "kel_desa",
+            "Kecamatan": "kecamatan",
+            "X": "x",
+            "Y": "y",
+            "Status_Kepemilikan": "status_kepemilikan",
+            "Jenis_Data": "jenis_data",
+            "Tgl_Penawaran_Transaksi": "tgl_penawaran_transaksi",
+            "Harga_Penawaran_Transaksi": "harga_penawaran_transaksi",
+            "Luas_Tanah_m2": "luas_tanah_m2",
+            "Lebar_Depan": "lebar_depan",
+            "Panjang_Kebelakang": "panjang_kebelakang",
+            "Bentuk_Tanah": "bentuk_tanah",
+            "Elevasi_Dari_Jalan": "elevasi_dari_jalan",
+            "Letak_Tanah": "letak_tanah",
+            "Kelas_Jalan": "kelas_jalan",
+            "Lebar_Jalan": "lebar_jalan",
+            "Aksebilitas": "aksesibilitas",
+            "Drainase": "drainase",
+            "Utilitas": "utilitas",
+            "Fasilitas": "fasilitas",
+            "Zoning": "zoning",
+            "Luas_Bangunan": "luas_bangunan",
+            "Jenis": "jenis",
+            "Jumlah_Lantai": "jumlah_lantai",
+            "Tahun_Pembuatan": "tahun_pembuatan",
+            "Tahun_Renovasi": "tahun_renovasi",
+            "Kontruksi_Atas": "konstruksi_atas",
+            "Kontruksi_bawah": "konstruksi_bawah",
+            "Atap": "atap",
+            "Dinding": "dinding",
+            "LangitLangit": "langit_langit",
+            "Lantai": "lantai",
+            "Pagar": "pagar",
+            "Panjang_Pagar": "panjang_pagar",
+            "Luas_Carport": "luas_carport",
+            "Pintu_Jendela": "pintu_jendela",
+            "Jumlah_Fasilitas": "jumlah_fasilitas",
+            "Keadaan_Fisik": "keadaan_fisik",
+            "Biaya_Bangunan_m2": "biaya_bangunan_m2",
+            "RCN": "rcn",
+            "Tahun_Penilaian": "tahun_penilaian",
+            "Umur_Efektif": "umur_efektif",
+            "Penyusutan": "penyusutan",
+            "Nilai_Bangunan": "nilai_bangunan",
+            "Harga_Penyesuaian": "harga_penyesuaian",
+            "Nilai_Bangunan_Rp": "nilai_bangunan_rp",
+            "Harga_Tanah_Rp": "harga_tanah_rp",
+            "Penyesuaian_Waktu": "penyesuaian_waktu",
+            "Penyesuaian_Status_Kepemilikan": "penyesuaian_status_kepemilikan",
+            "nilluas": "nil_luas",
+            "nilai": "nilai",
+            "akses": "akses",
+            "Penyusutan_Rumah": "penyusutan_rumah",
+            "Penyusutan_Ruko": "penyusutan_ruko",
+            "Keterangan": "keterangan",
+            "Pembanding": "pembanding",
+            "Penyusutan_Rumah_1": "penyusutan_rumah_1",
+            "Penyusutan_Rumah_2": "penyusutan_rumah_2",
+            "Penyusutan_Ruko_1": "penyusutan_ruko_1",
+            "Penyusutan_Ruko_2": "penyusutan_ruko_2",
+            "N_Sementara": "n_sementara",
+            "Responden": "responden",
+            "Catatan": "catatan"
+        }
+
+        current_fields = [f.name for f in arcpy.ListFields(fc_path)]
+        mapped_count = 0
+
+        for nama_lama, nama_baru in field_mapping.items():
+            if nama_lama in current_fields:
+                try:
+                    arcpy.management.AlterField(
+                        in_table=fc_path,
+                        field=nama_lama,
+                        new_field_name=nama_baru,
+                        new_field_alias=nama_baru 
+                    )
+                    mapped_count += 1
+                except Exception as e:
+                    arcpy.AddWarning(f"  -> Gagal mengubah field '{nama_lama}' menjadi '{nama_baru}': {e}")
+        
+        if mapped_count > 0:
+            arcpy.AddMessage(f"Berhasil melakukan mapping pada {mapped_count} field di {os.path.basename(fc_path)}")
+        else:
+            arcpy.AddMessage(f"Tidak ada field yang perlu disesuaikan pada {os.path.basename(fc_path)}")
+
     def update_config_file(self, config_path, output_path):
         """
         Memperbarui file config.json dengan path yang baru
@@ -308,7 +406,7 @@ class Import_Workspace(object):
         try:
             # Baca file config.json
             if config_path.endswith('.bin'):
-                config_data = get_all_config(config_path)
+                config_data = get_all_config(config_path) # Asumsi get_all_config terdefinisi di luar
                 arcpy.AddMessage(f"Data konfigurasi yang dibaca dari .bin: {config_data}")
             
             elif config_path.endswith('.json'):
@@ -326,8 +424,10 @@ class Import_Workspace(object):
             config_data["gdb_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb")
 
             arcpy.AddMessage(f"Data konfigurasi yang diperbarui: {config_data}")
-            config_path = os.path.join(output_path, PROJECT_CONFIG_FILE_NAME)
-            setup_project_config(config_data, config_path)
+            
+            # Asumsi PROJECT_CONFIG_FILE_NAME dan setup_project_config terdefinisi di luar class
+            new_config_path = os.path.join(output_path, PROJECT_CONFIG_FILE_NAME) 
+            setup_project_config(config_data, new_config_path)
             self.delete_legacy_config_json(output_path)
             
             return True
@@ -338,7 +438,7 @@ class Import_Workspace(object):
 
     def check_and_extract_config(self, zip_path, output_path):
         """
-        Mengecek apakah file zip mengandmung config.json atau config.dat
+        Mengecek apakah file zip mengandung config.json atau config.dat
         dan melakukan ekstraksi jika ditemukan
         """
         zona_layer_path = None
@@ -355,10 +455,9 @@ class Import_Workspace(object):
                 
                 # Cek apakah ada config.json atau config.dat
                 has_config_json = any(
-                    'config.json' in f.lower() or PROJECT_CONFIG_FILE_NAME in f.lower()
+                    'config.json' in f.lower() or PROJECT_CONFIG_FILE_NAME.lower() in f.lower()
                     for f in file_list
                 )
-            
                 
                 if has_config_json:
                     arcpy.AddMessage("File config ditemukan dalam zip. Melakukan ekstraksi...")
@@ -386,10 +485,12 @@ class Import_Workspace(object):
                             break
                     
                     if config_path:
-                        
+                        # Cek apakah ekstensinya .json (untuk trigger field mapping nantinya)
+                        is_json_format = config_path.lower().endswith('.json')
+
                         # Baca isi config file jika diperlukan
                         try:
-                            update_success = self.update_config_file(config_path, output_path)                                
+                            update_success = self.update_config_file(config_path, output_path)                               
                             if update_success:
                                 # Baca lagi untuk menampilkan hasil perubahan
                                 new_config_path = os.path.join(output_path, PROJECT_CONFIG_FILE_NAME)
@@ -403,11 +504,27 @@ class Import_Workspace(object):
                                     arcpy.AddError("Config hasil ekstraksi tidak memiliki dataset_path")
                                     return False, None
 
+                                # --- LOGIKA PENAMBAHAN MAPPING FIELD ---
+                                if is_json_format:
+                                    arcpy.AddMessage("Mendeteksi file config legacy (.json). Memeriksa layer titik_sampel dan titik_zona...")
+                                    
+                                    # Definisikan path untuk kedua layer
+                                    fc_titik_sampel = os.path.join(dataset_path, "titik_sampel")
+                                    fc_titik_zona = os.path.join(dataset_path, "titik_zona")
+
+                                    # Eksekusi mapping jika layer ditemukan
+                                    if arcpy.Exists(fc_titik_sampel):
+                                        arcpy.AddMessage("Memproses mapping field pada layer: titik_sampel")
+                                        self.map_legacy_fields(fc_titik_sampel)
+                                    
+                                    if arcpy.Exists(fc_titik_zona):
+                                        arcpy.AddMessage("Memproses mapping field pada layer: titik_zona")
+                                        self.map_legacy_fields(fc_titik_zona)
+                                # ---------------------------------------
 
                                 zona_layer_path = os.path.join(dataset_path, 'Zona_Layer')
                             else:
                                 return False, None
-
 
                         except Exception as e:
                             arcpy.AddWarning(f"Tidak dapat membaca file config: {e}")

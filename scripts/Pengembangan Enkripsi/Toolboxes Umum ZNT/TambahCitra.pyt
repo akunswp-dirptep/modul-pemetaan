@@ -114,7 +114,8 @@ class Tambah_Citra_Online(object):
             'Google Maps',
             'Google Satelit',
             'Google Satelit Hybrid',
-            'Google Street'
+            'Google Street',
+            'Peta Dasar'
         ]
 
         pilihan_sumber.value = 'Google Maps'
@@ -154,7 +155,10 @@ class Tambah_Citra_Online(object):
             'Google Satelit': 'https://mt1.google.com/vt/lyrs=s&x={col}&y={row}&z={level}',
             'Google Satelit Hybrid': 'https://mt1.google.com/vt/lyrs=y&x={col}&y={row}&z={level}',
             'Google Street': 'https://mt1.google.com/vt/lyrs=h&x={col}&y={row}&z={level}',
-            'Google Maps': 'https://mt1.google.com/vt/lyrs=r&x={col}&y={row}&z={level}'
+            'Google Maps': 'https://mt1.google.com/vt/lyrs=r&x={col}&y={row}&z={level}',
+            
+            # Opsi 1: Perbaikan urutan menjadi Z (level) / X (col) / Y (row)
+            'Peta Dasar': 'https://petadasar.atrbpn.go.id/main/wms/{level}/{col}/{row}.png'
         }
 
         url_source = url_source_dict.get(pilihan_sumber)
@@ -180,4 +184,4 @@ class Tambah_Citra_Online(object):
 
         arcpy.SetParameter(2, zl)
 
-        arcpy.AddMessage("Google Satellite berhasil ditambahkan.")
+        arcpy.AddMessage("Peta Online berhasil ditambahkan.")

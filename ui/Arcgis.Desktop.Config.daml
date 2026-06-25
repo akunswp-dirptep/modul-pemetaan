@@ -665,10 +665,10 @@
 					<tooltip heading="Pengolahan Titik Sampel">Pengolahan Titik Sampel Kegiatan Pembuatan Zona Nilai Tanah.</tooltip>
 					<!-- <button refID='ButtonMasukkanTitikSampelDariExcel' /> -->
 					<button refID="menu_titik_sampel_znt" />
-					<button refID="menu_titik_individual" />
 					<button refID="ButtonPerubahanTitikKoordinat" />
 					<button refID="ButtonCekJenisZona"/>	
 					<button refID="ButtonEditJenisZona"/>
+					<button refID="menu_titik_individual" />
 					<button refID="ButtonSesuaikanNomorZonaPembuatan"/>
 					<button refID="ButtonSinkronisasiDataTitikSampelKeSipenta" />
 				</menu>
@@ -2466,7 +2466,7 @@
 				</button>
 			
 			<!-- Pengolahan Zonasi -->
-				<button id="ButtonGenerateKonfigurasiZonasi" caption="Generate Konfigurasi Zonasi" smallImage="C:\PenilaianTanah\icons\zonasi.png" largeImage="C:\PenilaianTanah\icons\zonasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonGenerateKonfigurasiZonasi" caption="Generate Konfigurasi Zonasi" smallImage="C:\PenilaianTanah\icons\previewawalznt.png" largeImage="C:\PenilaianTanah\icons\previewawalznt.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 				<args>
 					<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanZonasi.pyt\Generate_Konfigurasi_Zonasi" name="Generate Konfigurasi Zonasi" xmlns=""/>
 				</args>
@@ -2480,14 +2480,14 @@
 					<tooltip heading="Deklarasi Zonasi Update">Menu untuk deklarasi zonasi update.</tooltip>
 				</button>
 
-				<button id="ButtonEditZonasiUpdate" caption="Edit Informasi Zonasi Pada Persil" smallImage="C:\PenilaianTanah\icons\zonasi.png" largeImage="C:\PenilaianTanah\icons\zonasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonEditZonasiUpdate" caption="Edit Informasi Zonasi Pada Persil" smallImage="C:\PenilaianTanah\icons\editzonasipembaruannbt.png" largeImage="C:\PenilaianTanah\icons\editzonasipembaruannbt.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanZonasi.pyt\Edit_Zonasi_Update" name="Edit Informasi Zonasi Pada Persil" xmlns=""/>
 					</args>
 					<tooltip heading="Edit Informasi Zonasi Pada Persil">Menu untuk edit informasi zonasi pada persil.</tooltip>
 				</button>
 
-				<button id="ButtonSeleksiZonasiTerisolasi" caption="Seleksi Zona Terisolasi" smallImage="C:\PenilaianTanah\icons\zonasi.png" largeImage="C:\PenilaianTanah\icons\zonasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonSeleksiZonasiTerisolasi" caption="Seleksi Zona Terisolasi" smallImage="C:\PenilaianTanah\icons\zonaterisolasi.png" largeImage="C:\PenilaianTanah\icons\zonaterisolasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanZonasi.pyt\Seleksi_Zonasi_Terisolasi" name="Seleksi Zona Terisolasi" xmlns=""/>
 					</args>
@@ -2769,8 +2769,8 @@
 				<button
 					id="ButtonHitungIndeksRataRata"
 					caption="Hitung Indeks Rata-Rata"
-					smallImage="C:\PenilaianTanah\icons\average.png"
-					largeImage="C:\PenilaianTanah\icons\average.png"
+					smallImage="C:\PenilaianTanah\icons\hitungINTPembaruanNBT.png"
+					largeImage="C:\PenilaianTanah\icons\hitungINTPembaruanNBT.png"
 					isCustomCommand="true"
 					assembly=""
 					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
@@ -2793,8 +2793,8 @@
 				<button
 					id="ButtonHitungNilaiPrediksi"
 					caption="Hitung Nilai Prediksi"
-					smallImage="C:\PenilaianTanah\icons\average.png"
-					largeImage="C:\PenilaianTanah\icons\average.png"
+					smallImage="C:\PenilaianTanah\icons\nilaiprediksi.png"
+					largeImage="C:\PenilaianTanah\icons\nilaiprediksi.png"
 					isCustomCommand="true"
 					assembly=""
 					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"

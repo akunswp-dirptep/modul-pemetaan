@@ -131,7 +131,7 @@ class Impor_Titik_Sampel_Dari_Excel(object):
             {
                 'excel_field': 'nomorsampel',
                 'excel_type': 'INTEGER',
-                'target_field': 'Nomor_Entry',
+                'target_field': 'no_sampel',
                 'target_type': 'INTEGER',
                 'target_alias': 'Nomor Sampel'
             },

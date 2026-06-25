@@ -1613,12 +1613,11 @@ class Update_Luas_Tanah(object):
 class Analisis_Bentuk_Persil(object):
 
     def __init__(self):
-        self.label="Analisis Bentuk Persil"
-        self.description=""
-        self.canRunInBackground=False
+        self.label = "Analisis Bentuk Persil"
+        self.description = "Alat untuk menganalisis dan menentukan bentuk persil berdasarkan geometri sudut dan sisinya."
+        self.canRunInBackground = False
 
     def getParameterInfo(self):
-
         update_only = arcpy.Parameter(
             displayName="Hanya Persil Status Update",
             name="update_only",
@@ -1626,10 +1625,19 @@ class Analisis_Bentuk_Persil(object):
             parameterType="Optional",
             direction="Input"
         )
-
         update_only.value = True
 
-        output_layer=arcpy.Parameter(
+        # Menambahkan parameter baru untuk memfilter Bentuk yang Null
+        null_only = arcpy.Parameter(
+            displayName="Hanya Analisis Bentuk Null/Kosong",
+            name="null_only",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input"
+        )
+        null_only.value = True
+
+        output_layer = arcpy.Parameter(
             displayName="Output Persil Update",
             name="output_persil",
             datatype="GPFeatureLayer",
@@ -1637,410 +1645,212 @@ class Analisis_Bentuk_Persil(object):
             direction="Output"
         )
 
-        return [
-            update_only,
-            output_layer
-        ]
+        return [update_only, null_only, output_layer]
 
     def isLicensed(self):
         return True
 
-    def updateParameters(self,parameters):
+    def updateParameters(self, parameters):
         return
 
-    def updateMessages(self,parameters):
+    def updateMessages(self, parameters):
         return
 
-    def execute(
-        self,
-        parameters,
-        messages
-    ):
-
+    def execute(self, parameters, messages):
         update_only = parameters[0].value
+        null_only = parameters[1].value
 
-        configs = persil.get_config_values()
-        dataset_path = configs['project_config']['dataset_path']
+        try:
+            configs = persil.get_config_values()
+            dataset_path = configs['project_config']['dataset_path']
+        except Exception:
+            messages.addWarningMessage("Modul konfigurasi persil tidak ditemukan, menggunakan workspace aktif.")
+            dataset_path = arcpy.env.workspace
+
         input_fc = os.path.join(dataset_path, 'Persil_Layer')
 
-        temp_line="in_memory\\temp_line"
-        temp_split="in_memory\\temp_split"
-        temp_dissolve="in_memory\\temp_dissolve"
-        temp_polygon = "in_memory\\temp_polygon"
+        # Standar ArcGIS Pro disarankan menggunakan 'memory' bukan 'in_memory'
+        temp_line = r"memory\temp_line"
+        temp_split = r"memory\temp_split"
+        temp_dissolve = r"memory\temp_dissolve"
+        temp_polygon = r"memory\temp_polygon"
 
-        cleanup_items=[
-            temp_line,
-            temp_split,
-            temp_dissolve,
-        ]
-
+        cleanup_items = [temp_line, temp_split, temp_dissolve, temp_polygon]
         for item in cleanup_items:
             self.delete_if_exists(item)
 
-        messages.addMessage(
-            "== Copy polygon =="
-        )
+        messages.addMessage("== Mempersiapkan data ==")
         input_layer = "input_layer"
 
+        # Menyusun Where Clause secara dinamis
+        conditions = []
         if update_only:
+            conditions.append("status_per = 'update'")
+        if null_only:
+            conditions.append("(BENTUK IS NULL OR BENTUK = '' OR BENTUK = ' ')")
 
-            arcpy.management.MakeFeatureLayer(
-                input_fc,
-                input_layer,
-                "status_per = 'update'"
-            )
+        where_clause = " AND ".join(conditions) if conditions else None
+        
+        messages.addMessage(f"== Filter: {where_clause if where_clause else 'Semua Data'} ==")
 
-        else:
+        # Membuat layer dengan kriteria filter
+        arcpy.management.MakeFeatureLayer(input_fc, input_layer, where_clause)
 
-            arcpy.management.MakeFeatureLayer(
-                input_fc,
-                input_layer
-            )
+        # Cek apakah ada bidang yang diproses
+        count = int(arcpy.management.GetCount(input_layer)[0])
+        if count == 0:
+            messages.addMessage("== Tidak ada bidang yang memenuhi kriteria untuk dianalisis. Proses dihentikan. ==")
+            return
 
-        arcpy.management.CopyFeatures(
-            input_layer,
-            temp_polygon
-        )
+        messages.addMessage(f"== Ditemukan {count} bidang. Menyalin polygon... ==")
+        arcpy.management.CopyFeatures(input_layer, temp_polygon)
 
-        messages.addMessage(
-            "== Polygon to line =="
-        )
+        messages.addMessage("== Konversi Polygon to Line ==")
+        arcpy.management.PolygonToLine(temp_polygon, temp_line, "IGNORE_NEIGHBORS")
+        arcpy.management.SplitLine(temp_line, temp_split)
 
-        arcpy.management.PolygonToLine(
-            temp_polygon,
-            temp_line,
-            "IGNORE_NEIGHBORS"
-        )
-
-        arcpy.management.SplitLine(
-            temp_line,
-            temp_split
-        )
-
-        field_definitions=[
-            ("LebarSisi","DOUBLE"),
-            ("XStart","DOUBLE"),
-            ("XEnd","DOUBLE"),
-            ("YStart","DOUBLE"),
-            ("YEnd","DOUBLE"),
-            ("Azimuth","DOUBLE"),
-            ("ATrans","DOUBLE")
+        field_definitions = [
+            ("LebarSisi", "DOUBLE"), ("XStart", "DOUBLE"),
+            ("XEnd", "DOUBLE"), ("YStart", "DOUBLE"),
+            ("YEnd", "DOUBLE"), ("Azimuth", "DOUBLE"),
+            ("ATrans", "DOUBLE")
         ]
 
-        for field_name,field_type in field_definitions:
+        for field_name, field_type in field_definitions:
+            self.add_field_if_not_exists(temp_split, field_name, field_type)
 
-            self.add_field_if_not_exists(
-                temp_split,
-                field_name,
-                field_type
-            )
+        arcpy.management.CalculateField(temp_split, "LebarSisi", "!shape.length!", "PYTHON3")
 
-        arcpy.management.CalculateField(
-            temp_split,
-            "LebarSisi",
-            "!shape.length!",
-            "PYTHON3"
-        )
-
-        messages.addMessage(
-            "== Hitung azimuth =="
-        )
-
-
-        with arcpy.da.UpdateCursor(
-            temp_split,
-            [
-                "SHAPE@",
-                "XStart",
-                "XEnd",
-                "YStart",
-                "YEnd",
-                "Azimuth",
-                "ATrans"
-            ]
-        ) as rows:
-
+        messages.addMessage("== Menghitung Azimuth ==")
+        with arcpy.da.UpdateCursor(temp_split, ["SHAPE@", "XStart", "XEnd", "YStart", "YEnd", "Azimuth", "ATrans"]) as rows:
             for row in rows:
+                geometry = row[0]
+                if not geometry: continue
 
-                geometry=row[0]
+                x_start = geometry.firstPoint.X
+                y_start = geometry.firstPoint.Y
+                x_end = geometry.lastPoint.X
+                y_end = geometry.lastPoint.Y
 
-                x_start=geometry.firstPoint.X
-                y_start=geometry.firstPoint.Y
-                x_end=geometry.lastPoint.X
-                y_end=geometry.lastPoint.Y
+                azimuth, atrans = self.calculate_azimuth(x_start, y_start, x_end, y_end)
 
-                azimuth,atrans=self.calculate_azimuth(
-                    x_start,
-                    y_start,
-                    x_end,
-                    y_end
-                )
-
-                row[1]=x_start
-                row[2]=x_end
-                row[3]=y_start
-                row[4]=y_end
-                row[5]=azimuth
-                row[6]=atrans
-
+                row[1] = x_start
+                row[2] = x_end
+                row[3] = y_start
+                row[4] = y_end
+                row[5] = azimuth
+                row[6] = atrans
                 rows.updateRow(row)
-        split_fields = [
 
-        field.name.upper()
-            for field in arcpy.ListFields(temp_split)
-        ]
-
-        messages.addMessage(
-            f"Field temp_split: {split_fields}"
-        )
-
+        split_fields = [f.name.upper() for f in arcpy.ListFields(temp_split)]
         if "IDBIDANG" not in split_fields:
+            raise Exception("Field IDBIDANG tidak ditemukan di temp_split. Pastikan layer asal memiliki IDBIDANG.")
 
-            raise Exception(
-                "Field IDBIDANG tidak ditemukan "
-                "di temp_split"
-            )
-        messages.addMessage(
-            "== Dissolve =="
-        )
+        messages.addMessage("== Proses Dissolve & Hitung Range ATrans ==")
+        arcpy.management.Dissolve(temp_split, temp_dissolve, ['IDBIDANG'], [["ATrans", "RANGE"]], "MULTI_PART", "DISSOLVE_LINES")
 
-        arcpy.management.Dissolve(
-            temp_split,
-            temp_dissolve,
-            ['IDBIDANG'],
-            [["ATrans","RANGE"]],
-            "MULTI_PART",
-            "DISSOLVE_LINES"
-        )
+        self.add_field_if_not_exists(temp_polygon, "BENTUK", "TEXT")
+        self.add_field_if_not_exists(temp_polygon, "S_BENTUK", "DOUBLE")
 
-        self.add_field_if_not_exists(
-            temp_polygon,
-            "BENTUK",
-            "TEXT"
-        )
+        polygon_fields = [f.name for f in arcpy.ListFields(temp_polygon)]
+        if "Range_ATrans" in polygon_fields:
+            arcpy.management.DeleteField(temp_polygon, "Range_ATrans")
 
-        self.add_field_if_not_exists(
-            temp_polygon,
-            "S_BENTUK",
-            "DOUBLE"
-        )
+        arcpy.management.JoinField(temp_polygon, 'IDBIDANG', temp_dissolve, 'IDBIDANG', ["Range_ATrans"])
 
-        fields=[
-            field.name
-            for field in arcpy.ListFields(temp_polygon)
-        ]
-
-        if "Range_ATrans" in fields:
-
-            arcpy.management.DeleteField(
-                temp_polygon,
-                "Range_ATrans"
-            )
-
-        arcpy.management.JoinField(
-            temp_polygon,
-            'IDBIDANG',
-            temp_dissolve,
-            'IDBIDANG',
-            ["Range_ATrans"]
-        )
-
-        messages.addMessage(
-            "== Hitung bentuk persil =="
-        )
-
-        with arcpy.da.UpdateCursor(
-            temp_polygon,
-            [
-                "Range_ATrans",
-                "BENTUK",
-                "S_BENTUK"
-            ]
-        ) as rows:
-
+        messages.addMessage("== Klasifikasi Bentuk Persil ==")
+        with arcpy.da.UpdateCursor(temp_polygon, ["Range_ATrans", "BENTUK", "S_BENTUK"]) as rows:
             for row in rows:
-
-                nilai=row[0]
-
+                nilai = row[0]
                 if nilai is None:
                     continue
 
-                if nilai<16.3:
-
-                    row[1]="Segi Empat Beraturan"
-                    row[2]=4
-
-                elif nilai>=16.3 and nilai<=58:
-
-                    row[1]="Segi Empat Tidak Beraturan"
-                    row[2]=3
-
+                if nilai < 16.3:
+                    row[1] = "Segi Empat Beraturan"
+                    row[2] = 4
+                elif 16.3 <= nilai <= 58:
+                    row[1] = "Segi Empat Tidak Beraturan"
+                    row[2] = 3
                 else:
-
-                    row[1]="Segi Banyak Tidak Beraturan"
-                    row[2]=2
-
+                    row[1] = "Segi Banyak Tidak Beraturan"
+                    row[2] = 2
                 rows.updateRow(row)
 
-        arcpy.management.AddGeometryAttributes(
-            temp_polygon,
-            "POINT_COUNT"
-        )
-
-        with arcpy.da.UpdateCursor(
-            temp_polygon,
-            [
-                "BENTUK",
-                "S_BENTUK",
-                "PNT_COUNT"
-            ]
-        ) as rows:
-
+        # Tambahkan klasifikasi Segi Tiga berdasarkan jumlah titik sudut
+        arcpy.management.AddGeometryAttributes(temp_polygon, "POINT_COUNT")
+        
+        with arcpy.da.UpdateCursor(temp_polygon, ["BENTUK", "S_BENTUK", "PNT_COUNT"]) as rows:
             for row in rows:
-
-                if row[2] and int(row[2])==4:
-
-                    row[0]="Segi Tiga"
-                    row[1]=1
-
+                # Titik pembentuk segi tiga adalah 4 (termasuk titik awal yang menutup polygon)
+                if row[2] and int(row[2]) == 4: 
+                    row[0] = "Segi Tiga"
+                    row[1] = 1
                     rows.updateRow(row)
 
-        fields=[
-            field.name
-            for field in arcpy.ListFields(temp_polygon)
-        ]
+        polygon_fields = [f.name for f in arcpy.ListFields(temp_polygon)]
+        if "PNT_COUNT" in polygon_fields:
+            arcpy.management.DeleteField(temp_polygon, "PNT_COUNT")
 
-        if "PNT_COUNT" in fields:
-
-            arcpy.management.DeleteField(
-                temp_polygon,
-                "PNT_COUNT"
-            )
-
+        # Mapping hasil untuk ditulis kembali ke Feature Class asal
         hasil_bentuk = {}
-
-        with arcpy.da.SearchCursor(
-            temp_polygon,
-            [
-                "IDBIDANG",
-                "BENTUK",
-                "S_BENTUK"
-            ]
-        ) as rows:
-
+        with arcpy.da.SearchCursor(temp_polygon, ["IDBIDANG", "BENTUK", "S_BENTUK"]) as rows:
             for row in rows:
+                hasil_bentuk[row[0]] = (row[1], row[2])
 
-                hasil_bentuk[row[0]] = (
-                    row[1],
-                    row[2]
-                )
-
-        with arcpy.da.UpdateCursor(
-            input_fc,
-            [
-                "IDBIDANG",
-                "BENTUK",
-                "S_BENTUK"
-            ],
-            "status_per = 'update'"
-        ) as rows:
-
+        messages.addMessage("== Menyimpan hasil ke database persil ==")
+        
+        # Menerapkan Where Clause pada UpdateCursor agar proses penyimpanannya sangat cepat
+        with arcpy.da.UpdateCursor(input_fc, ["IDBIDANG", "BENTUK", "S_BENTUK"], where_clause) as rows:
             for row in rows:
-
                 id_bidang = row[0]
+                if id_bidang in hasil_bentuk:
+                    bentuk, skor = hasil_bentuk[id_bidang]
+                    row[1] = bentuk
+                    row[2] = skor
+                    rows.updateRow(row)
 
-                if id_bidang not in hasil_bentuk:
-                    continue
+        # Membersihkan file sementara di memory
+        for item in cleanup_items:
+            self.delete_if_exists(item)
 
-                bentuk, skor = hasil_bentuk[id_bidang]
+        arcpy.management.MakeFeatureLayer(input_fc, "Persil_Layer")
+        arcpy.SetParameter(2, "Persil_Layer")
 
-                row[1] = bentuk
-                row[2] = skor
-
-                rows.updateRow(row)
-
-        arcpy.management.MakeFeatureLayer(
-            input_fc,
-            "Persil_Layer"
-        )
-
-        arcpy.SetParameter(1, "Persil_Layer")
-
-        messages.addMessage(
-            "== Proses selesai =="
-        )
-
+        messages.addMessage("== Proses selesai ==")
         return
 
-    def delete_if_exists(self,path):
-
+    def delete_if_exists(self, path):
         if arcpy.Exists(path):
-
             try:
                 arcpy.management.Delete(path)
-
             except Exception:
                 pass
 
-    def add_field_if_not_exists(
-        self,
-        feature_class,
-        field_name,
-        field_type
-    ):
-
-        field_names=[
-            field.name.lower()
-            for field in arcpy.ListFields(feature_class)
-        ]
-
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+        field_names = [field.name.lower() for field in arcpy.ListFields(feature_class)]
         if field_name.lower() not in field_names:
+            arcpy.management.AddField(feature_class, field_name, field_type)
 
-            arcpy.management.AddField(
-                feature_class,
-                field_name,
-                field_type
-            )
+    def calculate_azimuth(self, x_start, y_start, x_end, y_end):
+        delta_y = y_end - y_start
+        delta_x = x_end - x_start
 
-    def calculate_azimuth(
-        self,
-        x_start,
-        y_start,
-        x_end,
-        y_end
-    ):
-
-        delta_y=y_end-y_start
-        delta_x=x_end-x_start
-
-        if delta_y==0:
-
-            if delta_x>=0:
-                azimuth=90
-
+        if delta_y == 0:
+            if delta_x >= 0:
+                azimuth = 90
             else:
-                azimuth=-90
-
+                azimuth = -90
         else:
+            azimuth = math.atan(delta_x / delta_y) * (180 / math.pi)
 
-            azimuth=math.atan(
-                delta_x/delta_y
-            )*(180/math.pi)
-
-        if azimuth<-45:
-            atrans=azimuth+180
-
-        elif azimuth>=-45 and azimuth<=45:
-            atrans=azimuth+90
-
+        if azimuth < -45:
+            atrans = azimuth + 180
+        elif -45 <= azimuth <= 45:
+            atrans = azimuth + 90
         else:
-            atrans=azimuth
+            atrans = azimuth
 
-        return(
-            azimuth,
-            atrans
-        )
-
+        return azimuth, atrans
 class Edit_Bentuk_Persil(object):
 
     def __init__(self):

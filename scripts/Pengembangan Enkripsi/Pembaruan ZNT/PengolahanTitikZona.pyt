@@ -1183,7 +1183,7 @@ class Perbaharui_Indeks_Sampel_Pada_Titik_Zona:
 
         arcpy.management.CreateFeatureclass("in_memory", "Titik_Zona_Temp", geometry_type, spatial_reference=spatial_ref)
 
-        fields_to_copy = ["Nomor_Entry", "nilai"]
+        fields_to_copy = ["no_sampel", "nilai"]
 
         for field in fields_to_copy:
             arcpy.management.AddField(tzt, field, arcpy.ListFields(tz, field)[0].type)
@@ -1202,14 +1202,14 @@ class Perbaharui_Indeks_Sampel_Pada_Titik_Zona:
         arcpy.management.CalculateField(hi, "indeks_sampel", "doSomething(int(!nilai!),float(!NILAIZN_LAMA!),!JNSZN!," + bulat1 + "," + bulat2 + ")", "PYTHON3", code_block)
         fields_hi = {f.name for f in arcpy.ListFields(hi)}
         fields_tz = {f.name for f in arcpy.ListFields(tz)}
-        common_fields = list((fields_hi & fields_tz) - {"OBJECTID", "Shape", "Shape_Length", "Shape_Area", "Nomor_Entry"})
+        common_fields = list((fields_hi & fields_tz) - {"OBJECTID", "Shape", "Shape_Length", "Shape_Area", "no_sampel"})
         for field_name in common_fields:
             if field_name not in [f.name for f in arcpy.ListFields(tz)]:
                 arcpy.AddMessage(f"Field {field_name} tidak ada di Titik_Zona, menambahkannya...")
                 field_template = arcpy.ListFields(hi, field_name)[0]
                 arcpy.management.AddField(tz, field_name, field_template.type, field_template.precision, field_template.scale, field_template.length, field_template.aliasName, field_template.isNullable, field_template.required, field_template.domain)
         data_dict = {}
-        cursor_fields_hi = ["Nomor_Entry"] + common_fields
+        cursor_fields_hi = ["no_sampel"] + common_fields
         with arcpy.da.SearchCursor(hi, cursor_fields_hi) as cursor:
             for row in cursor:
                 nomor_entry = row[0]
@@ -1217,7 +1217,7 @@ class Perbaharui_Indeks_Sampel_Pada_Titik_Zona:
             del cursor
         arcpy.AddMessage('Memperbarui Titik_Zona dengan data dari hasil Identity...')
         updated_rows = 0
-        cursor_fields_tz = ["Nomor_Entry"] + common_fields
+        cursor_fields_tz = ["no_sampel"] + common_fields
         with arcpy.da.UpdateCursor(tz, cursor_fields_tz) as cursor:
             for row in cursor:
                 nomor_entry = row[0]

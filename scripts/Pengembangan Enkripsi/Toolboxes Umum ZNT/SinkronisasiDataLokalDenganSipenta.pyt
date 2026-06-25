@@ -87,7 +87,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         
         penjelasan = arcpy.Parameter(
-            displayName="Anda Belum Login Sebagai Pemeta Nilai Tanah",
+            displayName="Penjelasan",
             name="petunjuk",
             datatype="GPString",
             parameterType="Optional",
@@ -101,7 +101,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
  
 
-        params = [catatan, data_yang_disinkronisasi, berkas, penjelasan]
+        params = [data_yang_disinkronisasi, catatan, berkas, penjelasan]
         return params
 
 
@@ -115,7 +115,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         Called whenever a parameter has been changed.
         """
 
-        catatan, data_yang_disinkronisasi, berkas, penjelasan = parameters
+        data_yang_disinkronisasi, catatan, berkas, penjelasan = parameters
         is_login = get_user_data(CREDENTIAL_KEY)
 
         # Jika belum login
@@ -185,11 +185,11 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             return
 
 
-        self.catatan = parameters[0].valueAsText
-        self.data_type = parameters[1].valueAsText
+        self.data_type = parameters[0].valueAsText
+        self.catatan = parameters[1].valueAsText
         self.project_id = parameters[2].valueAsText
         server = get_user_data(PREFERRED_SERVER_KEY)
-        self.use_production = True if server == "Produksi" or server == None else False
+        self.use_production = True if server == "Produksi" or server is None else False
         token = user_data.get(AUTH_KEY, None)
         headers = {"Authorization": f"Bearer {token}", 'Content-Type': 'application/json' }
         self.config_paths = self.get_config_values()
@@ -298,8 +298,8 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             'tahun': configs['tahun'],
             'lokasi': configs['provinsi'] ,
             'coor': configs['coor'] ,
-            'path_titik_sampel_sementara': os.path.join(configs['dataset_path'], titiksampelsementara),
-            'path_titik_sampel_individual_sementara': os.path.join(configs['dataset_path'], titiksampelindividualsementara),
+            'path_titik_sampel_sementara': os.path.join('in_memory', titiksampelsementara),
+            'path_titik_sampel_individual_sementara': os.path.join('in_memory', titiksampelindividualsementara),
             'path_sementara_json' : os.path.join(configs['ws_dir'], 'titik_sampel_sementara.json'),
             'path_individual_sementara_json': os.path.join(configs['ws_dir'], 'titik_sampel_individual_sementara.json'),
         }
@@ -527,7 +527,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         try:
             arcpy.AddMessage("Mengunggah data ke server SIPENTA...")
             
-            response = requests.post(url, json=json_data, headers=headers, timeout=1200)
+            response = requests.post(url, json=json_data, headers=headers, timeout=60)
 
 
             # ---- Penanganan untuk response code ----
@@ -706,7 +706,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         try:
             arcpy.AddMessage("Mengunggah data ke server SIPENTA...")
-            response = requests.post(url, json=json_data, headers=headers, timeout=12000)
+            response = requests.post(url, json=json_data, headers=headers, timeout=60)
 
 
             # ---- Penanganan untuk response code ----

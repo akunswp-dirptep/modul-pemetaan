@@ -24,7 +24,13 @@ class Toolbox(object):
     def __init__(self):
         self.label = "Toolbox"
         self.alias = ""
-        self.tools = [Ambil_Titik_Sampel_Dari_Sipenta, Tampilkan_Simbologi_Titik_Sampel]
+        self.tools = [Ambil_Titik_Sampel_Dari_Sipenta, 
+                      Tampilkan_Simbologi_Titik_Sampel,
+                      Hitung_Titik,
+                      Bandingkan_Dan_Siapkan_Data,
+                      Setujui_Dan_Gabungkan_Data,
+                      Pilih_Dan_Tampilkan_Bidang,
+                      Gabungkan_Persil_Terpilih]
 
 class Ambil_Titik_Sampel_Dari_Sipenta(object):
     """Tool utama untuk mengambil dan memproses data sampel tanah"""
@@ -1084,3 +1090,670 @@ class Tampilkan_Simbologi_Titik_Sampel(object):
         arcpy.SetParameter(1, "Titik_Sampel")
         arcpy.SetParameter(2, "Titik_Sampel_Individual")
 
+class Hitung_Titik(object):
+    def __init__(self):
+        self.label = "Identifikasi Jumlah Sampel"
+        self.description = "Menghitung, menyeleksi titik sampel, dan menyeleksi area persil jika perubahan mengelompok."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        param0 = arcpy.Parameter(
+            displayName="Layer Titik Sampel (Titik_Sampel)",
+            name="in_points",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+        
+        param1 = arcpy.Parameter(
+            displayName="Layer Bidang (Persil_Layer)",
+            name="in_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+
+        param2 = arcpy.Parameter(
+            displayName="Tipe Perubahan",
+            name="tipe_perubahan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param2.filter.type = "ValueList"
+        param2.filter.list = ["Semua Tipe", "Menyebar", "Mengelompok"]
+        param2.value = "Semua Tipe"
+
+        param3 = arcpy.Parameter(
+            displayName="Pilih Zonasi (Kosongkan untuk Semua)",
+            name="zonasi",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input",
+            multiValue=True)
+
+        param4 = arcpy.Parameter(
+            displayName="Pilih Nilai Kelompok Perubahan (Kosongkan untuk Semua)",
+            name="kel_perubahan",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input",
+            multiValue=True)
+        param4.enabled = False
+
+        param5 = arcpy.Parameter(
+            displayName="Pilih Wilayah WADMKD (Kosongkan untuk Semua)",
+            name="wilayah",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input",
+            multiValue=True)
+            
+        param6 = arcpy.Parameter(
+            displayName="Pilih Kolom Nomor Sampel",
+            name="field_nomor_sampel",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input")
+        param6.parameterDependencies = ["in_points"] 
+
+        return [param0, param1, param2, param3, param4, param5, param6]
+
+    def updateParameters(self, parameters):
+        if parameters[1].value:  
+            in_persil = parameters[1].valueAsText
+            tipe_perubahan = parameters[2].valueAsText
+
+            if tipe_perubahan == "Mengelompok":
+                parameters[3].enabled = False  
+                parameters[4].enabled = True   
+            else:
+                parameters[3].enabled = True   
+                parameters[4].enabled = False  
+
+            try:
+                if not parameters[3].altered or not parameters[3].filter.list:
+                    zonasi_list = sorted(list(set(row[0] for row in arcpy.da.SearchCursor(in_persil, ["ZONASI"]) if row[0])))
+                    parameters[3].filter.list = [str(z) for z in zonasi_list]
+
+                if not parameters[4].altered or not parameters[4].filter.list:
+                    kel_list = sorted(list(set(row[0] for row in arcpy.da.SearchCursor(in_persil, ["kelompok_perubahan"]) if row[0] and str(row[0]).strip() != '')))
+                    parameters[4].filter.list = [str(k) for k in kel_list]
+
+                if not parameters[5].altered or not parameters[5].filter.list:
+                    wilayah_list = sorted(list(set(row[0] for row in arcpy.da.SearchCursor(in_persil, ["WADMKD"]) if row[0])))
+                    parameters[5].filter.list = [str(w) for w in wilayah_list]
+            except Exception:
+                pass
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        in_points = parameters[0].valueAsText
+        in_persil = parameters[1].valueAsText
+        tipe_perubahan = parameters[2].valueAsText
+        zonasi_vals = parameters[3].valueAsText
+        kel_vals = parameters[4].valueAsText
+        wilayah_vals = parameters[5].valueAsText
+        field_nomor = parameters[6].valueAsText
+
+        query_parts = []
+        
+        zonasi_field = arcpy.AddFieldDelimiters(in_persil, "ZONASI")
+        kel_field = arcpy.AddFieldDelimiters(in_persil, "kelompok_perubahan")
+        wilayah_field = arcpy.AddFieldDelimiters(in_persil, "WADMKD")
+
+        fields_dict = {f.name: f.type for f in arcpy.ListFields(in_persil)}
+        def is_numeric(fieldname):
+            return fields_dict.get(fieldname) in ["Integer", "SmallInteger", "Double", "Single", "OID"]
+
+        # --- 1. MEMBUAT QUERY FILTER UTAMA UNTUK PERSIL ---
+        if tipe_perubahan == "Mengelompok":
+            if is_numeric("kelompok_perubahan"):
+                query_parts.append(f"({kel_field} IS NOT NULL)")
+            else:
+                query_parts.append(f"({kel_field} IS NOT NULL AND {kel_field} <> '' AND {kel_field} <> ' ')")
+            
+            if kel_vals:
+                if is_numeric("kelompok_perubahan"):
+                    k_list = [k.strip(chr(39)).strip(chr(34)) for k in kel_vals.split(";")]
+                else:
+                    k_list = [f"'{k.strip(chr(39)).strip(chr(34))}'" for k in kel_vals.split(";")]
+                query_parts.append(f"{kel_field} IN ({','.join(k_list)})")
+
+        elif tipe_perubahan == "Menyebar":
+            if is_numeric("kelompok_perubahan"):
+                query_parts.append(f"({kel_field} IS NULL)")
+            else:
+                query_parts.append(f"({kel_field} IS NULL OR {kel_field} = '' OR {kel_field} = ' ')")
+                
+            if zonasi_vals:
+                z_list = [f"'{z.strip(chr(39)).strip(chr(34))}'" for z in zonasi_vals.split(";")]
+                query_parts.append(f"{zonasi_field} IN ({','.join(z_list)})")
+
+        else: 
+            if zonasi_vals:
+                z_list = [f"'{z.strip(chr(39)).strip(chr(34))}'" for z in zonasi_vals.split(";")]
+                query_parts.append(f"{zonasi_field} IN ({','.join(z_list)})")
+
+        if wilayah_vals:
+            w_list = [f"'{w.strip(chr(39)).strip(chr(34))}'" for w in wilayah_vals.split(";")]
+            query_parts.append(f"{wilayah_field} IN ({','.join(w_list)})")
+
+        where_clause = " AND ".join(query_parts) if query_parts else None
+        
+        if where_clause:
+            arcpy.AddMessage(f"Menerapkan Query Filter: {where_clause}")
+
+        # --- 2. PERSIAPAN PENGELOMPOKAN (GROUPING) ---
+        group_field = "kelompok_perubahan" if tipe_perubahan == "Mengelompok" else "ZONASI"
+        nama_grup_tampil = "KELOMPOK PERUBAHAN" if tipe_perubahan == "Mengelompok" else "ZONASI"
+
+        temp_persil_layer = "persil_terfilter"
+        arcpy.management.MakeFeatureLayer(in_persil, temp_persil_layer, where_clause)
+
+        unique_groups = set()
+        with arcpy.da.SearchCursor(temp_persil_layer, [group_field]) as cursor:
+            for row in cursor:
+                unique_groups.add(row[0])
+
+        # --- 3. PROSES SPATIAL SELECTION PER GRUP ---
+        temp_points_layer = "titik_temp_loop"
+        arcpy.management.MakeFeatureLayer(in_points, temp_points_layer)
+        
+        report_dict = {}
+
+        for grp in sorted(list(unique_groups), key=lambda x: (x is None, str(x))):
+            if grp is None or str(grp).strip() == '':
+                sub_where = f"{arcpy.AddFieldDelimiters(in_persil, group_field)} IS NULL OR {arcpy.AddFieldDelimiters(in_persil, group_field)} = ''"
+                tampilan_grp = "Kosong / Tidak Terdefinisi"
+            else:
+                tampilan_grp = str(grp)
+                if is_numeric(group_field):
+                    sub_where = f"{arcpy.AddFieldDelimiters(in_persil, group_field)} = {grp}"
+                else:
+                    safe_grp = str(grp).replace("'", "''")
+                    sub_where = f"{arcpy.AddFieldDelimiters(in_persil, group_field)} = '{safe_grp}'"
+
+            arcpy.management.SelectLayerByAttribute(temp_persil_layer, "NEW_SELECTION", sub_where)
+            
+            arcpy.management.SelectLayerByLocation(
+                in_layer=temp_points_layer,
+                overlap_type="COMPLETELY_WITHIN",
+                select_features=temp_persil_layer,
+                selection_type="NEW_SELECTION"
+            )
+            
+            count = int(arcpy.management.GetCount(temp_points_layer)[0])
+            if count > 0:
+                list_nomor = []
+                with arcpy.da.SearchCursor(temp_points_layer, [field_nomor]) as p_cursor:
+                    for p_row in p_cursor:
+                        if p_row[0] is not None:
+                            list_nomor.append(str(p_row[0]))
+                
+                report_dict[tampilan_grp] = list_nomor
+
+        # --- 4. SELEKSI FINAL DI PETA ---
+        arcpy.management.SelectLayerByAttribute(temp_persil_layer, "CLEAR_SELECTION")
+        
+        # Eksekusi langsung ke layer titik di peta
+        arcpy.management.SelectLayerByLocation(
+            in_layer=in_points,
+            overlap_type="COMPLETELY_WITHIN",
+            select_features=temp_persil_layer,
+            selection_type="NEW_SELECTION"
+        )
+
+        # BARU: Seleksi Persil di layer peta jika tipe_perubahan "Mengelompok"
+        if tipe_perubahan == "Mengelompok":
+            arcpy.AddMessage("\n (Info: Layer Persil juga telah diseleksi pada map karena tipe perubahan adalah 'Mengelompok')")
+            if where_clause:
+                arcpy.management.SelectLayerByAttribute(in_persil, "NEW_SELECTION", where_clause)
+            else:
+                # Fallback ke persil_terfilter jika query kosong tapi tetap mau seleksi semua yang valid
+                arcpy.management.SelectLayerByLocation(in_persil, "ARE_IDENTICAL_TO", temp_persil_layer)
+        else:
+            # Pastikan tidak ada persil yang tersisa terseleksi jika tipe "Menyebar" / "Semua"
+            arcpy.management.SelectLayerByAttribute(in_persil, "CLEAR_SELECTION")
+        
+        final_total = int(arcpy.management.GetCount(in_points)[0])
+
+        # --- 5. TAMPILKAN OUTPUT ---
+        arcpy.AddMessage("\n" + "="*60)
+        arcpy.AddMessage(f" TOTAL KESELURUHAN TITIK SAMPEL DITEMUKAN : {final_total}")
+        arcpy.AddMessage("="*60)
+
+        if final_total > 0:
+            arcpy.AddMessage(f"\n RINCIAN BERDASARKAN {nama_grup_tampil}:")
+            
+            for grp, list_sampel in report_dict.items():
+                nomor_teks = ", ".join(list_sampel)
+                arcpy.AddMessage(f"\n >> {nama_grup_tampil}: {grp} ({len(list_sampel)} titik)")
+                arcpy.AddMessage(f"    Nomor Sampel: {nomor_teks}")
+                
+            arcpy.AddMessage("\n" + "-"*60)
+            arcpy.AddMessage(" (Catatan: Titik sampel di atas dalam keadaan terseleksi di layar Peta Anda)")
+
+        return
+
+class Bandingkan_Dan_Siapkan_Data(object):
+    def __init__(self):
+        self.label = "Bandingkan dan Siapkan Data"
+        self.description = "Membandingkan data Persil Layer dan User Layer berdasarkan IDBIDANG, dan menghasilkan tabel staging untuk di-review."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        param0 = arcpy.Parameter(
+            displayName="Persil Layer (Layer Utama)",
+            name="in_main_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+
+        param1 = arcpy.Parameter(
+            displayName="User Layer (Layer Pengguna)",
+            name="in_user_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+
+        # MODIFIKASI: Mengubah parameter WADMKD agar bisa pilih banyak (multiValue=True)
+        param2 = arcpy.Parameter(
+            displayName="Pilih WADMKD (Bisa Pilih Banyak)",
+            name="in_wadmkd",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+            multiValue=True) # <-- Memungkinkan centang banyak kelurahan
+
+        param3 = arcpy.Parameter(
+            displayName="Kecualikan Field (Opsional)",
+            name="in_exclude_fields",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input",
+            multiValue=True)
+
+        param4 = arcpy.Parameter(
+            displayName="Tabel Staging Output (Review Tabel)",
+            name="out_staging_table",
+            datatype="DETable",
+            parameterType="Required",
+            direction="Output")
+
+        return [param0, param1, param2, param3, param4]
+
+    def updateParameters(self, parameters):
+        # Mendapatkan unique value WADMKD dari Persil Layer untuk dropdown checklist
+        if parameters[0].value:
+            try:
+                main_layer = parameters[0].valueAsText
+                wadmkd_list = set()
+                with arcpy.da.SearchCursor(main_layer, ["WADMKD"]) as cursor:
+                    for row in cursor:
+                        if row[0]:
+                            wadmkd_list.add(row[0])
+                parameters[2].filter.list = sorted(list(wadmkd_list))
+            except Exception:
+                pass
+
+        # Mendapatkan list field yang sama untuk parameter pengecualian
+        if parameters[0].value and parameters[1].value:
+            try:
+                main_layer = parameters[0].valueAsText
+                user_layer = parameters[1].valueAsText
+                
+                main_fields = [f.name for f in arcpy.ListFields(main_layer)]
+                user_fields = [f.name for f in arcpy.ListFields(user_layer)]
+                
+                common_fields = sorted(list(set(main_fields) & set(user_fields)))
+                parameters[3].filter.list = common_fields
+            except Exception:
+                pass
+                
+        return
+
+    def execute(self, parameters, messages):
+        main_layer = parameters[0].valueAsText
+        user_layer = parameters[1].valueAsText
+        
+        # MODIFIKASI: Membaca multi-value WADMKD pilihan user
+        wadmkd_val = parameters[2].valueAsText
+        if not wadmkd_val:
+            arcpy.AddError("Silakan pilih minimal satu WADMKD.")
+            return
+            
+        # Bersihkan string dan ubah menjadi list (contoh output arcpy: "'Kelurahan A';'Kelurahan B'")
+        wadmkd_list = [w.strip().replace("'", "") for w in wadmkd_val.split(";")]
+        
+        # MODIFIKASI SQL: Menyusun format SQL IN ('A', 'B', 'C')
+        # Digunakan fungsi format string agar teks dibungkus tanda kutip tunggal
+        wadmkd_formatted = ", ".join([f"'{w}'" for w in wadmkd_list])
+        where_clause = f"WADMKD IN ({wadmkd_formatted})"
+        
+        # Ambil input field yang dikecualikan user
+        user_excluded = []
+        if parameters[3].valueAsText:
+            raw_excluded = parameters[3].valueAsText.replace("'", "").split(";")
+            user_excluded = [f.strip() for f in raw_excluded if f.strip()]
+
+        out_table = parameters[4].valueAsText
+
+        # 1. Identifikasi field yang sama antara kedua layer
+        main_fields = [f.name for f in arcpy.ListFields(main_layer)]
+        user_fields = [f.name for f in arcpy.ListFields(user_layer)]
+        
+        base_ignore_fields = ['OBJECTID', 'Shape', 'Shape_Length', 'Shape_Area', 'IDBIDANG', 'WADMKD']
+        ignore_fields = base_ignore_fields + user_excluded
+        
+        common_fields = list(set(main_fields) & set(user_fields))
+        fields_to_compare = [f for f in common_fields if f not in ignore_fields]
+
+        if not fields_to_compare:
+            arcpy.AddError("Tidak ada field yang sama untuk dibandingkan selain field sistem/kunci atau field yang dikecualikan.")
+            return
+
+        # 2. Baca data dari layer utama dengan where_clause IN
+        arcpy.AddMessage(f"Membaca layer utama untuk kelurahan terpilih...")
+        main_data = {}
+        with arcpy.da.SearchCursor(main_layer, ['IDBIDANG'] + fields_to_compare, where_clause) as cursor:
+            for row in cursor:
+                idbidang = row[0]
+                if idbidang:
+                    main_data[idbidang] = dict(zip(fields_to_compare, row[1:]))
+
+        # 3. Baca data dari layer pengguna dengan where_clause IN
+        arcpy.AddMessage("Membaca layer pengguna...")
+        user_data = {}
+        with arcpy.da.SearchCursor(user_layer, ['IDBIDANG'] + fields_to_compare, where_clause) as cursor:
+            for row in cursor:
+                idbidang = row[0]
+                if idbidang:
+                    user_data[idbidang] = dict(zip(fields_to_compare, row[1:]))
+
+        # 4. Buat Tabel Staging
+        arcpy.AddMessage("Membuat tabel staging untuk review...")
+        out_path, out_name = os.path.split(out_table)
+        arcpy.management.CreateTable(out_path, out_name)
+        arcpy.management.AddField(out_table, "IDBIDANG", "TEXT", field_length=50)
+        arcpy.management.AddField(out_table, "FIELD_NAME", "TEXT", field_length=50)
+        arcpy.management.AddField(out_table, "MAIN_VALUE", "TEXT", field_length=255)
+        arcpy.management.AddField(out_table, "USER_VALUE", "TEXT", field_length=255)
+        arcpy.management.AddField(out_table, "STATUS_MERGE", "TEXT", field_length=10)
+
+        # 5. Bandingkan data dan masukkan ke tabel staging
+        insert_fields = ["IDBIDANG", "FIELD_NAME", "MAIN_VALUE", "USER_VALUE", "STATUS_MERGE"]
+        diff_count = 0
+        with arcpy.da.InsertCursor(out_table, insert_fields) as icursor:
+            for idbidang, m_vals in main_data.items():
+                if idbidang in user_data:
+                    u_vals = user_data[idbidang]
+                    for f_name in fields_to_compare:
+                        val_m = m_vals[f_name]
+                        val_u = u_vals[f_name]
+                        
+                        if val_m != val_u:
+                            icursor.insertRow((idbidang, f_name, str(val_m), str(val_u), "TIDAK"))
+                            diff_count += 1
+        
+        arcpy.AddMessage(f"Selesai! Ditemukan {diff_count} perbedaan pada kelurahan terpilih. Silakan buka tabel '{out_name}', ubah STATUS_MERGE menjadi 'YA' untuk data yang disetujui.")
+        return
+
+class Setujui_Dan_Gabungkan_Data(object):
+    def __init__(self):
+        self.label = "Setujui dan Gabungkan Data"
+        self.description = "Membaca tabel staging dan menerapkan perubahan ke Persil Layer hanya untuk record yang disetujui (STATUS_MERGE = 'YA')."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        param0 = arcpy.Parameter(
+            displayName="Persil Layer (Layer Utama)",
+            name="in_main_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+
+        param1 = arcpy.Parameter(
+            displayName="Tabel Staging (Yang sudah direview)",
+            name="in_staging_table",
+            datatype="DETable",
+            parameterType="Required",
+            direction="Input")
+
+        return [param0, param1]
+
+    def updateParameters(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        main_layer = parameters[0].valueAsText
+        staging_table = parameters[1].valueAsText
+
+        # 1. Kumpulkan perubahan yang disetujui
+        arcpy.AddMessage("Membaca data yang disetujui untuk di-merge...")
+        approved_updates = {} # Format: { 'ID_001': {'NAMA_PEMILIK': 'Budi', 'LUAS': '100'} }
+        
+        with arcpy.da.SearchCursor(staging_table, ["IDBIDANG", "FIELD_NAME", "USER_VALUE", "STATUS_MERGE"]) as cursor:
+            for row in cursor:
+                idbidang, field_name, user_val, status = row
+                if status and status.upper() == 'YA':
+                    if idbidang not in approved_updates:
+                        approved_updates[idbidang] = {}
+                    approved_updates[idbidang][field_name] = user_val
+
+        if not approved_updates:
+            arcpy.AddWarning("Tidak ada data yang memiliki STATUS_MERGE = 'YA'. Merge dibatalkan.")
+            return
+
+        # 2. Update Persil Layer
+        arcpy.AddMessage("Menerapkan perubahan ke Persil Layer...")
+        # Kumpulkan semua field unik yang akan diupdate agar kursor efisien
+        all_fields_to_update = set()
+        for updates in approved_updates.values():
+            all_fields_to_update.update(updates.keys())
+        
+        update_fields = ['IDBIDANG'] + list(all_fields_to_update)
+        arcpy.AddMessage(update_fields)
+        arcpy.AddMessage(approved_updates)
+        
+        update_count = 0
+        with arcpy.da.UpdateCursor(main_layer, update_fields) as ucursor:
+            for row in ucursor:
+                idbidang = str(row[0])
+                if idbidang in approved_updates:
+                    arcpy.AddMessage("Masuk")
+                    # Ambil dictionary field dan nilai barunya
+                    field_updates = approved_updates[idbidang]
+                    row_changed = False
+                    
+                    # Cek tiap field di cursor (dimulai dari index 1)
+                    for i, field_name in enumerate(update_fields[1:], start=1):
+                        arcpy.AddMessage(field_name)
+                        arcpy.AddMessage(field_updates)
+                        if field_name in field_updates:
+                            arcpy.AddMessage("Masuk")
+                            # Masukkan nilai baru (Note: pastikan tipe data sesuai, tabel ini menyimpan dalam bentuk String)
+                            row[i] = field_updates[field_name]
+                            row_changed = True
+                    
+                    if row_changed:
+                        ucursor.updateRow(row)
+                        update_count += 1
+
+        arcpy.AddMessage(f"Berhasil melakukan merge untuk {update_count} bidang/persil ke layer utama!")
+        return
+
+class Pilih_Dan_Tampilkan_Bidang(object):
+    def __init__(self):
+        self.label = "Pilih dan Zoom IDBIDANG"
+        self.description = "Alat untuk menyeleksi IDBIDANG pada tabel input dan Persil_Layer, lalu otomatis zoom ke fitur yang terpilih."
+        # Memastikan tool berjalan di foreground agar proses zoom peta berjalan lancar
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        # 1. Parameter Layer/Tabel Input
+        param_in_table = arcpy.Parameter(
+            displayName="Input Table / Layer (mengandung STATUS_MERGE)",
+            name="in_table",
+            datatype=["GPFeatureLayer", "GPTableView"],
+            parameterType="Required",
+            direction="Input"
+        )
+
+        # 2. Parameter Layer Target (Persil_Layer)
+        param_target_layer = arcpy.Parameter(
+            displayName="Layer Persil (Persil_Layer)",
+            name="target_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        # 3. Parameter Pemilihan IDBIDANG (Bisa pilih banyak)
+        param_id_bidang = arcpy.Parameter(
+            displayName="Pilih IDBIDANG",
+            name="id_bidang",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+            multiValue=True  # <--- PERUBAHAN: Mengaktifkan seleksi ganda
+        )
+
+        return [param_in_table, param_target_layer, param_id_bidang]
+
+    def updateParameters(self, parameters):
+        # Mengisi dropdown IDBIDANG secara otomatis berdasarkan Layer Input yang dipilih
+        if parameters[0].value:
+            in_table = parameters[0].valueAsText
+            try:
+                # Cek apakah field IDBIDANG ada
+                fields = [f.name.upper() for f in arcpy.ListFields(in_table)]
+                if "IDBIDANG" in fields:
+                    # Ambil nilai unik menggunakan SearchCursor
+                    unique_ids = set()
+                    with arcpy.da.SearchCursor(in_table, ["IDBIDANG", "STATUS_MERGE"]) as cursor:
+                        for row in cursor:
+                            if row[0] is not None and row[1] == "TIDAK":
+                                unique_ids.add(str(row[0]))
+                    
+                    # Update daftar dropdown
+                    parameters[2].filter.list = sorted(list(unique_ids))
+            except Exception:
+                pass
+        return
+
+    def updateMessages(self, parameters):
+        # Memberikan peringatan jika input tidak memiliki field IDBIDANG
+        if parameters[0].value:
+            fields = [f.name.upper() for f in arcpy.ListFields(parameters[0].valueAsText)]
+            if "IDBIDANG" not in fields:
+                parameters[0].setErrorMessage("Layer/Tabel input harus memiliki kolom bernama 'IDBIDANG'.")
+        return
+
+    def execute(self, parameters, messages):
+        in_table = parameters[0].valueAsText
+        target_layer = parameters[1].valueAsText
+        id_bidang_text = parameters[2].valueAsText  # Output dari multi-value dipisahkan oleh titik koma (;)
+
+        # --- PERUBAHAN: Memproses Multi-Value ---
+        # Memecah text berdasarkan ';' dan membersihkan tanda kutip bawaan ArcGIS (jika ada)
+        raw_ids = id_bidang_text.split(';')
+        clean_ids = [val.strip("'").strip('"') for val in raw_ids]
+
+        # Membuat format string untuk query IN tipe Teks (contoh: 'ID1', 'ID2', 'ID3')
+        ids_for_string = ", ".join([f"'{val}'" for val in clean_ids])
+        
+        # Membuat format string untuk query IN tipe Angka (contoh: 1, 2, 3)
+        ids_for_numeric = ", ".join(clean_ids)
+
+        # Membuat query menggunakan operator IN
+        # (Asumsi mengikuti kode asli: layer target = angka, layer input = teks)
+        persil_layer_query = f"IDBIDANG IN ({ids_for_numeric})"
+        tabel_query = f"IDBIDANG IN ({ids_for_string}) AND STATUS_MERGE ='TIDAK'"
+
+        try:
+            # 1. Lakukan seleksi pada Tabel/Layer Input
+            arcpy.management.SelectLayerByAttribute(in_table, "NEW_SELECTION", tabel_query)
+            messages.addMessage(f"Berhasil menyeleksi {in_table} dengan {tabel_query}")
+
+            # 2. Lakukan seleksi pada Layer Persil (Persil_Layer)
+            arcpy.management.SelectLayerByAttribute(target_layer, "NEW_SELECTION", persil_layer_query)
+            messages.addMessage(f"Berhasil menyeleksi {target_layer} dengan {persil_layer_query}")
+
+            # 3. Zoom otomatis ke fitur yang terseleksi
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            active_map_view = aprx.activeView
+            
+            if active_map_view is not None:
+                desc = arcpy.Describe(target_layer)
+                # Extent otomatis merujuk pada fitur yang terseleksi jika ada seleksi aktif
+                if hasattr(desc, 'extent'):
+                    active_map_view.camera.setExtent(desc.extent)
+                    messages.addMessage("Berhasil Zoom ke fitur yang dipilih.")
+                else:
+                    messages.addWarningMessage("Gagal zoom otomatis: Extent fitur tidak ditemukan.")
+            else:
+                messages.addWarningMessage("Gagal zoom otomatis: Pastikan jendela Map sedang aktif dibuka.")
+        except Exception as e:
+            messages.addErrorMessage(f"Terjadi kesalahan saat memproses: {str(e)}")
+
+        return
+
+class Gabungkan_Persil_Terpilih(object):
+    def __init__(self):
+        self.label = "Gabungkan Persil Terpilih"
+        self.description = "Menggabungkan (Append) fitur yang sedang di-select dari satu layer ke layer lain."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        # Parameter untuk Layer B (sumber yang ada selection-nya)
+        param0 = arcpy.Parameter(
+            displayName="Layer Sumber (Yang Di-select / Layer B)",
+            name="input_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        # Parameter untuk Layer A (tujuan)
+        param1 = arcpy.Parameter(
+            displayName="Layer Target (Tujuan / Layer A)",
+            name="target_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        params = [param0, param1]
+        return params
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        input_layer = parameters[0].valueAsText
+        target_layer = parameters[1].valueAsText
+
+        # Menghitung jumlah fitur yang sedang terpilih untuk informasi di log
+        count = arcpy.management.GetCount(input_layer)
+        messages.addMessage(f"Memproses {count[0]} polygon persil terpilih...")
+
+        try:
+            # Menggunakan Append dengan opsi NO_TEST agar proses tetap berjalan
+            # meskipun ada perbedaan nama/tipe kolom atribut antara Layer B dan Layer A.
+            arcpy.management.Append(
+                inputs=input_layer, 
+                target=target_layer, 
+                schema_type="NO_TEST"
+            )
+            messages.addMessage("Proses gabung persil berhasil!")
+        except Exception as e:
+            messages.addErrorMessage(f"Terjadi kesalahan: {str(e)}")
+            
+        return

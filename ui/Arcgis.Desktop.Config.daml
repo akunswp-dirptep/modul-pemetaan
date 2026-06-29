@@ -111,8 +111,9 @@
 				</group>
 			<!-- Sistem Aplikasi -->
 				<group id="sistem_aplikasi" caption="Penilaian Tanah">
-				<button refID="ButtonLoginPemeta" size="large"/>
+					<button refID="ButtonLoginPemeta" size="large"/>
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
+					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
 				</group>
 
 			</groups>
@@ -2186,7 +2187,13 @@
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\AplikasiPenilaianTanah.pyt\Catatan_Aplikasi" name="Cek Pembaruan Aplikasi" xmlns=""/>
 					</args>
-					<tooltip heading="Cek Pembaruan Aplikasi"></tooltip>
+					<tooltip heading="Cek Pembaruan Aplikasi">Tool untuk mengecek Pembaruan Aplikasi</tooltip>
+				</button>
+				<button id="ButtonUnduhDataDariSipenta" caption="Unduh Data Dari Sipenta" smallImage="C:\PenilaianTanah\icons\unduhdatadarisipenta.png" largeImage="C:\PenilaianTanah\icons\unduhdatadarisipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\UnduhDataDariSipenta.pyt\Unduh_Data_Dari_Sipenta" name="Unduh Data Dari Sipenta" xmlns=""/>
+					</args>
+					<tooltip heading="Unduh Data Dari Sipenta">Tool untuk mengunduh data pemetaan berdasarkan nomor berkas</tooltip>
 				</button>
 		<!-- Button Pembaruan NBT (Restorasi) -->
 			<!-- Menu Persiapan Data -->

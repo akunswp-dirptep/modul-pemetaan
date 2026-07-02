@@ -1,5 +1,6 @@
 import sys
 import arcpy, os, math
+import statistics
 
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
@@ -34,7 +35,10 @@ class Toolbox:
                       Hitung_Statistik_Cluster,
                       Hitung_Individual_Cluster,
                       Pengembalian_Cluster,
-                      Hitung_Persil_Individual_Otomatis]
+                      Hitung_Persil_Individual_Otomatis,
+                      Simpan_Sebagai_Perubahan_Menyebar,
+                      Hitung_Statistik_Kelompok_Perubahan,
+                      ]
 
 
 class Persiapan_Persil_Individual(object):
@@ -1007,7 +1011,7 @@ class Hitung_Persil_Individual_Otomatis(object):
 
     def __init__(self):
         self.label = "Hitung Nilai Persil Individual Otomatis"
-        self.description = "Menghitung penyesuaian nilai persil secara otomatis dengan interval pencarian dinamis."
+        self.description = "Menghitung penyesuaian nilai persil secara otomatis dengan interval pencarian dinamis (Minimal 3 pembanding)."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -1148,7 +1152,7 @@ class Hitung_Persil_Individual_Otomatis(object):
 
         unresolved_targets = set(target_dict.keys())
         dict_update_massal = {}
-        jumlah_pembanding = 3
+        jumlah_pembanding = 3 # <-- Batas minimum yang ditetapkan
 
         interval_list = list(range(interval, max_jarak, interval))
         if max_jarak not in interval_list:
@@ -1201,9 +1205,7 @@ class Hitung_Persil_Individual_Otomatis(object):
                         if objek['s_zonasi'] == pembanding['s_zonasi']:
                             hasil = self.calculate_penyesuaian(objek, pembanding)
                             
-                            # --- FILTER TAMBAHAN: Cegah Infinite Loop ---
-                            # Jika persentase > 10, abaikan kandidat ini sepenuhnya
-                            # agar sistem mengambil kandidat lain yang lebih jauh di radius berikutnya
+                            # Filter Tambahan
                             if abs(hasil["persentase"]) > 10:
                                 continue 
                             
@@ -1228,15 +1230,12 @@ class Hitung_Persil_Individual_Otomatis(object):
                     )
                 )
 
-                rekomendasi_final = hasil_rekomendasi[:jumlah_pembanding]
-
                 is_last_interval = (jarak_sekarang == max_jarak)
                 
-                if len(rekomendasi_final) >= jumlah_pembanding or is_last_interval:
-                    if not rekomendasi_final:
-                        continue 
+                if len(hasil_rekomendasi) >= jumlah_pembanding:
+                    # Mengambil 3 pembanding terbaik (sesuai jumlah_pembanding)
+                    rekomendasi_final = hasil_rekomendasi[:jumlah_pembanding]
 
-                    # Karena kandidat buruk sudah difilter di atas, validasi ini sekadar pengaman ekstra
                     validasi_berhasil = True
                     hasil_list = []
                     id_pembanding_list = []
@@ -1271,9 +1270,14 @@ class Hitung_Persil_Individual_Otomatis(object):
                             "perubahan": "individual"
                         }
                     
-                        # --- PERUBAHAN UTAMA: Hanya hapus dari antrean target JIKA validasi BERHASIL ---
-                        # Jika gagal, target dibiarkan agar ditangkap lagi oleh loop radius berikutnya
+                        # Hanya hapus dari antrean target JIKA validasi BERHASIL dan syarat >= 3 terpenuhi
                         unresolved_targets.remove(target_oid)
+
+                else:
+                    # Jika belum mencapai minimal 3 pembanding
+                    if is_last_interval:
+                        # Jika sudah mentok di jarak maksimal tapi kandidat tetap kurang dari 3, berikan notifikasi
+                        arcpy.AddWarning(f"IDBIDANG {objek['IDBIDANG']} dilewati: Hanya memiliki {len(hasil_rekomendasi)} pembanding valid (Syarat minimal: {jumlah_pembanding}).")
 
         # Bersihkan Memori Loop
         self.delete_if_exists(target_layer)
@@ -2134,7 +2138,73 @@ class Deteksi_Outlier_Indeks(object):
             upper_bound
         )
 
+class Simpan_Sebagai_Perubahan_Menyebar(object):
+    def __init__(self):
+        """Mendefinisikan informasi Tool."""
+        self.label = "Update Atribut (Menyebar)"
+        self.description = "Tools untuk memperbarui field (perubahan, status_per, NILAIBD_LAMA, data_pembanding, kelompok_perubahan) pada feature yang dipilih (selected features)."
+        self.canRunInBackground = False
 
+    def getParameterInfo(self):
+        """Mendefinisikan parameter input untuk tool."""
+        # Parameter 0: Input Feature Layer
+        param0 = arcpy.Parameter(
+            displayName="Penjelasan",
+            name="in_features",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+
+        param0.value = 'Tools ujicoba'
+        
+        return [param0]
+
+    def isLicensed(self):
+        """Cek lisensi (biarkan return True agar selalu bisa digunakan)."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Memodifikasi nilai parameter sebelum divalidasi (tidak diperlukan untuk tools ini)."""
+        return
+
+    def updateMessages(self, parameters):
+        """Memodifikasi pesan error/warning bawaan (tidak diperlukan untuk tools ini)."""
+        return
+
+    def execute(self, parameters, messages):
+        """Kode utama yang dieksekusi saat klik RUN."""
+        # Mengambil input dari user
+        in_features = 'Persil_Layer'
+        
+        # Daftar field yang akan di-update (urutan harus sama dengan di bawah)
+        fields = ['perubahan', 'status_per', 'NILAIBD_LAMA', 'data_pembanding', 'kelompok_perubahan']
+        
+        try:
+            # Membuka UpdateCursor
+            # Cursor otomatis hanya mengeksekusi fitur yang sedang terpilih (selected)
+            with arcpy.da.UpdateCursor(in_features, fields) as cursor:
+                count = 0
+                for row in cursor:
+                    row[0] = 'menyebar'  # perubahan
+                    row[1] = 'update'    # status_per
+                    row[2] = 0           # NILAIBD_LAMA
+                    row[3] = None        # data_pembanding
+                    row[4] = None        # kelompok_perubahan
+                    
+                    # Terapkan perubahan pada baris tersebut
+                    cursor.updateRow(row)
+                    count += 1
+            
+            # Tampilkan pesan sukses di geoprocessing window
+            messages.addMessage(f"✅ Selesai! Berhasil memperbarui {count} fitur.")
+            
+        except Exception as e:
+            # Tampilkan pesan error jika ada field yang tidak ditemukan atau tipe data salah
+            messages.addErrorMessage(f"❌ Terjadi kesalahan: {str(e)}")
+            messages.addErrorMessage("Pastikan Feature Layer memiliki field: perubahan, status_per, NILAIBD_LAMA, data_pembanding, dan kelompok_perubahan dengan tipe data yang sesuai.")
+            
+        return
 # Mengelompokkan
 
 class Set_Cluster_Persil(object):
@@ -2266,13 +2336,11 @@ class Set_Cluster_Persil(object):
 class Periksa_Titik_Sampel_Kelompok_Perubahan(object):
 
     def __init__(self):
-
         self.label = "Periksa Titik Sampel Kelompok Perubahan"
         self.description = ""
         self.canRunInBackground = False
 
     def getParameterInfo(self):
-
         return []
 
     def isLicensed(self):
@@ -2292,59 +2360,74 @@ class Periksa_Titik_Sampel_Kelompok_Perubahan(object):
 
         dataset_path = configs["project_config"]["dataset_path"]
         
+        persil_path = os.path.join(dataset_path, "Persil_Layer")
+        sampel_path = os.path.join(dataset_path, "Titik_Sampel")
+        
+        # MENGGUNAKAN WORKSPACE MEMORY (in_memory ArcGIS Pro)
+        # File sementara akan disimpan langsung di RAM komputer Anda
+        dissolve_path = r"memory\temp_dissolve_persil"
+        identity_path = r"memory\temp_identity_cluster"
 
-        persil_path = os.path.join(
-            dataset_path,
-            "Persil_Layer"
-        )
-
-        sampel_path = os.path.join(
-            dataset_path,
-            "Titik_Sampel"
-        )
-
-        identity_path = os.path.join(
-            dataset_path,
-            "temp_identity_cluster"
-        )
+        # PENTING: Sesuaikan nama field nomor/ID sampel dari layer Titik_Sampel Anda di sini
+        field_nomor_sampel = "no_sampel" 
 
         if not arcpy.Exists(persil_path):
-
             messages.addErrorMessage(
                 "Feature class Persil_Layer tidak ditemukan"
             )
-
             raise arcpy.ExecuteError
 
         if not arcpy.Exists(sampel_path):
-
             messages.addErrorMessage(
                 "Feature class Titik_Sampel_Update tidak ditemukan"
             )
-
             raise arcpy.ExecuteError
 
+        # Bersihkan data memory lawas jika ada (mencegah error jika dijalankan berulang kali)
+        self.delete_if_exists(dissolve_path)
         self.delete_if_exists(identity_path)
 
-        messages.addMessage("== Membuat identity ==")
+        # 1. PROSES DISSOLVE PERSIL TERLEBIH DAHULU
+        messages.addMessage("== Melakukan Dissolve pada Persil Layer (di dalam Memory) ==")
+        
+        fields = [f.name.lower() for f in arcpy.ListFields(persil_path)]
+        if "kelompok_perubahan" not in fields:
+            messages.addErrorMessage("Field 'kelompok_perubahan' tidak ditemukan di Persil_Layer")
+            raise arcpy.ExecuteError
+
+        arcpy.management.Dissolve(
+            in_features=persil_path,
+            out_feature_class=dissolve_path,
+            dissolve_field="kelompok_perubahan",
+            multi_part="MULTI_PART"
+        )
+
+        # 2. PROSES IDENTITY MENGGUNAKAN HASIL DISSOLVE
+        messages.addMessage("== Membuat identity dengan Persil Ter-dissolve (di dalam Memory) ==")
 
         arcpy.analysis.Identity(
             sampel_path,
-            persil_path,
+            dissolve_path,
             identity_path
         )
 
+        # Cek apakah field nomor sampel ada di hasil identity
+        identity_fields = [f.name.lower() for f in arcpy.ListFields(identity_path)]
+        if field_nomor_sampel.lower() not in identity_fields:
+            messages.addWarningMessage(
+                f"Field '{field_nomor_sampel}' tidak ditemukan di output identity. Menggunakan OBJECTID default."
+            )
+            field_nomor_sampel = "OBJECTID"
+
         list_cluster = []
 
+        # Mengambil kelompok_perubahan yang valid
         with arcpy.da.SearchCursor(
             identity_path,
-            ["kelompok_perubahan"],
-            "perubahan = 'mengelompok'"
+            ["kelompok_perubahan"]
         ) as rows:
-
             for row in rows:
-
-                if row[0] is not None:
+                if row[0] is not None and str(row[0]).strip() != "":
                     list_cluster.append(row[0])
 
         unique_cluster = sorted(
@@ -2359,50 +2442,47 @@ class Periksa_Titik_Sampel_Kelompok_Perubahan(object):
 
             titik_list = []
 
-            where_clause = (
-                f"kelompok_perubahan = {cluster_id}"
-            )
+            # Gunakan penanganan tipe data dinamis untuk klausa WHERE kelompok_perubahan
+            # (Mengantisipasi jika field berupa String/Teks atau Short/Long Integer)
+            field_type = [f.type for f in arcpy.ListFields(identity_path, "kelompok_perubahan")][0]
+            if field_type in ["String", "Guid"]:
+                where_clause = f"kelompok_perubahan = '{cluster_id}'"
+            else:
+                where_clause = f"kelompok_perubahan = {cluster_id}"
 
+            # Mengambil nomor sampel berdasarkan field_nomor_sampel
             with arcpy.da.SearchCursor(
                 identity_path,
-                ["OBJECTID"],
+                [field_nomor_sampel],
                 where_clause
             ) as rows:
-
                 for row in rows:
-                    titik_list.append(row[0])
+                    if row[0] is not None:
+                        titik_list.append(str(row[0]))
 
             jumlah_titik = len(titik_list)
+            str_nomor_sampel = ", ".join(titik_list) if titik_list else "-"
 
             if jumlah_titik > 3:
-
                 messages.addWarningMessage(
-                    (
-                        f"Kelompok [{cluster_id}] "
-                        "memiliki titik sampel "
-                        "lebih dari 3."
-                    )
+                    f"Kelompok [{cluster_id}] memiliki titik sampel LEBIH dari 3 (Jumlah: {jumlah_titik}). "
+                    f"Nomor Sampel: [{str_nomor_sampel}]"
                 )
 
             elif jumlah_titik < 3:
-
                 messages.addWarningMessage(
-                    (
-                        f"Kelompok [{cluster_id}] "
-                        "memiliki titik sampel "
-                        "kurang dari 3."
-                    )
+                    f"Kelompok [{cluster_id}] memiliki titik sampel KURANG dari 3 (Jumlah: {jumlah_titik}). "
+                    f"Nomor Sampel: [{str_nomor_sampel}]"
                 )
 
             else:
-
                 messages.addMessage(
-                    (
-                        f"Kelompok [{cluster_id}] "
-                        "memiliki 3 titik sampel."
-                    )
+                    f"Kelompok [{cluster_id}] memiliki TEPAT 3 titik sampel. "
+                    f"Nomor Sampel: [{str_nomor_sampel}]"
                 )
 
+        # Bersihkan memory setelah proses selesai agar RAM komputer kembali lega
+        self.delete_if_exists(dissolve_path)
         self.delete_if_exists(identity_path)
 
         messages.addMessage(
@@ -2412,15 +2492,12 @@ class Periksa_Titik_Sampel_Kelompok_Perubahan(object):
         return
 
     def delete_if_exists(self, path):
-
         if arcpy.Exists(path):
-
             try:
                 arcpy.management.Delete(path)
-
             except Exception:
-                pass
-            
+                pass            
+
 class Hitung_Statistik_Cluster(object):
 
     def __init__(self):
@@ -3031,7 +3108,419 @@ def doSomething(a, b):
         )
 
         return
-    
+
+class Hitung_Statistik_Kelompok_Perubahan(object):
+    def __init__(self):
+        self.label = "Penyesuaian Hitung Statistik Kelompok Perubahan"
+        self.description = ""
+        self.canRunInBackground = False
+
+    # =====================================================
+    # PARAMETER
+    # =====================================================
+    def getParameterInfo(self):
+        # Parameter baru untuk memilih kelompok (bisa pilih lebih dari satu)
+        param_kelompok = arcpy.Parameter(
+            displayName="Pilih ID Kelompok Perubahan (Kosongkan untuk proses semua)",
+            name="kelompok_pilihan",
+            datatype="GPLong",
+            parameterType="Optional",
+            direction="Input",
+            multiValue=True
+        )
+
+        output_persil = arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        
+        return [param_kelompok, output_persil]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        # 1. Cek apakah ada persil layer atau layer dengan sumber data yang valid di map
+        # Kita berasumsi nama layer atau path datanya bisa diambil dari config atau default "Persil_Layer"
+        # Namun karena fungsi ini berjalan real-time sebelum 'execute', kita bisa mencari layer bernama "Persil_Layer" di map aktif
+        
+        # Lakukan pengecekan hanya jika daftar pilihan belum terisi (agar tidak terus-menerus membaca data/looping berat)
+        if not parameters[0].filter.list:
+            try:
+                aprx = arcpy.mp.ArcGISProject("CURRENT")
+                current_map = aprx.activeMap
+                persil_layer = None
+                
+                # Mencari apakah ada layer bernama "Persil_Layer" di isi Map
+                if current_map:
+                    for layer in current_map.listLayers():
+                        if layer.name == "Persil_Layer":
+                            persil_layer = layer
+                            break
+                
+                # Jika tidak ada di Map aktif, coba alternatif mengambil dari konfigurasi path (jika persil ter-import)
+                if not persil_layer:
+                    # Opsi fallback: jika script 'persil' dan environment project-nya siap
+                    configs = persil.get_config_values()
+                    dataset_path = configs["project_config"]["dataset_path"]
+                    fallback_path = os.path.join(dataset_path, "Persil_Layer")
+                    if arcpy.Exists(fallback_path):
+                        persil_layer = fallback_path
+
+                # 2. Kalau layer ditemukan, ambil nilai kelompok perubahan yang unik
+                if persil_layer and arcpy.Exists(persil_layer):
+                    list_kelompok = []
+                    fields = [field.name for field in arcpy.ListFields(persil_layer)]
+                    
+                    # Pastikan field yang dibutuhkan ada sebelum memanggil cursor
+                    if "kelompok_perubahan" in fields and "perubahan" in fields:
+                        where_clause = "perubahan = 'mengelompok'"
+                        with arcpy.da.SearchCursor(persil_layer, ["kelompok_perubahan"], where_clause) as rows:
+                            for row in rows:
+                                if row[0] not in (None, 0, ""):
+                                    list_kelompok.append(int(row[0]))
+                        
+                        unique_kelompok = sorted(list(set(list_kelompok)))
+                        
+                        # 3. Ubah parameter 0 menjadi dropdown dengan mengisi nilai filter list
+                        if unique_kelompok:
+                            parameters[0].filter.type = "ValueList"
+                            parameters[0].filter.list = unique_kelompok
+            except Exception:
+                # Menggunakan pass agar jika ada error pembacaan map saat inisialisasi, tool tidak langsung crash
+                pass
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    # =====================================================
+    # HELPER
+    # =====================================================
+
+    def delete_if_exists(self, path):
+        if arcpy.Exists(path):
+            try:
+                arcpy.management.Delete(path)
+            except Exception:
+                pass
+
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+        fields = [field.name.upper() for field in arcpy.ListFields(feature_class)]
+        if field_name.upper() not in fields:
+            arcpy.management.AddField(feature_class, field_name, field_type)
+
+    def get_data_row(self, persil_path, id_bidang):
+        fields = [
+            "IdBidang", "OBJECTID", "LUASM2", "LBRDPN", "S_BENTUK", 
+            "S_LETAK", "S_KLS_JLN", "ls_tnh_i", "lb_dpn_i", "S_ZONASI", 
+            "ZONASI", "NILAIBD_LAMA" 
+        ]
+        
+        with arcpy.da.SearchCursor(persil_path, fields, f"IdBidang = {id_bidang}") as rows:
+            for row in rows:
+                return {
+                    "IdBidang": row[0],
+                    "OBJECTID": row[1],
+                    "ls_tnh": row[2],
+                    "lb_dpn": row[3],
+                    "s_bentuk": row[4],
+                    "s_letak": row[5],
+                    "s_kls_jln": row[6],
+                    "ls_tnh_i": row[7],
+                    "lb_dpn_i": row[8],
+                    "s_zonasi": row[9],
+                    "zonasi": row[10],
+                    "nilai": row[11] # Nilai ini nantinya akan ditimpa dengan harga sampel untuk Pembanding
+                }
+        return None
+
+    def calculate_penyesuaian(self, objek, pembanding):
+        ls_tnh = ((objek["ls_tnh_i"] - pembanding["ls_tnh_i"]) * 0.5)
+        lb_dpn = ((objek["lb_dpn_i"] - pembanding["lb_dpn_i"]) * 1.5)
+        bentuk = ((objek["s_bentuk"] - pembanding["s_bentuk"]) * 1.5)
+        letak = ((objek["s_letak"] - pembanding["s_letak"]) * 1)
+        kls_jln = ((objek["s_kls_jln"] - pembanding["s_kls_jln"]) * 3)
+
+        persentase = ls_tnh + lb_dpn + bentuk + letak + kls_jln
+        nilai = (pembanding["nilai"] * (100 + persentase)) / 100
+
+        komponen = [ls_tnh, lb_dpn, bentuk, letak, kls_jln]
+        nilai_nol = komponen.count(0)
+
+        return {
+            "persentase": persentase,
+            "nilai": nilai,
+            "nilai_nol": nilai_nol
+        }
+
+    # =====================================================
+    # EXECUTE
+    # =====================================================
+
+    def execute(self, parameters, messages):
+        messages.addMessage("== Proses dimulai ==")
+
+        # Mendapatkan nilai pilihan kelompok dari parameter input pengguna
+        pilihan_user = parameters[0].values
+        list_pilihan = []
+        if pilihan_user:
+            list_pilihan = [int(v) for v in pilihan_user]
+
+        configs = persil.get_config_values()
+        dataset_path = configs["project_config"]["dataset_path"]
+
+        # =================================================
+        # DATASET & MEMORY WORKSPACE
+        # =================================================
+        persil_path = os.path.join(dataset_path, "Persil_Layer")
+        sampel_path = os.path.join(dataset_path, "Titik_Sampel")
+
+        identity_path = r"memory\temp_identity_kelompok"
+        temp_intersect = r"memory\temp_intersect_kelompok"
+        temp_dissolve_persil = r"memory\temp_dissolve_persil"
+
+        # =================================================
+        # VALIDASI
+        # =================================================
+        required_fc = [persil_path, sampel_path]
+        for fc in required_fc:
+            if not arcpy.Exists(fc):
+                messages.addErrorMessage(f"Feature class {os.path.basename(fc)} tidak ditemukan")
+                raise arcpy.ExecuteError
+
+        cleanup_items = [identity_path, temp_intersect, temp_dissolve_persil]
+        for item in cleanup_items:
+            self.delete_if_exists(item)
+
+        # =================================================
+        # FIELD MANAGEMENT
+        # =================================================
+        self.add_field_if_not_exists(persil_path, "SMPBKREL", "DOUBLE")
+        self.add_field_if_not_exists(persil_path, "data_pembanding", "TEXT")
+
+        # =================================================
+        # IDENTITY 
+        # =================================================
+        messages.addMessage("== Membuat identity ==")
+        arcpy.analysis.Identity(
+            sampel_path,
+            persil_path,
+            identity_path
+        )
+
+        # =================================================
+        # GET KELOMPOK LIST
+        # =================================================
+        list_kelompok = []
+        with arcpy.da.SearchCursor(identity_path, ["kelompok_perubahan"], "perubahan = 'mengelompok'") as rows:
+            for row in rows:
+                if row[0] not in (None, 0, ""):
+                    list_kelompok.append(row[0])
+
+        unique_kelompok = sorted(list(set(list_kelompok)))
+
+        # Filter kelompok berdasarkan input pengguna (jika diisi)
+        if list_pilihan:
+            unique_kelompok = [k for k in unique_kelompok if k in list_pilihan]
+            
+            # Validasi jika input pengguna tidak ada di dataset
+            if not unique_kelompok:
+                messages.addWarningMessage(f"Kelompok yang dimasukkan {list_pilihan} tidak ditemukan atau tidak valid. Proses dihentikan.")
+                return
+
+        messages.addMessage(f"Kelompok yang akan dihitung: {unique_kelompok}")
+
+        # =================================================
+        # LOOP KELOMPOK
+        # =================================================
+        counter = 0
+        for kelompok_id in unique_kelompok:
+            counter += 1
+            messages.addMessage(f"== Proses Kelompok {kelompok_id} ==")
+            
+            # --- KONFIGURASI NAMA FIELD HARGA SAMPEL ---
+            # UBAH "NILAI_SAMPEL" di bawah ini sesuai dengan nama kolom harga yang ada di Titik Sampel!
+            field_harga_sampel = "nilai" 
+            # -------------------------------------------
+            
+            pembanding_dict = {}
+            where_clause_kelompok = f"kelompok_perubahan = {kelompok_id}"
+            
+            try:
+                # Mengambil ID dan Harga langsung dari hasil identity (yang membawa atribut sampel)
+                with arcpy.da.SearchCursor(identity_path, ["IdBidang", field_harga_sampel], where_clause_kelompok) as rows:
+                    for row in rows:
+                        if row[0] not in (None, "", 0):
+                            if row[0] not in pembanding_dict:
+                                pembanding_dict[row[0]] = row[1] 
+            except RuntimeError as e:
+                messages.addErrorMessage(f"Error membaca '{field_harga_sampel}'. Pastikan field tersebut benar dari sampel. Error: {str(e)}")
+                raise arcpy.ExecuteError
+            
+            pembanding_ids = list(pembanding_dict.keys())
+
+            if len(pembanding_ids) > 3:
+                messages.addMessage(f"--> Dilewati: Bidang pembanding > 3 ({len(pembanding_ids)} bidang).")
+                continue
+            elif len(pembanding_ids) < 3:
+                messages.addMessage(f"--> Dilewati: Bidang pembanding < 3 ({len(pembanding_ids)} bidang).")
+                continue
+            # =============================================
+            # PERHITUNGAN STATISTIK (MEAN, STD, PTDDEV)
+            # =============================================
+            list_nilai_adj = []
+            for pid in pembanding_ids:
+                harga_sampel = pembanding_dict[pid]
+                list_nilai_adj.append(harga_sampel)
+            
+            mean_val = statistics.mean(list_nilai_adj)
+            std_val = statistics.stdev(list_nilai_adj)
+                
+            # Hitung PTDDEV (Koefisien Variasi dalam bentuk persentase)
+            ptddev = (std_val / mean_val * 100) if mean_val != 0 else 0
+
+            if ptddev > 15:
+                arcpy.AddWarning(f'kelompok perubahan {kelompok_id} memiliki standar deviasi lebih dari 15%. Penilaian dilewati')
+                continue
+            
+            # =================================================
+            # UPDATE ATRIBUT BIDANG PEMBANDING ITU SENDIRI
+            # =================================================
+            
+            for pid in pembanding_ids:
+                harga_sampel = pembanding_dict[pid]
+                with arcpy.da.UpdateCursor(
+                    persil_path,
+                    ["NILAIBD", "data_pembanding", "perubahan", "SMPBKREL"],
+                    f"IdBidang = {pid}"
+                ) as p_cursor:
+                    for p_row in p_cursor:
+                        p_row[0] = round(harga_sampel)  # NILAIBD dari nilai sampel
+                        p_row[1] = None          # Kosongkan data_pembanding
+                        p_row[3] = ptddev
+                        p_cursor.updateRow(p_row)
+                messages.addMessage(f"  - Bidang Pembanding IdBidang={pid} diperbarui (NILAIBD={harga_sampel}).")
+
+            pembanding_data = []
+            for pid in pembanding_ids:
+                data = self.get_data_row(persil_path, pid)
+                if data:
+                    # Menimpa NILAIBD_LAMA yang diambil sebelumnya dengan Harga Sampel (dari tabel identity)
+                    data["nilai"] = pembanding_dict[pid] 
+                    pembanding_data.append(data)
+            
+            if len(pembanding_data) != 3:
+                continue
+
+            pembanding1, pembanding2, pembanding3 = pembanding_data[0], pembanding_data[1], pembanding_data[2]
+            
+            # Mendapatkan Objek yang akan dihitung (bidang di kelompok yg bukan pembanding)
+            objek_ids = []
+            with arcpy.da.SearchCursor(persil_path, ["IdBidang"], where_clause_kelompok) as rows:
+                for row in rows:
+                    if row[0] not in pembanding_ids:
+                        objek_ids.append(row[0])
+
+            # Hitung individual untuk setiap bidang objek
+            for obj_id in objek_ids:
+                objek = self.get_data_row(persil_path, obj_id)
+                if not objek: continue
+
+                zonasi_valid = True
+                for p_idx, p in enumerate(pembanding_data, start=1):
+                    if objek["s_zonasi"] != p["s_zonasi"]:
+                        messages.addMessage(f"  - Objek IdBidang={obj_id} dilewati (Zonasi beda dgn Pembanding {p_idx}).")
+                        zonasi_valid = False
+                        break
+                
+                if not zonasi_valid: continue
+
+                # Kalkulasi masing-masing pembanding
+                hasil1 = self.calculate_penyesuaian(objek, pembanding1)
+                hasil2 = self.calculate_penyesuaian(objek, pembanding2)
+                hasil3 = self.calculate_penyesuaian(objek, pembanding3)
+
+                hasil_list = [
+                    hasil1,
+                    hasil2,
+                    hasil3
+                ]
+
+                for i, hasil in enumerate(hasil_list, start=1):
+                    if hasil["persentase"] > 10:
+                        arcpy.AddWarning(
+                            f"== bidang {obj_id} tidak bisa dihitung karena memiliki persentase lebih dari 10% =="
+                        )
+                        continue
+
+                nilai_adj1 = hasil1["nilai"]
+                nilai_adj2 = hasil2["nilai"]
+                nilai_adj3 = hasil3["nilai"]
+
+                total_nol = hasil1["nilai_nol"] + hasil2["nilai_nol"] + hasil3["nilai_nol"]
+                
+
+                bobot1 = (hasil1["nilai_nol"] / total_nol) * 100
+                bobot2 = (hasil2["nilai_nol"] / total_nol) * 100
+                bobot3 = (hasil3["nilai_nol"] / total_nol) * 100
+                
+                nilai_akhir = (
+                    (nilai_adj1 * bobot1 / 100) +
+                    (nilai_adj2 * bobot2 / 100) +
+                    (nilai_adj3 * bobot3 / 100)
+                )
+
+
+                list_data_pembanding = f"{pembanding1['OBJECTID']} ; {pembanding2['OBJECTID']} ; {pembanding3['OBJECTID']}"
+
+                # Update ke kolom NILAIBD secara langsung
+                with arcpy.da.UpdateCursor(
+                    persil_path,
+                    ["data_pembanding", "NILAIBD", "perubahan", "SMPBKREL"],
+                    f"IdBidang = {obj_id}"
+                ) as u_cursor:
+                    for u_row in u_cursor:
+                        u_row[0] = list_data_pembanding
+                        u_row[1] = round(nilai_akhir)
+                        u_row[2] = "mengelompok"
+                        u_row[3] = ptddev
+                        u_cursor.updateRow(u_row)
+                        
+                messages.addMessage(f"  - Objek IdBidang={obj_id} berhasil diperbarui.")
+
+        # =================================================
+        # REFRESH LAYER
+        # =================================================
+        if arcpy.Exists("Persil_Layer"):
+            try:
+                arcpy.management.Delete("Persil_Layer")
+            except Exception:
+                pass
+
+        arcpy.management.MakeFeatureLayer(persil_path, "Persil_Layer")
+        
+        # PERHATIKAN: Ubah index parameter ke 1, karena sekarang output_persil adalah parameter kedua
+        parameters[1].value = "Persil_Layer"
+
+        try:
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            current_map = aprx.activeMap
+            for layer in current_map.listLayers():
+                if layer.name == "Titik_Sampel":
+                    layer.visible = True
+        except Exception:
+            pass
+
+        for item in cleanup_items:
+            self.delete_if_exists(item)
+
+        messages.addMessage("== Proses selesai ==")
+        return
+         
 class Hitung_Individual_Cluster(object):
 
     def __init__(self):

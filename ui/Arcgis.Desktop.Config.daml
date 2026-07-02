@@ -465,14 +465,15 @@
 					<button refID="ButtonResetPersilIndividual" />
 					<button refID='ButtonGenerateTitikIndeks' />
 					<button refID='ButtonDeteksiOutlierIndeks' />
-					<button refID='ButtonPeriksaTitikSampelKelompokPerubahan' />
-					<button refID='ButtonHitungStatistikCluster' />
+
 					
 				</menu>
 
 				<menu id="pengolahan_pembaruan_nbt" caption="Pengolahan NBT" extendedCaption="Pengolahan NBT" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\perhitungan_nbt.png"
 					smallImage="C:\PenilaianTanah\icons\perhitungan_nbt.png">
+					<button refID='ButtonPeriksaTitikSampelKelompokPerubahan' />
+					<button refID='ButtonHitungStatistikCluster' />
 					<button refID='ButtonHitungIndeksRataRata' />
 					<button refID='ButtonHitungNilaiPrediksi' />
 

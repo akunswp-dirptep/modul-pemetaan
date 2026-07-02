@@ -823,11 +823,6 @@ class Hitung_Nilai_Prediksi(object):
         messages
     ):
 
-        import os
-        import sys
-        import arcpy
-        import datetime
-
         arcpy.env.overwriteOutput = True
 
         messages.addMessage(
@@ -886,7 +881,8 @@ class Hitung_Nilai_Prediksi(object):
             "KLSTRZ",
             "NILAIBD",
             "NILAIBD_LAMA",
-            "INDEKS_RATA"
+            "INDEKS_RATA",
+            "KELOMPOK_PERUBAHAN"
 
         ]
 
@@ -958,58 +954,51 @@ class Hitung_Nilai_Prediksi(object):
 
         with arcpy.da.UpdateCursor(
             persil_path,
-            [
-                "KLSTRZ",
-                "NILAIBD",
-                "NILAIBD_LAMA",
-                "INDEKS_RATA"
-            ]
+            [ "KLSTRZ", "NILAIBD", "NILAIBD_LAMA", "INDEKS_RATA", "KELOMPOK_PERUBAHAN"]
         ) as rows:
-
             for row in rows:
 
                 cluster = row[0]
                 nilai_lama = row[2]
                 indeks_rata = row[3]
+                kelompok_perubahan = row[4]
 
-                if (
-                    cluster not in (
-                        None,
-                        0
-                    )
-                    and
-                    indeks_rata is not None
-                    and
-                    nilai_lama is not None
-                ):
+                if kelompok_perubahan is None:
 
-                    try:
+                    if (cluster not in (None, 0)
+                        and
+                        indeks_rata is not None
+                        and
+                        nilai_lama is not None
+                    ):
 
-                        nilai_baru = (
-                            float(nilai_lama)
-                            *
-                            (
-                                float(indeks_rata)
-                                / 100.0
+                        try:
+
+                            nilai_baru = (
+                                float(nilai_lama)
+                                *
+                                (
+                                    float(indeks_rata)
+                                    / 100.0
+                                )
                             )
-                        )
 
-                        row[1] = round(
-                            nilai_baru,
-                            2
-                        )
+                            row[1] = round(
+                                nilai_baru,
+                                2
+                            )
 
-                    except Exception:
+                        except Exception:
+
+                            row[1] = None
+
+                    else:
 
                         row[1] = None
 
-                else:
-
-                    row[1] = None
-
-                rows.updateRow(
-                    row
-                )
+                    rows.updateRow(
+                        row
+                    )
 
         messages.addMessage(
             "✅ Nilai NBT berhasil dihitung"

@@ -1,4 +1,7 @@
-Version: 6.2 - Cilegon
+Version: 6.1.1 - Balikpapan
 
-Penambahan Fitur:
- 1. Penambahan Fitur Unduh Data Pemetaan yang sudah di upload dari Sipenta
+Penambahan Nama Kota/Kabupaten:
+ - Lebak
+ - Banjarnegara
+ - Barito Kuala
+ - Lembata

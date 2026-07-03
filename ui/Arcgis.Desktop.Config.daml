@@ -113,7 +113,7 @@
 				<group id="sistem_aplikasi" caption="Penilaian Tanah">
 					<button refID="ButtonLoginPemeta" size="large"/>
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
-					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
+					<!-- <button refID="ButtonUnduhDataDariSipenta" size="large"/> -->
 				</group>
 
 			</groups>
@@ -2668,7 +2668,7 @@
 				>
 					<args>
 						<params
-							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Hitung_Statistik_Cluster"
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanTitikSampel.pyt\Hitung_Statistik_Kelompok_Perubahan"
 							name="Hitung Nilai Tanah Kelompok"
 							xmlns=""
 						/>
@@ -2848,8 +2848,8 @@
 				<button
 					id="ButtonTampilkanSimbologiPersilLayer"
 					caption="Tampilkan Simbologi Persil"
-					smallImage="C:\PenilaianTanah\icons\folder.png"
-					largeImage="C:\PenilaianTanah\icons\folder.png"
+					smallImage="C:\PenilaianTanah\icons\simbologicekjeniszona.png"
+					largeImage="C:\PenilaianTanah\icons\simbologicekjeniszona.png"
 					isCustomCommand="true"
 					assembly=""
 					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"

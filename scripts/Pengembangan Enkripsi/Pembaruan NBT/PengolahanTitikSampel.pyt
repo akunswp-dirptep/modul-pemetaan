@@ -978,7 +978,7 @@ class Hitung_Persil_Individual(object):
             * 3
         )
 
-        persentase = (
+        persentase = abs(
             ls_tnh
             + lb_dpn
             + bentuk
@@ -1317,7 +1317,7 @@ class Hitung_Persil_Individual_Otomatis(object):
         letak = (objek["s_letak"] - pembanding["s_letak"]) * 1
         kls_jln = (objek["s_kls_jln"] - pembanding["s_kls_jln"]) * 3
 
-        persentase = ls_tnh + lb_dpn + bentuk + letak + kls_jln
+        persentase = abs(ls_tnh + lb_dpn + bentuk + letak + kls_jln)
         nilai = pembanding["nilai"] * (100 + persentase) / 100
 
         komponen = [ls_tnh, lb_dpn, bentuk, letak, kls_jln]
@@ -3245,12 +3245,11 @@ class Hitung_Statistik_Kelompok_Perubahan(object):
         letak = ((objek["s_letak"] - pembanding["s_letak"]) * 1)
         kls_jln = ((objek["s_kls_jln"] - pembanding["s_kls_jln"]) * 3)
 
-        persentase = ls_tnh + lb_dpn + bentuk + letak + kls_jln
+        persentase = abs(ls_tnh + lb_dpn + bentuk + letak + kls_jln)
         nilai = (pembanding["nilai"] * (100 + persentase)) / 100
 
         komponen = [ls_tnh, lb_dpn, bentuk, letak, kls_jln]
         nilai_nol = komponen.count(0)
-
         return {
             "persentase": persentase,
             "nilai": nilai,
@@ -3403,7 +3402,7 @@ class Hitung_Statistik_Kelompok_Perubahan(object):
                         p_row[1] = None          # Kosongkan data_pembanding
                         p_row[3] = ptddev
                         p_cursor.updateRow(p_row)
-                messages.addMessage(f"  - Bidang Pembanding IdBidang={pid} diperbarui (NILAIBD={harga_sampel}).")
+                messages.addMessage(f"  - Bidang Pembanding IdBidang= {pid} diperbarui (NILAIBD={round(harga_sampel)}).")
 
             pembanding_data = []
             for pid in pembanding_ids:
@@ -3456,24 +3455,28 @@ class Hitung_Statistik_Kelompok_Perubahan(object):
                             f"== bidang {obj_id} tidak bisa dihitung karena memiliki persentase lebih dari 10% =="
                         )
                         continue
-
                 nilai_adj1 = hasil1["nilai"]
                 nilai_adj2 = hasil2["nilai"]
                 nilai_adj3 = hasil3["nilai"]
 
                 total_nol = hasil1["nilai_nol"] + hasil2["nilai_nol"] + hasil3["nilai_nol"]
                 
-
-                bobot1 = (hasil1["nilai_nol"] / total_nol) * 100
-                bobot2 = (hasil2["nilai_nol"] / total_nol) * 100
-                bobot3 = (hasil3["nilai_nol"] / total_nol) * 100
+                # Jika semua nilai_nol adalah 0, bagi bobot sama rata (masing-masing sepertiga)
+                if total_nol == 0:
+                    bobot1 = 100.0 / 3.0
+                    bobot2 = 100.0 / 3.0
+                    bobot3 = 100.0 / 3.0
+                # Jika ada nilai_nol, hitung bobot secara proporsional seperti biasa
+                else:
+                    bobot1 = (hasil1["nilai_nol"] / total_nol) * 100
+                    bobot2 = (hasil2["nilai_nol"] / total_nol) * 100
+                    bobot3 = (hasil3["nilai_nol"] / total_nol) * 100
                 
                 nilai_akhir = (
                     (nilai_adj1 * bobot1 / 100) +
                     (nilai_adj2 * bobot2 / 100) +
                     (nilai_adj3 * bobot3 / 100)
                 )
-
 
                 list_data_pembanding = f"{pembanding1['OBJECTID']} ; {pembanding2['OBJECTID']} ; {pembanding3['OBJECTID']}"
 
@@ -3489,8 +3492,6 @@ class Hitung_Statistik_Kelompok_Perubahan(object):
                         u_row[2] = "mengelompok"
                         u_row[3] = ptddev
                         u_cursor.updateRow(u_row)
-                        
-                messages.addMessage(f"  - Objek IdBidang={obj_id} berhasil diperbarui.")
 
         # =================================================
         # REFRESH LAYER

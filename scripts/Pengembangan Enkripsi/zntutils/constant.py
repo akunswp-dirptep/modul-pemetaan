@@ -254,6 +254,7 @@ KAB_KOTA = {
         "Kota Tasikmalaya"
     ],
     "Jawa Tengah": [
+        "Banjarnegara",
         "Banyumas",
         "Batang",
         "Blora",
@@ -300,7 +301,6 @@ KAB_KOTA = {
     "Jawa Timur": [
         "Bangkalan",
         "Banyuwangi",
-        "Bojonegoro",
         "Bondowoso",
         "Blitar",
         "Bojonegoro",
@@ -339,6 +339,7 @@ KAB_KOTA = {
         "Kota Surabaya"
     ],
     "Banten": [
+        "Lebak",
         "Pandeglang",
         "Serang",
         "Tangerang",
@@ -376,6 +377,7 @@ KAB_KOTA = {
         "Ende",
         "Flores Timur",
         "Kupang",
+        "Lembata",
         "Malaka",
         "Manggarai",
         "Manggarai Barat",
@@ -410,7 +412,6 @@ KAB_KOTA = {
         "Kota Singkawang"
     ],
     "Kalimantan Tengah": [
-        "Barito Kuala",
         "Barito Selatan",
         "Barito Timur",
         "Barito Utara",
@@ -609,13 +610,22 @@ KAB_KOTA = {
         "Kota Jayapura"
     ],
     "Papua Barat": [
-        "Fak Fak",
+        "Fakfak",
         "Kaimana",
         "Manokwari",
         "Manokwari Selatan",
         "Pegunungan Arfak",
         "Teluk Bintuni",
-        "Teluk Wondama"
+        "Teluk Wondama",
+        "Kota Sorong"
+    ],
+    "Papua Barat Daya": [
+        "Maybrat",
+        "Raja Ampat",
+        "Sorong",
+        "Sorong Selatan",
+        "Tambrauw",
+        "Kota Sorong"
     ],
     "Papua Selatan": [
         "Asmat",
@@ -643,17 +653,10 @@ KAB_KOTA = {
         "Yahukimo",
         "Yalimo"
     ],
-    "Papua Barat Daya": [
-        "Maybrat",
-        "Raja Ampat",
-        "Sorong",
-        "Sorong Selatan",
-        "Tambrauw",
-        "Kota Sorong"
-    ],
+
 }
 
-VERSION_NUMBER = '6.1'
+VERSION_NUMBER = '6.1.1'
 VERSION_NAME = 'Balikpapan'
 VERSION_ID = '62a88d75-66d6-420b-b932-8e66d4fb25c9'
 CURRENT_VERSION = f'{VERSION_NUMBER} - {VERSION_NAME}'

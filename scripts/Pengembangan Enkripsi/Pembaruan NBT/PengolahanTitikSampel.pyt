@@ -2936,7 +2936,6 @@ class Mencari_Nilai_Outlier(object):
             parameterType="Required",
             direction="Input")
         param_zone_val.filter.type = "ValueList"
-        # Daftar akan diisi secara dinamis di fungsi updateParameters
 
         # 2. Parameter Pilihan Field Target (Nilai)
         param_field = arcpy.Parameter(
@@ -2976,34 +2975,25 @@ class Mencari_Nilai_Outlier(object):
             direction="Input")
         param_threshold.value = 5.0 # Default: 5x lipat
 
-        # 6. Parameter Output Feature Class
-        param_out_fc = arcpy.Parameter(
-            displayName="Output Feature Class (Hasil Anomali)",
-            name="out_features",
-            datatype="DEFeatureClass",
-            parameterType="Required",
-            direction="Output")
+        # Catatan: Parameter 6 (Output Feature Class) telah dihapus
 
-        return [param_in_fc, param_zone_val, param_field, param_radius, param_skip_zero, param_threshold, param_out_fc]
+        return [param_in_fc, param_zone_val, param_field, param_radius, param_skip_zero, param_threshold]
 
     def isLicensed(self):
         return True
 
     def updateParameters(self, parameters):
-        # Jika Input Layer (parameter 0) diisi, baca nilai unik dari field ZONASI
         if parameters[0].value:
             in_fc = parameters[0].valueAsText
             try:
                 fields = [f.name.upper() for f in arcpy.ListFields(in_fc)]
                 if "ZONASI" in fields:
                     unique_values = set()
-                    # Ambil nilai zonasi dengan SearchCursor
                     with arcpy.da.SearchCursor(in_fc, ["ZONASI"]) as cursor:
                         for row in cursor:
                             if row[0] is not None:
                                 unique_values.add(str(row[0]))
                     
-                    # Update dropdown parameter 1 dengan nilai-nilai unik yang didapat
                     if unique_values:
                         parameters[1].filter.list = sorted(list(unique_values))
                 else:
@@ -3013,7 +3003,6 @@ class Mencari_Nilai_Outlier(object):
         return
 
     def updateMessages(self, parameters):
-        # Beri pesan error di tampilan pengguna jika layer tidak punya field ZONASI
         if parameters[0].value:
             in_fc = parameters[0].valueAsText
             try:
@@ -3031,26 +3020,22 @@ class Mencari_Nilai_Outlier(object):
         radius = parameters[3].valueAsText
         skip_zero = parameters[4].value
         threshold = parameters[5].value
-        out_fc = parameters[6].valueAsText
 
         desc = arcpy.Describe(in_fc)
         oid_field = desc.OIDFieldName
         
-        # Cek tipe field ZONASI untuk membuat SQL WHERE clause yang valid
         field_type = "String"
         for f in desc.fields:
             if f.name.upper() == "ZONASI":
                 field_type = f.type
                 break
                 
-        # Membuat Where Clause dengan delimitasi yang aman (untuk GDB, SHP, SQL Server, dll)
         zonasi_field_delimited = arcpy.AddFieldDelimiters(in_fc, "ZONASI")
         if field_type in ["String", "Guid", "GlobalID"]:
             where_clause = f"{zonasi_field_delimited} = '{chosen_zone}'"
         else:
             where_clause = f"{zonasi_field_delimited} = {chosen_zone}"
 
-        # Memfilter data menjadi layer spasial sementara yang HANYA berisi zonasi terpilih
         temp_layer = "filtered_zone_layer"
         arcpy.management.MakeFeatureLayer(in_fc, temp_layer, where_clause)
 
@@ -3061,14 +3046,12 @@ class Mencari_Nilai_Outlier(object):
 
         messages.addMessage(f"Membaca {count} fitur pada area Zonasi: {chosen_zone}...")
         
-        # Simpan data valid di Memory (Dictionary)
         valid_data = {}
         with arcpy.da.SearchCursor(temp_layer, [oid_field, target_field]) as cursor:
             for row in cursor:
                 oid = row[0]
                 nilai = row[1]
 
-                # Filter Null & Nilai 0
                 if nilai is None:
                     continue
                 if skip_zero and (nilai == 0 or nilai == 0.0):
@@ -3086,7 +3069,6 @@ class Mencari_Nilai_Outlier(object):
         if arcpy.Exists(temp_near):
             arcpy.management.Delete(temp_near)
 
-        # Proses Generate Near Table (Hanya mengeksekusi bidang yang ada di temp_layer)
         arcpy.analysis.GenerateNearTable(
             in_features=temp_layer,
             near_features=temp_layer,
@@ -3098,13 +3080,12 @@ class Mencari_Nilai_Outlier(object):
 
         messages.addMessage("Menganalisis anomali nilai...")
         
-        # Map tetangga: {IN_FID: [NEAR_FID1, NEAR_FID2, ...]}
         neighbors_dict = {}
         with arcpy.da.SearchCursor(temp_near, ["IN_FID", "NEAR_FID"]) as cursor:
             for row in cursor:
                 t_fid = row[0]
                 j_fid = row[1]
-                if t_fid == j_fid: # Abaikan dirinya sendiri
+                if t_fid == j_fid:
                     continue
                 if t_fid not in neighbors_dict:
                     neighbors_dict[t_fid] = []
@@ -3112,14 +3093,13 @@ class Mencari_Nilai_Outlier(object):
 
         arcpy.management.Delete(temp_near)
 
-        anomalies = {}
+        # Menggunakan List untuk menampung OID yang anomali
+        anomaly_oids = []
 
-        # Logika Inti Penemuan Anomali
         for t_fid, t_nilai in valid_data.items():
             if t_fid not in neighbors_dict:
                 continue
 
-            # Karena semua data yang diproses sudah satu zonasi, kita cukup ambil nilainya langsung
             valid_neighbors = []
             for j_fid in neighbors_dict[t_fid]:
                 if j_fid in valid_data:
@@ -3137,29 +3117,29 @@ class Mencari_Nilai_Outlier(object):
                 rasio = (max_val / min_val) if min_val > 0 else float('inf')
 
                 if rasio >= threshold:
-                    keterangan = f"Zonasi: {chosen_zone} | Nilai Bidang: {t_nilai:,.0f} | Rata-rata {len(valid_neighbors)} Tetangga: {avg_nilai:,.0f}"
-                    anomalies[t_fid] = keterangan
+                    anomaly_oids.append(t_fid)
 
-        messages.addMessage(f"Ditemukan {len(anomalies)} bidang anomali.")
-        messages.addMessage("Membuat layer output...")
+        messages.addMessage(f"Ditemukan {len(anomaly_oids)} bidang anomali.")
         
-        # Ekspor layer (hanya zonasi yang dievaluasi) ke dalam output
-        arcpy.management.CopyFeatures(temp_layer, out_fc)
-        arcpy.management.AddField(out_fc, "INFO_ANOMALI", "TEXT", field_length=500)
-
-        # Update layer output agar HANYA menyisakan bidang anomali
-        with arcpy.da.UpdateCursor(out_fc, [oid_field, "INFO_ANOMALI"]) as u_cursor:
-            for row in u_cursor:
-                oid = row[0]
-                if oid in anomalies:
-                    row[1] = anomalies[oid]
-                    u_cursor.updateRow(row)
-                else:
-                    u_cursor.deleteRow()
-
-        messages.addMessage(f"Selesai! Output tersimpan di: {out_fc}")
-        return
+        # Logika Seleksi Layer Asal
+        if len(anomaly_oids) == 0:
+            arcpy.management.SelectLayerByAttribute(in_fc, "CLEAR_SELECTION")
+            messages.addMessage("Tidak ada anomali. Menghapus seleksi (jika ada).")
+        else:
+            messages.addMessage("Menyeleksi bidang anomali pada layer asal...")
+            # Membuat format String untuk SQL IN Statement: misal "1, 5, 10, 15"
+            oid_list_str = ",".join(map(str, anomaly_oids))
+            selection_query = f"{oid_field} IN ({oid_list_str})"
             
+            # Melakukan seleksi ke layer asli pengguna
+            arcpy.management.SelectLayerByAttribute(in_fc, "NEW_SELECTION", selection_query)
+            messages.addMessage(f"Selesai! Fitur anomali berhasil diseleksi.")
+
+        # Bersihkan layer temp
+        if arcpy.Exists(temp_layer):
+            arcpy.management.Delete(temp_layer)
+
+        return           
 class Hitung_Individual_Cluster(object):
 
     def __init__(self):

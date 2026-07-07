@@ -21,7 +21,7 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Hitung_Indeks_Rata_Rata, Hitung_Nilai_Prediksi]
+        self.tools = [Hitung_Indeks_Rata_Rata, Hitung_Nilai_Prediksi, Hitung_Harga_Menyebar]
 
 
 class Hitung_Indeks_Rata_Rata(object):
@@ -1092,6 +1092,423 @@ def doSomething(
 
         return
     
+class Hitung_Harga_Menyebar(object):
+
+    def __init__(self):
+        self.label = "Hitung Harga Menyebar"
+        self.description = "Mengubah zonasi dan kelas jalan pada persil terseleksi, sekaligus menghitung ulang NILAIBD_LAMA menggunakan perbandingan dinamis."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+
+        pilih_zona = arcpy.Parameter(
+            displayName="Pilih Zonasi",
+            name="pilih_zona",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        edit_kelas_jalan = arcpy.Parameter(
+            displayName="Edit Kelas Jalan",
+            name="edit_kelas_jalan",
+            datatype="GPBoolean",
+            parameterType="Required",
+            direction="Input"
+        )
+        edit_kelas_jalan.value = False
+
+        pilih_kelas_jalan = arcpy.Parameter(
+            displayName="Pilih Kelas Jalan",
+            name="pilih_kelas_jalan",
+            datatype="GPString",
+            parameterType="Optional", 
+            direction="Input"
+        )
+        pilih_kelas_jalan.filter.type = "ValueList"
+        pilih_kelas_jalan.filter.list = [
+            "Arteri Primer", "Arteri Sekunder", "Kolektor Primer",
+            "Kolektor Sekunder", "Lokal Primer", "Lokal Sekunder", "Setapak"
+        ]
+
+        # Parameter Baru: Jarak Maksimal
+        max_jarak = arcpy.Parameter(
+            displayName="Jarak Maksimal Pencarian Pembanding (Meter)",
+            name="max_jarak",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input"
+        )
+        max_jarak.value = 200
+
+        simpan_sebagai_perubahan = arcpy.Parameter(
+            displayName="Simpan Sebagai Perubahan",
+            name="simpan_sebagai_perubahan",
+            datatype="GPBoolean",
+            parameterType="Required",
+            direction="Input"
+        )
+        simpan_sebagai_perubahan.value = True
+
+        output_data = arcpy.Parameter(
+            name="persil_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [pilih_zona, edit_kelas_jalan, pilih_kelas_jalan, max_jarak, simpan_sebagai_perubahan, output_data]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        if parameters[1].value:
+            parameters[2].enabled = True
+        else:
+            parameters[2].enabled = False
+
+        if parameters[0].altered:
+            return
+
+        try:
+            configs = persil.get_config_values()
+            zonasi_config_path = os.path.join(configs["project_config"]["ws_path"], "zonasiupdate.json")
+            if not os.path.exists(zonasi_config_path):
+                return
+
+            with open(zonasi_config_path, "r", encoding="utf-8") as f:
+                zonasi_json = json.load(f)
+            
+            parameters[0].filter.type = "ValueList"
+            parameters[0].filter.list = list(zonasi_json.keys())
+        except:
+            pass
+        return
+
+    def updateMessages(self, parameters):
+        if parameters[1].value and not parameters[2].valueAsText:
+            parameters[2].setErrorMessage("Pilih Kelas Jalan harus diisi jika Edit Kelas Jalan dicentang.")
+        else:
+            parameters[2].clearMessage()
+        return
+
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+        field_names = [field.name for field in arcpy.ListFields(feature_class)]
+        if field_name not in field_names:
+            arcpy.management.AddField(feature_class, field_name, field_type)
+
+    def delete_if_exists(self, path):
+        if arcpy.Exists(path):
+            try:
+                arcpy.management.Delete(path)
+            except Exception:
+                pass
+
+    def calculate_penyesuaian(self, objek, pembanding):
+        ls_tnh = (objek["ls_tnh_i"] - pembanding["ls_tnh_i"]) * 0.5
+        lb_dpn = (objek["lb_dpn_i"] - pembanding["lb_dpn_i"]) * 1.5
+        bentuk = (objek["s_bentuk"] - pembanding["s_bentuk"]) * 1.5
+        letak = (objek["s_letak"] - pembanding["s_letak"]) * 1
+        kls_jln = (objek["s_kls_jln"] - pembanding["s_kls_jln"]) * 3
+
+        persentase = abs(ls_tnh + lb_dpn + bentuk + letak + kls_jln)
+        nilai = pembanding["nilai"] * (100 + persentase) / 100
+
+        komponen = [ls_tnh, lb_dpn, bentuk, letak, kls_jln]
+        nilai_nol = komponen.count(0)
+
+        return {
+            "persentase": persentase,
+            "nilai": nilai,
+            "nilai_nol": nilai_nol
+        }
+
+    def execute(self, parameters, messages):
+        messages.addMessage("== Proses dimulai ==")
+
+        zonasi = parameters[0].valueAsText
+        is_edit_kls_jln = parameters[1].value
+        kls_jln = parameters[2].valueAsText
+        max_jarak = parameters[3].value
+        simpan_sebagai_data_baru = parameters[4].value
+        interval = 20 
+
+        configs = persil.get_config_values()
+
+        # Ambil config zonasi
+        zonasi_config_path = os.path.join(configs["project_config"]["ws_path"], "zonasiupdate.json")
+        if not os.path.exists(zonasi_config_path):
+            messages.addErrorMessage("== File konfigurasi zonasi tidak ditemukan ==")
+            raise arcpy.ExecuteError
+
+        with open(zonasi_config_path, "r", encoding="utf-8") as f:
+            zonasi_json = json.load(f)
+
+        if zonasi not in zonasi_json:
+            messages.addErrorMessage(f"== Zonasi '{zonasi}' tidak ditemukan ==")
+            raise arcpy.ExecuteError
+
+        s_zonasi = zonasi_json[zonasi].get("s_zonasi",  0)
+        min_lb_jln = zonasi_json[zonasi].get("min_lb_jln", 1.5)
+
+        # Ambil config kelas jalan
+        s_kls_jln = 0
+        if is_edit_kls_jln:
+            if not kls_jln:
+                messages.addErrorMessage("== Kelas Jalan belum dipilih ==")
+                raise arcpy.ExecuteError
+            try:
+                kelas_jalan_config = configs["jaringan_jalan_config"]["skoring"]["kelas_jalan"]
+                s_kls_jln = kelas_jalan_config.get(kls_jln, 0)
+            except KeyError:
+                messages.addErrorMessage("== Key konfigurasi kelas jalan tidak ditemukan ==")
+                raise arcpy.ExecuteError
+
+        dataset_path = configs["project_config"]["dataset_path"]
+        persil_edit = "Persil_Layer"
+        persil_edit_path = os.path.join(dataset_path, persil_edit)
+
+        # Siapkan Field
+        self.add_field_if_not_exists(persil_edit_path, "min_lb_jln", "DOUBLE")
+        self.add_field_if_not_exists(persil_edit_path, "data_pembanding", "TEXT")
+        self.add_field_if_not_exists(persil_edit_path, "perubahan", "TEXT")
+
+        required_fields = [
+            "OBJECTID", "ZONASI", "S_ZONASI", "min_lb_jln", "status_per", "KLSJLN", "S_KLS_JLN",
+            "NILAIBD_LAMA", "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG",
+            "perubahan", "data_pembanding"
+        ]
+
+        persil_fields = [f.name for f in arcpy.ListFields(persil_edit_path)]
+        missing_fields = [f for f in required_fields if f not in persil_fields]
+        if missing_fields:
+            messages.addErrorMessage(f"== Field berikut tidak ditemukan: {', '.join(missing_fields)} ==")
+            raise arcpy.ExecuteError
+
+        ada_seleksi = len(arcpy.Describe(persil_edit).FIDSet)
+        if ada_seleksi == 0:
+            messages.addErrorMessage("== Error: Tidak ada fitur persil yang terseleksi di Persil_Layer ==")
+            raise arcpy.ExecuteError
+
+        # =========================================================
+        # 1. BACA DATA TARGET DAN KANDIDAT PEMBANDING KE MEMORI
+        # =========================================================
+        target_dict = {}
+        target_oids = []
+        
+        messages.addMessage("Membaca target fitur yang terseleksi...")
+        # SearchCursor pada persil_edit (layer di Peta) otomatis hanya mengambil yang terseleksi
+        with arcpy.da.SearchCursor(persil_edit, ["OBJECTID", "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG", "S_KLS_JLN"]) as rows:
+            for row in rows:
+                target_oids.append(row[0])
+                target_dict[row[0]] = {
+                    "OBJECTID": row[0],
+                    "s_zonasi": s_zonasi, # Memakai nilai parameter user
+                    "s_kls_jln": s_kls_jln if is_edit_kls_jln else (row[6] or 0), 
+                    "ls_tnh_i": row[1] or 0,
+                    "lb_dpn_i": row[2] or 0,
+                    "s_bentuk": row[3] or 0,
+                    "s_letak": row[4] or 0,
+                    "IDBIDANG": row[5]
+                }
+
+        pembanding_dict = {}
+        messages.addMessage("Membaca data referensi pembanding...")
+        # SearchCursor pada persil_edit_path (jalur GDB) mengambil seluruh data untuk pembanding
+        fields_kandidat = ["OBJECTID", "S_ZONASI", "S_KLS_JLN", "NILAIBD_LAMA", "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG"]
+        with arcpy.da.SearchCursor(persil_edit_path, fields_kandidat, "perubahan IS NULL AND NILAIBD_LAMA > 0") as rows:
+            for row in rows:
+                if row[0] not in target_oids:
+                    pembanding_dict[row[0]] = {
+                        "OBJECTID": row[0],
+                        "s_zonasi": row[1],
+                        "s_kls_jln": row[2] or 0,
+                        "nilai": row[3],
+                        "ls_tnh_i": row[4] or 0,
+                        "lb_dpn_i": row[5] or 0,
+                        "s_bentuk": row[6] or 0,
+                        "s_letak": row[7] or 0,
+                        "IDBIDANG": row[8]
+                    }
+
+        if not pembanding_dict:
+            messages.addWarningMessage("Tidak ada kandidat pembanding valid di dalam database.")
+
+        # =========================================================
+        # 2. PROSES NEAR TABLE DINAMIS
+        # =========================================================
+        target_layer = "target_layer_temp"
+        kandidat_layer = "kandidat_layer_temp"
+        near_table = "memory\\bulk_near_table" 
+
+        self.delete_if_exists(kandidat_layer)
+        arcpy.management.MakeFeatureLayer(persil_edit_path, kandidat_layer, "perubahan IS NULL AND NILAIBD_LAMA IS NOT NULL AND NILAIBD_LAMA > 0")
+
+        unresolved_targets = set(target_oids)
+        dict_hasil_hitung = {}
+        jumlah_pembanding = 3
+
+        interval_list = list(range(interval, max_jarak + interval, interval))
+        if interval_list[-1] > max_jarak:
+            interval_list[-1] = max_jarak
+        
+        messages.addMessage("Melakukan perhitungan nilai dengan pencarian jarak dinamis...")
+
+        for jarak_sekarang in interval_list:
+            if not unresolved_targets:
+                break 
+
+            messages.addMessage(f"Mencari kandidat pada radius {jarak_sekarang} meter... (Sisa Target: {len(unresolved_targets)})")
+
+            target_oids_str = ",".join(map(str, unresolved_targets))
+            target_where = f"OBJECTID IN ({target_oids_str})"
+            
+            self.delete_if_exists(target_layer)
+            self.delete_if_exists(near_table)
+            arcpy.management.MakeFeatureLayer(persil_edit_path, target_layer, target_where)
+
+            arcpy.analysis.GenerateNearTable(
+                in_features=target_layer,
+                near_features=kandidat_layer,
+                out_table=near_table,
+                search_radius=f"{jarak_sekarang} Meters",
+                location="NO_LOCATION",
+                angle="NO_ANGLE",
+                closest="ALL"
+            )
+
+            near_results = {}
+            if arcpy.Exists(near_table):
+                with arcpy.da.SearchCursor(near_table, ["IN_FID", "NEAR_FID", "NEAR_DIST"]) as rows:
+                    for in_fid, near_fid, near_dist in rows:
+                        if in_fid not in near_results:
+                            near_results[in_fid] = []
+                        near_results[in_fid].append((near_fid, near_dist))
+
+            max_jarak_safe = max_jarak if max_jarak > 0 else 1
+
+            for target_oid in list(unresolved_targets):
+                objek = target_dict[target_oid]
+                kandidat_list = near_results.get(target_oid, [])
+                hasil_rekomendasi = []
+
+                for near_fid, jarak in kandidat_list:
+                    if near_fid in pembanding_dict:
+                        pembanding = pembanding_dict[near_fid]
+                        if objek['s_zonasi'] == pembanding['s_zonasi']:
+                            hasil = self.calculate_penyesuaian(objek, pembanding)
+                            
+                            if abs(hasil["persentase"]) > 10:
+                                continue 
+                            
+                            skor_jarak = (jarak / max_jarak_safe) * 100 
+                            skor_persentase = abs(hasil["persentase"])
+                            skor_pemilihan = (skor_jarak * 0.70) + (skor_persentase * 0.30)
+                            
+                            hasil_rekomendasi.append({
+                                "OBJECTID": near_fid,
+                                "jarak": round(jarak, 2),
+                                "skor_pemilihan": skor_pemilihan, 
+                                "nilai_nol": hasil["nilai_nol"],
+                                "data_hasil": hasil 
+                            })
+
+                hasil_rekomendasi.sort(key=lambda x: (x["skor_pemilihan"], -x["nilai_nol"], x["jarak"]))
+                is_last_interval = (jarak_sekarang == interval_list[-1])
+                
+                if len(hasil_rekomendasi) >= jumlah_pembanding:
+                    rekomendasi_final = hasil_rekomendasi[:jumlah_pembanding]
+                    validasi_berhasil = True
+                    hasil_list = []
+                    id_pembanding_list = []
+
+                    for rec in rekomendasi_final:
+                        hasil = rec["data_hasil"]
+                        if hasil["persentase"] > 10:
+                            validasi_berhasil = False
+                            break
+                        hasil_list.append(hasil)
+                        id_pembanding_list.append(str(rec['OBJECTID']))
+
+                    if validasi_berhasil:
+                        total_nol = sum(h["nilai_nol"] for h in hasil_list)
+                        nilai_akhir = 0
+
+                        if total_nol > 0:
+                            for h in hasil_list:
+                                bobot = (h["nilai_nol"] / total_nol) 
+                                nilai_akhir += h["nilai"] * bobot
+                        else:
+                            bobot_rata = 1.0 / len(hasil_list)
+                            for h in hasil_list:
+                                nilai_akhir += h["nilai"] * bobot_rata
+
+                        dict_hasil_hitung[target_oid] = {
+                            "data_pembanding": " ; ".join(id_pembanding_list),
+                            "nilai_akhir": nilai_akhir
+                        }
+                        unresolved_targets.remove(target_oid)
+                else:
+                    if is_last_interval:
+                        arcpy.AddWarning(f"IDBIDANG {objek['IDBIDANG']} dilewati (Pembanding valid kurang dari {jumlah_pembanding}). Nilai persil ini tidak akan dihitung.")
+
+        self.delete_if_exists(target_layer)
+        self.delete_if_exists(kandidat_layer)
+        self.delete_if_exists(near_table)
+
+        # =========================================================
+        # 3. UPDATE SELURUH ATRIBUT KE PERSIL_LAYER
+        # =========================================================
+        messages.addMessage("== Menyimpan seluruh pembaruan zonasi, jalan, dan hasil perhitungan ke layer ==")
+
+        update_fields = [
+            "OBJECTID", "ZONASI", "S_ZONASI", "min_lb_jln", "status_per", 
+            "NILAIBD_LAMA", "data_pembanding", "perubahan"
+        ]
+        
+        if is_edit_kls_jln:
+            update_fields.extend(["KLSJLN", "S_KLS_JLN"])
+
+        # Update Cursor hanya memengaruhi data terseleksi
+        with arcpy.da.UpdateCursor(persil_edit, update_fields) as rows:
+            for row in rows:
+                oid = row[0]
+
+                # Update Parameter Zonasi
+                row[1] = zonasi
+                row[2] = s_zonasi
+                row[3] = min_lb_jln
+
+                if simpan_sebagai_data_baru:
+                    row[4] = "update"
+                    row[7] = "individual"
+
+                # Masukkan hasil hitung jika oid ditemukan di dictionary hasil
+                if oid in dict_hasil_hitung:
+                    row[5] = dict_hasil_hitung[oid]["nilai_akhir"]
+                    row[6] = dict_hasil_hitung[oid]["data_pembanding"]
+
+                # Update Parameter Kelas Jalan
+                if is_edit_kls_jln:
+                    row[8] = kls_jln
+                    row[9] = s_kls_jln
+                
+                rows.updateRow(row)
+
+        messages.addMessage("== Proses selesai ==")
+        
+        simbology_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Zonasi_Persil_Layer.lyrx"
+        arcpy.management.MakeFeatureLayer(persil_edit_path, "Persil_Layer")
+        try:
+            arcpy.management.ApplySymbologyFromLayer("Persil_Layer", simbology_path)
+        except Exception as e:
+            messages.addWarningMessage(f"== Peringatan Simbologi: {str(e)} ==")
+
+        # Indeks set parameter adalah 5 (sesuai urutan output_data)
+        arcpy.SetParameter(5, "Persil_Layer")
+        
+        return
 
 # DUMP
 class Hitung_Indeks_Rata_Rata_OLD(object):

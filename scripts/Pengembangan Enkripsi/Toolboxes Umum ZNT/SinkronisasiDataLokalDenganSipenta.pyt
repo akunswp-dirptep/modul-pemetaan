@@ -56,6 +56,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             datatype="GPString",
             parameterType="Required",
             direction="Input")
+        
         data_yang_disinkronisasi = arcpy.Parameter(
             displayName="Pilih Data yang Disinkronisasi",
             name="data_type",

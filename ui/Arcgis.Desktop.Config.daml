@@ -472,6 +472,7 @@
 				<menu id="pengolahan_pembaruan_nbt" caption="Pengolahan NBT" extendedCaption="Pengolahan NBT" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\perhitungan_nbt.png"
 					smallImage="C:\PenilaianTanah\icons\perhitungan_nbt.png">
+					<button refID='ButtonHitungHargaMenyebar' />
 					<button refID='ButtonPeriksaTitikSampelKelompokPerubahan' />
 					<button refID='ButtonHitungStatistikCluster' />
 					<button refID='ButtonHitungIndeksRataRata' />
@@ -2655,6 +2656,14 @@
 				</args>
 				<tooltip heading="Periksa Titik Sampel Kelompok">Menu untuk memeriksa jumlah titik sampel pada setiap kelompok perubahan.</tooltip>
 				</button>
+
+				<button id="ButtonHitungHargaMenyebar" caption="Hitung Harga Menyebar" smallImage="C:\PenilaianTanah\icons\calculator.png" largeImage="C:\PenilaianTanah\icons\calculator.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<args>
+					<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PengolahanNBT.pyt\Hitung_Harga_Menyebar" name="Hitung Harga Menyebar" xmlns=""/>
+				</args>
+				<tooltip heading="Hitung Harga Menyebar">Menu untuk menghitung harga menyebar.</tooltip>
+				</button>
+
 				<button
 					id="ButtonHitungStatistikCluster"
 					caption="Hitung Nilai Tanah Kelompok"

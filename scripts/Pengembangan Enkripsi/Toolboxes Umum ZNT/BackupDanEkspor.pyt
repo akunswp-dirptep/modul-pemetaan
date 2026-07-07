@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-import sys
+import sys, requests
 import arcpy, os, zipfile
 import time
 
@@ -14,6 +14,8 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
 from zntutils import zona_layer as zonalayer
+from zntutils.system_utils import get_user_data, setup_user_data, get_all_berkas_id, clear_user_data
+from zntutils.constant import PREFERRED_BERKAS_ID, AUTH_KEY, CREDENTIAL_KEY, PREFERRED_SERVER_KEY
 
 arcpy.env.outputZFlag = "Disabled"  
 arcpy.env.outputMFlag = "Disabled"  
@@ -27,7 +29,7 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Ekspor_Geodatabase, Ekspor_Zona]
+        self.tools = [Ekspor_Geodatabase, Simpan_Workspace_Ke_Sipenta, Ekspor_Zona]
 
 
 class Ekspor_Geodatabase:
@@ -38,14 +40,6 @@ class Ekspor_Geodatabase:
 
     def getParameterInfo(self):
 
-        """
-        Kondisi yang harus dipenuhi oleh parameter pada tool ini:
-        1. Hanya menerima path file (DEFile) sebagai output ZIP
-        2. Filter file harus diatur untuk hanya menerima file dengan ekstensi .zip
-        """
-
-        
-        #  Pemenuhan kondisi 1: Hanya menerima path file (DEFile) sebagai output ZIP
         output_zip_file = arcpy.Parameter(
             displayName="File ZIP (.zip)",
             name="output_zip_file",
@@ -54,7 +48,6 @@ class Ekspor_Geodatabase:
             direction="Output"
         )
 
-        # Pemenuhan kondisi 2: Filter file harus diatur untuk hanya menerima file dengan ekstensi .zip
         output_zip_file.filter.list = ["zip"]
 
         params = [output_zip_file]
@@ -197,6 +190,301 @@ class Ekspor_Geodatabase:
                 time.sleep(2)
         
         return None
+
+class Simpan_Workspace_Ke_Sipenta:
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Ekspor Workspace ke Sipenta"
+        self.description = ""
+
+    def getParameterInfo(self):
+
+        berkas_list = get_all_berkas_id()
+        berkas_show = []
+        if berkas_list is not None:
+            can_show = 0
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+
+        berkas = arcpy.Parameter(
+            displayName="Berkas",
+            name="berkas",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+               
+
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+        
+        judul = arcpy.Parameter(
+            displayName="Judul",
+            name="catatan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        
+        catatan = arcpy.Parameter(
+            displayName="Catatan",
+            name="catatan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        
+        penjelasan = arcpy.Parameter(
+            displayName="Penjelasan",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
+        
+        penjelasan.value = (
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.datetime.now().year))
+
+        params = [berkas, judul, catatan, penjelasan]
+        return params
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+        berkas = parameters[0]
+        judul = parameters[1]
+        catatan = parameters[2]
+        penjelasan = parameters[3]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        # Jika belum login
+        if not is_login:
+            for param in [catatan, judul, berkas, penjelasan]:
+                param.enabled = False
+            penjelasan.enabled = True
+            return
+
+        # Jika sudah login
+        else:
+            for param in [catatan, judul, berkas, penjelasan]:
+                param.enabled = True
+
+            penjelasan.value = (
+                "Tools ini berfungsi untuk menyimpan workspace ke Sipenta.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.datetime.now().year))
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter. This method is called after internal validation."""
+        return
+
+    def execute(self, parameters, messages):
+
+        """
+        Pemenuhan kondisi yang harus dipenuhi oleh program pada tool ini:
+        1. Menyimpan file ZIP yang dihasilkan ke lokasi yang dipilih oleh pengguna melalui parameter input.
+        2. Melakukan pengecekan terlebihb dahulu apakah lokasi yang dipilih valid dan dapat diakses sebelum menyimpan file ZIP.
+        """
+
+        zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
+        ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
+
+        berkas = parameters[0].valueAsText
+        judul = parameters[1].valueAsText
+        catatan = parameters[2].valueAsText
+
+
+        if ws_dir:
+            # Pemenuhan kondisi 2: Melakukan pengecekan terlebihb dahulu apakah lokasi yang dipilih valid dan dapat diakses sebelum menyimpan file ZIP.
+            parent_dir = os.path.dirname(ws_dir)
+
+            if not os.path.exists(parent_dir) and parent_dir != "":
+                arcpy.AddError(f"Directory parent tidak ditemukan: {parent_dir}")
+            else:
+                # Pemenuhan kondisi 1: Menyimpan file ZIP yang dihasilkan ke lokasi yang dipilih oleh pengguna melalui parameter input.
+                zip_file_path = self.compress_directory_to_zip(ws_dir, ws_dir, judul)
+                
+                if zip_file_path:
+                    arcpy.AddMessage(f"Proses kompresi selesai. File ZIP: {zip_file_path}")
+                else:
+                    arcpy.AddError("Gagal mengompresi workspace setelah beberapa percobaan")
+        else:
+            arcpy.AddError("Folder tujuan tidak valid")
+
+
+        self.upload_zip_to_sipenta()
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and
+        added to the display."""
+        return
+    
+    def compress_directory_to_zip(self, source_dir, output_folder, zip_filename):
+        """
+        Mengompresi seluruh direktori menjadi file ZIP dan disimpan di folder tujuan
+        Melewati file yang terkunci oleh ArcGIS
+        
+        Parameters:
+        source_dir (str): Path direktori yang akan dikompresi
+        output_folder (str): Path folder tujuan untuk menyimpan file ZIP
+        """
+        try:
+            arcpy.AddMessage(f"Mengompresi direktori: {source_dir}")
+            arcpy.AddMessage(f"Folder tujuan: {output_folder}")
+            
+            # Pastikan folder tujuan exists
+            if not os.path.exists(output_folder):
+                os.makedirs(output_folder)
+                arcpy.AddMessage(f"Folder tujuan dibuat: {output_folder}")
+            
+            # Generate nama file ZIP berdasarkan nama folder source dan timestamp
+            source_name = os.path.basename(source_dir)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            if not zip_filename:
+                zip_filename = f"{source_name}_backup_{timestamp}.zip"
+            output_zip_path = os.path.join(output_folder, zip_filename)
+            
+            arcpy.AddMessage(f"Membuat file ZIP: {zip_filename}")
+            
+            # List file yang akan di-skip (file lock ArcGIS)
+            skip_extensions = ['.lock', '.sr.lock']
+            skip_keywords = ['.LAPTOP-', '.DESKTOP-']
+            
+            # Buat file ZIP
+            with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                # Walk melalui semua file dan subdirektori
+                for root, dirs, files in os.walk(source_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        
+                        # Skip file lock ArcGIS
+                        if any(file.endswith(ext) for ext in skip_extensions) or any(keyword in file for keyword in skip_keywords):
+
+                            continue
+                        
+                        # Skip file yang sedang digunakan/dikunci
+                        try:
+                            # Coba buka file untuk membaca (test jika file terkunci)
+                            with open(file_path, 'rb') as test_file:
+                                pass
+                                
+                            # Hitung path relatif untuk disimpan dalam ZIP
+                            arcname = os.path.relpath(file_path, source_dir)
+                            zipf.write(file_path, arcname)
+                            
+                        except (PermissionError, IOError) as e:
+                            arcpy.AddWarning(f"  Tidak dapat mengakses file (mungkin terkunci): {file} - {str(e)}")
+                            continue
+                        except Exception as e:
+                            arcpy.AddWarning(f"  Error pada file {file}: {str(e)}")
+                            continue
+
+            return output_zip_path
+            
+        except Exception as e:
+            arcpy.AddError(f"Error dalam kompresi ZIP: {str(e)}")
+            return None
+
+    def compress_with_retry(self, source_dir, output_folder, zip_filename, max_retries=3):
+        """
+        Mencoba kompresi dengan beberapa kali retry jika ada file terkunci
+        """
+        for attempt in range(max_retries):
+            arcpy.AddMessage(f"Percobaan kompresi ke-{attempt + 1}")
+            
+            result = self.compress_directory_to_zip(source_dir, output_folder, zip_filename)
+            if result:
+                return result
+            
+            if attempt < max_retries - 1:
+                arcpy.AddMessage(f"Menunggu 2 detik sebelum mencoba lagi...")
+                time.sleep(2)
+        
+        return None
+
+    def upload_zip_to_sipenta(nomor_berkas, token, judul, zip_path, catatan, use_production=True):
+        
+        zipname = os.path.basename(zip_path)
+        try:
+            arcpy.AddMessage('Mengupload file ke server...')
+            test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/workspace"
+            prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/workspace"
+            url = prod_url if use_production else test_url
+
+            headers = {
+                    "Authorization": f"Bearer {token}"
+                }
+
+            data = {
+                    "no_berkas": f'{nomor_berkas}',
+                    "judul": f'{judul}',
+                    "catatan": f'{catatan}',
+                }
+
+            with open(zip_path, "rb") as zip_file:
+                files = {
+                        "file": (
+                            zipname,
+                            zip_file,
+                            "application/zip"
+                        )
+                    }
+
+                response = requests.post(
+                        url,
+                        headers=headers,
+                        data=data,
+                        files=files
+                    )
+                response.raise_for_status()  # Raise an exception for HTTP errors
+                if response.status_code == 200:
+                    arcpy.AddMessage("Workspace berhasil disimpan ke modul tatausaha sipenta.")
+
+        except requests.RequestException as e:
+                arcpy.AddError(f"Error saat upload wokspace: {str(e)}")
+                
+        except requests.exceptions.HTTPError as e:
+            # Ambil response dari exception
+                response = e.response
+
+                try:
+                    error_json = response.json()
+                    message = error_json.get("message", "")
+                except Exception:
+                    message = ""
+
+                # Handle khusus token expired
+                if response.status_code == 403 and "expired" in message.lower():
+                    clear_user_data()
+                    raise Exception("Token Anda kadaluarsa, silakan login ulang.")
+
+                # Handle forbidden biasa
+                elif response.status_code == 403:
+                    raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
+
+                else:
+                    raise Exception(f"HTTP Error: {e}")
+        return
 
 class Ekspor_Zona:
     def __init__(self):

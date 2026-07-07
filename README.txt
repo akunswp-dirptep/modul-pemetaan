@@ -1,7 +1,4 @@
-Version: 6.1.1 - Balikpapan
+Version: 6.1.2 - Balikpapan
 
-Penambahan Nama Kota/Kabupaten:
- - Lebak
- - Banjarnegara
- - Barito Kuala
- - Lembata
+Penambahan Fitur Uji Coba
+ - Hitung Harga Menyebar

@@ -21,7 +21,7 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
         os.makedirs(path)
     except Exception as e:
         arcpy.AddError(f"Terdapat kesalahan saat membuat folder sementara: {str(e)}")
-        return
+        return None
 
     shapefile_base = os.path.splitext(shapefile_path)[0]
     extensions = [".shp", ".shx", ".dbf", ".prj", ".cpg", ".shp.xml", ".sbn", ".sbx"]
@@ -29,7 +29,7 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
 
     if not shapefile_components:
         arcpy.AddError("Komponen shapefile tidak ditemukan untuk di-zip.")
-        return
+        return None
 
     try:
         zipname = os.path.join(path, in_feature + ".zip")
@@ -38,8 +38,9 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
                 zipf.write(file, basename(file))
     except Exception as e:
         arcpy.AddError(f"Terdapat kesalahan saat membuat file zip: {str(e)}")
-        return
+        return None
 
+    # --- BLOK REQUEST DAN ERROR HANDLING DIGABUNG DI SINI ---
     try:
         arcpy.AddMessage('Mengupload file ke server...')
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload"
@@ -47,58 +48,71 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
         url = prod_url if use_production else test_url
 
         headers = {
-                "Authorization": f"Bearer {token}"
-            }
-
+            "Authorization": f"Bearer {token}"
+        }
         data = {
-                "no_berkas": f'{nomor_berkas}',
-                "param": f'{param}'
-            }
+            "no_berkas": f'{nomor_berkas}',
+            "param": f'{param}'
+        }
 
         with open(zipname, "rb") as zip_file:
             files = {
-                    "file": (
-                        in_feature + '.zip',
-                        zip_file,
-                        "application/zip"
-                    )
-                }
+                "file": (
+                    in_feature + '.zip',
+                    zip_file,
+                    "application/zip"
+                )
+            }
 
             response = requests.post(
-                    url,
-                    headers=headers,
-                    data=data,
-                    files=files
-                )
-            response.raise_for_status()  # Raise an exception for HTTP errors
-            if response.status_code == 200:
-                arcpy.AddMessage("File berhasil diupload ke modul tatausaha sipenta.")
-
-    except requests.RequestException as e:
-            arcpy.AddError(f"Error during file upload: {str(e)}")
+                url,
+                headers=headers,
+                data=data,
+                files=files
+            )
             
+            # Wajib dipanggil untuk memicu exception jika status 4xx/5xx
+            response.raise_for_status() 
+            
+            # Jika lolos dari raise_for_status, berarti sukses (200 OK)
+            arcpy.AddMessage("File berhasil diupload ke modul tatausaha sipenta.")
+            return response.json()
+
+    # 1. Tangkap HTTPError (403, 404, 500, dll) DULUAN
     except requests.exceptions.HTTPError as e:
-        # Ambil response dari exception
-            response = e.response
+        response = e.response
+        
+        # Ambil JSON
+        try:
+            error_json = response.json()
+            message = error_json.get("message", "")
+        except ValueError:
+            message = ""
 
-            try:
-                error_json = response.json()
-                message = error_json.get("message", "")
-            except Exception:
-                message = ""
-
-            # Handle khusus token expired
-            if response.status_code == 403 and "expired" in message.lower():
-                clear_user_data()
-                raise Exception("Token Anda kadaluarsa, silakan login ulang.")
-
-            # Handle forbidden biasa
-            elif response.status_code == 403:
-                raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
-
+        # Handle khusus 403
+        if response.status_code == 403:
+            if "expired" in message.lower():
+                # clear_user_data() 
+                arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
             else:
-                raise Exception(f"HTTP Error: {e}")
-    return
+                error_message = message if message else "Periksa hak akses atau token."
+                # Tampilkan pesan spesifik dari JSON server
+                arcpy.AddError(f"Akses ditolak (403). Pesan: {error_message}")
+        else:
+            # Jika HTTP error lain (misal 500 Internal Server Error)
+            arcpy.AddError(f"HTTP Error: {e}")
+            
+    # 2. Tangkap error Request secara umum (misal koneksi putus/timeout)
+    except requests.RequestException as e:
+        arcpy.AddError(f"Error koneksi ke server: {str(e)}")
+        
+    # 3. Tangkap error Python lainnya
+    except Exception as e:
+        arcpy.AddError(f"Error umum saat upload: {str(e)}")
+        
+    # Jika gagal (masuk except), kembalikan None
+    return None
+
 
 def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feature_layer, use_production=True):
     zipname = None
@@ -227,12 +241,17 @@ def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feat
 
         # Forbidden
         elif response.status_code == 403:
+            # Mencoba mem-parsing respons JSON
+            try:
+                error_data = response.json()
+                # Mengambil nilai dari 'message', beri nilai default jika tidak ditemukan
+                error_message = error_data.get("message", "Periksa hak akses atau token.")
+            except ValueError:
+                # Fallback jika respons ternyata bukan JSON yang valid
+                error_message = "Periksa hak akses atau token."
 
-            raise Exception(
-                "Akses ditolak (403). "
-                "Periksa hak akses atau token."
-            )
-
+            raise Exception(f"Akses ditolak (403). Pesan: {error_message}")
+        
         # Error Lain
         else:
 
@@ -351,13 +370,17 @@ def upload_json_data_to_sipenta(nomor_berkas, token, param, in_feature, json_dat
                 "silakan login ulang."
             )
 
-        # Forbidden
         elif response.status_code == 403:
+            # Mencoba mem-parsing respons JSON
+            try:
+                error_data = response.json()
+                # Mengambil nilai dari 'message', beri nilai default jika tidak ditemukan
+                error_message = error_data.get("message", "Periksa hak akses atau token.")
+            except ValueError:
+                # Fallback jika respons ternyata bukan JSON yang valid
+                error_message = "Periksa hak akses atau token."
 
-            raise Exception(
-                "Akses ditolak (403). "
-                "Periksa hak akses atau token."
-            )
+            raise Exception(f"Akses ditolak (403). Pesan: {error_message}")
 
         # Error Lain
         else:

@@ -107,8 +107,6 @@ class Cek_Topologi(object):
         current_map.addDataFromPath(topologi_path)
         return
 
-
-
 class Tampilkan_Simbologi_Pembagian_Kelas(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""

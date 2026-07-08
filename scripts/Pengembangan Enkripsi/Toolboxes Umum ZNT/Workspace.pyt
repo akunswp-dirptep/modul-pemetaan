@@ -560,9 +560,11 @@ class Unduh_Workspace(object):
         self._cached_api_data = None
 
     def getParameterInfo(self):
+        # 1. Mendapatkan daftar berkas
         berkas_list = get_all_berkas_id()
         berkas_show = []
-        if berkas_list is not None:
+        
+        if berkas_list:
             can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
@@ -573,6 +575,7 @@ class Unduh_Workspace(object):
         else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
+        # 2. Definisi Parameter
         nomor_berkas = arcpy.Parameter(
             displayName="Nomor Berkas",
             name="nomor_berkas",
@@ -580,10 +583,10 @@ class Unduh_Workspace(object):
             parameterType="Required",
             direction="Input"
         )
-
         nomor_berkas.filter.type = "ValueList"
         nomor_berkas.filter.list = berkas_show
 
+        # Set default value untuk nomor_berkas
         if berkas_list:
             preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
             nomor_berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
@@ -625,76 +628,114 @@ class Unduh_Workspace(object):
             direction="Output"
         )
 
-        return [nomor_berkas, created_by, pilihan_waktu, output_path, output_zl_path]
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        penjelasan.value = (
+            "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+            "Kementerian ATR/BPN.\n"
+            f"Tahun: {datetime.now().year}\n"
+        )
+
+        return [nomor_berkas, created_by, pilihan_waktu, output_path, output_zl_path, penjelasan]
 
     def isLicensed(self):
         return True
 
     def updateParameters(self, parameters):
-        nomor_berkas_param = parameters[0]
-        nomor_berkas_val = nomor_berkas_param.valueAsText
-        
-        # Bypass eksekusi jika nomor berkas kosong/belum dipilih
-        if not nomor_berkas_val:
-            parameters[1].filter.list = []
-            parameters[2].filter.list = []
-            self._cached_nomor_berkas = None
-            self._cached_api_data = None
-            return
+        nomor_berkas = parameters[0]
+        created_by = parameters[1]
+        pilihan_waktu = parameters[2]
+        output_path = parameters[3]
+        penjelasan = parameters[5]
 
-        user_data = get_user_data(CREDENTIAL_KEY)
-        server = get_user_data(PREFERRED_SERVER_KEY)
-        use_production = True if server == "Produksi" or server is None else False
-        token = user_data.get(AUTH_KEY, None)
-        
-        # 1. Cek apakah nomor_berkas benar-benar berubah
-        if nomor_berkas_val != self._cached_nomor_berkas:
-            
-            # Reset dropdown dependent jika ini bukan inisialisasi awal
-            if self._cached_nomor_berkas is not None:
-                parameters[1].value = None
-                parameters[2].value = None
-            
-            try:
-                # Pastikan mengirim nomor_berkas_val (string), bukan object parameter
-                response_data = self.call_sipenta_api(token, nomor_berkas_val, use_production)
-                
-                if response_data and response_data.get("success"):
-                    self._cached_api_data = response_data.get("data", [])
-                else:
-                    self._cached_api_data = []
-            except Exception:
-                self._cached_api_data = [] # Silent fail di updateParameters agar UI tidak error
-            
-            # Perbarui cache dengan nomor berkas yang baru ditarik datanya
-            self._cached_nomor_berkas = nomor_berkas_val
+        # 1. Cek Status Login
+        is_login = get_user_data(CREDENTIAL_KEY)
 
-        # 2. Update Dropdown 'created_by' berdasarkan data di cache
-        if self._cached_api_data:
-            unique_creators = list(set([item['created_by'] for item in self._cached_api_data if item.get('created_by')]))
-            parameters[1].filter.list = sorted(unique_creators)
-            
-            # 3. Update Dropdown 'pilihan_waktu' berdasarkan pilihan 'created_by'
-
-            selected_creator = parameters[1].valueAsText
-            if selected_creator:
-                timestamps_local = []
-                for item in self._cached_api_data:
-                    if item.get('created_by') == selected_creator:
-                        # Konversi waktu JSON (UTC) ke Lokal sebelum dimasukkan ke dropdown
-                        local_time = self.utc_to_local_string(item.get('created_at'))
-                        timestamps_local.append(local_time)
-                
-                parameters[2].filter.list = sorted(timestamps_local, reverse=True) # Waktu terbaru di atas
-            else:
-                parameters[2].filter.list = []
-                if parameters[2].valueAsText is not None:
-                    parameters[2].value = None
+        if is_login is None:
+            nomor_berkas.enabled = False
+            created_by.enabled = False
+            pilihan_waktu.enabled = False
+            output_path.enabled = False
+            penjelasan.enabled = True
         else:
-            parameters[1].filter.list = []
-            parameters[2].filter.list = []
+            nomor_berkas.enabled = True
+            created_by.enabled = True
+            pilihan_waktu.enabled = True
+            output_path.enabled = True
+            penjelasan.value = (
+                "Buat Folder baru untuk menghindari menimpa workspace\n"
+                "yang sudah ada.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                f"Tahun: {datetime.now().year}\n"
+            )
 
-        return
+            nomor_berkas_val = nomor_berkas.valueAsText
+            
+            if not nomor_berkas_val:
+                created_by.filter.list = []
+                pilihan_waktu.filter.list = []
+                self._cached_nomor_berkas = None
+                self._cached_api_data = None
+                return
+
+            user_data = get_user_data(CREDENTIAL_KEY)
+            server = get_user_data(PREFERRED_SERVER_KEY)
+            use_production = True if server in ["Produksi", None] else False
+            token = user_data.get(AUTH_KEY, None)
+            
+            if nomor_berkas_val != self._cached_nomor_berkas:
+                
+                # Reset dropdown dependent jika ini bukan inisialisasi awal
+                if self._cached_nomor_berkas is not None:
+                    created_by.value = None
+                    pilihan_waktu.value = None
+                
+                try:
+                    # Memanggil API dengan nomor_berkas_val
+                    response_data = self.call_sipenta_api(token, nomor_berkas_val, use_production)
+                    
+                    if response_data and response_data.get("success"):
+                        self._cached_api_data = response_data.get("data", [])
+                    else:
+                        self._cached_api_data = []
+                except Exception:
+                    # Silent fail di updateParameters agar UI tidak error
+                    self._cached_api_data = [] 
+                
+                # Perbarui cache dengan nomor berkas yang baru ditarik
+                self._cached_nomor_berkas = nomor_berkas_val
+
+            if self._cached_api_data:
+                unique_creators = list(set(
+                    [item['created_by'] for item in self._cached_api_data if item.get('created_by')]
+                ))
+                created_by.filter.list = sorted(unique_creators)
+                
+                selected_creator = created_by.valueAsText
+                if selected_creator:
+                    timestamps_local = []
+                    for item in self._cached_api_data:
+                        if item.get('created_by') == selected_creator:
+                            # Konversi waktu JSON (UTC) ke Lokal sebelum dimasukkan ke dropdown
+                            local_time = self.utc_to_local_string(item.get('created_at'))
+                            timestamps_local.append(local_time)
+                    
+                    # Waktu terbaru di urutan atas
+                    pilihan_waktu.filter.list = sorted(timestamps_local, reverse=True) 
+                else:
+                    pilihan_waktu.filter.list = []
+                    if pilihan_waktu.valueAsText is not None:
+                        pilihan_waktu.value = None
+            else:
+                created_by.filter.list = []
+                pilihan_waktu.filter.list = []  
     def updateMessages(self, parameters):
         return
 

@@ -82,17 +82,35 @@ class Tambah_Citra_Basemap(object):
 
         if not file_citra.lower().endswith(('.tif', '.tiff')):
             raise arcpy.ExecuteError("File harus berformat TIF.")
-
-        config_dan_paths = get_config_values()
-        simbology_path = os.path.join(config_dan_paths['symbology_folder'], "Simbologi_Jenis_Zona.lyrx")
+        
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        active_map = aprx.activeMap
 
         zl = "Zona_Layer"
 
-        arcpy.SetParameter(1, file_citra)
-        arcpy.management.MakeFeatureLayer(config_dan_paths['zl_path'], zl)
-        arcpy.management.ApplySymbologyFromLayer(zl, simbology_path)
-        arcpy.SetParameter(2, zl)
-        return
+        layer_ditemukan = False
+        for lyr in active_map.listLayers():
+            if lyr.name == "Zona_Layer":
+                layer_ditemukan = True
+                break
+        
+        if layer_ditemukan:
+            config_dan_paths = get_config_values()
+            simbology_path = os.path.join(
+                config_dan_paths['symbology_folder'],
+                "Simbologi_Jenis_Zona.lyrx"
+            )
+            arcpy.management.MakeFeatureLayer(
+                config_dan_paths['zl_path'],
+                zl
+            )
+
+            arcpy.management.ApplySymbologyFromLayer(
+                zl,
+                simbology_path
+            )
+
+            arcpy.SetParameter(2, zl)
 
 class Tambah_Citra_Online(object):
     def __init__(self):
@@ -143,13 +161,8 @@ class Tambah_Citra_Online(object):
 
     def execute(self, parameters, messages):
 
-        config_dan_paths = get_config_values()
+        
         pilihan_sumber = parameters[0].valueAsText
-        simbology_path = os.path.join(
-            config_dan_paths['symbology_folder'],
-            "Simbologi_Jenis_Zona.lyrx"
-        )
-
         zl = "Zona_Layer"
         url_source_dict = {
             'Google Satelit': 'https://mt1.google.com/vt/lyrs=s&x={col}&y={row}&z={level}',
@@ -163,23 +176,31 @@ class Tambah_Citra_Online(object):
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         active_map = aprx.activeMap
 
-        # Tambah Google tile layer
         google_layer = active_map.addDataFromPath(url_source)
-
-        # Rename layer
         google_layer.name = pilihan_sumber
 
-        # Tambah zona layer
-        arcpy.management.MakeFeatureLayer(
-            config_dan_paths['zl_path'],
-            zl
-        )
+        layer_ditemukan = False
+        for lyr in active_map.listLayers():
+            if lyr.name == "Zona_Layer":
+                layer_ditemukan = True
+                break
+        
+        if layer_ditemukan:
+            config_dan_paths = get_config_values()
+            simbology_path = os.path.join(
+                config_dan_paths['symbology_folder'],
+                "Simbologi_Jenis_Zona.lyrx"
+            )
+            arcpy.management.MakeFeatureLayer(
+                config_dan_paths['zl_path'],
+                zl
+            )
 
-        arcpy.management.ApplySymbologyFromLayer(
-            zl,
-            simbology_path
-        )
+            arcpy.management.ApplySymbologyFromLayer(
+                zl,
+                simbology_path
+            )
 
-        arcpy.SetParameter(2, zl)
+            arcpy.SetParameter(2, zl)
 
         arcpy.AddMessage("Peta Online berhasil ditambahkan.")

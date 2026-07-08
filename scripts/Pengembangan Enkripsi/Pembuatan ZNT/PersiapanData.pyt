@@ -133,7 +133,11 @@ class Upload_Peta_Rencana_Area_Kerja(object):
         else:
             shapefile_path.enabled = True
             berkas.enabled = True
-            penjelasan.enabled = False
+            penjelasan.value = (
+                "Pastikan data sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
         
         return 
 
@@ -271,7 +275,11 @@ class Upload_Peta_Area_Kerja_Disepakati(object):
         else:
             shapefile_path.enabled = True
             berkas.enabled = True
-            penjelasan.enabled = False
+            penjelasan.value = (
+                "Pastikan data sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
         
         return 
 
@@ -414,7 +422,11 @@ class Upload_Peta_Area_Kerja_Pembuatan_ZNT_AOI(object):
         else:
             shapefile_path.enabled = True
             berkas.enabled = True
-            penjelasan.enabled = False
+            penjelasan.value = (
+                "Pastikan data sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
         
         return 
 
@@ -729,7 +741,11 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
         else:
             feature_layer.enabled = True
             berkas.enabled = True
-            penjelasan.enabled = False
+            penjelasan.value = (
+                "Pastikan data sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
         
         return
         

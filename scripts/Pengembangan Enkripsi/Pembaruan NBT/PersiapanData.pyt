@@ -152,7 +152,11 @@ class Upload_Peta_Rencana_Lokasi_Kegiatan_AOI(object):
         else:
             shapefile_path.enabled = True
             berkas.enabled = True
-            penjelasan.enabled = False
+            penjelasan.value = (
+                "Pastikan data sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
         
         return
     def execute(self, parameters, messages):
@@ -292,7 +296,11 @@ class Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI(object):
         else:
             shapefile_path.enabled = True
             berkas.enabled = True
-            penjelasan.enabled = False
+            penjelasan.value = (
+                "Pastikan data sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
         
         return
    
@@ -431,7 +439,11 @@ class Upload_Peta_Peta_Area_Kerja_AOI(object):
             else:
                 shapefile_path.enabled = True
                 berkas.enabled = True
-                penjelasan.enabled = False
+                penjelasan.value = (
+                "Pastikan data sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
             
             return
    

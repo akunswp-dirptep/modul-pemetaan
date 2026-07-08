@@ -1813,7 +1813,10 @@ class Analisis_Bentuk_Persil(object):
         for item in cleanup_items:
             self.delete_if_exists(item)
 
+        sim_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Bentuk_Persil.lyrx"
+        
         arcpy.management.MakeFeatureLayer(input_fc, "Persil_Layer")
+        arcpy.management.ApplySymbologyFromLayer("Persil_Layer", sim_path)
         arcpy.SetParameter(2, "Persil_Layer")
 
         messages.addMessage("== Proses selesai ==")
@@ -2060,10 +2063,11 @@ class Edit_Bentuk_Persil(object):
         )
 
         persil_path = os.path.join(configs['project_config']['dataset_path'], 'Persil_Layer')
-        arcpy.management.MakeFeatureLayer(
-            persil_path,
-            "Persil_Layer"
-        )
+        
+        sim_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Bentuk_Persil.lyrx"
+        
+        arcpy.management.MakeFeatureLayer(persil_path, "Persil_Layer")
+        arcpy.management.ApplySymbologyFromLayer("Persil_Layer", sim_path)
 
 
         arcpy.SetParameter(1, "Persil_Layer")

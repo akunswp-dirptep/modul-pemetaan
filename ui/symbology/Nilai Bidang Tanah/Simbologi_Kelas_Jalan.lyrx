@@ -662,7 +662,7 @@
         {
           "type" : "CIMLabelClass",
           "expressionTitle" : "Custom",
-          "expression" : "var id_bidang = $feature.IDBIDANG;\r\nvar nilai = $feature.NILAIBD_LAMA;\r\nvar teks_nilai = \"\";\r\n\r\n// Cek jika NILAIBD_LAMA tidak kosong\r\nif (!IsEmpty(nilai)) {\r\n    // Ubah ke satuan ribuan\r\n    var nilai_ribuan = nilai;\r\n    \r\n    // Format angka dasar (biasanya menghasilkan koma jika sistem komputer US/English)\r\n    var format_angka = Text(nilai_ribuan, '#,###');\r\n    \r\n    // Mengganti karakter koma (,) menjadi titik (.)\r\n    var format_titik = Replace(format_angka, ',', '.');\r\n    \r\n    // Gabungkan dengan teks Rp dan Ribu\r\n    teks_nilai = \"Rp \" + format_titik;\r\n}\r\n\r\n// Cek jika IDBIDANG kosong\r\nif (IsEmpty(id_bidang)) {\r\n    id_bidang = \"Tanpa ID\";\r\n}\r\n\r\n// Tampilkan teks statis \"IDBIDANG: \" diikuti nilai ID-nya di baris pertama\r\n// dan nilai Rupiah di baris kedua\r\nreturn id_bidang + TextFormatting.NewLine + teks_nilai;",
+          "expression" : "var id_bidang = $feature.IDBIDANG;\nvar nilai = $feature.NILAIBD_LAMA;\nvar teks_nilai = \"\";\n\n// Cek jika NILAIBD_LAMA tidak kosong\nif (!IsEmpty(nilai)) {\n    // Ubah ke satuan ribuan\n    var nilai_ribuan = nilai;\n    \n    // Format angka dasar (biasanya menghasilkan koma jika sistem komputer US/English)\n    var format_angka = Text(nilai_ribuan, '#,###');\n    \n    // Mengganti karakter koma (,) menjadi titik (.)\n    var format_titik = Replace(format_angka, ',', '.');\n    \n    // Gabungkan dengan teks Rp dan Ribu\n    teks_nilai = \"Rp \" + format_titik ;\n}\n\n// Cek jika IDBIDANG kosong\nif (IsEmpty(id_bidang)) {\n    id_bidang = \"Tanpa ID\";\n}\n\n// Tampilkan teks statis \"IDBIDANG: \" diikuti nilai ID-nya di baris pertama\n// dan nilai Rupiah di baris kedua\nreturn id_bidang + TextFormatting.NewLine + teks_nilai;",
           "expressionEngine" : "Arcade",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
@@ -908,95 +908,19 @@
       "renderer" : {
         "type" : "CIMUniqueValueRenderer",
         "sampleSize" : 10000,
-        "visualVariables" : [
-          {
-            "type" : "CIMTransparencyVisualVariable",
-            "authoringInfo" : {
-              "type" : "CIMVisualVariableAuthoringInfo",
-              "minSliderValue" : 2,
-              "maxSliderValue" : 7,
-              "heading" : "S_ZONASI"
-            },
-            "field" : "S_ZONASI",
-            "transparencyValues" : [
-              70,
-              30
-            ],
-            "dataValues" : [
-              2,
-              7
-            ],
-            "normalizationType" : "Nothing"
-          }
-        ],
         "colorRamp" : {
-          "type" : "CIMFixedColorRamp",
-          "colors" : [
-            {
-              "type" : "CIMRGBColor",
-              "values" : [
-                0,
-                143,
-                71,
-                100
-              ]
-            },
-            {
-              "type" : "CIMRGBColor",
-              "values" : [
-                215,
-                0,
-                215,
-                100
-              ]
-            },
-            {
-              "type" : "CIMRGBColor",
-              "values" : [
-                179,
-                132,
-                248,
-                100
-              ]
-            },
-            {
-              "type" : "CIMRGBColor",
-              "values" : [
-                255,
-                219,
-                0,
-                100
-              ]
-            },
-            {
-              "type" : "CIMRGBColor",
-              "values" : [
-                154,
-                86,
-                31,
-                100
-              ]
-            },
-            {
-              "type" : "CIMRGBColor",
-              "values" : [
-                157,
-                213,
-                0,
-                100
-              ]
-            },
-            {
-              "type" : "CIMRGBColor",
-              "values" : [
-                255,
-                156,
-                0,
-                100
-              ]
-            }
-          ],
-          "arrangement" : "Default"
+          "type" : "CIMRandomHSVColorRamp",
+          "colorSpace" : {
+            "type" : "CIMICCColorSpace",
+            "url" : "Default RGB"
+          },
+          "maxH" : 360,
+          "minS" : 60,
+          "maxS" : 80,
+          "minV" : 60,
+          "maxV" : 80,
+          "minAlpha" : 100,
+          "maxAlpha" : 100
         },
         "defaultLabel" : "<all other values>",
         "defaultSymbol" : {
@@ -1007,12 +931,11 @@
               {
                 "type" : "CIMSolidStroke",
                 "enable" : true,
-                "name" : "New_d1e3b446-2516-44c0-a7f5-61b55d3ee53d",
                 "capStyle" : "Round",
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
-                "miterLimit" : 4,
-                "width" : 1,
+                "miterLimit" : 10,
+                "width" : 2,
                 "height3D" : 1,
                 "anchor3D" : "Center",
                 "color" : {
@@ -1028,14 +951,13 @@
               {
                 "type" : "CIMSolidFill",
                 "enable" : true,
-                "name" : "New_3e4c596c-046e-416f-8117-6fb73212a14b",
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    153,
-                    153,
-                    153,
-                    50.196078431372548
+                    130,
+                    130,
+                    130,
+                    0
                   ]
                 }
               }
@@ -1045,7 +967,7 @@
         },
         "defaultSymbolPatch" : "Default",
         "fields" : [
-          "ZONASI"
+          "KLSJLN"
         ],
         "groups" : [
           {
@@ -1053,7 +975,6 @@
             "classes" : [
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Industri",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -1063,12 +984,11 @@
                       {
                         "type" : "CIMSolidStroke",
                         "enable" : true,
-                        "name" : "New_a7ebab16-1890-4230-8533-e3f7d2e19a00",
                         "capStyle" : "Round",
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
-                        "miterLimit" : 4,
-                        "width" : 1,
+                        "miterLimit" : 10,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -1084,12 +1004,11 @@
                       {
                         "type" : "CIMSolidFill",
                         "enable" : true,
-                        "name" : "New_3e4c596c-046e-416f-8117-6fb73212a14b",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
-                            0,
-                            197,
+                            255,
+                            255,
                             255,
                             100
                           ]
@@ -1103,7 +1022,7 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "Industri"
+                      ""
                     ]
                   }
                 ],
@@ -1111,7 +1030,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Perdagangan dan Jasa",
+                "label" : "Arteri Primer",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -1121,12 +1040,11 @@
                       {
                         "type" : "CIMSolidStroke",
                         "enable" : true,
-                        "name" : "New_2be87d2b-42b5-4beb-8a60-bed4f5132817",
                         "capStyle" : "Round",
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
-                        "miterLimit" : 4,
-                        "width" : 1,
+                        "miterLimit" : 10,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -1142,12 +1060,67 @@
                       {
                         "type" : "CIMSolidFill",
                         "enable" : true,
-                        "name" : "New_3e4c596c-046e-416f-8117-6fb73212a14b",
+                        "color" : {
+                          "type" : "CIMRGBColor",
+                          "values" : [
+                            230,
+                            0,
+                            0,
+                            100
+                          ]
+                        }
+                      }
+                    ],
+                    "angleAlignment" : "Map"
+                  }
+                },
+                "values" : [
+                  {
+                    "type" : "CIMUniqueValue",
+                    "fieldValues" : [
+                      "Arteri Primer"
+                    ]
+                  }
+                ],
+                "visible" : true
+              },
+              {
+                "type" : "CIMUniqueValueClass",
+                "label" : "Arteri Sekunder",
+                "patch" : "Default",
+                "symbol" : {
+                  "type" : "CIMSymbolReference",
+                  "symbol" : {
+                    "type" : "CIMPolygonSymbol",
+                    "symbolLayers" : [
+                      {
+                        "type" : "CIMSolidStroke",
+                        "enable" : true,
+                        "capStyle" : "Round",
+                        "joinStyle" : "Round",
+                        "lineStyle3D" : "Strip",
+                        "miterLimit" : 10,
+                        "width" : 2,
+                        "height3D" : 1,
+                        "anchor3D" : "Center",
+                        "color" : {
+                          "type" : "CIMRGBColor",
+                          "values" : [
+                            0,
+                            0,
+                            0,
+                            100
+                          ]
+                        }
+                      },
+                      {
+                        "type" : "CIMSolidFill",
+                        "enable" : true,
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
                             255,
-                            0,
+                            170,
                             0,
                             100
                           ]
@@ -1161,7 +1134,7 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "Perdagangan dan Jasa"
+                      "Arteri Sekunder"
                     ]
                   }
                 ],
@@ -1169,7 +1142,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Permukiman Menengah",
+                "label" : "Kolektor Primer",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -1179,12 +1152,11 @@
                       {
                         "type" : "CIMSolidStroke",
                         "enable" : true,
-                        "name" : "New_587e172b-e04e-49ba-92a8-cad658044d4a",
                         "capStyle" : "Round",
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
-                        "miterLimit" : 4,
-                        "width" : 1,
+                        "miterLimit" : 10,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -1200,13 +1172,12 @@
                       {
                         "type" : "CIMSolidFill",
                         "enable" : true,
-                        "name" : "New_3e4c596c-046e-416f-8117-6fb73212a14b",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
-                            245,
-                            122,
-                            182,
+                            255,
+                            255,
+                            0,
                             100
                           ]
                         }
@@ -1219,7 +1190,7 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "Permukiman Menengah"
+                      "Kolektor Primer"
                     ]
                   }
                 ],
@@ -1227,7 +1198,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Permukiman Mewah",
+                "label" : "Kolektor Sekunder",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -1237,12 +1208,11 @@
                       {
                         "type" : "CIMSolidStroke",
                         "enable" : true,
-                        "name" : "New_0b68babc-6c54-4a14-8d32-c1f7088dd51b",
                         "capStyle" : "Round",
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
-                        "miterLimit" : 4,
-                        "width" : 1,
+                        "miterLimit" : 10,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -1258,13 +1228,12 @@
                       {
                         "type" : "CIMSolidFill",
                         "enable" : true,
-                        "name" : "New_3e4c596c-046e-416f-8117-6fb73212a14b",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
-                            76,
-                            0,
+                            38,
                             115,
+                            0,
                             100
                           ]
                         }
@@ -1277,7 +1246,7 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "Permukiman Mewah"
+                      "Kolektor Sekunder"
                     ]
                   }
                 ],
@@ -1285,7 +1254,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Permukiman Sederhana",
+                "label" : "Lokal Primer",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -1295,12 +1264,11 @@
                       {
                         "type" : "CIMSolidStroke",
                         "enable" : true,
-                        "name" : "New_8f5c9c92-b67e-44cc-81b8-eacdeca5e3ac",
                         "capStyle" : "Round",
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
-                        "miterLimit" : 4,
-                        "width" : 1,
+                        "miterLimit" : 10,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -1316,13 +1284,12 @@
                       {
                         "type" : "CIMSolidFill",
                         "enable" : true,
-                        "name" : "New_3e4c596c-046e-416f-8117-6fb73212a14b",
                         "color" : {
-                          "type" : "CIMRGBColor",
+                          "type" : "CIMHSVColor",
                           "values" : [
-                            255,
-                            152,
-                            0,
+                            100.18000000000001,
+                            100,
+                            90.200000000000003,
                             100
                           ]
                         }
@@ -1335,7 +1302,7 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "Permukiman Sederhana"
+                      "Lokal Primer"
                     ]
                   }
                 ],
@@ -1343,7 +1310,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Pertanian",
+                "label" : "Lokal Sekunder",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -1353,12 +1320,11 @@
                       {
                         "type" : "CIMSolidStroke",
                         "enable" : true,
-                        "name" : "New_0e241b79-35fc-4b62-9988-655b856157a7",
                         "capStyle" : "Round",
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
-                        "miterLimit" : 4,
-                        "width" : 1,
+                        "miterLimit" : 10,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -1374,13 +1340,12 @@
                       {
                         "type" : "CIMSolidFill",
                         "enable" : true,
-                        "name" : "New_3e4c596c-046e-416f-8117-6fb73212a14b",
                         "color" : {
-                          "type" : "CIMRGBColor",
+                          "type" : "CIMHSVColor",
                           "values" : [
-                            211,
-                            255,
-                            190,
+                            216,
+                            100,
+                            90.200000000000003,
                             100
                           ]
                         }
@@ -1393,7 +1358,7 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "Pertanian"
+                      "Lokal Sekunder"
                     ]
                   }
                 ],
@@ -1401,7 +1366,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Sempadan dan Lindung",
+                "label" : "Setapak",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -1411,12 +1376,11 @@
                       {
                         "type" : "CIMSolidStroke",
                         "enable" : true,
-                        "name" : "New_6fd49d9e-174a-4693-a519-a48bb045d02f",
                         "capStyle" : "Round",
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
-                        "miterLimit" : 4,
-                        "width" : 1,
+                        "miterLimit" : 10,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
@@ -1432,13 +1396,12 @@
                       {
                         "type" : "CIMSolidFill",
                         "enable" : true,
-                        "name" : "New_3e4c596c-046e-416f-8117-6fb73212a14b",
                         "color" : {
-                          "type" : "CIMRGBColor",
+                          "type" : "CIMHSVColor",
                           "values" : [
-                            230,
-                            230,
                             0,
+                            0,
+                            80,
                             100
                           ]
                         }
@@ -1451,14 +1414,14 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "Sempadan dan Lindung"
+                      "Setapak"
                     ]
                   }
                 ],
                 "visible" : true
               }
             ],
-            "heading" : "ZONASI"
+            "heading" : "KLSJLN"
           }
         ],
         "useDefaultSymbol" : true,

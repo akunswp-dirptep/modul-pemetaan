@@ -156,9 +156,7 @@ class Tambah_Citra_Online(object):
             'Google Satelit Hybrid': 'https://mt1.google.com/vt/lyrs=y&x={col}&y={row}&z={level}',
             'Google Street': 'https://mt1.google.com/vt/lyrs=h&x={col}&y={row}&z={level}',
             'Google Maps': 'https://mt1.google.com/vt/lyrs=r&x={col}&y={row}&z={level}',
-            
-            # Opsi 1: Perbaikan urutan menjadi Z (level) / X (col) / Y (row)
-            'Peta Dasar': 'https://petadasar.atrbpn.go.id/main/wms/{level}/{col}/{row}.png'
+            'Peta Dasar': 'https://sipenta.atrbpn.go.id/petadasar/drone/{x}/{y}/{z}'
         }
 
         url_source = url_source_dict.get(pilihan_sumber)

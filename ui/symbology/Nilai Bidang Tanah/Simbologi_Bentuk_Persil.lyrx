@@ -3,13 +3,13 @@
   "version" : "3.4.0",
   "build" : 55405,
   "layers" : [
-    "CIMPATH=Map/Persil_Layer.json"
+    "CIMPATH=Map1/Persil_Layer.json"
   ],
   "layerDefinitions" : [
     {
       "type" : "CIMFeatureLayer",
       "name" : "Persil_Layer",
-      "uRI" : "CIMPATH=Map/Persil_Layer.json",
+      "uRI" : "CIMPATH=Map1/Persil_Layer.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -17,7 +17,7 @@
       "description" : "Persil_Layer",
       "layerElevation" : {
         "type" : "CIMLayerElevationSurface",
-        "elevationSurfaceLayerURI" : "CIMPATH=Map/b1d685acfa394bcdaba1ff710245c091.json"
+        "elevationSurfaceLayerURI" : "CIMPATH=Map1/fbf2f08e8def4144b1d52fc22f2272c0.json"
       },
       "expanded" : true,
       "layerType" : "Operational",
@@ -68,50 +68,15 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "NIB",
-            "fieldName" : "NIB",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
-            },
+            "alias" : "STATUS PERUBAHAN",
+            "fieldName" : "status_per",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "ls_asal",
-            "fieldName" : "ls_asal",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "kelompok_perubahan",
+            "alias" : "KELOMPOK PERUBAHAN",
             "fieldName" : "kelompok_perubahan",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "KLSTRZ",
-            "fieldName" : "KLSTRZ",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -189,6 +154,20 @@
             "type" : "CIMFieldDescription",
             "alias" : "ZONASI",
             "fieldName" : "ZONASI",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "KLSTRZ",
+            "fieldName" : "KLSTRZ",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
             "visible" : true,
             "searchMode" : "Exact"
           },
@@ -418,6 +397,13 @@
           },
           {
             "type" : "CIMFieldDescription",
+            "alias" : "NIB",
+            "fieldName" : "NIB",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
             "alias" : "S_LETAK",
             "fieldName" : "S_LETAK",
             "numberFormat" : {
@@ -474,6 +460,20 @@
           },
           {
             "type" : "CIMFieldDescription",
+            "alias" : "IDBIDANG",
+            "fieldName" : "IDBIDANG",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
             "alias" : "S_ELEVASI",
             "fieldName" : "S_ELEVASI",
             "numberFormat" : {
@@ -488,42 +488,21 @@
           },
           {
             "type" : "CIMFieldDescription",
+            "alias" : "BERUBAH",
+            "fieldName" : "BERUBAH",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
             "alias" : "LS_ASAL",
-            "fieldName" : "LS_ASAL_1",
+            "fieldName" : "LS_ASAL",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
               "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "JKWISATA",
-            "fieldName" : "JKWISATA",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "ORIG_FID",
-            "fieldName" : "ORIG_FID",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
             },
             "visible" : true,
             "searchMode" : "Exact"
@@ -558,22 +537,22 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "IDBIDANG",
-            "fieldName" : "IDBIDANG",
+            "alias" : "JKWISATA",
+            "fieldName" : "JKWISATA",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
               "alignmentWidth" : 0,
               "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
+              "roundingValue" : 6
             },
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "simbologi_jalan",
-            "fieldName" : "simbologi_jalan",
+            "alias" : "CATATAN",
+            "fieldName" : "CATATAN",
             "visible" : true,
             "searchMode" : "Exact"
           },
@@ -595,6 +574,20 @@
             "type" : "CIMFieldDescription",
             "alias" : "perubahan",
             "fieldName" : "perubahan",
+            "visible" : true,
+            "searchMode" : "Exact"
+          },
+          {
+            "type" : "CIMFieldDescription",
+            "alias" : "SAVENILAIBD",
+            "fieldName" : "SAVENILAIBD",
+            "numberFormat" : {
+              "type" : "CIMNumericFormat",
+              "alignmentOption" : "esriAlignRight",
+              "alignmentWidth" : 0,
+              "roundingOption" : "esriRoundNumberOfDecimals",
+              "roundingValue" : 0
+            },
             "visible" : true,
             "searchMode" : "Exact"
           },
@@ -646,138 +639,13 @@
             "fieldName" : "data_pembanding",
             "visible" : true,
             "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "MEAN_nilai",
-            "fieldName" : "MEAN_nilai",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "STD_nilai",
-            "fieldName" : "STD_nilai",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "PTDDEV",
-            "fieldName" : "PTDDEV",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "JOIN_KEY",
-            "fieldName" : "JOIN_KEY",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "INDEKS_RATA",
-            "fieldName" : "INDEKS_RATA",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "INDEKS_MIN",
-            "fieldName" : "INDEKS_MIN",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "INDEKS_MAX",
-            "fieldName" : "INDEKS_MAX",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "INDEKS_STD",
-            "fieldName" : "INDEKS_STD",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "JUMLAH_TITIK",
-            "fieldName" : "JUMLAH_TITIK",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "NILBULAT",
-            "fieldName" : "NILBULAT",
-            "visible" : true,
-            "searchMode" : "Exact"
           }
         ],
+        "selectionSetURI" : "CIMPATH=ObjectIdentifierSet/d3491288bca61726e60e4454ad900529.dat",
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "nbt_ds",
-          "workspaceConnectionString" : "DATABASE=..\\Ujicoba\\NilaiBidangTanah.gdb",
+          "workspaceConnectionString" : "DATABASE=E:\\Pembaruan NBT Cirebon 2026\\Geodatabase Keempat\\NilaiBidangTanah.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "Persil_Layer",
           "datasetType" : "esriDTFeatureClass"
@@ -795,7 +663,7 @@
         {
           "type" : "CIMLabelClass",
           "expressionTitle" : "Custom",
-          "expression" : "$feature.ID",
+          "expression" : "var id_bidang = $feature.IDBIDANG;\r\nvar nilai = $feature.NILAIBD_LAMA;\r\nvar teks_nilai = \"\";\r\n\r\n// Cek jika NILAIBD_LAMA tidak kosong\r\nif (!IsEmpty(nilai)) {\r\n    // Ubah ke satuan ribuan\r\n    var nilai_ribuan = nilai;\r\n    \r\n    // Format angka dasar (biasanya menghasilkan koma jika sistem komputer US/English)\r\n    var format_angka = Text(nilai_ribuan, '#,###');\r\n    \r\n    // Mengganti karakter koma (,) menjadi titik (.)\r\n    var format_titik = Replace(format_angka, ',', '.');\r\n    \r\n    // Gabungkan dengan teks Rp dan Ribu\r\n    teks_nilai = \"Rp \" + format_titik ;\r\n}\r\n\r\n// Cek jika IDBIDANG kosong\r\nif (IsEmpty(id_bidang)) {\r\n    id_bidang = \"Tanpa ID\";\r\n}\r\n\r\n// Tampilkan teks statis \"IDBIDANG: \" diikuti nilai ID-nya di baris pertama\r\n// dan nilai Rupiah di baris kedua\r\nreturn id_bidang + TextFormatting.NewLine + teks_nilai;",
           "expressionEngine" : "Arcade",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {
@@ -962,20 +830,41 @@
             "symbol" : {
               "type" : "CIMTextSymbol",
               "blockProgression" : "TTB",
-              "depth3D" : 1,
+              "depth3D" : 0,
               "extrapolateBaselines" : true,
+              "flipAngle" : 90,
               "fontEffects" : "Normal",
               "fontEncoding" : "Unicode",
-              "fontFamilyName" : "Tahoma",
-              "fontStyleName" : "Regular",
-              "fontType" : "Unspecified",
+              "fontFamilyName" : "Arial",
+              "fontStyleName" : "Bold",
+              "fontType" : "TrueType",
               "haloSize" : 1,
-              "height" : 10,
+              "haloSymbol" : {
+                "type" : "CIMPolygonSymbol",
+                "symbolLayers" : [
+                  {
+                    "type" : "CIMSolidFill",
+                    "enable" : true,
+                    "color" : {
+                      "type" : "CIMRGBColor",
+                      "values" : [
+                        255,
+                        255,
+                        255,
+                        100
+                      ]
+                    }
+                  }
+                ],
+                "angleAlignment" : "Map"
+              },
+              "height" : 11,
               "hinting" : "Default",
               "horizontalAlignment" : "Left",
               "kerning" : true,
               "letterWidth" : 100,
-              "ligatures" : true,
+              "ligatures" : false,
+              "lineGap" : -2,
               "lineGapType" : "ExtraLeading",
               "symbol" : {
                 "type" : "CIMPolygonSymbol",
@@ -986,9 +875,9 @@
                     "color" : {
                       "type" : "CIMRGBColor",
                       "values" : [
-                        0,
-                        0,
-                        0,
+                        78,
+                        78,
+                        78,
                         100
                       ]
                     }
@@ -996,9 +885,16 @@
                 ],
                 "angleAlignment" : "Map"
               },
+              "symbol3DProperties" : {
+                "type" : "CIM3DSymbolProperties",
+                "dominantSizeAxis3D" : "Z",
+                "rotationOrder3D" : "XYZ",
+                "scaleZ" : 1,
+                "scaleY" : 1
+              },
               "textCase" : "Normal",
               "textDirection" : "LTR",
-              "verticalAlignment" : "Bottom",
+              "verticalAlignment" : "Baseline",
               "verticalGlyphOrientation" : "Right",
               "wordSpacing" : 100,
               "billboardMode3D" : "FaceNearPlane"
@@ -1009,6 +905,7 @@
           "iD" : -1
         }
       ],
+      "labelVisibility" : true,
       "renderer" : {
         "type" : "CIMUniqueValueRenderer",
         "sampleSize" : 10000,
@@ -1019,10 +916,10 @@
             "url" : "Default RGB"
           },
           "maxH" : 360,
-          "minS" : 15,
-          "maxS" : 30,
-          "minV" : 99,
-          "maxV" : 100,
+          "minS" : 60,
+          "maxS" : 80,
+          "minV" : 60,
+          "maxV" : 80,
           "minAlpha" : 100,
           "maxAlpha" : 100
         },
@@ -1039,15 +936,15 @@
                 "joinStyle" : "Round",
                 "lineStyle3D" : "Strip",
                 "miterLimit" : 10,
-                "width" : 0.69999999999999996,
+                "width" : 2,
                 "height3D" : 1,
                 "anchor3D" : "Center",
                 "color" : {
                   "type" : "CIMRGBColor",
                   "values" : [
-                    110,
-                    110,
-                    110,
+                    0,
+                    0,
+                    0,
                     100
                   ]
                 }
@@ -1061,7 +958,7 @@
                     130,
                     130,
                     130,
-                    100
+                    0
                   ]
                 }
               }
@@ -1089,19 +986,20 @@
                       {
                         "type" : "CIMSolidStroke",
                         "enable" : true,
+                        "name" : "New_cf23e40c-da68-4791-a80f-b0b51c07ab90",
                         "capStyle" : "Round",
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 0.69999999999999996,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
-                            110,
-                            110,
-                            110,
+                            255,
+                            0,
+                            0,
                             100
                           ]
                         }
@@ -1110,12 +1008,12 @@
                         "type" : "CIMSolidFill",
                         "enable" : true,
                         "color" : {
-                          "type" : "CIMHSVColor",
+                          "type" : "CIMRGBColor",
                           "values" : [
-                            207.5,
-                            21.149999999999999,
-                            89.019999999999996,
-                            100
+                            130,
+                            130,
+                            130,
+                            0
                           ]
                         }
                       }
@@ -1149,15 +1047,15 @@
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 0.69999999999999996,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
-                            110,
-                            110,
-                            110,
+                            0,
+                            112,
+                            255,
                             100
                           ]
                         }
@@ -1166,12 +1064,12 @@
                         "type" : "CIMSolidFill",
                         "enable" : true,
                         "color" : {
-                          "type" : "CIMHSVColor",
+                          "type" : "CIMRGBColor",
                           "values" : [
-                            108.95,
-                            16.170000000000002,
-                            92.159999999999997,
-                            100
+                            130,
+                            130,
+                            130,
+                            0
                           ]
                         }
                       }
@@ -1205,15 +1103,15 @@
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 0.69999999999999996,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
-                            110,
-                            110,
-                            110,
+                            76,
+                            230,
+                            0,
                             100
                           ]
                         }
@@ -1222,12 +1120,12 @@
                         "type" : "CIMSolidFill",
                         "enable" : true,
                         "color" : {
-                          "type" : "CIMHSVColor",
+                          "type" : "CIMRGBColor",
                           "values" : [
-                            34.770000000000003,
-                            34.649999999999999,
-                            99.609999999999999,
-                            100
+                            130,
+                            130,
+                            130,
+                            0
                           ]
                         }
                       }
@@ -1247,7 +1145,7 @@
               },
               {
                 "type" : "CIMUniqueValueClass",
-                "label" : "Segitiga",
+                "label" : "Segi Tiga",
                 "patch" : "Default",
                 "symbol" : {
                   "type" : "CIMSymbolReference",
@@ -1261,15 +1159,15 @@
                         "joinStyle" : "Round",
                         "lineStyle3D" : "Strip",
                         "miterLimit" : 10,
-                        "width" : 0.69999999999999996,
+                        "width" : 2,
                         "height3D" : 1,
                         "anchor3D" : "Center",
                         "color" : {
                           "type" : "CIMRGBColor",
                           "values" : [
-                            110,
-                            110,
-                            110,
+                            132,
+                            0,
+                            168,
                             100
                           ]
                         }
@@ -1278,12 +1176,12 @@
                         "type" : "CIMSolidFill",
                         "enable" : true,
                         "color" : {
-                          "type" : "CIMHSVColor",
+                          "type" : "CIMRGBColor",
                           "values" : [
-                            329.13999999999999,
-                            13.83,
-                            99.219999999999999,
-                            100
+                            130,
+                            130,
+                            130,
+                            0
                           ]
                         }
                       }
@@ -1295,7 +1193,7 @@
                   {
                     "type" : "CIMUniqueValue",
                     "fieldValues" : [
-                      "Segitiga"
+                      "Segi Tiga"
                     ]
                   }
                 ],
@@ -1313,16 +1211,20 @@
       "snappable" : true
     }
   ],
+  "binaryReferences" : [
+    {
+      "type" : "CIMBinaryReference",
+      "uRI" : "CIMPATH=ObjectIdentifierSet/d3491288bca61726e60e4454ad900529.dat",
+      "data" : "CgUKA4zDAw=="
+    }
+  ],
   "rGBColorProfile" : "sRGB IEC61966-2.1",
   "cMYKColorProfile" : "U.S. Web Coated (SWOP) v2",
   "elevationSurfaceLayerDefinitions" : [
     {
       "type" : "CIMElevationSurfaceLayer",
       "name" : "Ground",
-      "uRI" : "CIMPATH=Map/b1d685acfa394bcdaba1ff710245c091.json",
-      "sourceModifiedTime" : {
-        "type" : "TimeInstant"
-      },
+      "uRI" : "CIMPATH=Map1/fbf2f08e8def4144b1d52fc22f2272c0.json",
       "useSourceMetadata" : true,
       "description" : "Ground",
       "expanded" : true,

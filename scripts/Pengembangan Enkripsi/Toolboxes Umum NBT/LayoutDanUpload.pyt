@@ -100,9 +100,9 @@ class Tampilkan_Simbologi_Persil(object):
         pilihan_atribut = parameters[1].valueAsText
         pilihan_simbologi = parameters[2].valueAsText
         mapping_simbology = {
-            'Bentuk': ['Simbologi_Bentuk_Persil.lyrx', 'Simbologi_Bentuk_Persil_Dan_Status_Pembaruan.lyrx'],
+            'Bentuk': [r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Bentuk_Persil.lyrx", 'Simbologi_Bentuk_Persil_Dan_Status_Pembaruan.lyrx'],
             'Letak': ['Simbologi_Letak_Persil.lyrx', 'Simbologi_Letak_Persil_Dan_Status_Pembaruan.lyrx'],
-            'Kelas Jalan': ['Simbologi_Kelas_Jalan.lyrx', 'Simbologi_Kelas_Jalan_Dan_Status_Pembaruan.lyrx'],
+            'Kelas Jalan': [r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Kelas_Jalan.lyrx", 'Simbologi_Kelas_Jalan_Dan_Status_Pembaruan.lyrx'],
             'Lebar Jalan': ['Simbologi_Lebar_Jalan.lyrx', 'Simbologi_Lebar_Jalan_Dan_Status_Pembaruan.lyrx'],
             'Lebar Depan': ['Simbologi_Lebar_Depan.lyrx', 'Simbologi_Lebar_Depan_Dan_Status_Pembaruan.lyrx'],
             'Tipe Hak': ['Simbologi_Tipe_Hak.lyrx', 'Simbologi_Tipe_Hak_Dan_Status_Pembaruan.lyrx'],

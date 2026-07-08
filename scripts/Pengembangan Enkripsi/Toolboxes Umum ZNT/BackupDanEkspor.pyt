@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
+from datetime import datetime, timezone
 import sys, requests
 import arcpy, os, zipfile
 import time
@@ -218,6 +218,7 @@ class Simpan_Workspace_Ke_Sipenta:
             can_show = 0
             for berkas in berkas_list:
                 if berkas[1] is True:
+                    
                     berkas_show.append(f"{berkas[0]}")
                     can_show += 1
             if can_show == 0:
@@ -236,11 +237,18 @@ class Simpan_Workspace_Ke_Sipenta:
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
         
-        if berkas_list:
-            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
-            berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        if berkas_list and can_show > 0:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '01/' in preferred_berkas or '02/' in preferred_berkas :
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]           
+        elif berkas_list and can_show == 0:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
+
         
         judul = arcpy.Parameter(
             displayName="Judul",

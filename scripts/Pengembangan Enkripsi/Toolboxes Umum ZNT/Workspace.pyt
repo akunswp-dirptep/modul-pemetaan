@@ -1,5 +1,5 @@
-from datetime import datetime
-import sys
+from datetime import datetime, timezone
+import sys, requests
 import uuid
 import arcpy, os, json, zipfile
 
@@ -11,8 +11,9 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
     
-from zntutils.constant import NAMA_PROVINSI, KAB_KOTA, PROJECT_CONFIG_FILE_NAME
+from zntutils.constant import NAMA_PROVINSI, KAB_KOTA, PROJECT_CONFIG_FILE_NAME, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY, PREFERRED_SERVER_KEY, PROJECT_CONFIG_FILE_NAME, PREFERRED_BERKAS_ID
 from zntutils.system_utils import setup_project_config, get_all_config, get_login_status
+from zntutils.system_utils import get_user_data, setup_user_data, get_all_berkas_id, clear_user_data
 
 def current_year():
     try:
@@ -29,7 +30,8 @@ class Toolbox:
 
         # List of tool classes associated with this toolbox
         self.tools = [Buat_Workspace,
-                      Import_Workspace]
+                      Import_Workspace,
+                      Unduh_Workspace]
 
 
 class Buat_Workspace(object):
@@ -539,6 +541,442 @@ class Import_Workspace(object):
                     return True, zona_layer_path
                 else:
                     arcpy.AddMessage("Tidak ditemukan config.json dalam file zip")
+                    return False, None
+                    
+        except zipfile.BadZipFile:
+            arcpy.AddError("File yang dipilih bukan file zip yang valid")
+            return False, None
+        except Exception as e:
+            arcpy.AddError(f"Error saat memproses file zip: {e}")
+            return False, None
+
+class Unduh_Workspace(object):
+    def __init__(self):
+        self.label = "Unduh Workspace"
+        self.description = "Tool untuk mengunduh workspace ZNT dari Sipenta."
+        
+        # Digunakan untuk caching sederhana agar tidak perlu memanggil API berulang-kali di UI
+        self._cached_nomor_berkas = None
+        self._cached_api_data = None
+
+    def getParameterInfo(self):
+        berkas_list = get_all_berkas_id()
+        berkas_show = []
+        if berkas_list is not None:
+            can_show = 0
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+
+        nomor_berkas = arcpy.Parameter(
+            displayName="Nomor Berkas",
+            name="nomor_berkas",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        nomor_berkas.filter.type = "ValueList"
+        nomor_berkas.filter.list = berkas_show
+
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            nomor_berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        else:
+            nomor_berkas.value = 'Tidak ada berkas yang dapat dipilih'
+
+        created_by = arcpy.Parameter(
+            displayName="Dibuat Oleh",
+            name="created_by",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        created_by.filter.type = "ValueList"
+        created_by.filter.list = []
+
+        pilihan_waktu = arcpy.Parameter(
+            displayName="Waktu Upload",
+            name="pilihan_waktu",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        pilihan_waktu.filter.type = "ValueList"
+        pilihan_waktu.filter.list = []
+
+        output_path = arcpy.Parameter(
+            displayName="Target Folder Penyimpanan",
+            name="output_path",
+            datatype="DEFolder",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        output_zl_path = arcpy.Parameter(
+            name="output_zl_path",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [nomor_berkas, created_by, pilihan_waktu, output_path, output_zl_path]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        nomor_berkas_param = parameters[0]
+        nomor_berkas_val = nomor_berkas_param.valueAsText
+        
+        # Bypass eksekusi jika nomor berkas kosong/belum dipilih
+        if not nomor_berkas_val:
+            parameters[1].filter.list = []
+            parameters[2].filter.list = []
+            self._cached_nomor_berkas = None
+            self._cached_api_data = None
+            return
+
+        user_data = get_user_data(CREDENTIAL_KEY)
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server is None else False
+        token = user_data.get(AUTH_KEY, None)
+        
+        # 1. Cek apakah nomor_berkas benar-benar berubah
+        if nomor_berkas_val != self._cached_nomor_berkas:
+            
+            # Reset dropdown dependent jika ini bukan inisialisasi awal
+            if self._cached_nomor_berkas is not None:
+                parameters[1].value = None
+                parameters[2].value = None
+            
+            try:
+                # Pastikan mengirim nomor_berkas_val (string), bukan object parameter
+                response_data = self.call_sipenta_api(token, nomor_berkas_val, use_production)
+                
+                if response_data and response_data.get("success"):
+                    self._cached_api_data = response_data.get("data", [])
+                else:
+                    self._cached_api_data = []
+            except Exception:
+                self._cached_api_data = [] # Silent fail di updateParameters agar UI tidak error
+            
+            # Perbarui cache dengan nomor berkas yang baru ditarik datanya
+            self._cached_nomor_berkas = nomor_berkas_val
+
+        # 2. Update Dropdown 'created_by' berdasarkan data di cache
+        if self._cached_api_data:
+            unique_creators = list(set([item['created_by'] for item in self._cached_api_data if item.get('created_by')]))
+            parameters[1].filter.list = sorted(unique_creators)
+            
+            # 3. Update Dropdown 'pilihan_waktu' berdasarkan pilihan 'created_by'
+
+            selected_creator = parameters[1].valueAsText
+            if selected_creator:
+                timestamps_local = []
+                for item in self._cached_api_data:
+                    if item.get('created_by') == selected_creator:
+                        # Konversi waktu JSON (UTC) ke Lokal sebelum dimasukkan ke dropdown
+                        local_time = self.utc_to_local_string(item.get('created_at'))
+                        timestamps_local.append(local_time)
+                
+                parameters[2].filter.list = sorted(timestamps_local, reverse=True) # Waktu terbaru di atas
+            else:
+                parameters[2].filter.list = []
+                if parameters[2].valueAsText is not None:
+                    parameters[2].value = None
+        else:
+            parameters[1].filter.list = []
+            parameters[2].filter.list = []
+
+        return
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        nomor_berkas = parameters[0].valueAsText
+        created_by = parameters[1].valueAsText
+        waktu_upload = parameters[2].valueAsText
+        output_path = parameters[3].valueAsText
+
+        arcpy.AddMessage("Mengambil konfigurasi file dari server...")
+        
+        user_data = get_user_data(CREDENTIAL_KEY)
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        token = user_data.get(AUTH_KEY, None)
+
+        data_response = self.call_sipenta_api(token, nomor_berkas, use_production)
+        data_list = data_response.get("data", [])
+
+        # Cari public_url yang sesuai dengan input user
+        target_url = None
+        for item in data_list:
+            # Konversi created_at dari JSON (UTC) ke Lokal untuk dibandingkan dengan input UI
+            json_local_time = self.utc_to_local_string(item.get("created_at"))
+            
+            if item.get("created_by") == created_by and json_local_time == waktu_upload:
+                target_url = item.get("public_url")
+                break
+        
+        if not target_url:
+            arcpy.AddError("Link unduhan tidak ditemukan untuk data yang dipilih.")
+            return
+
+        # Proses Download File ZIP
+        arcpy.AddMessage(f"Mulai mengunduh file workspace dari: {target_url}")
+        safe_timestamp = waktu_upload.replace(":", "").replace(" ", "_").replace("-", "")
+        zip_filename = f"workspace_{safe_timestamp}.zip"
+        zip_file_path = os.path.join(output_path, zip_filename)
+
+        try:
+            response = requests.get(target_url, stream=True, timeout=60)
+            response.raise_for_status()
+            with open(zip_file_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            arcpy.AddMessage(f"Berhasil mengunduh ke: {zip_file_path}")
+        except Exception as e:
+            arcpy.AddError(f"Gagal mengunduh file: {str(e)}")
+            return
+
+        # Ekstrak file dan map konfigurasi seperti pada Import_Workspace
+        arcpy.AddMessage(f"Memproses ekstraksi file: {zip_file_path}")
+        success, zona_layer_path = self.check_and_extract_config(zip_file_path, output_path)
+        
+        if success:
+            arcpy.AddMessage("Ekstraksi berhasil. Memperbarui ArcGIS Project...")
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            folder_connections = aprx.folderConnections
+
+            new_folder = output_path
+            if not any(fc['connectionString'] == new_folder for fc in folder_connections):
+                folder_connections.append({
+                    'connectionString': new_folder,
+                    'isHomeFolder': False
+                })
+                aprx.updateFolderConnections(folder_connections, validate=True)
+
+            arcpy.SetParameter(4, zona_layer_path)
+            arcpy.AddMessage("Proses selesai dengan sukses.")
+        else:
+            arcpy.AddError("Proses konfigurasi dan ekstraksi tidak berhasil.")
+        
+        return
+    
+    def utc_to_local_string(self, utc_time_str):
+        """Mengubah string UTC (GMT+0) menjadi string Waktu Lokal sistem."""
+        if not utc_time_str:
+            return ""
+        try:
+            # 1. Parse string ke objek datetime
+            dt_utc = datetime.strptime(utc_time_str, "%Y-%m-%d %H:%M:%S")
+            
+            # 2. Tetapkan bahwa waktu ini adalah UTC
+            dt_utc = dt_utc.replace(tzinfo=timezone.utc)
+            
+            # 3. Konversi ke waktu lokal laptop (astimezone tanpa argumen otomatis mendeteksi local timezone)
+            dt_local = dt_utc.astimezone()
+            
+            # 4. Format kembali menjadi string
+            return dt_local.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return utc_time_str # Fallback ke waktu asli jika parsing gagal
+    def call_sipenta_api(self, token, nomor_berkas, use_production=True):
+        test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/workspace?no_berkas={nomor_berkas}"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/workspace?no_berkas={nomor_berkas}"
+        url = prod_url if use_production else test_url
+
+        try:
+            headers = {"Authorization": f"Bearer {token}"}
+            # Jika token kosong, headers dapat dihilangkan atau disesuaikan
+            response = requests.get(url, headers=headers, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+            if not data:
+                arcpy.AddError('Server Tidak mengirimkan Apapun')
+            return data
+        except requests.exceptions.HTTPError as e:
+            response = e.response
+            try:
+                error_json = response.json()
+                message = error_json.get("message", "")
+            except Exception:
+                message = ""
+            
+            if response.status_code == 403 and "expired" in message.lower():
+                clear_user_data()
+                raise Exception("Token Anda kadaluarsa, silakan login ulang.")
+            elif response.status_code == 403:
+                raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
+            else:
+                raise Exception(f"HTTP Error: {e}")
+        except requests.exceptions.RequestException as e:
+            arcpy.AddError(f"Error dalam pemanggilan API: {str(e)}")
+            raise arcpy.ExecuteError
+        except json.JSONDecodeError as e:
+            arcpy.AddError(f"Error ketika mengubah respon API ke JSON: {str(e)}")
+            raise arcpy.ExecuteError
+
+    def delete_legacy_config_json(self, workspace_folder):
+        legacy_config_path = os.path.join(workspace_folder, 'config.json')
+        if os.path.exists(legacy_config_path):
+            os.remove(legacy_config_path)
+            arcpy.AddMessage(f"File config.json lama dihapus: {legacy_config_path}")
+
+    def map_legacy_fields(self, fc_path):
+        field_mapping = {
+            "Nomor_Entry": "no_sampel", "No_Identifikasi": "no_identifikasi",
+            "Surveyor": "nama_surveyor", "Tanggal_Pelaksanaan": "tgl_pelaksanaan",
+            "Kd_Jenis_Bangunan": "kode_jenis_bangunan", "Alamat": "alamat",
+            "Kelurahan": "kel_desa", "Kecamatan": "kecamatan", "X": "x", "Y": "y",
+            "Status_Kepemilikan": "status_kepemilikan", "Jenis_Data": "jenis_data",
+            "Tgl_Penawaran_Transaksi": "tgl_penawaran_transaksi", "Harga_Penawaran_Transaksi": "harga_penawaran_transaksi",
+            "Luas_Tanah_m2": "luas_tanah_m2", "Lebar_Depan": "lebar_depan",
+            "Panjang_Kebelakang": "panjang_kebelakang", "Bentuk_Tanah": "bentuk_tanah",
+            "Elevasi_Dari_Jalan": "elevasi_dari_jalan", "Letak_Tanah": "letak_tanah",
+            "Kelas_Jalan": "kelas_jalan", "Lebar_Jalan": "lebar_jalan",
+            "Aksebilitas": "aksesibilitas", "Drainase": "drainase", "Utilitas": "utilitas",
+            "Fasilitas": "fasilitas", "Zoning": "zoning", "Luas_Bangunan": "luas_bangunan",
+            "Jenis": "jenis", "Jumlah_Lantai": "jumlah_lantai", "Tahun_Pembuatan": "tahun_pembuatan",
+            "Tahun_Renovasi": "tahun_renovasi", "Kontruksi_Atas": "konstruksi_atas",
+            "Kontruksi_bawah": "konstruksi_bawah", "Atap": "atap", "Dinding": "dinding",
+            "LangitLangit": "langit_langit", "Lantai": "lantai", "Pagar": "pagar",
+            "Panjang_Pagar": "panjang_pagar", "Luas_Carport": "luas_carport",
+            "Pintu_Jendela": "pintu_jendela", "Jumlah_Fasilitas": "jumlah_fasilitas",
+            "Keadaan_Fisik": "keadaan_fisik", "Biaya_Bangunan_m2": "biaya_bangunan_m2",
+            "RCN": "rcn", "Tahun_Penilaian": "tahun_penilaian", "Umur_Efektif": "umur_efektif",
+            "Penyusutan": "penyusutan", "Nilai_Bangunan": "nilai_bangunan",
+            "Harga_Penyesuaian": "harga_penyesuaian", "Nilai_Bangunan_Rp": "nilai_bangunan_rp",
+            "Harga_Tanah_Rp": "harga_tanah_rp", "Penyesuaian_Waktu": "penyesuaian_waktu",
+            "Penyesuaian_Status_Kepemilikan": "penyesuaian_status_kepemilikan",
+            "nilluas": "nil_luas", "nilai": "nilai", "akses": "akses",
+            "Penyusutan_Rumah": "penyusutan_rumah", "Penyusutan_Ruko": "penyusutan_ruko",
+            "Keterangan": "keterangan", "Pembanding": "pembanding",
+            "Penyusutan_Rumah_1": "penyusutan_rumah_1", "Penyusutan_Rumah_2": "penyusutan_rumah_2",
+            "Penyusutan_Ruko_1": "penyusutan_ruko_1", "Penyusutan_Ruko_2": "penyusutan_ruko_2",
+            "N_Sementara": "n_sementara", "Responden": "responden", "Catatan": "catatan"
+        }
+
+        current_fields = [f.name for f in arcpy.ListFields(fc_path)]
+        mapped_count = 0
+
+        for nama_lama, nama_baru in field_mapping.items():
+            if nama_lama in current_fields:
+                try:
+                    arcpy.management.AlterField(
+                        in_table=fc_path, field=nama_lama,
+                        new_field_name=nama_baru, new_field_alias=nama_baru
+                    )
+                    mapped_count += 1
+                except Exception as e:
+                    arcpy.AddWarning(f"  -> Gagal mengubah field '{nama_lama}' menjadi '{nama_baru}': {e}")
+        
+        if mapped_count > 0:
+            arcpy.AddMessage(f"Berhasil melakukan mapping pada {mapped_count} field di {os.path.basename(fc_path)}")
+
+    def update_config_file(self, config_path, output_path):
+        try:
+            if config_path.endswith('.bin'):
+                config_data = get_all_config(config_path)
+            elif config_path.endswith('.json'):
+                with open(config_path, 'r') as config_file:
+                    config_data = json.load(config_file)
+
+            if not isinstance(config_data, dict):
+                raise ValueError("Format file config tidak valid")
+            
+            id = str(uuid.uuid4())
+            config_data['id'] = id
+            config_data["ws_path"] = output_path
+            config_data["dataset_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb", "znt_ds")
+            config_data["gdb_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb")
+            
+            new_config_path = os.path.join(output_path, PROJECT_CONFIG_FILE_NAME) 
+            setup_project_config(config_data, new_config_path)
+            self.delete_legacy_config_json(output_path)
+            
+            return True
+        except Exception as e:
+            arcpy.AddError(f"Error saat memperbarui config: {e}")
+            return False
+
+    def check_and_extract_config(self, zip_path, output_path):
+        zona_layer_path = None
+        try:
+            if not os.path.exists(zip_path):
+                arcpy.AddError(f"File zip tidak ditemukan: {zip_path}")
+                return False, None
+            
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                file_list = zip_ref.namelist()
+                has_config_json = any('config.json' in f.lower() or PROJECT_CONFIG_FILE_NAME.lower() in f.lower() for f in file_list)
+                
+                if has_config_json:
+                    extract_dir = output_path
+                    if not os.path.exists(extract_dir):
+                        os.makedirs(extract_dir)
+
+                    self.delete_legacy_config_json(extract_dir)
+                    zip_ref.extractall(extract_dir)
+                    
+                    config_path = None
+                    for root, dirs, files in os.walk(extract_dir):
+                        for file in files:
+                            if file.lower() == 'config.json' or file.lower() == PROJECT_CONFIG_FILE_NAME.lower():
+                                config_path = os.path.join(root, file)
+                                break
+                        if config_path: break
+                    
+                    if config_path:
+                        is_json_format = config_path.lower().endswith('.json')
+                        try:
+                            update_success = self.update_config_file(config_path, output_path)                              
+                            if update_success:
+                                new_config_path = os.path.join(output_path, PROJECT_CONFIG_FILE_NAME)
+                                updated_config = get_all_config(new_config_path)
+                                
+                                if not isinstance(updated_config, dict):
+                                    arcpy.AddError("Config hasil ekstraksi tidak dapat dibaca")
+                                    return False, None
+
+                                dataset_path = updated_config.get('dataset_path')
+                                if not dataset_path:
+                                    arcpy.AddError("Config hasil ekstraksi tidak memiliki dataset_path")
+                                    return False, None
+
+                                if is_json_format:
+                                    fc_titik_sampel = os.path.join(dataset_path, "titik_sampel")
+                                    fc_titik_zona = os.path.join(dataset_path, "titik_zona")
+
+                                    if arcpy.Exists(fc_titik_sampel):
+                                        self.map_legacy_fields(fc_titik_sampel)
+                                    if arcpy.Exists(fc_titik_zona):
+                                        self.map_legacy_fields(fc_titik_zona)
+
+                                zona_layer_path = os.path.join(dataset_path, 'Zona_Layer')
+                            else:
+                                return False, None
+                        except Exception as e:
+                            arcpy.AddWarning(f"Tidak dapat membaca file config: {e}")
+                            return False, None
+                    else:
+                        arcpy.AddError("File config tidak ditemukan setelah ekstraksi")
+                        return False, None
+                    
+                    if zona_layer_path is None:
+                        arcpy.AddError("Path Zona_Layer tidak berhasil dibentuk dari config")
+                        return False, None
+
+                    return True, zona_layer_path
+                else:
+                    arcpy.AddError("Tidak ditemukan config dalam file zip")
                     return False, None
                     
         except zipfile.BadZipFile:

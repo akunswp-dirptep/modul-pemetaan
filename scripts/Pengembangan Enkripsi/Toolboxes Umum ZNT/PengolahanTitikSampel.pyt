@@ -160,6 +160,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         if berkas_list is None:
             arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan ZNT.")
             return
+        
         metode = parameters[0].valueAsText
         berkas_value = parameters[1].valueAsText
 

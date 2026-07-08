@@ -703,7 +703,7 @@
 					largeImage="C:\PenilaianTanah\icons\uploads.png"
 					smallImage="C:\PenilaianTanah\icons\uploads.png">
 					<tooltip heading="Backup dan Ekspor Hasil Pengolahan">Backup dan Ekspor Hasil Perhitungan Pembuatan Zona Nilai Tanah.</tooltip>
-					<button refID="ButtonUnduhGeodatabase" />
+					<button refID="ButtonEksporWorkspace" />
 					<button refID="ButtonSimpanWorkspacekeSipenta" />
 					<button refID="ButtonEksporZona"/>
 				</menu>
@@ -798,7 +798,8 @@
 					largeImage="C:\PenilaianTanah\icons\uploads.png"
 					smallImage="C:\PenilaianTanah\icons\uploads.png">
 					<tooltip heading="Backup dan Ekspor Hasil Pengolahan">Backup dan Ekspor Hasil Pengolahan Peta Pembaruan Zona Nilai Tanah.</tooltip>
-					<button refID="ButtonUnduhGeodatabase" />
+					<button refID="ButtonEksporWorkspace" />
+					<button refID="ButtonSimpanWorkspacekeSipenta" />
 					<button refID="ButtonEksporZona"/>
 				</menu>
 
@@ -2156,14 +2157,14 @@
 				</button>
 
 			<!-- Menu Backup dan Ekspor Hasil -->
-				<button id="ButtonUnduhGeodatabase" caption="Ekspor Geodatabase" smallImage="C:\PenilaianTanah\icons\database_download.png" largeImage="C:\PenilaianTanah\icons\database_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonEksporWorkspace" caption="Ekspor Workspace" smallImage="C:\PenilaianTanah\icons\database_download.png" largeImage="C:\PenilaianTanah\icons\database_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\BackupDanEkspor.pyt\Ekspor_Geodatabase" name="Ekspor Geodatabase" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\BackupDanEkspor.pyt\Ekspor_Workspace" name="Ekspor Workspace" xmlns=""/>
 					</args>
-					<tooltip heading="Ekspor Geodatabase">Menu untuk membuat zip dari folder Geodatabase agar bisa dibagikan ke pengguna lain.</tooltip>
+					<tooltip heading="Ekspor Workspace">Menu untuk membuat zip dari folder Workspace agar bisa dibagikan ke pengguna lain.</tooltip>
 				</button>
 
-				<button id="ButtonSimpanWorkspacekeSipenta" caption="Simpan Workspace ke Sipenta" smallImage="C:\PenilaianTanah\icons\database_download.png" largeImage="C:\PenilaianTanah\icons\database_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonSimpanWorkspacekeSipenta" caption="Simpan Workspace ke Sipenta" smallImage="C:\PenilaianTanah\icons\simpanworkspacekesipenta.png" largeImage="C:\PenilaianTanah\icons\simpanworkspacekesipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\BackupDanEkspor.pyt\Simpan_Workspace_Ke_Sipenta" name="Simpan Workspace ke Sipenta" xmlns=""/>
 					</args>

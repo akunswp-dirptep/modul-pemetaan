@@ -29,19 +29,19 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Ekspor_Geodatabase, Simpan_Workspace_Ke_Sipenta, Ekspor_Zona]
+        self.tools = [Ekspor_Workspace, Simpan_Workspace_Ke_Sipenta, Ekspor_Zona]
 
 
-class Ekspor_Geodatabase:
+class Ekspor_Workspace:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Ekspor Geodatabase"
+        self.label = "Ekspor Workspace"
         self.description = ""
 
     def getParameterInfo(self):
 
         output_zip_file = arcpy.Parameter(
-            displayName="File ZIP (.zip)",
+            displayName="Simpan Zip (.zip)",
             name="output_zip_file",
             datatype="DEFile",
             parameterType="Required",
@@ -49,6 +49,19 @@ class Ekspor_Geodatabase:
         )
 
         output_zip_file.filter.list = ["zip"]
+
+        # 1. Dapatkan path folder utama user (C:\Users\NamaUser)
+        user_home_dir = os.path.expanduser('~')
+        
+        # 2. Arahkan ke folder Downloads
+        downloads_folder = os.path.join(user_home_dir, 'Downloads')
+        
+        # 3. Buat nama file default (opsional: tambahkan timestamp agar tidak menimpa file lama)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_filename = f"Backup_Workspace_{timestamp}.zip"
+        
+        # 4. Set nilai default parameter ke path lengkap tersebut
+        output_zip_file.value = os.path.join(downloads_folder, default_filename)
 
         params = [output_zip_file]
         return params

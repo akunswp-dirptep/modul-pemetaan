@@ -113,7 +113,7 @@
 				<group id="sistem_aplikasi" caption="Penilaian Tanah">
 					<button refID="ButtonLoginPemeta" size="large"/>
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
-					<!-- <button refID="ButtonUnduhDataDariSipenta" size="large"/> -->
+					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
 				</group>
 
 			</groups>
@@ -704,6 +704,7 @@
 					smallImage="C:\PenilaianTanah\icons\uploads.png">
 					<tooltip heading="Backup dan Ekspor Hasil Pengolahan">Backup dan Ekspor Hasil Perhitungan Pembuatan Zona Nilai Tanah.</tooltip>
 					<button refID="ButtonUnduhGeodatabase" />
+					<button refID="ButtonSimpanWorkspacekeSipenta" />
 					<button refID="ButtonEksporZona"/>
 				</menu>
 
@@ -2161,6 +2162,14 @@
 					</args>
 					<tooltip heading="Ekspor Geodatabase">Menu untuk membuat zip dari folder Geodatabase agar bisa dibagikan ke pengguna lain.</tooltip>
 				</button>
+
+				<button id="ButtonSimpanWorkspacekeSipenta" caption="Simpan Workspace ke Sipenta" smallImage="C:\PenilaianTanah\icons\database_download.png" largeImage="C:\PenilaianTanah\icons\database_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\BackupDanEkspor.pyt\Simpan_Workspace_Ke_Sipenta" name="Simpan Workspace ke Sipenta" xmlns=""/>
+					</args>
+					<tooltip heading="Simpan Workspace ke Sipenta">Menu untuk menyimpan workspace ke Sipenta.</tooltip>
+				</button>
+
 				<button id="ButtonEksporZona" caption="Ekspor Zona" smallImage="C:\PenilaianTanah\icons\layers_download.png" largeImage="C:\PenilaianTanah\icons\layers_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\BackupDanEkspor.pyt\Ekspor_Zona" name="Ekspor Zona" xmlns=""/>

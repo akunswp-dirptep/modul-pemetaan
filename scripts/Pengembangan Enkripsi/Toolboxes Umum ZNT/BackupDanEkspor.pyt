@@ -194,13 +194,13 @@ class Ekspor_Geodatabase:
 class Simpan_Workspace_Ke_Sipenta:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Ekspor Workspace ke Sipenta"
-        self.description = ""
+        self.label = "Simpan Workspace ke Sipenta"
+        self.description = "Tool untuk mengompresi workspace aktif dan mengunggahnya ke server Sipenta."
 
     def getParameterInfo(self):
-
         berkas_list = get_all_berkas_id()
         berkas_show = []
+        
         if berkas_list is not None:
             can_show = 0
             for berkas in berkas_list:
@@ -217,11 +217,12 @@ class Simpan_Workspace_Ke_Sipenta:
             name="berkas",
             datatype="GPString",
             parameterType="Required",
-            direction="Input")
-               
-
+            direction="Input"
+        )
+        
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
+        
         if berkas_list:
             preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
             berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
@@ -230,30 +231,34 @@ class Simpan_Workspace_Ke_Sipenta:
         
         judul = arcpy.Parameter(
             displayName="Judul",
-            name="catatan",
+            name="judul", 
             datatype="GPString",
             parameterType="Required",
-            direction="Input")
+            direction="Input"
+        )
         
         catatan = arcpy.Parameter(
             displayName="Catatan",
             name="catatan",
             datatype="GPString",
             parameterType="Required",
-            direction="Input")
+            direction="Input"
+        )
         
         penjelasan = arcpy.Parameter(
             displayName="Penjelasan",
             name="petunjuk",
             datatype="GPString",
             parameterType="Optional",
-            direction="Input")
+            direction="Input"
+        )
         
         penjelasan.value = (
-                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
-                "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(datetime.datetime.now().year))
+            "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+            "Kementerian ATR/BPN.\n"
+            f"Tahun: {datetime.now().year}\n"
+        )
 
         params = [berkas, judul, catatan, penjelasan]
         return params
@@ -264,8 +269,7 @@ class Simpan_Workspace_Ke_Sipenta:
 
     def updateParameters(self, parameters):
         """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
+        validation is performed."""
         berkas = parameters[0]
         judul = parameters[1]
         catatan = parameters[2]
@@ -289,64 +293,67 @@ class Simpan_Workspace_Ke_Sipenta:
                 "Tools ini berfungsi untuk menyimpan workspace ke Sipenta.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(datetime.datetime.now().year))
+                f"Tahun: {datetime.now().year}\n"
+            )
         return
 
     def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
+        """Modify the messages created by internal validation."""
         return
 
     def execute(self, parameters, messages):
-
         """
         Pemenuhan kondisi yang harus dipenuhi oleh program pada tool ini:
-        1. Menyimpan file ZIP yang dihasilkan ke lokasi yang dipilih oleh pengguna melalui parameter input.
-        2. Melakukan pengecekan terlebihb dahulu apakah lokasi yang dipilih valid dan dapat diakses sebelum menyimpan file ZIP.
+        1. Menyimpan file ZIP yang dihasilkan ke lokasi yang dipilih.
+        2. Melakukan pengecekan apakah lokasi dapat diakses.
         """
-
         zl_path = zonalayer.is_zona_layer_comply(show_path_message=False)
         ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
 
         berkas = parameters[0].valueAsText
         judul = parameters[1].valueAsText
         catatan = parameters[2].valueAsText
 
+        # Mengambil token user untuk otorisasi upload
+        user_data = get_user_data(CREDENTIAL_KEY)
+        token = user_data.get(AUTH_KEY, None)
+        if not token:
+            arcpy.AddError("Sesi telah habis atau Anda belum login.")
+            return
 
         if ws_dir:
-            # Pemenuhan kondisi 2: Melakukan pengecekan terlebihb dahulu apakah lokasi yang dipilih valid dan dapat diakses sebelum menyimpan file ZIP.
             parent_dir = os.path.dirname(ws_dir)
 
             if not os.path.exists(parent_dir) and parent_dir != "":
                 arcpy.AddError(f"Directory parent tidak ditemukan: {parent_dir}")
+                return
             else:
-                # Pemenuhan kondisi 1: Menyimpan file ZIP yang dihasilkan ke lokasi yang dipilih oleh pengguna melalui parameter input.
-                zip_file_path = self.compress_directory_to_zip(ws_dir, ws_dir, judul)
+                # Membuat format nama file zip agar rapi
+                zip_filename = f"{judul.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+                
+                # Menggunakan compress_with_retry agar tahan dari error file lock
+                zip_file_path = self.compress_with_retry(ws_dir, ws_dir, zip_filename)
                 
                 if zip_file_path:
                     arcpy.AddMessage(f"Proses kompresi selesai. File ZIP: {zip_file_path}")
+                    # Eksekusi proses upload jika zip berhasil dibuat
+                    self.upload_zip_to_sipenta(berkas, token, judul, zip_file_path, catatan, use_production)
+
                 else:
                     arcpy.AddError("Gagal mengompresi workspace setelah beberapa percobaan")
         else:
             arcpy.AddError("Folder tujuan tidak valid")
-
-
-        self.upload_zip_to_sipenta()
         return
 
     def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
+        """This method takes place after outputs are processed."""
         return
     
     def compress_directory_to_zip(self, source_dir, output_folder, zip_filename):
         """
-        Mengompresi seluruh direktori menjadi file ZIP dan disimpan di folder tujuan
-        Melewati file yang terkunci oleh ArcGIS
-        
-        Parameters:
-        source_dir (str): Path direktori yang akan dikompresi
-        output_folder (str): Path folder tujuan untuk menyimpan file ZIP
+        Mengompresi seluruh direktori menjadi file ZIP dan melewati file terkunci.
         """
         try:
             arcpy.AddMessage(f"Mengompresi direktori: {source_dir}")
@@ -357,7 +364,6 @@ class Simpan_Workspace_Ke_Sipenta:
                 os.makedirs(output_folder)
                 arcpy.AddMessage(f"Folder tujuan dibuat: {output_folder}")
             
-            # Generate nama file ZIP berdasarkan nama folder source dan timestamp
             source_name = os.path.basename(source_dir)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             if not zip_filename:
@@ -366,29 +372,23 @@ class Simpan_Workspace_Ke_Sipenta:
             
             arcpy.AddMessage(f"Membuat file ZIP: {zip_filename}")
             
-            # List file yang akan di-skip (file lock ArcGIS)
             skip_extensions = ['.lock', '.sr.lock']
             skip_keywords = ['.LAPTOP-', '.DESKTOP-']
             
-            # Buat file ZIP
             with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                # Walk melalui semua file dan subdirektori
                 for root, dirs, files in os.walk(source_dir):
                     for file in files:
                         file_path = os.path.join(root, file)
                         
                         # Skip file lock ArcGIS
                         if any(file.endswith(ext) for ext in skip_extensions) or any(keyword in file for keyword in skip_keywords):
-
                             continue
                         
-                        # Skip file yang sedang digunakan/dikunci
                         try:
-                            # Coba buka file untuk membaca (test jika file terkunci)
+                            # Coba buka file untuk membaca (test jika terkunci)
                             with open(file_path, 'rb') as test_file:
                                 pass
                                 
-                            # Hitung path relatif untuk disimpan dalam ZIP
                             arcname = os.path.relpath(file_path, source_dir)
                             zipf.write(file_path, arcname)
                             
@@ -407,7 +407,7 @@ class Simpan_Workspace_Ke_Sipenta:
 
     def compress_with_retry(self, source_dir, output_folder, zip_filename, max_retries=3):
         """
-        Mencoba kompresi dengan beberapa kali retry jika ada file terkunci
+        Mencoba kompresi dengan beberapa kali retry jika ada file terkunci.
         """
         for attempt in range(max_retries):
             arcpy.AddMessage(f"Percobaan kompresi ke-{attempt + 1}")
@@ -417,75 +417,90 @@ class Simpan_Workspace_Ke_Sipenta:
                 return result
             
             if attempt < max_retries - 1:
-                arcpy.AddMessage(f"Menunggu 2 detik sebelum mencoba lagi...")
+                arcpy.AddMessage("Menunggu 2 detik sebelum mencoba lagi...")
                 time.sleep(2)
         
         return None
 
-    def upload_zip_to_sipenta(nomor_berkas, token, judul, zip_path, catatan, use_production=True):
-        
+    def upload_zip_to_sipenta(self, nomor_berkas, token, judul, zip_path, catatan, use_production=True):
+        """
+        Mengunggah hasil kompresi ke server Sipenta
+        """
         zipname = os.path.basename(zip_path)
         try:
             arcpy.AddMessage('Mengupload file ke server...')
             test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/workspace"
             prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/workspace"
-            url = prod_url if use_production else test_url
+            url = prod_url if use_production else test_url            
 
             headers = {
-                    "Authorization": f"Bearer {token}"
-                }
+                "Authorization": f"Bearer {token}"
+            }
 
             data = {
-                    "no_berkas": f'{nomor_berkas}',
-                    "judul": f'{judul}',
-                    "catatan": f'{catatan}',
-                }
+                "no_berkas": f'{nomor_berkas}',
+                "judul": f'{judul}',
+                "catatan": f'{catatan}',
+            }
 
             with open(zip_path, "rb") as zip_file:
                 files = {
-                        "file": (
-                            zipname,
-                            zip_file,
-                            "application/zip"
-                        )
-                    }
+                    "file": (
+                        zipname,
+                        zip_file,
+                        "application/zip"
+                    )
+                }
 
                 response = requests.post(
-                        url,
-                        headers=headers,
-                        data=data,
-                        files=files
-                    )
-                response.raise_for_status()  # Raise an exception for HTTP errors
-                if response.status_code == 200:
-                    arcpy.AddMessage("Workspace berhasil disimpan ke modul tatausaha sipenta.")
-
-        except requests.RequestException as e:
-                arcpy.AddError(f"Error saat upload wokspace: {str(e)}")
+                    url,
+                    headers=headers,
+                    data=data,
+                    files=files
+                )
+                # Wajib dipanggil untuk memicu exception jika status 4xx/5xx
+                response.raise_for_status() 
                 
+                # Jika lolos dari raise_for_status, berarti sukses (200 OK)
+                arcpy.AddMessage("File berhasil diupload ke modul tatausaha sipenta.")
+                return response.json()
+
+        # 1. Tangkap HTTPError (403, 404, 500, dll) DULUAN
         except requests.exceptions.HTTPError as e:
-            # Ambil response dari exception
-                response = e.response
+            response = e.response
+            
+            # Ambil JSON
+            try:
+                error_json = response.json()
+                message = error_json.get("message", "")
+            except ValueError:
+                message = ""
 
-                try:
-                    error_json = response.json()
-                    message = error_json.get("message", "")
-                except Exception:
-                    message = ""
-
-                # Handle khusus token expired
-                if response.status_code == 403 and "expired" in message.lower():
-                    clear_user_data()
-                    raise Exception("Token Anda kadaluarsa, silakan login ulang.")
-
-                # Handle forbidden biasa
-                elif response.status_code == 403:
-                    raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
-
+            # Handle khusus 403
+            if response.status_code == 403:
+                if "expired" in message.lower():
+                    # clear_user_data() 
+                    arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
                 else:
-                    raise Exception(f"HTTP Error: {e}")
-        return
+                    error_message = message if message else "Periksa hak akses atau token."
+                    # Tampilkan pesan spesifik dari JSON server
+                    arcpy.AddError(f"Akses ditolak (403). Pesan: {error_message}")
+            else:
+                # Jika HTTP error lain (misal 500 Internal Server Error)
+                arcpy.AddError(f"HTTP Error: {e}")
+                
+        # 2. Tangkap error Request secara umum (misal koneksi putus/timeout)
+        except requests.RequestException as e:
+            arcpy.AddError(f"Error koneksi ke server: {str(e)}")
+            
+        # 3. Tangkap error Python lainnya
+        except Exception as e:
+            arcpy.AddError(f"Error umum saat upload: {str(e)}")
 
+        finally:
+            arcpy.management.Delete(zip_path)
+            
+        return
 class Ekspor_Zona:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""

@@ -127,10 +127,10 @@
 					<tool refID="esri_editing_ShowEditFeaturesBtn"/>
 					<tool refID="esri_editing_EditVerticesMove"/>
 					<tool refID="esri_editing_SketchAutoCompletePolygonTool"/>
-					<tool refID="esri_mapping_clearSelectionButton"/>
 					<tool refID="esri_editing_SplitCommand"/>
-					<tool refID="esri_editing_DelSelFeaturesBtn"/>
 					<tool refID="esri_editing_ClipCommand"/>
+					<tool refID="esri_mapping_clearSelectionButton"/>
+					<tool refID="esri_editing_DelSelFeaturesBtn"/>
 					<tool refID="esri_editing_SaveEditsBtn"/>
 				</toolPalette>
 			</palettes>
@@ -1724,11 +1724,11 @@
 				</button>
 			<!-- Menu Pengolahan Data Dasar -->
 
-				<button id="ButtonUploadPetaZonaAwalNilaiTanah" caption="Upload Peta Survei Batas Zona Awal Nilai Tanah" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadPetaZonaAwalNilaiTanah" caption="Upload Survei Batas Zona Awal Nilai Tanah" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanDataDasar.pyt\Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT" name="Upload Peta Zona Awal Nilai Tanah" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanDataDasar.pyt\Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT" name="Upload Survei Batas Zona Awal Nilai Tanah" xmlns=""/>
 					</args>
-					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Peta Zona Awal Nilai Tanah ZNT.</tooltip>
+					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Survei Batas Zona Awal Nilai Tanah.</tooltip>
 				</button>
 
 			<!-- Menu Pengolahan Titik Sampel  -->
@@ -1749,25 +1749,25 @@
 				</button>
 
 			<!-- Menu Layout dan Upload ZNT  -->
-				<button id="ButtonUploadPetaSebaranSampel" caption="Upload Peta Sebaran Sampel" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadPetaSebaranSampel" caption="Upload Data Titik Sampel" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT\LayoutDanUpload.pyt\Upload_Peta_Sebaran_Sampel" name="Upload Peta Sebaran Sampel" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT\LayoutDanUpload.pyt\Upload_Peta_Sebaran_Sampel" name="Upload Data Titik Sampel" xmlns=""/>
 					</args>
-					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Peta Sebaran Sampel ZNT.</tooltip>
+					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Data Titik Sampel.</tooltip>
 				</button>
 
-				<button id="ButtonUploadPetaStandarDeviasi" caption="Upload Peta Simpangan Baku Relatif" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadPetaStandarDeviasi" caption="Upload Data Simpangan Baku Relatif" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT\LayoutDanUpload.pyt\Upload_Peta_Simpangan_Baku_Relatif" name="Upload Peta Sebaran Sampel" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT\LayoutDanUpload.pyt\Upload_Peta_Simpangan_Baku_Relatif" name="Upload Data Simpangan Baku Relatif" xmlns=""/>
 					</args>
-					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Peta Simpangan Baku Relatif ZNT.</tooltip>
+					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Data Simpangan Baku Relatif .</tooltip>
 				</button>
 
-				<button id="ButtonUploadPetaZonaNilaiTanah" caption="Upload Peta Zona Nilai Tanah" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadPetaZonaNilaiTanah" caption="Upload Data Zona Nilai Tanah" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT\LayoutDanUpload.pyt\Upload_Peta_Zona_Nilai_Tanah" name="Upload Peta Zona Nilai Tanah" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan ZNT\LayoutDanUpload.pyt\Upload_Peta_Zona_Nilai_Tanah" name="Upload Data Zona Nilai Tanah" xmlns=""/>
 					</args>
-					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Peta Zona Nilai Tanah ZNT.</tooltip>
+					<tooltip heading="Upload ZNT">Menu untuk melakukan Upload Data Zona Nilai Tanah.</tooltip>
 				</button>
 
 

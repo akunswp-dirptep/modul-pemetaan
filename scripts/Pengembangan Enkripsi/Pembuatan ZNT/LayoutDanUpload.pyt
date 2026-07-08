@@ -54,7 +54,7 @@ class Toolbox:
 class Upload_Peta_Sebaran_Sampel:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Peta Sebaran Sampel"
+        self.label = "Upload Data Titik Sampel"
         self.description = ""
 
     def getParameterInfo(self):
@@ -197,7 +197,7 @@ class Upload_Peta_Sebaran_Sampel:
 class Upload_Peta_Simpangan_Baku_Relatif:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Peta Simpangan Baku Relatif"
+        self.label = "Upload Data Simpangan Baku Relatif"
         self.description = ""
 
     def getParameterInfo(self):
@@ -341,7 +341,7 @@ class Upload_Peta_Simpangan_Baku_Relatif:
 class Upload_Peta_Zona_Nilai_Tanah:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
-        self.label = "Upload Peta Zona Nilai Tanah"
+        self.label = "Upload Data Zona Nilai Tanah"
         self.description = ""
 
     def getParameterInfo(self):

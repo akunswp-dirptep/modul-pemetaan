@@ -5,5 +5,3 @@ __pycache__/
 *.pyc
 *.pyt.xml
 qc-code/
-temp/
-config/

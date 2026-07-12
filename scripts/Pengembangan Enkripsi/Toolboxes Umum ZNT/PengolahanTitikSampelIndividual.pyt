@@ -217,10 +217,11 @@ class Rekomendasi_Titik_Pembanding(object):
         
     
     def cek_zona_beda(self, ts_path, zl_path, tz_path):
+        
         zona_beda = []
 
         layers_to_check = [
-            (ts_path, "Titik_Sampel", r"in_memory\identity_ts")
+            (ts_path, "Titik_Sampel", os.path.join(self.dataset_path, 'identity_ts'))
         ]
 
         if arcpy.Exists(tz_path):
@@ -242,9 +243,12 @@ class Rekomendasi_Titik_Pembanding(object):
             with arcpy.da.SearchCursor(
                 identity_fc,
                 ["NOZN", "JNSZN", "Zoning"]
+            
             ) as cursor:
 
                 for nozona, jenis, zoning in cursor:
+                    arcpy.AddMessage(jenis)
+                    arcpy.AddMessage(zoning)
                     if str(jenis) != str(zoning):
                         zona_beda.append(
                             f"{layer_name} - NOZN {nozona} "
@@ -363,7 +367,6 @@ class Rekomendasi_Titik_Pembanding(object):
                 break  # Hanya ambil satu baris (nomor_entry unik)
 
         return data_format
-
 
     def penyesuaian_status_kepemilikan(self, hak):
 

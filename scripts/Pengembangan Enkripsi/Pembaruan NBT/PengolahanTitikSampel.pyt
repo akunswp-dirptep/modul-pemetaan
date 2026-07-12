@@ -38,7 +38,6 @@ class Toolbox:
                       Hitung_Persil_Individual_Otomatis,
                       Simpan_Sebagai_Perubahan_Menyebar,
                       Hitung_Statistik_Kelompok_Perubahan,
-                      Mencari_Nilai_Outlier
                       ]
 
 
@@ -2916,7 +2915,7 @@ class Hitung_Statistik_Kelompok_Perubahan(object):
 class Mencari_Nilai_Outlier(object):
     def __init__(self):
         self.label = "Mencari Nilai Outlier"
-        self.description = "Mencari bidang anomali berdasarkan pilihan zonasi spesifik dan perbandingan nilai dalam radius tertentu menggunakan Near Table."
+        self.description = "Mencari bidang anomali berdasarkan pilihan Kelurahan, Zonasi spesifik, dan perbandingan nilai dalam radius tertentu menggunakan Near Table."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -2928,7 +2927,16 @@ class Mencari_Nilai_Outlier(object):
             parameterType="Required",
             direction="Input")
 
-        # 1. Parameter Pilihan Nilai Zonasi (Dropdown Dinamis)
+        # 1. Parameter Pilihan Kelurahan (Dropdown Dinamis)
+        param_kelurahan = arcpy.Parameter(
+            displayName="Pilih Kelurahan (Otomatis dari field WADMKD)",
+            name="kelurahan_value",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        param_kelurahan.filter.type = "ValueList"
+
+        # 2. Parameter Pilihan Nilai Zonasi (Dropdown Dinamis)
         param_zone_val = arcpy.Parameter(
             displayName="Pilih Zonasi (Otomatis dari field ZONASI)",
             name="zone_value",
@@ -2937,7 +2945,7 @@ class Mencari_Nilai_Outlier(object):
             direction="Input")
         param_zone_val.filter.type = "ValueList"
 
-        # 2. Parameter Pilihan Field Target (Nilai)
+        # 3. Parameter Pilihan Field Target (Nilai)
         param_field = arcpy.Parameter(
             displayName="Field Nilai yang Dicek",
             name="target_field",
@@ -2948,16 +2956,16 @@ class Mencari_Nilai_Outlier(object):
         param_field.filter.list = ["NILAIBD_LAMA", "NILAIBD"]
         param_field.value = "NILAIBD_LAMA"
 
-        # 3. Parameter Radius
+        # 4. Parameter Radius
         param_radius = arcpy.Parameter(
             displayName="Radius Pencarian",
             name="radius",
             datatype="GPLinearUnit",
             parameterType="Required",
             direction="Input")
-        param_radius.value = "50 Meters"
+        param_radius.value = "100 Meters"
 
-        # 4. Parameter Skip 0
+        # 5. Parameter Skip 0
         param_skip_zero = arcpy.Parameter(
             displayName="Abaikan Nilai 0 (Null otomatis diabaikan)",
             name="skip_zero",
@@ -2966,18 +2974,16 @@ class Mencari_Nilai_Outlier(object):
             direction="Input")
         param_skip_zero.value = True
 
-        # 5. Parameter Batas Anomali
+        # 6. Parameter Batas Anomali
         param_threshold = arcpy.Parameter(
             displayName="Threshold Perbedaan (Berapa Kali Lipat)",
             name="threshold",
             datatype="GPDouble",
             parameterType="Required",
             direction="Input")
-        param_threshold.value = 5.0 # Default: 5x lipat
+        param_threshold.value = 2.0 
 
-        # Catatan: Parameter 6 (Output Feature Class) telah dihapus
-
-        return [param_in_fc, param_zone_val, param_field, param_radius, param_skip_zero, param_threshold]
+        return [param_in_fc, param_kelurahan, param_zone_val, param_field, param_radius, param_skip_zero, param_threshold]
 
     def isLicensed(self):
         return True
@@ -2985,19 +2991,40 @@ class Mencari_Nilai_Outlier(object):
     def updateParameters(self, parameters):
         if parameters[0].value:
             in_fc = parameters[0].valueAsText
+            kelurahan_val = parameters[1].valueAsText
             try:
                 fields = [f.name.upper() for f in arcpy.ListFields(in_fc)]
-                if "ZONASI" in fields:
-                    unique_values = set()
-                    with arcpy.da.SearchCursor(in_fc, ["ZONASI"]) as cursor:
+                
+                # Update List Kelurahan (WADMKD)
+                if "WADMKD" in fields:
+                    unique_kel = set()
+                    with arcpy.da.SearchCursor(in_fc, ["WADMKD"]) as cursor:
                         for row in cursor:
                             if row[0] is not None:
-                                unique_values.add(str(row[0]))
-                    
-                    if unique_values:
-                        parameters[1].filter.list = sorted(list(unique_values))
+                                unique_kel.add(str(row[0]))
+                    if unique_kel:
+                        parameters[1].filter.list = sorted(list(unique_kel))
                 else:
                     parameters[1].filter.list = []
+
+                # Update List Zonasi
+                if "ZONASI" in fields:
+                    where_clause = None
+                    # Jika Kelurahan sudah dipilih, filter Zonasi yang tampil agar sesuai Kelurahan tersebut
+                    if kelurahan_val:
+                        kel_delim = arcpy.AddFieldDelimiters(in_fc, "WADMKD")
+                        where_clause = f"{kel_delim} = '{kelurahan_val}'"
+                        
+                    unique_zone = set()
+                    with arcpy.da.SearchCursor(in_fc, ["ZONASI"], where_clause=where_clause) as cursor:
+                        for row in cursor:
+                            if row[0] is not None:
+                                unique_zone.add(str(row[0]))
+                    
+                    if unique_zone:
+                        parameters[2].filter.list = sorted(list(unique_zone))
+                else:
+                    parameters[2].filter.list = []
             except:
                 pass
         return
@@ -3007,44 +3034,68 @@ class Mencari_Nilai_Outlier(object):
             in_fc = parameters[0].valueAsText
             try:
                 fields = [f.name.upper() for f in arcpy.ListFields(in_fc)]
+                missing_fields = []
+                
+                if "WADMKD" not in fields:
+                    missing_fields.append("'WADMKD'")
                 if "ZONASI" not in fields:
-                    parameters[0].setErrorMessage("Layer input harus memiliki field bernama 'ZONASI' agar tool ini bisa berfungsi.")
+                    missing_fields.append("'ZONASI'")
+                    
+                if missing_fields:
+                    param_msg = " dan ".join(missing_fields)
+                    parameters[0].setErrorMessage(f"Layer input harus memiliki field {param_msg} agar tool ini bisa berfungsi.")
             except:
                 pass
         return
 
     def execute(self, parameters, messages):
         in_fc = parameters[0].valueAsText
-        chosen_zone = parameters[1].valueAsText
-        target_field = parameters[2].valueAsText
-        radius = parameters[3].valueAsText
-        skip_zero = parameters[4].value
-        threshold = parameters[5].value
+        chosen_kelurahan = parameters[1].valueAsText
+        chosen_zone = parameters[2].valueAsText
+        target_field = parameters[3].valueAsText
+        radius = parameters[4].valueAsText
+        skip_zero = parameters[5].value
+        threshold = parameters[6].value
 
         desc = arcpy.Describe(in_fc)
         oid_field = desc.OIDFieldName
         
-        field_type = "String"
+        # Pengecekan tipe data field untuk formasi SQL yang tepat
+        zone_type = "String"
+        kel_type = "String"
         for f in desc.fields:
             if f.name.upper() == "ZONASI":
-                field_type = f.type
-                break
+                zone_type = f.type
+            elif f.name.upper() == "WADMKD":
+                kel_type = f.type
                 
-        zonasi_field_delimited = arcpy.AddFieldDelimiters(in_fc, "ZONASI")
-        if field_type in ["String", "Guid", "GlobalID"]:
-            where_clause = f"{zonasi_field_delimited} = '{chosen_zone}'"
+        zonasi_delim = arcpy.AddFieldDelimiters(in_fc, "ZONASI")
+        kelurahan_delim = arcpy.AddFieldDelimiters(in_fc, "WADMKD")
+        
+        # Pembuatan Query Kelurahan
+        if kel_type in ["String", "Guid", "GlobalID"]:
+            kel_query = f"{kelurahan_delim} = '{chosen_kelurahan}'"
         else:
-            where_clause = f"{zonasi_field_delimited} = {chosen_zone}"
+            kel_query = f"{kelurahan_delim} = {chosen_kelurahan}"
+
+        # Pembuatan Query Zonasi
+        if zone_type in ["String", "Guid", "GlobalID"]:
+            zone_query = f"{zonasi_delim} = '{chosen_zone}'"
+        else:
+            zone_query = f"{zonasi_delim} = {chosen_zone}"
+
+        # Gabungkan kedua Query
+        where_clause = f"{kel_query} AND {zone_query}"
 
         temp_layer = "filtered_zone_layer"
         arcpy.management.MakeFeatureLayer(in_fc, temp_layer, where_clause)
 
         count = int(arcpy.management.GetCount(temp_layer)[0])
         if count == 0:
-            arcpy.AddError(f"Tidak ada data valid untuk Zonasi: {chosen_zone}")
+            arcpy.AddError(f"Tidak ada data valid untuk Kelurahan: {chosen_kelurahan} dan Zonasi: {chosen_zone}")
             return
 
-        messages.addMessage(f"Membaca {count} fitur pada area Zonasi: {chosen_zone}...")
+        messages.addMessage(f"Membaca {count} fitur pada area Kelurahan: {chosen_kelurahan}, Zonasi: {chosen_zone}...")
         
         valid_data = {}
         with arcpy.da.SearchCursor(temp_layer, [oid_field, target_field]) as cursor:
@@ -3060,7 +3111,7 @@ class Mencari_Nilai_Outlier(object):
                 valid_data[oid] = float(nilai)
 
         if not valid_data:
-            arcpy.AddError("Proses dibatalkan: Tidak ada nilai bidang yang valid (bukan Null/0) pada zonasi ini.")
+            arcpy.AddError("Proses dibatalkan: Tidak ada nilai bidang yang valid (bukan Null/0) pada filter ini.")
             return
 
         messages.addMessage(f"Mencari tetangga dalam radius {radius} menggunakan Near Table...")
@@ -3139,7 +3190,8 @@ class Mencari_Nilai_Outlier(object):
         if arcpy.Exists(temp_layer):
             arcpy.management.Delete(temp_layer)
 
-        return           
+        return
+    
 class Hitung_Individual_Cluster(object):
 
     def __init__(self):

@@ -1531,15 +1531,35 @@ class Setujui_Dan_Gabungkan_Data(object):
 
         # 1. Kumpulkan perubahan yang disetujui
         arcpy.AddMessage("Membaca data yang disetujui untuk di-merge...")
-        approved_updates = {} # Format: { 'ID_001': {'NAMA_PEMILIK': 'Budi', 'LUAS': '100'} }
+        approved_updates = {} 
         
         with arcpy.da.SearchCursor(staging_table, ["IDBIDANG", "FIELD_NAME", "USER_VALUE", "STATUS_MERGE"]) as cursor:
             for row in cursor:
                 idbidang, field_name, user_val, status = row
+                
                 if status and status.upper() == 'YA':
+                    # 1. Tangani nilai None (baik objek None bawaan atau string "None")
+                    if user_val is None or str(user_val).strip().lower() == 'none' or str(user_val).strip() == '':
+                        clean_val = None
+                    else:
+                        # 2. Tangani string berbentuk angka (seperti "1.0", "2") menjadi integer
+                        try:
+                            # Coba konversi ke float dulu untuk menangani string desimal
+                            float_val = float(user_val)
+                            
+                            # Cek apakah float tersebut sebenarnya adalah bilangan bulat (integer)
+                            if float_val.is_integer():
+                                clean_val = int(float_val)
+                            else:
+                                clean_val = float_val # Biarkan sebagai float jika memang angka desimal (misal "1.5")
+                        except (ValueError, TypeError):
+                            # Jika gagal dikonversi ke angka (berarti teks/string biasa), biarkan aslinya
+                            clean_val = user_val
+
+                    # 3. Simpan nilai yang sudah dibersihkan ke dalam dictionary
                     if idbidang not in approved_updates:
                         approved_updates[idbidang] = {}
-                    approved_updates[idbidang][field_name] = user_val
+                    approved_updates[idbidang][field_name] = clean_val
 
         if not approved_updates:
             arcpy.AddWarning("Tidak ada data yang memiliki STATUS_MERGE = 'YA'. Merge dibatalkan.")
@@ -1561,17 +1581,16 @@ class Setujui_Dan_Gabungkan_Data(object):
             for row in ucursor:
                 idbidang = str(row[0])
                 if idbidang in approved_updates:
-                    arcpy.AddMessage("Masuk")
+
                     # Ambil dictionary field dan nilai barunya
                     field_updates = approved_updates[idbidang]
                     row_changed = False
                     
                     # Cek tiap field di cursor (dimulai dari index 1)
                     for i, field_name in enumerate(update_fields[1:], start=1):
-                        arcpy.AddMessage(field_name)
-                        arcpy.AddMessage(field_updates)
+
                         if field_name in field_updates:
-                            arcpy.AddMessage("Masuk")
+  
                             # Masukkan nilai baru (Note: pastikan tipe data sesuai, tabel ini menyimpan dalam bentuk String)
                             row[i] = field_updates[field_name]
                             row_changed = True

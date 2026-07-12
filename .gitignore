@@ -1,9 +1,9 @@
 unins000.dat
 unins000.exe
 test_folder/
-config/penilaiantanah.bin
 __pycache__/
 *.pyc
 *.pyt.xml
-qc/
+qc-code/
 temp/
+config/

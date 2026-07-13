@@ -484,7 +484,10 @@
 					largeImage="C:\PenilaianTanah\icons\analysis1.png"
 					smallImage="C:\PenilaianTanah\icons\analysis1.png">
 					<button refID="ButtonTampilkanSimbologiPersilLayer" size="Medium"/>
-					<button refID='ButtonUploadTitikSampel' />
+					<button refID='ButtonUploadTitikSampelPembaruanNBT' />
+					<button refID='ButtonUploadTitikZonaPembaruanNBT' />
+					<button refID='ButtonUploadNilaiBidangTanahPembaruanNBT' />
+					
 
 				</menu>
 				<menu id="menu_backup_dan_ekspor_hasil_nbt" caption="Backup dan Ekspor Hasil" extendedCaption="Backup dan Ekspor Hasil" keytip="TA"         
@@ -2851,7 +2854,7 @@
 				</button>
 			<!-- Layout dan Upload -->
 				<button
-					id="ButtonUploadTitikSampel"
+					id="ButtonUploadTitikSampelPembaruanNBT"
 					caption="Upload Titik Sampel"
 					smallImage="C:\PenilaianTanah\icons\folder.png"
 					largeImage="C:\PenilaianTanah\icons\folder.png"
@@ -2873,6 +2876,55 @@
 						Menu untuk mengupload titik sampel yang akan digunakan.
 					</tooltip>
 				</button>
+
+				<button
+					id="ButtonUploadNilaiBidangTanahPembaruanNBT"
+					caption="Upload Nilai Bidang Tanah"
+					smallImage="C:\PenilaianTanah\icons\folder.png"
+					largeImage="C:\PenilaianTanah\icons\folder.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\LayoutDanUpload.pyt\Upload_Nilai_Bidang_Tanah"
+							name="Upload Nilai Bidang Tanah"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Upload Nilai Bidang Tanah">
+						Menu untuk memperbaharui nilai bidang tanah yang akan digunakan.
+					</tooltip>
+				</button>
+
+				<button
+					id="ButtonUploadTitikZonaPembaruanNBT"
+					caption="Upload Titik Zona"
+					smallImage="C:\PenilaianTanah\icons\folder.png"
+					largeImage="C:\PenilaianTanah\icons\folder.png"
+					isCustomCommand="true"
+					assembly=""
+					className="esri_geoprocessing_module:Commands.ExecuteGPToolButton"
+					extendedCaption=""
+					helpContextID=""
+				>
+					<args>
+						<params
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\LayoutDanUpload.pyt\Upload_Titik_Zona"
+							name="Upload Titik Zona"
+							xmlns=""
+						/>
+					</args>
+
+					<tooltip heading="Upload Titik Zona">
+						Menu untuk mengupload titik zona yang digunakan.
+					</tooltip>
+				</button>
+
 				<button
 					id="ButtonTampilkanSimbologiPersilLayer"
 					caption="Tampilkan Simbologi Persil"

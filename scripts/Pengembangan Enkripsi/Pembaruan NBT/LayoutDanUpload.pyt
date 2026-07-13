@@ -1,6 +1,6 @@
 import arcpy
 import os, sys
-import json
+import json, shutil, requests
 import zipfile
 import tempfile
 from datetime import datetime
@@ -272,255 +272,233 @@ class Upload_Titik_Zona(object):
         setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return
 
-
 class Upload_Nilai_Bidang_Tanah(object):
-
     def __init__(self):
-
-        self.label = (
-            "Export Feature Layer ke JSON ZIP"
-        )
-
-        self.description = (
-            "Mengubah Feature Layer menjadi "
-            "format JSON lalu otomatis ZIP"
-        )
-
+        self.label = "Upload Nilai Bidang Tanah"
+        self.description = "Mengonversi layer ke custom JSON, mengompresnya ke ZIP, lalu mengunggahnya ke API SIPENTA."
         self.canRunInBackground = False
 
-    # =====================================================
-    # PARAMETER
-    # =====================================================
-
     def getParameterInfo(self):
+        berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
+        berkas_show = []
+        can_show = 0
+        if berkas_list is not None:
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
-        input_layer = arcpy.Parameter(
-            displayName="Input Feature Layer",
-            name="input_layer",
+        param_in_feature = arcpy.Parameter(
+            name="in_feature",
+            displayName="Input Layer (Persil)",
             datatype="GPFeatureLayer",
             parameterType="Required",
-            direction="Input"
-        )
+            direction="Input")
 
-        output_zip = arcpy.Parameter(
-            displayName="Output ZIP",
-            name="output_zip",
-            datatype="DEFile",
+        # 2. Parameter Nomor Berkas
+        berkas = arcpy.Parameter(
+            name="nomor_berkas",
+            displayName="Nomor Berkas",
+            datatype="GPString",
             parameterType="Required",
-            direction="Output"
-        )
+            direction="Input")
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        if berkas_list and can_show > 0:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '04/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]           
+        elif berkas_list and can_show == 0:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
 
-        output_zip.filter.list = ["zip"]
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
 
-        return [
-            input_layer,
-            output_zip
-        ]
+        penjelasan.value = (
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
+        
+        return [param_in_feature, berkas, penjelasan]
 
     def isLicensed(self):
         return True
 
-    def updateParameters(
-        self,
-        parameters
-    ):
+    def updateParameters(self, parameters):
+
+            shapefile_path = parameters[0]
+            berkas = parameters[1]
+            penjelasan = parameters[2]
+
+            is_login = get_user_data(CREDENTIAL_KEY)
+
+            if is_login is None:
+                shapefile_path.enabled = False
+                berkas.enabled = False
+                penjelasan.enabled = True
+            else:
+                shapefile_path.enabled = True
+                berkas.enabled = True
+                penjelasan.enabled = False
+            return
+
+    def updateMessages(self, parameters):
         return
 
-    def updateMessages(
-        self,
-        parameters
-    ):
-        return
+    def execute(self, parameters, messages):
+        # Mengambil nilai dari antarmuka ArcGIS Pro
 
-    # =====================================================
-    # HELPER
-    # =====================================================
+        user_data = get_user_data(CREDENTIAL_KEY)
 
-    def convert_value(
-        self,
-        value
-    ):
+        berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
 
-        if value is None:
+        if berkas_list is None:
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan NBT.")
+            return
+        
+        in_feature = parameters[0].valueAsText
+        nomor_berkas = parameters[1].valueAsText
+        token = parameters[2].valueAsText
+        api_param = 'pembaruan_nbt_nilai_bidang_tanah'
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        token = user_data.get(AUTH_KEY, None)
 
-            return None
+        # Persiapan nama file dan folder sementara menggunakan scratchFolder bawaan ArcPy
+        temp_dir = os.path.join(arcpy.env.scratchFolder, "sipenta_temp")
+        layer_name = os.path.basename(in_feature)
+        json_filename = "data.json"
+        zip_filename = f"{layer_name}.zip"
+        
+        json_path = os.path.join(temp_dir, json_filename)
+        zip_path = os.path.join(temp_dir, zip_filename)
 
-        if isinstance(
-            value,
-            (
-                int,
-                float,
-                str,
-                bool
-            )
-        ):
+        arcpy.AddMessage('Mempersiapkan folder sementara untuk proses data...')
+        try:
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+            os.makedirs(temp_dir)
+        except Exception as e:
+            arcpy.AddError(f"Terdapat kesalahan saat membuat folder sementara: {str(e)}")
+            return
 
-            return value
+        try:
+            # ==========================================
+            # FASE 1: KONVERSI LAYER KE CUSTOM JSON
+            # ==========================================
+            arcpy.AddMessage("1. Membaca layer dan membuat file JSON...")
+            fields_info = arcpy.ListFields(in_feature)
+            # Mengecualikan OID dan Geometry
+            headers = [f.name for f in fields_info if f.type not in ["OID", "Geometry"]]
+            
+            rows = []
+            with arcpy.da.SearchCursor(in_feature, headers) as cursor:
+                for row in cursor:
+                    rows.append(list(row))
+                    
+            custom_json = {
+                "headers": headers,
+                "rows": rows
+            }
+            
+            # Simpan JSON ke folder sementara
+            with open(json_path, "w") as f:
+                json.dump(custom_json, f)
 
-        return str(value)
+            # ==========================================
+            # FASE 2: KOMPRESI KE ZIP
+            # ==========================================
+            arcpy.AddMessage("2. Mengompresi JSON ke dalam file ZIP...")
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                # Simpan file di dalam zip dengan nama yang sama
+                zipf.write(json_path, arcname=json_filename)
 
-    # =====================================================
-    # EXECUTE
-    # =====================================================
+            # ==========================================
+            # FASE 3: UPLOAD KE API SIPENTA
+            # ==========================================
+            arcpy.AddMessage("3. Mengupload file ZIP ke server SIPENTA...")
+            test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload"
+            prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/upload"
+            url = prod_url if use_production else test_url
 
-    def execute(
-        self,
-        parameters,
-        messages
-    ):
+            api_headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            
+            data = {
+                "no_berkas": str(nomor_berkas),
+                "param": str(api_param)
+            }
 
-        messages.addMessage(
-            "== Proses dimulai =="
-        )
-
-        input_layer = (
-            parameters[0].valueAsText
-        )
-
-        output_zip = (
-            parameters[1].valueAsText
-        )
-
-        # =================================================
-        # VALIDASI
-        # =================================================
-
-        if not arcpy.Exists(
-            input_layer
-        ):
-
-            messages.addErrorMessage(
-                (
-                    "Feature layer "
-                    "tidak ditemukan"
-                )
-            )
-
-            raise arcpy.ExecuteError
-
-        # =================================================
-        # FIELD
-        # =================================================
-
-        messages.addMessage(
-            "== Membaca field =="
-        )
-
-        fields = [
-
-            field.name
-            for field in arcpy.ListFields(
-                input_layer
-            )
-            if field.type not in [
-                "Geometry",
-                "OID"
-            ]
-        ]
-
-        # =================================================
-        # ROWS
-        # =================================================
-
-        messages.addMessage(
-            "== Membaca data =="
-        )
-
-        rows_data = []
-
-        with arcpy.da.SearchCursor(
-            input_layer,
-            fields
-        ) as rows:
-
-            for row in rows:
-
-                converted_row = [
-
-                    self.convert_value(
-                        value
+            with open(zip_path, "rb") as zip_file:
+                files = {
+                    "file": (
+                        zip_filename,
+                        zip_file,
+                        "application/zip"
                     )
-                    for value in row
+                }
 
-                ]
-
-                rows_data.append(
-                    converted_row
+                response = requests.post(
+                    url,
+                    headers=api_headers,
+                    data=data,
+                    files=files
                 )
+                response.raise_for_status()
 
-        # =================================================
-        # JSON OBJECT
-        # =================================================
+            arcpy.AddMessage("File berhasil diupload ke modul tatausaha SIPENTA.")
 
-        json_data = {
+        # ==========================================
+        # FASE ERROR HANDLING (Milik Anda)
+        # ==========================================
+        except requests.exceptions.HTTPError as e:
+            response = e.response
+            message = ""
+            try:
+                error_json = response.json()
+                message = error_json.get("message", "")
+            except Exception:
+                pass
 
-            "headers": fields,
-            "rows": rows_data
+            if response.status_code == 403 and "expired" in message.lower():
+                # Catatan: Jika ada fungsi internal untuk hapus data user, panggil di sini
+                # clear_user_data() 
+                arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
+            elif response.status_code == 403:
+                error_message = message if message else "Periksa hak akses atau token."
+                arcpy.AddError(f"Akses ditolak (403). Pesan: {error_message}")
+            else:
+                arcpy.AddError(f"HTTP Error {response.status_code}: {message or str(e)}")
 
-        }
+        except requests.exceptions.RequestException as e:
+            arcpy.AddError(f"Error during file upload: {str(e)}")
 
-        # =================================================
-        # TEMP DIRECTORY
-        # =================================================
+        except Exception as e:
+            arcpy.AddError(f"Terjadi kesalahan sistem: {str(e)}")
 
-        temp_dir = tempfile.mkdtemp()
-
-        json_path = os.path.join(
-            temp_dir,
-            "data.json"
-        )
-
-        # =================================================
-        # SAVE JSON
-        # =================================================
-
-        messages.addMessage(
-            "== Menyimpan JSON =="
-        )
-
-        with open(
-            json_path,
-            "w",
-            encoding="utf-8"
-        ) as json_file:
-
-            json.dump(
-                json_data,
-                json_file,
-                ensure_ascii=False,
-                indent=2
-            )
-
-        # =================================================
-        # CREATE ZIP
-        # =================================================
-
-        messages.addMessage(
-            "== Membuat ZIP =="
-        )
-
-        with zipfile.ZipFile(
-            output_zip,
-            "w",
-            zipfile.ZIP_DEFLATED
-        ) as zipf:
-
-            zipf.write(
-                json_path,
-                arcname="data.json"
-            )
-
-        # =================================================
-        # FINISH
-        # =================================================
-
-        messages.addMessage(
-            "== Export selesai =="
-        )
-
-        messages.addMessage(
-            f"ZIP berhasil dibuat:\n"
-            f"{output_zip}"
-        )
-
-        return
+        # ==========================================
+        # FASE 4: CLEANUP FOLDER SEMENTARA
+        # ==========================================
+        finally:
+            arcpy.AddMessage("4. Membersihkan file sementara...")
+            if os.path.exists(temp_dir):
+                try:
+                    shutil.rmtree(temp_dir)
+                except Exception as cleanup_error:
+                    arcpy.AddWarning(f"Gagal menghapus folder sementara: {str(cleanup_error)}")
+            return

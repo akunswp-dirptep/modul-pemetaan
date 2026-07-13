@@ -616,6 +616,8 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         arcpy.AddMessage("Proses pembaruan titik yang dipilih selesai.")
 
     def json_to_feature_class(self, json_data, ds_path, file_name, lokasi, tahun):
+        import os
+        import arcpy
 
         fields = [
             ("no_sampel","Nomor Sampel", "INTEGER"),
@@ -695,11 +697,14 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         if arcpy.Exists(feature_class_path):
             arcpy.management.Delete(feature_class_path)
 
+        # 1. Konversi JSON ke Feature Class
         arcpy.conversion.JSONToFeatures(json_data, feature_class_path)
 
+        # 2. Update Alias
         for field in fields:
             arcpy.management.AlterField(feature_class_path, field[0], field[0], field[1])
         
+        # 3. Tambah Field 'lokasi'
         additional_fields = [
             ('lokasi', 'Lokasi', "STRING"),
         ]
@@ -708,6 +713,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         
         arcpy.management.CalculateField(feature_class_path, 'lokasi', f'"{lokasi}"', "PYTHON3")
 
+        # 4. Konversi ke Integer (Ini yang membuat posisi field pindah ke belakang)
         field_to_integer = [
             ("no_sampel", "Nomor Sampel", "INTEGER"),
             ("zoning", "Zoning/Peruntukan", "INTEGER"),
@@ -720,7 +726,6 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         for field_name, alias, field_type in field_to_integer:
             temp_field = f"{field_name}_temp"
 
-            
             arcpy.management.AddField(
                 feature_class_path,
                 temp_field,
@@ -728,7 +733,6 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 field_alias=alias
             )
 
-            
             arcpy.management.CalculateField(
                 feature_class_path,
                 temp_field,
@@ -746,6 +750,46 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 new_field_name=field_name,
                 new_field_alias=alias
             )
+
+        # =========================================================
+        # 5. PROSES PENGURUTAN ULANG FIELD (REORDER)
+        # =========================================================
+        
+        # Susun daftar urutan akhir (Sesuai list 'fields' di atas + 'lokasi')
+        final_order = [f[0] for f in fields] + ["lokasi"]
+        
+        # Buat FieldMappings object untuk mengatur ulang urutan secara fisik
+        field_mappings = arcpy.FieldMappings()
+        
+        for f_name in final_order:
+            try:
+                fmap = arcpy.FieldMap()
+                fmap.addInputField(feature_class_path, f_name)
+                field_mappings.addFieldMap(fmap)
+            except Exception:
+                # Bypass jika ada field yang terlewat atau tidak valid
+                pass
+                
+        # Tentukan nama file sementara untuk proses ekspor
+        temp_fc_name = f"{file_name}_reordered"
+        temp_fc_path = os.path.join(ds_path, temp_fc_name)
+        
+        if arcpy.Exists(temp_fc_path):
+            arcpy.management.Delete(temp_fc_path)
+            
+        # Ekspor feature class lama ke baru menggunakan FieldMappings yang berurutan
+        arcpy.conversion.FeatureClassToFeatureClass(
+            in_features=feature_class_path, 
+            out_path=ds_path, 
+            out_name=temp_fc_name, 
+            field_mapping=field_mappings
+        )
+        
+        # Hapus feature class lama yang urutannya berantakan
+        arcpy.management.Delete(feature_class_path)
+        
+        # Rename feature class yang sudah rapi ke nama aslinya
+        arcpy.management.Rename(temp_fc_path, file_name)
 
     def get_config_values(self):
         """

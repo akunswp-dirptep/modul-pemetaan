@@ -2497,7 +2497,7 @@ class Periksa_Titik_Sampel_Kelompok_Perubahan(object):
                 arcpy.management.Delete(path)
             except Exception:
                 pass            
-
+            
 class Hitung_Statistik_Kelompok_Perubahan(object):
 
     def __init__(self):

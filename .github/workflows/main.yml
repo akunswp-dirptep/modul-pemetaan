@@ -1,0 +1,24 @@
+name: Installer Produksi
+
+on:
+  push:
+    branches:
+      - dev/actions
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Ambil File dari Repository
+      uses: actions/checkout@v4
+
+    - name: Jalankan Inno Setup
+      run: iscc github-export.iss
+
+    - name: Simpan Hasil Kompilasi (.exe)
+      uses: actions/upload-artifact@v4
+      with:
+        name: Penilaian Tanah V6.2
+        path: Output/

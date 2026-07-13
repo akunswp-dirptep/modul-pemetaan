@@ -3,7 +3,7 @@ name: Installer Produksi
 on:
   push:
     branches:
-      - main
+      - pemetaan-V6
   workflow_dispatch:
 
 jobs:

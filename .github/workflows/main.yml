@@ -3,7 +3,7 @@ name: Installer Produksi
 on:
   push:
     branches:
-      - dev/actions
+      - main
   workflow_dispatch:
 
 jobs:

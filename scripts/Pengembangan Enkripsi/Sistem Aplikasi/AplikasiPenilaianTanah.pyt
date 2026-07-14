@@ -40,7 +40,7 @@ def check_update():
 
 
         if latest_version_id != VERSION_ID:
-            pesan = 'Versi terbaru tersedia: {}.\nJalankan tool untuk mendownload versi terbaru.'.format(latest_version_id)    
+            pesan = 'Versi terbaru tersedia: {}.\n.'.format(latest_version_id)    
             return [pesan, data["url"], latest_version]
         else:
             return []

@@ -776,6 +776,9 @@ class Hitung_Persil_Individual(object):
         bobot2 = (hasil2["nilai_nol"] / total_nol) * 100
         bobot3 = (hasil3["nilai_nol"] / total_nol) * 100
 
+        arcpy.AddMessage(f'{bobot1}, {bobot2}, {bobot3}')
+        arcpy.AddMessage(f'f{hasil1["nilai"] * bobot1 / 100}, {hasil2["nilai"] * bobot2 / 100}, {hasil3["nilai"] * bobot3 / 100}')
+
         nilai_akhir = (
             (hasil1["nilai"] * bobot1 / 100)
             + (hasil2["nilai"] * bobot2 / 100)

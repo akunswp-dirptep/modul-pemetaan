@@ -15,13 +15,14 @@ def current_year():
     except Exception:
         return None
 
-def fetch(url, retries=5):
+def fetch(url, retries=3):
+    # Mengurangi retries menjadi 3 agar tidak menunggu terlalu lama jika internet mati
     for i in range(retries):
         try:
             r = requests.get(
                 url,
                 headers={"User-Agent": "Mozilla/5.0"},
-                timeout=10
+                timeout=5 # Menurunkan timeout agar lebih responsif
             )
             r.raise_for_status()
             return r
@@ -35,58 +36,55 @@ def check_update():
         response = fetch(url=UPDATE_URL)
         data = response.json()
 
-        latest_version_id = data["version_id"]
-        latest_version = data["version"]
-
+        latest_version_id = data.get("version_id")
+        latest_version = data.get("version")
+        update_url = data.get("url")
+        changelog = data.get("changelog", "Tidak ada informasi pembaruan tambahan.")
 
         if latest_version_id != VERSION_ID:
-            pesan = 'Versi terbaru tersedia: {}.\n.'.format(latest_version_id)    
-            return [pesan, data["url"], latest_version]
+            return {
+                "status": "update_available",
+                "version": latest_version,
+                "url": update_url,
+                "changelog": changelog
+            }
         else:
-            return []
+            return {"status": "up_to_date"}
 
     except Exception as e:
-        return None
+        return {"status": "error"}
 
 class Toolbox:
     def __init__(self):
-        """Define the toolbox (the name of the toolbox is the name of the
-        .pyt file)."""
+        """Define the toolbox (the name of the toolbox is the name of the .pyt file)."""
         self.label = "Toolbox"
         self.alias = "toolbox"
-
-        # List of tool classes associated with this toolbox
         self.tools = [Catatan_Aplikasi]
-
 
 class Catatan_Aplikasi:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Cek Pembaruan Aplikasi"
-        self.description = ""
+        self.description = "Alat untuk mengecek ketersediaan versi terbaru aplikasi Penilaian Tanah."
 
     def getParameterInfo(self):
         """Define the tool parameters."""
-
-        self.update_check = check_update()
         
         penjelasan = arcpy.Parameter(
             displayName='Tentang Aplikasi',
-            name = 'penjelasan',
-            datatype = 'GPString',
+            name='penjelasan',
+            datatype='GPString',
             parameterType='Required',
             direction='Input'
         )
 
         penjelasan.value = (
-                f"Penilaian Tanah versi {CURRENT_VERSION} \n"
-                "Jalankan tools untuk mengecek pembaruan aplikasi \n\n"
-
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
-                "Kementrian ATR/BPN\n"
-                "Tahun: {}\n"
-
-            ).format(current_year())
+            f"Penilaian Tanah versi {CURRENT_VERSION} \n"
+            "Jalankan tools untuk mengecek pembaruan aplikasi \n\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            f"Tahun: {current_year()}\n"
+        )
 
         return [penjelasan]
 
@@ -95,61 +93,48 @@ class Catatan_Aplikasi:
         return True
 
     def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
         return
 
     def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
         return
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-
+        
+        arcpy.AddMessage("Sedang memeriksa pembaruan di server...\n")
         hasil = check_update()
 
-
-        if hasil is not None:
-            if len(hasil) > 0:
-                arcpy.AddMessage(
-                    f"Penilaian Tanah di perangkat ini\n"
-                    f"memiliki versi {CURRENT_VERSION} \n"
-                    f"Terdapat versi baru: {hasil[2]}\n"
-
-                )
-
-                link_variable = f"{hasil[1]}"
-                message_structure = {
-                    "element": "content",
-                    "data": [
-                        "Unduh melalui link berikut: ",
-                        {
-                            "element": "hyperlink",
-                            "data": "Pembaruan Aplikasi",
-                            "link": link_variable
-                        }
-                    ]
-                }
-
-                arcpy.AddMessage(f"json:{json.dumps(message_structure)}")
-
-            elif len(hasil) == 0:
-                arcpy.AddMessage(
-                    f"Penilaian Tanah di perangkat ini\n"
-                    f"memiliki versi {CURRENT_VERSION} \n"
-                    "Belum ada pembaruan aplikasi \n\n"
-                )
-        else:
+        if hasil["status"] == "update_available":
             arcpy.AddMessage(
-                    f"Penilaian Tanah di perangkat ini\n"
-                    f"memiliki versi {CURRENT_VERSION} \n"
-                    "Terdapat kendala mengecek pembaruan aplikasi \n\n"
+                f"Penilaian Tanah di perangkat ini memiliki versi {CURRENT_VERSION}\n"
+                f"Terdapat versi baru: {hasil['version']}\n"
+                f"Catatan Rilis: {hasil['changelog']}\n"
             )
-        return
 
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
+            message_structure = {
+                "element": "content",
+                "data": [
+                    "Unduh melalui tautan berikut: ",
+                    {
+                        "element": "hyperlink",
+                        "data": "Unduh Pembaruan Aplikasi",
+                        "link": hasil["url"]
+                    }
+                ]
+            }
+
+            arcpy.AddMessage(f"json:{json.dumps(message_structure)}")
+
+        elif hasil["status"] == "up_to_date":
+            arcpy.AddMessage(
+                f"Penilaian Tanah di perangkat ini memiliki versi {CURRENT_VERSION}\n"
+                "Belum ada pembaruan aplikasi (Anda menggunakan versi terbaru).\n"
+            )
+            
+        else:
+            arcpy.AddError(
+                f"Penilaian Tanah di perangkat ini memiliki versi {CURRENT_VERSION}\n"
+                "Terdapat kendala saat mengecek pembaruan aplikasi. Pastikan koneksi internet Anda stabil."
+            )
+            
         return

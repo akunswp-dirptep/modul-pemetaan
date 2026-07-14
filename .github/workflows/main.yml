@@ -20,5 +20,5 @@ jobs:
     - name: Simpan Hasil Kompilasi (.exe)
       uses: actions/upload-artifact@v4
       with:
-        name: Penilaian Tanah V6.2
+        name: Penilaian Tanah V6.2.1
         path: Output/

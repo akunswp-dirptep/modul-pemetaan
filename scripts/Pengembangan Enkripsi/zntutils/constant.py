@@ -656,9 +656,9 @@ KAB_KOTA = {
 
 }
 
-VERSION_NUMBER = '6.2'
+VERSION_NUMBER = '6.2.1'
 # VERSION_NAME = 'Balikpapan'
-VERSION_ID = '7daa6a6a-ff15-42a1-8c14-fb3eca51fc44'
+VERSION_ID = '019f5fc9-7e84-7b99-b67e-3f8fe277871b'
 CURRENT_VERSION = f'{VERSION_NUMBER}'
 SIPENTA_SERVER_INSTALLER_URL = 'https://belajar.atrbpn.go.id/sipenta/tatausaha/apis/installer'
 UPDATE_URL = "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json"

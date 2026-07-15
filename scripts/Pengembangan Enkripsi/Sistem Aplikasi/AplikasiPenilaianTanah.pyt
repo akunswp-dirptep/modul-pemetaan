@@ -1,6 +1,7 @@
 import arcpy
 import requests, os, time, sys, json
 from datetime import datetime
+import urllib.parse
 
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
@@ -65,26 +66,44 @@ class Catatan_Aplikasi:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Cek Pembaruan Aplikasi"
-        self.description = "Alat untuk mengecek ketersediaan versi terbaru aplikasi Penilaian Tanah."
+        self.description = "Alat untuk mengecek dan mengunduh versi terbaru aplikasi Penilaian Tanah."
 
     def getParameterInfo(self):
         """Define the tool parameters."""
         
         penjelasan = arcpy.Parameter(
-            displayName='Tentang Aplikasi',
+            displayName='Tentang Aplikasi & Status Pembaruan',
             name='penjelasan',
             datatype='GPString',
             parameterType='Required',
             direction='Input'
         )
 
-        penjelasan.value = (
-            f"Penilaian Tanah versi {CURRENT_VERSION} \n"
-            "Jalankan tools untuk mengecek pembaruan aplikasi \n\n"
+        # Teks dasar
+        info_teks = (
+            f"Penilaian Tanah versi {CURRENT_VERSION} \n\n"
             "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
             f"Tahun: {current_year()}\n"
+            "--------------------------------------------------\n"
         )
+
+        # Cek pembaruan otomatis saat tool diklik
+        hasil = check_update()
+
+        if hasil["status"] == "update_available":
+            info_teks =  (
+                f"[!] PEMBARUAN TERSEDIA\n"
+                f"Versi Terbaru: {hasil['version']}\n"
+                f"Catatan Rilis: {hasil['changelog']}\n\n"
+                "Klik tombol 'Run' (Jalankan) di bawah ini\nuntuk mengunduh pembaruan secara otomatis."
+            )
+        elif hasil["status"] == "up_to_date":
+            info_teks = "[V] Aplikasi Anda sudah versi yang paling baru.\nBelum ada pembaruan.\n" + info_teks
+        else:
+            info_teks = "[X] Gagal terhubung ke server untuk mengecek pembaruan.\nPastikan koneksi internet aktif.\n" +info_teks
+
+        penjelasan.value = info_teks
 
         return [penjelasan]
 
@@ -101,29 +120,40 @@ class Catatan_Aplikasi:
     def execute(self, parameters, messages):
         """The source code of the tool."""
         
-        arcpy.AddMessage("Sedang memeriksa pembaruan di server...\n")
+        arcpy.AddMessage("Memeriksa pembaruan di server...\n")
         hasil = check_update()
 
         if hasil["status"] == "update_available":
-            arcpy.AddMessage(
-                f"Penilaian Tanah di perangkat ini memiliki versi {CURRENT_VERSION}\n"
-                f"Terdapat versi baru: {hasil['version']}\n"
-                f"Catatan Rilis: {hasil['changelog']}\n"
-            )
+            url_unduh = hasil["url"]
+            versi_baru = hasil["version"]
+            
+            arcpy.AddMessage(f"Ditemukan versi {versi_baru}. Memulai proses pengunduhan...")
+            
+            # Menentukan lokasi penyimpanan di folder Downloads pengguna
+            download_dir = os.path.join(os.path.expanduser('~'), 'Downloads')
+            
+            # Mencoba mengambil nama file dari URL, atau menggunakan nama default
+            parsed_url = urllib.parse.urlparse(url_unduh)
+            file_name = os.path.basename(parsed_url.path)
+            if not file_name or "." not in file_name:
+                file_name = f"Update_Penilaian_Tanah_v{versi_baru}.zip" # Ekstensi default
+                
+            download_path = os.path.join(download_dir, file_name)
 
-            message_structure = {
-                "element": "content",
-                "data": [
-                    "Unduh melalui tautan berikut: ",
-                    {
-                        "element": "hyperlink",
-                        "data": "Unduh Pembaruan Aplikasi",
-                        "link": hasil["url"]
-                    }
-                ]
-            }
-
-            arcpy.AddMessage(f"json:{json.dumps(message_structure)}")
+            try:
+                # Proses mengunduh file secara chunk (potongan) agar memori aman
+                response = requests.get(url_unduh, stream=True)
+                response.raise_for_status()
+                
+                with open(download_path, 'wb') as file:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        file.write(chunk)
+                
+                arcpy.AddMessage(f"\n✅ PENGUNDUHAN BERHASIL!")
+                arcpy.AddMessage(f"File pembaruan telah disimpan di: {download_path}")
+                
+            except Exception as e:
+                arcpy.AddError(f"❌ Gagal mengunduh file: {str(e)}")
 
         elif hasil["status"] == "up_to_date":
             arcpy.AddMessage(

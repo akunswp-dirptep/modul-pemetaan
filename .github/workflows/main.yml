@@ -17,12 +17,8 @@ jobs:
     - name: Jalankan Inno Setup
       run: iscc github-export.iss
 
-    # (Opsional) Tetap simpan sebagai artifact di repo saat ini untuk cadangan
-    - name: Simpan Hasil Kompilasi (.exe)
-      uses: actions/upload-artifact@v4
-      with:
-        name: Penilaian Tanah V6.2.1
-        path: Output/
+    # Langkah "Simpan Hasil Kompilasi (.exe)" telah dihapus dari sini 
+    # agar tidak memakan limit penyimpanan GitHub Actions.
 
     # Checkout repo tujuan ke dalam folder bernama 'target-repo'
     - name: Checkout Target Repository
@@ -41,18 +37,18 @@ jobs:
         # Pindah direktori ke repo tujuan
         cd target-repo
         
-        # Konfigurasi identitas Git (menggunakan identitas bot GitHub Actions)
+        # Konfigurasi identitas Git
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         
         # Tambahkan file ke Git
         git add .
         
-        # Cek apakah ada perubahan. Jika ada, commit dan push. Jika tidak, lewati.
+        # Cek apakah ada perubahan. Jika ada, commit dan push.
         $status = git status --porcelain
         if ($status) {
           git commit -m "Auto-update: Menambahkan installer Penilaian Tanah V6 terbaru"
           git push
         } else {
-          Write-Host "Tidak ada perubahan pada artifact, melewati proses commit & push."
+          Write-Host "Tidak ada perubahan pada file, melewati proses commit & push."
         }

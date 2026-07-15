@@ -17,38 +17,33 @@ jobs:
     - name: Jalankan Inno Setup
       run: iscc github-export.iss
 
-    # Langkah "Simpan Hasil Kompilasi (.exe)" telah dihapus dari sini 
-    # agar tidak memakan limit penyimpanan GitHub Actions.
-
-    # Checkout repo tujuan ke dalam folder bernama 'target-repo'
-    - name: Checkout Target Repository
-      uses: actions/checkout@v4
+    # Langkah ini akan otomatis membuat Tag, Release Baru, 
+    # dan mengunggah file .exe dari folder Output ke repo tujuan.
+    - name: Buat GitHub Release di Repo Tujuan
+      uses: softprops/action-gh-release@v2
       with:
+        # Menentukan target repositori tujuan
         repository: Akring-creator/update-version-repo
+        
+        # Menggunakan PAT Token untuk izin akses ke repo tujuan
         token: ${{ secrets.PAT_TOKEN }}
-        path: target-repo
-
-    # Pindahkan file dan Push ke repo tujuan
-    - name: Pindahkan Artifact dan Push ke Repo Tujuan
-      run: |
-        # Salin semua isi folder Output ke folder target-repo
-        Copy-Item -Path Output\* -Destination target-repo\ -Force -Recurse
         
-        # Pindah direktori ke repo tujuan
-        cd target-repo
+        # Nama Tag sistem Git (Harus unik setiap kali dijalankan).
+        # Di bawah ini menggunakan kombinasi tanggal & waktu agar selalu unik secara otomatis.
+        tag_name: v6-${{ github.run_number }}-${{ github.run_id }}
         
-        # Konfigurasi identitas Git
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        # Judul Halaman Rilis yang akan tampil di GitHub
+        name: "Penilaian Tanah V6.2.1 (Build #${{ github.run_number }})"
         
-        # Tambahkan file ke Git
-        git add .
+        # Catatan rilis atau deskripsi singkat
+        body: |
+          Automated release oleh GitHub Actions.
+          Komit terakhir: ${{ github.sha }}
         
-        # Cek apakah ada perubahan. Jika ada, commit dan push.
-        $status = git status --porcelain
-        if ($status) {
-          git commit -m "Auto-update: Menambahkan installer Penilaian Tanah V6 terbaru"
-          git push
-        } else {
-          Write-Host "Tidak ada perubahan pada file, melewati proses commit & push."
-        }
+        # Path/lokasi file .exe yang ingin diunggah sebagai asset rilis.
+        # Menggunakan wildcard (*) agar semua file di dalam folder Output ikut terunggah.
+        files: Output/*
+        
+        # Set ke true jika ini adalah versi stabil, atau false jika masih beta/prerelease
+        prerelease: false
+        draft: false

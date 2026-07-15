@@ -271,11 +271,11 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             direction="Input")
         penjelasan.value = (
             "Tool ini menghitung nilai ZNT untuk zona yang\n"
-            " merupakan pencilan atau outlier\n"
+            "merupakan pencilan atau outlier\n"
             "Nilai ZNT dihitung berdasarkan rata-rata nilai\n"
             "tanah (m2) dari titik sampel yang berada dalam zona tersebut\n"
             "Tool ini hanya memproses zona yang memiliki cluster\n"
-            " null atau tidak memiliki cluster sama sekali.\n\n"
+            "null atau tidak memiliki cluster sama sekali.\n\n"
             "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.datetime.now().year))

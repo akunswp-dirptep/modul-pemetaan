@@ -981,7 +981,7 @@ class Hitung_Persil_Individual(object):
             * 3
         )
 
-        persentase = abs(
+        persentase = (
             ls_tnh
             + lb_dpn
             + bentuk
@@ -1004,8 +1004,9 @@ class Hitung_Persil_Individual(object):
 
         nilai_nol = komponen.count(0)
 
+        
         return {
-            "persentase": persentase,
+            "persentase": abs(persentase),
             "nilai": nilai,
             "nilai_nol": nilai_nol
         }
@@ -1074,7 +1075,7 @@ class Hitung_Persil_Individual_Otomatis(object):
 
     def execute(self, parameters, messages):
 
-        messages.addMessage("== Proses dimulai ==")
+        messages.addMessage("Masuk")
 
         zonasi = parameters[0].valueAsText
         max_jarak = parameters[1].value
@@ -1224,6 +1225,7 @@ class Hitung_Persil_Individual_Otomatis(object):
                                 "nilai_nol": hasil["nilai_nol"],
                                 "data_hasil": hasil 
                             })
+                            arcpy.AddMessage(hasil_rekomendasi)
 
                 hasil_rekomendasi.sort(
                     key=lambda x: (
@@ -1245,6 +1247,7 @@ class Hitung_Persil_Individual_Otomatis(object):
 
                     for i, rec in enumerate(rekomendasi_final, start=1):
                         hasil = rec["data_hasil"]
+                        
                         if hasil["persentase"] > 10:
                             arcpy.AddWarning(f"== Pembanding untuk IDBIDANG {objek['IDBIDANG']} memiliki persentase > 10%. Ditunda ke radius berikutnya ==")
                             validasi_berhasil = False
@@ -1260,8 +1263,10 @@ class Hitung_Persil_Individual_Otomatis(object):
                             for hasil in hasil_list:
                                 bobot = (hasil["nilai_nol"] / total_nol) 
                                 nilai_akhir += hasil["nilai"] * bobot
+                                
                         else:
                             bobot_rata = 1.0 / len(hasil_list)
+
                             for hasil in hasil_list:
                                 nilai_akhir += hasil["nilai"] * bobot_rata
 
@@ -1320,14 +1325,14 @@ class Hitung_Persil_Individual_Otomatis(object):
         letak = (objek["s_letak"] - pembanding["s_letak"]) * 1
         kls_jln = (objek["s_kls_jln"] - pembanding["s_kls_jln"]) * 3
 
-        persentase = abs(ls_tnh + lb_dpn + bentuk + letak + kls_jln)
+        persentase = (ls_tnh + lb_dpn + bentuk + letak + kls_jln)
         nilai = pembanding["nilai"] * (100 + persentase) / 100
 
         komponen = [ls_tnh, lb_dpn, bentuk, letak, kls_jln]
         nilai_nol = komponen.count(0)
 
         return {
-            "persentase": persentase,
+            "persentase": abs(persentase),
             "nilai": nilai,
             "nilai_nol": nilai_nol
         }

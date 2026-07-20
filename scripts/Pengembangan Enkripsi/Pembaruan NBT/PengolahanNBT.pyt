@@ -1212,14 +1212,14 @@ class Hitung_Harga_Menyebar(object):
         letak = (objek["s_letak"] - pembanding["s_letak"]) * 1
         kls_jln = (objek["s_kls_jln"] - pembanding["s_kls_jln"]) * 3
 
-        persentase = abs(ls_tnh + lb_dpn + bentuk + letak + kls_jln)
+        persentase = (ls_tnh + lb_dpn + bentuk + letak + kls_jln)
         nilai = pembanding["nilai"] * (100 + persentase) / 100
 
         komponen = [ls_tnh, lb_dpn, bentuk, letak, kls_jln]
         nilai_nol = komponen.count(0)
 
         return {
-            "persentase": persentase,
+            "persentase": abs(persentase),
             "nilai": nilai,
             "nilai_nol": nilai_nol
         }
@@ -1314,6 +1314,7 @@ class Hitung_Harga_Menyebar(object):
                 }
 
         pembanding_dict = {}
+        arcpy.AddMessage(pembanding_dict)
         messages.addMessage("Membaca data referensi pembanding...")
         # SearchCursor pada persil_edit_path (jalur GDB) mengambil seluruh data untuk pembanding
         fields_kandidat = ["OBJECTID", "S_ZONASI", "S_KLS_JLN", "NILAIBD_LAMA", "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG"]

@@ -8,7 +8,31 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.constant import CURRENT_VERSION, UPDATE_URL, VERSION_ID
+import json
+import os
+
+# Path ke file metadata
+metadata_path = r'C:\PenilaianTanah\app-metadata.json'
+
+# Nilai default jika file gagal dibaca (opsional, tapi disarankan)
+CURRENT_VERSION = None
+VERSION_ID = None
+CHECK_UPDATE_URL = None
+
+# Membaca file JSON dengan penanganan error (Try-Except)
+try:
+    # Buka file dengan mode 'r' (read)
+    with open(metadata_path, 'r', encoding='utf-8') as file:
+        metadata = json.load(file)
+        
+    # Ekstrak data menggunakan key yang sesuai di JSON
+    CURRENT_VERSION = metadata.get("nomor_versi")
+    VERSION_ID = metadata.get("id_versi")
+    CHECK_UPDATE_URL = metadata.get("check_update_url")
+    INSTALLER_URL = metadata.get("installer_url")
+
+except Exception as e:
+    arcpy.AddMessage(f"Terjadi kesalahan tak terduga: {e}")
 
 def current_year():
     try:
@@ -34,7 +58,7 @@ def fetch(url, retries=3):
 
 def check_update():
     try:
-        response = fetch(url=UPDATE_URL)
+        response = fetch(url=CHECK_UPDATE_URL)
         data = response.json()
 
         latest_version_id = data.get("version_id")
@@ -85,7 +109,6 @@ class Catatan_Aplikasi:
             "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
             f"Tahun: {current_year()}\n"
-            "--------------------------------------------------\n"
         )
 
         # Cek pembaruan otomatis saat tool diklik
@@ -93,15 +116,15 @@ class Catatan_Aplikasi:
 
         if hasil["status"] == "update_available":
             info_teks =  (
-                f"[!] PEMBARUAN TERSEDIA\n"
+                f"PEMBARUAN TERSEDIA\n"
                 f"Versi Terbaru: {hasil['version']}\n"
                 f"Catatan Rilis: {hasil['changelog']}\n\n"
                 "Klik tombol 'Run' (Jalankan) di bawah ini\nuntuk mengunduh pembaruan secara otomatis."
             )
         elif hasil["status"] == "up_to_date":
-            info_teks = "[V] Aplikasi Anda sudah versi yang paling baru.\nBelum ada pembaruan.\n" + info_teks
+            info_teks = "Aplikasi Anda sudah versi yang paling baru.\nBelum ada pembaruan.\n" + info_teks
         else:
-            info_teks = "[X] Gagal terhubung ke server untuk mengecek pembaruan.\nPastikan koneksi internet aktif.\n" +info_teks
+            info_teks = "Gagal terhubung ke server untuk mengecek pembaruan.\nPastikan koneksi internet aktif.\n" +info_teks
 
         penjelasan.value = info_teks
 
@@ -124,7 +147,7 @@ class Catatan_Aplikasi:
         hasil = check_update()
 
         if hasil["status"] == "update_available":
-            url_unduh = hasil["url"]
+            url_unduh = INSTALLER_URL
             versi_baru = hasil["version"]
             
             arcpy.AddMessage(f"Ditemukan versi {versi_baru}. Memulai proses pengunduhan...")

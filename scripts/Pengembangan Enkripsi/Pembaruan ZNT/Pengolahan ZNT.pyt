@@ -73,7 +73,7 @@ class Hitung_Indeks_Nilai_Tanah:
         zona_layer = "Zona_Layer"
 
         mean_table = "in_memory/indeks_nilai_tanah_table"
-        zout_path = "in_memory/jenis_zona_join"   # 🔥 pindah ke memory
+        zout_path = "in_memory/jenis_zona_join"   
 
         mean_field_name = "indeks_nilai_tanah"
         join_key_field = "Keterangan"

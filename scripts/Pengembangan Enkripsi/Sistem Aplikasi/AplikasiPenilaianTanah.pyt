@@ -123,9 +123,9 @@ class Catatan_Aplikasi:
                 "Klik tombol 'Run' (Jalankan) di bawah ini\nuntuk mengunduh pembaruan secara otomatis."
             )
         elif hasil["status"] == "up_to_date":
-            info_teks = "Aplikasi Anda sudah versi yang paling baru.\nBelum ada pembaruan.\n" + info_teks
+            info_teks = "Aplikasi Anda sudah versi yang paling baru.\nBelum ada pembaruan.\n\n" + info_teks
         else:
-            info_teks = "Gagal terhubung ke server untuk mengecek pembaruan.\nPastikan koneksi internet aktif.\n" +info_teks
+            info_teks = "Gagal terhubung ke server untuk mengecek pembaruan.\nPastikan koneksi internet aktif.\n\n" +info_teks
 
         penjelasan.value = info_teks
 

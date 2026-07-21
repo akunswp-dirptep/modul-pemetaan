@@ -21,7 +21,7 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Hitung_Indeks_Rata_Rata, Hitung_Nilai_Prediksi, Hitung_Harga_Menyebar]
+        self.tools = [Hitung_Indeks_Rata_Rata, Hitung_Nilai_Prediksi, Hitung_Harga_Menyebar, PilihDataPembanding]
 
 
 class Hitung_Indeks_Rata_Rata(object):
@@ -1139,7 +1139,7 @@ class Hitung_Harga_Menyebar(object):
             parameterType="Required",
             direction="Input"
         )
-        max_jarak.value = 200
+        max_jarak.value = 20000
 
         simpan_sebagai_perubahan = arcpy.Parameter(
             displayName="Simpan Sebagai Perubahan",
@@ -1292,19 +1292,28 @@ class Hitung_Harga_Menyebar(object):
             raise arcpy.ExecuteError
 
         # =========================================================
-        # 1. BACA DATA TARGET DAN KANDIDAT PEMBANDING KE MEMORI
+        # 1. BACA DATA TARGET (UTAMA & DEPENDEN) SERTA KANDIDAT PEMBANDING
         # =========================================================
         target_dict = {}
-        target_oids = []
+        primary_oids = set()
+        primary_idbidangs = set()
+        dependent_oids = set()
         
-        messages.addMessage("Membaca target fitur yang terseleksi...")
-        # SearchCursor pada persil_edit (layer di Peta) otomatis hanya mengambil yang terseleksi
+        messages.addMessage("Membaca target fitur utama yang terseleksi...")
+        
+        # 1A. Membaca Target Utama (Berdasarkan Seleksi User)
         with arcpy.da.SearchCursor(persil_edit, ["OBJECTID", "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG", "S_KLS_JLN"]) as rows:
             for row in rows:
-                target_oids.append(row[0])
-                target_dict[row[0]] = {
-                    "OBJECTID": row[0],
-                    "s_zonasi": s_zonasi, # Memakai nilai parameter user
+                oid = row[0]
+                id_bidang = str(row[5]) if row[5] else ""
+                
+                primary_oids.add(oid)
+                if id_bidang:
+                    primary_idbidangs.add(id_bidang)
+                
+                target_dict[oid] = {
+                    "OBJECTID": oid,
+                    "s_zonasi": s_zonasi, 
                     "s_kls_jln": s_kls_jln if is_edit_kls_jln else (row[6] or 0), 
                     "ls_tnh_i": row[1] or 0,
                     "lb_dpn_i": row[2] or 0,
@@ -1314,24 +1323,59 @@ class Hitung_Harga_Menyebar(object):
                 }
 
         pembanding_dict = {}
-        arcpy.AddMessage(pembanding_dict)
-        messages.addMessage("Membaca data referensi pembanding...")
-        # SearchCursor pada persil_edit_path (jalur GDB) mengambil seluruh data untuk pembanding
-        fields_kandidat = ["OBJECTID", "S_ZONASI", "S_KLS_JLN", "NILAIBD_LAMA", "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG"]
-        with arcpy.da.SearchCursor(persil_edit_path, fields_kandidat, "perubahan IS NULL AND NILAIBD_LAMA > 0") as rows:
+        messages.addMessage("Memindai fitur terdampak (Dependen) dan menyusun referensi pembanding...")
+        
+        # 1B. Membaca Seluruh Data untuk mencari Dependen dan Pembanding
+        # Kueri SQL diubah: Hapus "perubahan IS NULL", tambahkan field "perubahan" di index ke-10
+        fields_kandidat = ["OBJECTID", "S_ZONASI", "S_KLS_JLN", "NILAIBD_LAMA", "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG", "data_pembanding", "perubahan"]
+        with arcpy.da.SearchCursor(persil_edit_path, fields_kandidat, "NILAIBD_LAMA > 0") as rows:
             for row in rows:
-                if row[0] not in target_oids:
-                    pembanding_dict[row[0]] = {
-                        "OBJECTID": row[0],
-                        "s_zonasi": row[1],
+                oid = row[0]
+                
+                if oid in primary_oids:
+                    continue
+                
+                is_dependent = False
+                dp_str = str(row[9]) if row[9] else ""
+                nilai_perubahan = row[10] # Mengambil nilai field perubahan
+                
+                # Cek apakah fitur ini menjadikan Target Utama sebagai pembandingnya
+                if dp_str:
+                    pembanding_list = [x.strip() for x in dp_str.split(";") if x.strip()]
+                    if any(pid in primary_idbidangs for pid in pembanding_list):
+                        is_dependent = True
+                
+                if is_dependent:
+                    # Masuk ke Target Terdampak MESKIPUN field perubahannya adalah 'individual'
+                    dependent_oids.add(oid)
+                    target_dict[oid] = {
+                        "OBJECTID": oid,
+                        "s_zonasi": row[1] or 0,
                         "s_kls_jln": row[2] or 0,
-                        "nilai": row[3],
                         "ls_tnh_i": row[4] or 0,
                         "lb_dpn_i": row[5] or 0,
                         "s_bentuk": row[6] or 0,
                         "s_letak": row[7] or 0,
                         "IDBIDANG": row[8]
                     }
+                else:
+                    # Filter pembanding dikembalikan kesini: 
+                    # Jika bukan dependen, dia HANYA boleh jadi pembanding kalau perubahan-nya KOSONG/NULL
+                    if not nilai_perubahan: 
+                        pembanding_dict[oid] = {
+                            "OBJECTID": oid,
+                            "s_zonasi": row[1] or 0,
+                            "s_kls_jln": row[2] or 0,
+                            "nilai": row[3],
+                            "ls_tnh_i": row[4] or 0,
+                            "lb_dpn_i": row[5] or 0,
+                            "s_bentuk": row[6] or 0,
+                            "s_letak": row[7] or 0,
+                            "IDBIDANG": row[8]
+                        }
+
+        if dependent_oids:
+            messages.addMessage(f"== Ditemukan {len(dependent_oids)} fitur dependen yang akan dihitung ulang zonasinya secara otomatis ==")
 
         if not pembanding_dict:
             messages.addWarningMessage("Tidak ada kandidat pembanding valid di dalam database.")
@@ -1339,14 +1383,18 @@ class Hitung_Harga_Menyebar(object):
         # =========================================================
         # 2. PROSES NEAR TABLE DINAMIS
         # =========================================================
+        all_target_oids = list(primary_oids.union(dependent_oids))
+        
         target_layer = "target_layer_temp"
         kandidat_layer = "kandidat_layer_temp"
         near_table = "memory\\bulk_near_table" 
 
+        # Syarat pembanding di layer Near Table tetap "perubahan IS NULL", karena kita tidak mau
+        # mencari pembanding yang datanya sudah diedit/berstatus 'individual'
         self.delete_if_exists(kandidat_layer)
         arcpy.management.MakeFeatureLayer(persil_edit_path, kandidat_layer, "perubahan IS NULL AND NILAIBD_LAMA IS NOT NULL AND NILAIBD_LAMA > 0")
 
-        unresolved_targets = set(target_oids)
+        unresolved_targets = set(all_target_oids)
         dict_hasil_hitung = {}
         jumlah_pembanding = 3
 
@@ -1360,7 +1408,19 @@ class Hitung_Harga_Menyebar(object):
             if not unresolved_targets:
                 break 
 
-            messages.addMessage(f"Mencari kandidat pada radius {jarak_sekarang} meter... (Sisa Target: {len(unresolved_targets)})")
+            # Mengambil daftar IDBIDANG dari target yang belum terselesaikan
+            sisa_idbidang = []
+            for oid in unresolved_targets:
+                id_bdg = target_dict[oid].get("IDBIDANG")
+                if id_bdg:
+                    sisa_idbidang.append(str(id_bdg))
+                else:
+                    sisa_idbidang.append(f"OID:{oid}") # Jaga-jaga jika IDBIDANG kosong/Null
+            
+            sisa_idbidang_str = ", ".join(sisa_idbidang)
+
+            # Memunculkan sisa target beserta IDBIDANG-nya ke pengguna
+            messages.addMessage(f"Mencari kandidat pada radius {jarak_sekarang} meter... (Sisa Target: {len(unresolved_targets)} bidang | IDBIDANG: {sisa_idbidang_str})")
 
             target_oids_str = ",".join(map(str, unresolved_targets))
             target_where = f"OBJECTID IN ({target_oids_str})"
@@ -1471,46 +1531,168 @@ class Hitung_Harga_Menyebar(object):
         if is_edit_kls_jln:
             update_fields.extend(["KLSJLN", "S_KLS_JLN"])
 
-        # Update Cursor hanya memengaruhi data terseleksi
-        with arcpy.da.UpdateCursor(persil_edit, update_fields) as rows:
+        final_oids_str = ",".join(map(str, all_target_oids))
+        where_clause = f"OBJECTID IN ({final_oids_str})"
+
+        # PERBAIKAN: Gunakan persil_edit_path (jalur GDB murni) agar 
+        # UpdateCursor tidak diblokir oleh seleksi aktif di peta
+        with arcpy.da.UpdateCursor(persil_edit_path, update_fields, where_clause) as rows:
             for row in rows:
                 oid = row[0]
 
-                # Update Parameter Zonasi
-                row[1] = zonasi
-                row[2] = s_zonasi
-                row[3] = min_lb_jln
+                # Zonasi dan kelas jalan HANYA diubah untuk Target Utama
+                if oid in primary_oids:
+                    row[1] = zonasi
+                    row[2] = s_zonasi
+                    row[3] = min_lb_jln
+                    
+                    if is_edit_kls_jln:
+                        row[8] = kls_jln
+                        row[9] = s_kls_jln
 
+                # Status ini diubah untuk Utama maupun Dependen
                 if simpan_sebagai_data_baru:
                     row[4] = "update"
                     row[7] = "individual"
 
-                # Masukkan hasil hitung jika oid ditemukan di dictionary hasil
+                # Harga dan Rujukan diperbarui untuk Utama maupun Dependen
                 if oid in dict_hasil_hitung:
                     row[5] = dict_hasil_hitung[oid]["nilai_akhir"]
                     row[6] = dict_hasil_hitung[oid]["data_pembanding"]
-
-                # Update Parameter Kelas Jalan
-                if is_edit_kls_jln:
-                    row[8] = kls_jln
-                    row[9] = s_kls_jln
                 
                 rows.updateRow(row)
 
-        messages.addMessage("== Proses selesai ==")
+        messages.addMessage("== Proses selesai, memperbarui tampilan peta ==")
         
         simbology_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Zonasi_Persil_Layer.lyrx"
-        arcpy.management.MakeFeatureLayer(persil_edit_path, "Persil_Layer")
+        
         try:
-            arcpy.management.ApplySymbologyFromLayer("Persil_Layer", simbology_path)
-        except Exception as e:
-            messages.addWarningMessage(f"== Peringatan Simbologi: {str(e)} ==")
+            # 1. Akses Project dan Map yang sedang aktif di ArcGIS Pro
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            active_map = aprx.activeMap
+            
+            if active_map:
+                # 2. Cari layer bernama "Persil_Layer" di TOC
+                layers = active_map.listLayers("Persil_Layer")
+                
+                if layers:
+                    target_layer = layers[0] # Ambil layer utama (yang paling atas)
+                    
+                    # 3. Hapus seleksi agar pengguna bisa melihat perubahan warna/simbologi
+                    arcpy.management.SelectLayerByAttribute(target_layer, "CLEAR_SELECTION")
+                    
+                    # 4. Terapkan simbologi pada layer yang sudah ada
+                    arcpy.management.ApplySymbologyFromLayer(target_layer, simbology_path)
+                    
+                    # 5. Hapus duplikat (jika sebelumnya skrip sempat membuat Persil_Layer ganda)
+                    if len(layers) > 1:
+                        for duplikat in layers[1:]:
+                            active_map.removeLayer(duplikat)
 
-        # Indeks set parameter adalah 5 (sesuai urutan output_data)
-        arcpy.SetParameter(5, "Persil_Layer")
+        except Exception as e:
+            messages.addWarningMessage(f"== Peringatan Pembaruan Tampilan: {str(e)} ==")
+
+        # # Jadikan nama layer asli sebagai output parameter agar sistem tahu proses telah selesai
+        # arcpy.SetParameter(5, "Persil_Layer")
         
         return
+    
+class PilihDataPembanding(object):
+    def __init__(self):
+        self.label = "Pilih Fitur Pembanding"
+        self.description = "Membaca field data_pembanding dari fitur yang terseleksi, lalu menyeleksi fitur rujukan berdasarkan IDBIDANG."
+        self.canRunInBackground = False
 
+    def getParameterInfo(self):
+        # 1. Parameter Input Layer (Otomatis mengambil Persil_Layer jika ada)
+        in_layer = arcpy.Parameter(
+            displayName="Layer Persil",
+            name="in_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+        in_layer.value = "Persil_Layer"
+
+        # 2. Parameter Opsi Seleksi (Apakah mau mengganti seleksi saat ini atau menambahkannya)
+        selection_type = arcpy.Parameter(
+            displayName="Tipe Seleksi",
+            name="selection_type",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        selection_type.filter.type = "ValueList"
+        selection_type.filter.list = ["NEW_SELECTION", "ADD_TO_SELECTION"]
+        selection_type.value = "NEW_SELECTION"
+
+        return [in_layer, selection_type]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        in_layer = parameters[0].valueAsText
+        selection_type = parameters[1].valueAsText
+
+        # 1. Pastikan ada fitur yang sedang terseleksi di layer
+        desc = arcpy.Describe(in_layer)
+        if not desc.FIDSet:
+            messages.addErrorMessage("== Error: Tidak ada fitur yang terseleksi. Silakan seleksi minimal satu persil terlebih dahulu. ==")
+            raise arcpy.ExecuteError
+
+        list_idbidang = set()
+
+        # 2. Baca isi field 'data_pembanding' HANYA pada fitur yang terseleksi
+        messages.addMessage("Membaca field data_pembanding pada fitur yang terseleksi...")
+        with arcpy.da.SearchCursor(in_layer, ["data_pembanding"]) as cursor:
+            for row in cursor:
+                val = row[0]
+                # Cek jika tidak null / kosong
+                if val:
+                    # Pisahkan teks berdasarkan ';' dan hilangkan spasi ekstra
+                    ids = [x.strip() for x in str(val).split(";") if x.strip()]
+                    # Masukkan ke dalam Set agar tidak ada ID yang duplikat
+                    list_idbidang.update(ids)
+
+        # Jika field kosong semua
+        if not list_idbidang:
+            messages.addWarningMessage("== Peringatan: Tidak ditemukan angka IDBIDANG pada field 'data_pembanding' di fitur yang terseleksi. ==")
+            return
+
+        # 3. Cek tipe data field IDBIDANG untuk menentukan apakah perlu tanda kutip ('') di query SQL
+        field_type = "String" # Default asumsi string
+        for field in arcpy.ListFields(in_layer):
+            if field.name.upper() == "IDBIDANG":
+                field_type = field.type
+                break
+        
+        # 4. Susun Where Clause (Klausa SQL IN)
+        if field_type in ["String", "Guid"]:
+            # Format: IDBIDANG IN ('2244', '2787', '4361')
+            ids_str = ", ".join([f"'{x}'" for x in list_idbidang])
+        else:
+            # Format: IDBIDANG IN (2244, 2787, 4361)
+            ids_str = ", ".join(list_idbidang)
+            
+        where_clause = f"IDBIDANG IN ({ids_str})"
+        messages.addMessage(f"Klausa Pencarian: {where_clause}")
+
+        # 5. Eksekusi Seleksi Layer
+        arcpy.management.SelectLayerByAttribute(
+            in_layer_or_view=in_layer, 
+            selection_type=selection_type, 
+            where_clause=where_clause
+        )
+        
+        messages.addMessage(f"== Sukses menyeleksi {len(list_idbidang)} persil pembanding! ==")
+        return
 # DUMP
 class Hitung_Indeks_Rata_Rata_OLD(object):
 

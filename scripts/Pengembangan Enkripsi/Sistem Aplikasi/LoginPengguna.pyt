@@ -125,6 +125,8 @@ class Login_Pemeta_Nilai_Tanah:
                     f"Nama: {user_data['nama_pengguna']}\n"
                     f"Instansi: {user_data['instansi']}\n\n"
 
+                    f"Jalankan Tool kembali untuk Logout\n\n"
+
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
                     "Kementerian ATR/BPN\n"
                     f"Tahun: {datetime.now().year}"
@@ -174,6 +176,8 @@ class Login_Pemeta_Nilai_Tanah:
                     "Informasi akun:\n\n"
                     f"Nama: {user_data['nama_pengguna']}\n"
                     f"Instansi: {user_data['instansi']}\n\n"
+
+                    f"Jalankan Tool kembali untuk Logout\n\n"
 
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
                     "Kementerian ATR/BPN\n"

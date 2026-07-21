@@ -116,7 +116,8 @@ class Catatan_Aplikasi:
 
         if hasil["status"] == "update_available":
             info_teks =  (
-                f"PEMBARUAN TERSEDIA\n"
+                f"PEMBARUAN TERSEDIA\n\n"
+                f"Versi Sekarang: {CURRENT_VERSION}\n"
                 f"Versi Terbaru: {hasil['version']}\n"
                 f"Catatan Rilis: {hasil['changelog']}\n\n"
                 "Klik tombol 'Run' (Jalankan) di bawah ini\nuntuk mengunduh pembaruan secara otomatis."

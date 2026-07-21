@@ -39,7 +39,6 @@ class Toolbox:
         # List of tool classes associated with this toolbox
         self.tools = [Upload_Peta_Rencana_Lokasi_Kegiatan_AOI,
                       Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI,
-                      Upload_Peta_Peta_Area_Kerja_AOI,
                       Buat_Workspace_Pembaruan_NBT,
                       Masukkan_Data_NBT_Sebelumnya,
                       Masukkan_Data_Jaringan_Jalan,
@@ -327,149 +326,6 @@ class Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI(object):
             nomor_berkas=berkas_value,
             token=token,
             param="pembaruan_nbt_peta_lokasi_kegiatan_yang_disepakati",
-            in_feature="Persil",
-            shapefile_path=shapefile_path,
-            use_production=use_production)
-
-        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
-        return
-
-class Upload_Peta_Peta_Area_Kerja_AOI(object):
-    def __init__(self):
-        self.label = "Upload Peta Area Kerja (AOI)"
-        self.description = ""
-        self.canRunInBackground = False
-
-
-    def getParameterInfo(self):
-        berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
-        berkas_show = []
-        can_show = 0
-        if berkas_list is not None:
-            for berkas in berkas_list:
-                if berkas[1] is True:
-                    berkas_show.append(f"{berkas[0]}")
-                    can_show += 1
-            if can_show == 0:
-                berkas_show = ['Tidak ada berkas yang dapat dipilih']
-        else:
-            berkas_show = ['Tidak ada berkas yang dapat dipilih']
-
-        shapefile = arcpy.Parameter(
-            displayName="Shapefile Peta Area Kerja (.shp)",
-            name="shapefile_path",
-            datatype="DEFile",  
-            parameterType="Required",
-            direction="Input")
-        
-        shapefile.filter.list = ["shp"]
- 
-
-        berkas = arcpy.Parameter(
-            displayName="Berkas",
-            name="link",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-               
-        berkas.filter.type = "ValueList"
-        berkas.filter.list = berkas_show
-        if berkas_list and can_show > 0:
-            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
-            if preferred_berkas:
-                if '04/' in preferred_berkas:
-                    berkas.value = preferred_berkas
-                else:
-                    berkas.value = berkas_show[0]           
-        elif berkas_list and can_show == 0:
-            berkas.value = 'Tidak ada berkas yang dapat dipilih'
-        else:
-            berkas.value = 'Tidak ada berkas yang dapat dipilih'
-        
-        penjelasan = arcpy.Parameter(
-            displayName="Informasi Tools",
-            name="petunjuk",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input")
-
-        penjelasan.value = (
-                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
-                "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(datetime.now().year))
-        params = [shapefile, berkas, penjelasan]
-        return params
-        
-    def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter.  This method is called after internal validation."""
-        shapefile_param = parameters[0]
-        
-        if shapefile_param.valueAsText:
-            shapefile_path = shapefile_param.valueAsText
-            shapefile_base = os.path.splitext(shapefile_path)[0]
-            required_ext = [".shp", ".shx", ".dbf", ".prj", ".cpg", ".shp.xml", ".sbn", ".sbx"]
-            missing = [
-                ext for ext in required_ext
-                if not os.path.exists(shapefile_base + ext)
-            ]
-
-            if missing:
-                shapefile_param.setErrorMessage(
-                    f"Komponen shapefile tidak lengkap.\nFile dengan ekstensi berikut tidak ditemukan: {', '.join(missing)}"
-                )
-        return   
-    
-    def updateParameters(self, parameters):
-            """Modify the values and properties of parameters before internal
-            validation is performed.  This method is called whenever a parameter
-            has been changed."""
-
-            shapefile_path = parameters[0]
-            berkas = parameters[1]
-            penjelasan = parameters[2]
-
-            is_login = get_user_data(CREDENTIAL_KEY)
-
-            if is_login is None:
-                shapefile_path.enabled = False
-                berkas.enabled = False
-                penjelasan.enabled = True
-            else:
-                shapefile_path.enabled = True
-                berkas.enabled = True
-                penjelasan.value = (
-                "Pastikan data sudah benar sebelum diupload.\n\n"
-                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
-                "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(datetime.now().year))
-            
-            return
-   
-    def execute(self, parameters, messages):
-        user_data = get_user_data(CREDENTIAL_KEY)
-
-        berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
-
-        if berkas_list is None:
-            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan NBT.")
-            return
-        
-        shapefile_path = parameters[0].valueAsText
-        berkas_value = parameters[1].valueAsText
-        server = get_user_data(PREFERRED_SERVER_KEY)
-        use_production = True if server == "Produksi" or server == None else False
-        token = user_data.get(AUTH_KEY, None)
-
-        validate_document_type(
-            document_id=berkas_value,
-            target='Pembaruan NBT')
-        
-        upload_shapefile_to_sipenta(
-            nomor_berkas=berkas_value,
-            token=token,
-            param="pembaruan_nbt_peta_area_kerja",
             in_feature="Persil",
             shapefile_path=shapefile_path,
             use_production=use_production)
@@ -780,12 +636,12 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         ["Nilai Bidang Tanah", "NILAIBD", ["PREDICTED", "NILAIBD"]],
 
         ["NIB", "NIB", ["NIB"]],
-        ["IdBidang", "IDBIDANG", ["IDBIDANG", "IDBID"]]
+        ["ID", "ID", ["ID"]]
     ]
 
     AUTO_CREATE_FIELDS = [
 
-        ("ID", "TEXT", 100),
+        
 
         ("BENTUK", "TEXT", 50),
         ("LETAK", "TEXT", 50),
@@ -799,6 +655,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         ("JKTRANSP", "DOUBLE"),
         ("JKPMRNTH", "DOUBLE"),
 
+        ("IDBIDANG", "LONG"),
         ("BANJIR", "SHORT"),
         ("LONGSOR", "SHORT")
     ]
@@ -900,86 +757,64 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             output_lama
         ]
 
-
     def updateParameters(self, parameters):
         gunakan_data_perubahan = parameters[2]
-        if gunakan_data_perubahan.value:
 
+        if gunakan_data_perubahan.value:
             parameters[3].enabled = True
             parameters[4].enabled = True
             parameters[5].enabled = True
-
         else:
-
             parameters[3].enabled = False
             parameters[4].enabled = False
             parameters[5].enabled = False
-
             parameters[3].value = None
             parameters[4].value = None
             parameters[5].value = None
+
         nbt_layer = parameters[0].valueAsText
         daftar_variabel = parameters[1]
 
         if not nbt_layer:
             return
 
-        field_names = [
-            f.name.upper()
-            for f in arcpy.ListFields(nbt_layer)
-        ]
+        # ==========================================
+        # KODE BARU: Refresh tabel jika input layer berubah
+        if parameters[0].altered and not parameters[0].hasBeenValidated:
+            daftar_variabel.value = None
+        # ==========================================
+
+        field_names = [f.name.upper() for f in arcpy.ListFields(nbt_layer)]
 
         if daftar_variabel.value is None:
-
             default_variabel = []
-
+            
             for nama, _, kandidat in self.DEFAULT_VARIABEL:
-
-                hasil_field = self.cari_field(
-                    field_names,
-                    kandidat
-                )
-
-                default_variabel.append([
-                    nama,
-                    hasil_field
-                ])
-
+                hasil_field = self.cari_field(field_names, kandidat)
+                default_variabel.append([nama, hasil_field])
+                
             daftar_variabel.value = default_variabel
 
         missing_fields = []
-
         for nama, _, kandidat in self.DEFAULT_VARIABEL:
-
-            hasil = self.cari_field(
-                field_names,
-                kandidat
-            )
-
+            hasil = self.cari_field(field_names, kandidat)
             if not hasil:
                 missing_fields.append(nama)
 
         if missing_fields:
-
             daftar_variabel.setErrorMessage(
-                "Field berikut belum tersedia:\n- "
-                + "\n- ".join(missing_fields)
+                "Field berikut belum tersedia:\n- " + "\n- ".join(missing_fields)
             )
 
-        spatial_ref = arcpy.Describe(
-            nbt_layer
-        ).spatialReference
-
+        spatial_ref = arcpy.Describe(nbt_layer).spatialReference
         if "DGN_1995_Indonesia_TM-3_Zone" not in spatial_ref.name:
-
             parameters[0].setErrorMessage(
                 "Koordinat Persil harus DGN_1995_Indonesia_TM-3"
             )
+            
         gunakan_data_perubahan = parameters[2]
 
-
         return
-
     def execute(self, parameters, messages):
 
         peta_lama_input = parameters[0].valueAsText
@@ -997,6 +832,14 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         dest_temp_path = r"in_memory\Persil_Lama"
 
         self.delete_if_exists(dest_temp_path)
+        # ==========================================
+        # KODE BARU: Hapus data target lama sebelum diolah
+        persil_layer = os.path.join(
+            dataset_path,
+            constant.LAYER_PERSIL
+        )
+        self.delete_if_exists(persil_layer)
+        # ==========================================
         arcpy.management.CopyFeatures(
             peta_lama_input,
             dest_temp_path
@@ -1028,7 +871,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             'Nilai Bidang Tanah': 'NILAIBD',
 
             'NIB': 'NIB',
-            'IdBidang': 'IDBIDANG'
+            'ID': 'ID'
         }
 
         rename_fields = {}
@@ -1142,7 +985,8 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             "NILAIBD",
 
             "NIB",
-            "IDBIDANG"
+            "IDBIDANG",
+            "ID"
         }
         if field_perubahan:
             protected_fields.add(field_perubahan.upper())
@@ -1482,6 +1326,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         ordered_fields = [
 
             "ID",
+            "IDBIDANG",
             "status_per",
             "kelompok_perubahan",
 
@@ -1521,12 +1366,6 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             "NILAIBD",
             "THNNILAI"
         ]
-
-
-        persil_layer = os.path.join(
-            dataset_path,
-            constant.LAYER_PERSIL
-        )
 
         self.reorder_fields(
             dest_temp_path,
@@ -1677,13 +1516,13 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                     f"Gagal menghapus "
                     f"{path}: {e}"
                 )
+                
     def reorder_fields(
         self,
         input_fc,
         output_fc,
         ordered_fields
     ):
-
         existing_fields = arcpy.ListFields(input_fc)
 
         keep_fields_name = {
@@ -1691,42 +1530,42 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             'kelompok_perubahan' : 'KELOMPOK PERUBAHAN',
         }
 
-
-        existing_field_names = [
-            f.name
+        # 1. KODE BARU: Bikin mapping huruf besar agar pencarian kebal huruf besar/kecil (case-insensitive)
+        existing_field_names_dict = {
+            f.name.upper(): f.name
             for f in existing_fields
             if f.type not in ["OID", "Geometry"]
-        ]
+        }
 
+        # 2. Ambil field prioritas sesuai urutan (cocokkan menggunakan huruf besar)
         ordered_existing = [
-
-            f for f in ordered_fields
-            if f in existing_field_names
+            existing_field_names_dict[f.upper()]
+            for f in ordered_fields
+            if f.upper() in existing_field_names_dict
         ]
 
+        # 3. Cari field sisa yang tidak ada di daftar prioritas
+        ordered_upper = [f.upper() for f in ordered_fields]
         remaining_fields = [
-
-            f for f in existing_field_names
-            if f not in ordered_existing
+            f.name
+            for f in existing_fields
+            if f.type not in ["OID", "Geometry"] and f.name.upper() not in ordered_upper
         ]
 
-        final_fields = (
-            ordered_existing
-            + remaining_fields
-        )
+        # Gabungkan prioritas di depan, sisa di belakang
+        final_fields = ordered_existing + remaining_fields
 
         field_mappings = arcpy.FieldMappings()
 
         for field_name in final_fields:
-
             field_map = arcpy.FieldMap()
-
             field_map.addInputField(
                 input_fc,
                 field_name
             )
 
             output_field = field_map.outputField
+            
             if field_name.lower() in keep_fields_name:
                 output_field.name = field_name
                 output_field.aliasName = keep_fields_name[field_name.lower()]
@@ -1735,7 +1574,6 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 output_field.aliasName = field_name.upper()
 
             field_map.outputField = output_field
-
             field_mappings.addFieldMap(field_map)
 
         arcpy.conversion.FeatureClassToFeatureClass(
@@ -1743,7 +1581,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             os.path.dirname(output_fc),
             os.path.basename(output_fc),
             field_mapping=field_mappings
-    )
+        )
 
 class Masukkan_Data_Jaringan_Jalan(object):
 

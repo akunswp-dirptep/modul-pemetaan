@@ -813,7 +813,9 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         
 
         # Mengekstrak nilai dari config
-        dataset_path = configs['dataset_path']  # Path ke geodatabase
+        dataset_path = configs['dataset_path']
+        if dataset_path is None:
+            arcpy.AddError(f"Path Geodatabase tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki path kembali dengan cara berikut:\n1. Ekspor Geodatabase menggunakaan Tools Ekspor Geodatabase pada menu Backup dan Ekspor Hasil\n2. Import kembali Geodatabase yang sudah diekspor menggunakan Tools Import Workspace pada menu Persiapan Data")
         tahun = configs['THNNILAI']  # Tahun penilaian
         lokasi = configs['WADMPR']   # Kode lokasi
         coor = configs['coord']      # Sistem koordinat

@@ -17,8 +17,33 @@ jobs:
     - name: Jalankan Inno Setup
       run: iscc github-export.iss
 
-    - name: Simpan Hasil Kompilasi (.exe)
-      uses: actions/upload-artifact@v4
+    # Langkah ini akan otomatis membuat Tag, Release Baru, 
+    # dan mengunggah file .exe dari folder Output ke repo tujuan.
+    - name: Buat GitHub Release di Repo Tujuan
+      uses: softprops/action-gh-release@v2
       with:
-        name: Penilaian Tanah V6.2.1
-        path: Output/
+        # Menentukan target repositori tujuan
+        repository: Akring-creator/update-version-repo
+        
+        # Menggunakan PAT Token untuk izin akses ke repo tujuan
+        token: ${{ secrets.PAT_TOKEN }}
+        
+        # Nama Tag sistem Git (Harus unik setiap kali dijalankan).
+        # Di bawah ini menggunakan kombinasi tanggal & waktu agar selalu unik secara otomatis.
+        tag_name: v6-${{ github.run_number }}-${{ github.run_id }}
+        
+        # Judul Halaman Rilis yang akan tampil di GitHub
+        name: "Penilaian Tanah V6.2.1 (Build #${{ github.run_number }})"
+        
+        # Catatan rilis atau deskripsi singkat
+        body: |
+          Automated release oleh GitHub Actions.
+          Komit terakhir: ${{ github.sha }}
+        
+        # Path/lokasi file .exe yang ingin diunggah sebagai asset rilis.
+        # Menggunakan wildcard (*) agar semua file di dalam folder Output ikut terunggah.
+        files: Output/*
+        
+        # Set ke true jika ini adalah versi stabil, atau false jika masih beta/prerelease
+        prerelease: false
+        draft: false

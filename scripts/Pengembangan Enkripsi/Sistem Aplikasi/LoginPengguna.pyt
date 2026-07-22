@@ -310,7 +310,7 @@ class Login_Pemeta_Nilai_Tanah:
         
         # URL untuk testing dan produksi
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/login/3/pemeta"
-        prod_url = f"https://sipenta.go.id/tatausaha/login/3/pemeta"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/login/3/pemeta"
     
         # url = prod_url if use_production else test_url
         url = prod_url if use_production else test_url

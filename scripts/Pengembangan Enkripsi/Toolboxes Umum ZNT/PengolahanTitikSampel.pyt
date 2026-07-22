@@ -46,9 +46,8 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         if berkas_list is not None:
             can_show = 0
             for berkas in berkas_list:
-                if berkas[1] is True:
-                    berkas_show.append(f"{berkas[0]}")
-                    can_show += 1
+                berkas_show.append(f"{berkas[0]}")
+                can_show += 1
             if can_show == 0:
                 berkas_show = ['Tidak ada berkas yang dapat dipilih']
         else:
@@ -901,6 +900,10 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             if response.status_code == 403 and "expired" in message.lower():
                 clear_user_data()
                 raise Exception("Token Anda kadaluarsa, silakan login ulang.")
+            
+            if response.status_code == 404 and message:
+                arcpy.AddError(message)
+                sys.exit(0)
 
             # Handle forbidden biasa
             elif response.status_code == 403:

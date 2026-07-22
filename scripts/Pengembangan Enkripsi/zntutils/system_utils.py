@@ -196,6 +196,7 @@ def get_all_berkas_id(process_type = None, DATA_KEY = CREDENTIAL_KEY):
                             continue
 
                     data_berkas.append((no_berkas, bisa_upload ))
+                    
 
                 def sort_key(item):
                     no_berkas = item[0] or ""

@@ -82,9 +82,8 @@ class Unduh_Data_Dari_Sipenta(object):
         can_show = 0
         if berkas_list is not None:
             for berkas in berkas_list:
-                if berkas[1] is True:
-                    berkas_show.append(f"{berkas[0]}")
-                    can_show += 1
+                berkas_show.append(f"{berkas[0]}")
+                can_show += 1
         if can_show == 0:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 

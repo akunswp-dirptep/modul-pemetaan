@@ -331,15 +331,16 @@ class Login_Pemeta_Nilai_Tanah:
                     renew_data = {
                         CREDENTIAL_KEY: {
                             'nama_pengguna': data['user']['nama'],
-                            'instansi': data['user']['perusahaan_nama'],
+                            'instansi': data['user']['nama_kantor'],
                             AUTH_KEY: data['token'],
                             'berkas': data['berkas'],
                             'role': data['user']['roles'],
-                            'instansi_id': data['user']['perusahaan_id'],
+                            'instansi_id': data['user']['kantor_id'],
                             'tipe_kredensial': TIPE_USER_PIHAK_KETIGA},
                         PREFERRED_SERVER_KEY: "Produksi" if use_production else "Belajar",
                         PREFERRED_BERKAS_ID: None
                     }
+                    arcpy.AddMessage(renew_data)
                     renew_multiple_user_data(renew_data)
                     
                 else:

@@ -1,7 +1,0 @@
-{
-    "name": "Penilaian Tanah",
-    "nomor_versi": "6.3",
-    "id_versi": "019f5fc9-7e84-7b99-b67e-3f8fe277871b",
-    "check_update_url": "https://raw.githubusercontent.com/Akring-creator/update-version-repo/main/realease-notes.json",
-    "installer_url": "https://github.com/Akring-creator/update-version-repo/releases/latest/download/Penilaian_Tanah.exe"
-}

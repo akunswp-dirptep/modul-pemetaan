@@ -1693,6 +1693,7 @@ class PilihDataPembanding(object):
         
         messages.addMessage(f"== Sukses menyeleksi {len(list_idbidang)} persil pembanding! ==")
         return
+
 # DUMP
 class Hitung_Indeks_Rata_Rata_OLD(object):
 

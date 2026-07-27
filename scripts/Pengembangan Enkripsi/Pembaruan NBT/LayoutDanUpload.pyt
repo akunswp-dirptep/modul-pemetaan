@@ -372,7 +372,7 @@ class Upload_Nilai_Bidang_Tanah(object):
         
         in_feature = parameters[0].valueAsText
         nomor_berkas = parameters[1].valueAsText
-        token = parameters[2].valueAsText
+
         api_param = 'pembaruan_nbt_nilai_bidang_tanah'
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False

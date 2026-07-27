@@ -25,7 +25,8 @@ class Toolbox:
                       Deklarasi_Zonasi_Update,
                       Seleksi_Zonasi_Terisolasi,
                       Edit_Zonasi_Update,
-                      Auto_Zonasi_Update]
+                      Auto_Zonasi_Update,
+                      Auto_WADMKC_WADMKD_Update]
 
 
 class Generate_Konfigurasi_Zonasi(object):
@@ -1230,4 +1231,169 @@ class Auto_Zonasi_Update(object):
         
         # Outputkan layer agar terefleksi di peta Pro
         arcpy.SetParameter(2, input_layer)
+        return
+
+
+class Auto_WADMKC_WADMKD_Update(object):
+    def __init__(self):
+        self.label = "Auto Isi WADMKC & WADMKD Berdasarkan Tetangga"
+        self.description = "Mengisi atribut WADMKC dan WADMKD yang Null berdasarkan 3 bidang terdekat, mengupdate status_per, dan perubahan."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        
+        input_layer = arcpy.Parameter(
+            displayName="Layer Persil",
+            name="input_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        output_data = arcpy.Parameter(
+            name="output_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        output_data.parameterDependencies = [input_layer.name]
+
+        return [input_layer, output_data]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        messages.addMessage("== Memulai proses otomatisasi WADMKC & WADMKD ==")
+
+        input_layer = parameters[0].valueAsText
+
+        # 1. Pengecekan Field yang Dibutuhkan
+        required_fields = ["WADMKC", "WADMKD"]
+        existing_fields = {f.name.upper(): f.name for f in arcpy.ListFields(input_layer)}
+        missing_fields = [f for f in required_fields if f.upper() not in existing_fields]
+
+        if missing_fields:
+            messages.addErrorMessage(f"== Field berikut tidak ditemukan pada layer: {', '.join(missing_fields)} ==")
+            raise arcpy.ExecuteError
+
+        # Cek apakah field tracking tersedia (menggunakan nama field asli di layer)
+        has_status = "STATUS_PER" in existing_fields or "STATUS_PERUBAHAN" in existing_fields
+        has_perubahan = "PERUBAHAN" in existing_fields
+        
+        status_field_name = existing_fields.get("STATUS_PER", existing_fields.get("STATUS_PERUBAHAN", ""))
+        perubahan_field_name = existing_fields.get("PERUBAHAN", "")
+
+        # 2. Proses berulang untuk WADMKC kemudian WADMKD
+        target_fields = ["WADMKC", "WADMKD"]
+        
+        for target_field in target_fields:
+            messages.addMessage(f"== Memproses field {target_field} ==")
+            
+            valid_layer = f"memory_valid_{target_field}"
+            null_layer = f"memory_null_{target_field}"
+            
+            # Query: hanya proses data yang null, referensi dari data yang valid
+            where_valid = f"{target_field} IS NOT NULL AND {target_field} <> '' AND {target_field} <> ' '"
+            where_null = f"{target_field} IS NULL OR {target_field} = '' OR {target_field} = ' '"
+            
+            # Pisahkan menjadi dua layer virtual di memori
+            arcpy.management.MakeFeatureLayer(input_layer, valid_layer, where_valid)
+            arcpy.management.MakeFeatureLayer(input_layer, null_layer, where_null)
+            
+            count_valid = int(arcpy.management.GetCount(valid_layer)[0])
+            count_null = int(arcpy.management.GetCount(null_layer)[0])
+            
+            if count_null == 0:
+                messages.addMessage(f"== Tidak ada bidang yang {target_field}-nya kosong. Lanjut ke proses berikutnya. ==")
+                arcpy.management.Delete(valid_layer)
+                arcpy.management.Delete(null_layer)
+                continue
+                
+            if count_valid == 0:
+                messages.addErrorMessage(f"== Tidak ada satupun bidang dengan {target_field} valid untuk referensi ==")
+                arcpy.management.Delete(valid_layer)
+                arcpy.management.Delete(null_layer)
+                continue
+                
+            messages.addMessage(f"== Ditemukan {count_null} bidang kosong dan {count_valid} bidang referensi untuk {target_field} ==")
+            messages.addMessage("== Mengkalkulasi 3 tetangga terdekat (Generate Near Table)... ==")
+            
+            # 3. Generate Near Table (Sangat cepat karena menggunakan spatial index)
+            near_table = r"memory\near_table_result"
+            if arcpy.Exists(near_table):
+                arcpy.management.Delete(near_table)
+                
+            arcpy.analysis.GenerateNearTable(
+                in_features=null_layer, 
+                near_features=valid_layer, 
+                out_table=near_table, 
+                closest="ALL", 
+                closest_count=3, 
+                method="PLANAR"
+            )
+            
+            # 4. Ambil nilai referensi berdasarkan OID
+            valid_dict = {}
+            with arcpy.da.SearchCursor(valid_layer, ["OID@", target_field]) as sc:
+                for row in sc:
+                    valid_dict[row[0]] = row[1]
+                    
+            # 5. Kumpulkan nilai dari 3 tetangga untuk masing-masing bidang null
+            null_neighbors = {}
+            with arcpy.da.SearchCursor(near_table, ["IN_FID", "NEAR_FID"]) as sc:
+                for row in sc:
+                    in_fid = row[0]   # OID bidang kosong
+                    near_fid = row[1] # OID bidang tetangga yang valid
+                    
+                    val = valid_dict.get(near_fid)
+                    if val is not None:
+                        if in_fid not in null_neighbors:
+                            null_neighbors[in_fid] = []
+                        null_neighbors[in_fid].append(val)
+                        
+            # 6. Update layer bidang kosong dengan voting mayoritas (Counter)
+            messages.addMessage(f"== Memperbarui bidang kosong untuk {target_field}... ==")
+            
+            # Menyusun field yang akan diupdate secara dinamis
+            update_fields = ["OID@", target_field]
+            if has_status: update_fields.append(status_field_name)
+            if has_perubahan: update_fields.append(perubahan_field_name)
+            
+            updated_count = 0
+            with arcpy.da.UpdateCursor(null_layer, update_fields) as uc:
+                for row in uc:
+                    oid = row[0]
+                    if oid in null_neighbors:
+                        val_list = null_neighbors[oid]
+                        
+                        if val_list:
+                            # Cari nilai yang paling banyak muncul (Mayoritas dari 3 tetangga)
+                            most_common_val = Counter(val_list).most_common(1)[0][0]
+                            row[1] = most_common_val
+                            
+                            if has_status:
+                                row[update_fields.index(status_field_name)] = "update"
+                            if has_perubahan:
+                                row[update_fields.index(perubahan_field_name)] = "menyebar"
+                                
+                            uc.updateRow(row)
+                            updated_count += 1
+                            
+            messages.addMessage(f"== Selesai. Berhasil memperbarui {updated_count} bidang untuk {target_field}. ==")
+            
+            # Bersihkan memori layer sementara agar RAM tidak penuh
+            arcpy.management.Delete(valid_layer)
+            arcpy.management.Delete(null_layer)
+            arcpy.management.Delete(near_table)
+            
+        messages.addMessage("== Proses otomatisasi WADMKC & WADMKD selesai keseluruhan ==")
+        
+        arcpy.SetParameter(1, input_layer)
         return

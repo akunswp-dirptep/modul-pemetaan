@@ -1199,200 +1199,200 @@ class Perbaharui_Letak_Persil(object):
         messages.addMessage("== Kalkulasi Jarak Terdekat Ke Jaringan Jalan (Dioptimalkan) ==")
         arcpy.analysis.Near(mem_midpoint, jalan, f"{near_radius} Meters", "LOCATION", "ANGLE")
 
-#         # 1. Buat Dictionary dari Jalan untuk mengambil S_KLS_JLN tanpa SpatialJoin
-#         jalan_dict = {}
-#         with arcpy.da.SearchCursor(jalan, ["IdJalan", field_s_kls_jln]) as j_cur:
-#             for j_row in j_cur:
-#                 jalan_dict[j_row[0]] = j_row[1]
+        # 1. Buat Dictionary dari Jalan untuk mengambil S_KLS_JLN tanpa SpatialJoin
+        jalan_dict = {}
+        with arcpy.da.SearchCursor(jalan, ["IdJalan", field_s_kls_jln]) as j_cur:
+            for j_row in j_cur:
+                jalan_dict[j_row[0]] = j_row[1]
 
-#         self.add_field_if_not_exists(mem_midpoint, "IdJoin", "LONG")
-#         oid_mid = arcpy.Describe(mem_midpoint).OIDFieldName
+        self.add_field_if_not_exists(mem_midpoint, "IdJoin", "LONG")
+        oid_mid = arcpy.Describe(mem_midpoint).OIDFieldName
         
-#         # Ekstrak tipe data asli agar AddField selanjutnya tidak konflik
-#         id_field_type = [f.type for f in arcpy.ListFields(mem_midpoint) if f.name.upper() == field_id.upper()][0]
-#         kls_field_type = [f.type for f in arcpy.ListFields(jalan) if f.name.upper() == field_s_kls_jln.upper()][0]
+        # Ekstrak tipe data asli agar AddField selanjutnya tidak konflik
+        id_field_type = [f.type for f in arcpy.ListFields(mem_midpoint) if f.name.upper() == field_id.upper()][0]
+        kls_field_type = [f.type for f in arcpy.ListFields(jalan) if f.name.upper() == field_s_kls_jln.upper()][0]
 
-#         # 2. Update IdJoin & Kumpulkan data ke dictionary dalam 1 kali iterasi memori
-#         midpoint_dict = {}
-#         with arcpy.da.UpdateCursor(mem_midpoint, [oid_mid, "IdJoin", field_id, "LebarSisi", "NEAR_FID", "NEAR_DIST"]) as cur:
-#             for row in cur:
-#                 row[1] = row[0] # Set IdJoin = OID
-#                 cur.updateRow(row)
+        # 2. Update IdJoin & Kumpulkan data ke dictionary dalam 1 kali iterasi memori
+        midpoint_dict = {}
+        with arcpy.da.UpdateCursor(mem_midpoint, [oid_mid, "IdJoin", field_id, "LebarSisi", "NEAR_FID", "NEAR_DIST"]) as cur:
+            for row in cur:
+                row[1] = row[0] # Set IdJoin = OID
+                cur.updateRow(row)
                 
-#                 near_fid = row[4]
-#                 near_dist = row[5]
-#                 s_kls = jalan_dict.get(near_fid, None)
+                near_fid = row[4]
+                near_dist = row[5]
+                s_kls = jalan_dict.get(near_fid, None)
                 
-#                 # Mapping: IdJoin -> (field_id, LebarSisi, IdJalan, PanjangNearLine, S_KLS_JLN)
-#                 midpoint_dict[row[0]] = (row[2], row[3], near_fid, near_dist, s_kls)
+                # Mapping: IdJoin -> (field_id, LebarSisi, IdJalan, PanjangNearLine, S_KLS_JLN)
+                midpoint_dict[row[0]] = (row[2], row[3], near_fid, near_dist, s_kls)
 
-#         sr = arcpy.Describe(mem_midpoint).spatialReference
+        sr = arcpy.Describe(mem_midpoint).spatialReference
         
-#         # 3. Output XYToLine langsung ke mem_join (bisa langsung potong kompas tanpa mem_line)
-#         arcpy.management.XYToLine(mem_midpoint, mem_join, "X", "Y", "NEAR_X", "NEAR_Y", "GEODESIC", "IdJoin", sr)
+        # 3. Output XYToLine langsung ke mem_join (bisa langsung potong kompas tanpa mem_line)
+        arcpy.management.XYToLine(mem_midpoint, mem_join, "X", "Y", "NEAR_X", "NEAR_Y", "GEODESIC", "IdJoin", sr)
         
-#         # 4. Siapkan field di mem_join
-#         self.add_field_if_not_exists(mem_join, field_id, id_field_type)
-#         self.add_field_if_not_exists(mem_join, "LebarSisi", "DOUBLE")
-#         self.add_field_if_not_exists(mem_join, "IdJalan", "LONG")
-#         self.add_field_if_not_exists(mem_join, "PanjangNearLine", "DOUBLE")
-#         self.add_field_if_not_exists(mem_join, field_s_kls_jln, kls_field_type)
+        # 4. Siapkan field di mem_join
+        self.add_field_if_not_exists(mem_join, field_id, id_field_type)
+        self.add_field_if_not_exists(mem_join, "LebarSisi", "DOUBLE")
+        self.add_field_if_not_exists(mem_join, "IdJalan", "LONG")
+        self.add_field_if_not_exists(mem_join, "PanjangNearLine", "DOUBLE")
+        self.add_field_if_not_exists(mem_join, field_s_kls_jln, kls_field_type)
 
-#         # 5. Injeksi Atribut dari Dictionary (Sangat Cepat menggantikan JoinField & SpatialJoin)
-#         with arcpy.da.UpdateCursor(mem_join, ["IdJoin", field_id, "LebarSisi", "IdJalan", "PanjangNearLine", field_s_kls_jln]) as cur:
-#             for row in cur:
-#                 val = midpoint_dict.get(row[0])
-#                 if val:
-#                     row[1] = val[0] # field_id
-#                     row[2] = val[1] # LebarSisi
-#                     row[3] = val[2] # IdJalan (didapat dari NEAR_FID)
-#                     row[4] = val[3] # PanjangNearLine (sama dengan nilai NEAR_DIST)
-#                     row[5] = val[4] # S_KLS_JLN
-#                     cur.updateRow(row)
-#         # --- TAHAP OPTIMASI UTAMA: PAIRWISE ERASE TERHADAP KESELURUHAN DATA PERSIL ---
-#         messages.addMessage("== Kalkulasi Pairwise Erase untuk identifikasi Lain-lain (Optimized) ==")
-#         arcpy.analysis.PairwiseErase(
-#             in_features=mem_join,
-#             erase_features=persil_path,  # Di-erase terhadap master layer agar akurat menangani hambatan bidang lain
-#             out_feature_class=mem_erase
-#         )
+        # 5. Injeksi Atribut dari Dictionary (Sangat Cepat menggantikan JoinField & SpatialJoin)
+        with arcpy.da.UpdateCursor(mem_join, ["IdJoin", field_id, "LebarSisi", "IdJalan", "PanjangNearLine", field_s_kls_jln]) as cur:
+            for row in cur:
+                val = midpoint_dict.get(row[0])
+                if val:
+                    row[1] = val[0] # field_id
+                    row[2] = val[1] # LebarSisi
+                    row[3] = val[2] # IdJalan (didapat dari NEAR_FID)
+                    row[4] = val[3] # PanjangNearLine (sama dengan nilai NEAR_DIST)
+                    row[5] = val[4] # S_KLS_JLN
+                    cur.updateRow(row)
+        # --- TAHAP OPTIMASI UTAMA: PAIRWISE ERASE TERHADAP KESELURUHAN DATA PERSIL ---
+        messages.addMessage("== Kalkulasi Pairwise Erase untuk identifikasi Lain-lain (Optimized) ==")
+        arcpy.analysis.PairwiseErase(
+            in_features=mem_join,
+            erase_features=persil_path,  # Di-erase terhadap master layer agar akurat menangani hambatan bidang lain
+            out_feature_class=mem_erase
+        )
 
-#         self.add_field_if_not_exists(mem_erase, "PanjangErase", "DOUBLE")
-#         self.add_field_if_not_exists(mem_erase, "Pengurangan", "DOUBLE")
-#         self.add_field_if_not_exists(mem_erase, "letak_tmp", "TEXT")
+        self.add_field_if_not_exists(mem_erase, "PanjangErase", "DOUBLE")
+        self.add_field_if_not_exists(mem_erase, "Pengurangan", "DOUBLE")
+        self.add_field_if_not_exists(mem_erase, "letak_tmp", "TEXT")
 
-#         arcpy.management.CalculateField(mem_erase, "PanjangErase", "!shape.length!", "PYTHON3")
-#         arcpy.management.CalculateField(mem_erase, "Pengurangan", "!PanjangErase! - !PanjangNearLine!", "PYTHON3")
+        arcpy.management.CalculateField(mem_erase, "PanjangErase", "!shape.length!", "PYTHON3")
+        arcpy.management.CalculateField(mem_erase, "Pengurangan", "!PanjangErase! - !PanjangNearLine!", "PYTHON3")
 
-#         code_letak = """
-# def get_letak(v):
-#     if v < -0.1:
-#         return 'Lain-lain'
-#     return 'Pinggir Jalan'
-# """
-#         arcpy.management.CalculateField(mem_erase, "letak_tmp", "get_letak(!Pengurangan!)", "PYTHON3", code_letak)
+        code_letak = """
+def get_letak(v):
+    if v < -0.1:
+        return 'Lain-lain'
+    return 'Pinggir Jalan'
+"""
+        arcpy.management.CalculateField(mem_erase, "letak_tmp", "get_letak(!Pengurangan!)", "PYTHON3", code_letak)
 
-#         messages.addMessage("== Agregasi Data Hasil Lintasan Jalan (Dioptimalkan) ==")
+        messages.addMessage("== Agregasi Data Hasil Lintasan Jalan (Dioptimalkan) ==")
         
-#         # 1. Mengambil data letak dari mem_erase (Tetap dipertahankan)
-#         join_dict = {}
-#         with arcpy.da.SearchCursor(mem_erase, [field_id, "letak_tmp"]) as rows:
-#             for row in rows:
-#                 if row[0] is not None:
-#                     join_dict[row[0]] = row[1]
+        # 1. Mengambil data letak dari mem_erase (Tetap dipertahankan)
+        join_dict = {}
+        with arcpy.da.SearchCursor(mem_erase, [field_id, "letak_tmp"]) as rows:
+            for row in rows:
+                if row[0] is not None:
+                    join_dict[row[0]] = row[1]
 
-#         # 2. PURE PYTHON AGGREGATION (Menggantikan 2x Proses Dissolve)
-#         # Tahap Pertama: Grouping berdasarkan kombinasi (field_id + IdJalan)
-#         pair_dict = {} # Key: (field_id, IdJalan) -> Value: [sum_lebar, max_kls]
+        # 2. PURE PYTHON AGGREGATION (Menggantikan 2x Proses Dissolve)
+        # Tahap Pertama: Grouping berdasarkan kombinasi (field_id + IdJalan)
+        pair_dict = {} # Key: (field_id, IdJalan) -> Value: [sum_lebar, max_kls]
         
-#         fields_to_scroll = [field_id, "IdJalan", "LebarSisi", field_s_kls_jln]
-#         with arcpy.da.SearchCursor(mem_join, fields_to_scroll) as rows:
-#             for row in rows:
-#                 fid, id_jln, lebar, kls = row
-#                 if fid is None or id_jln is None:
-#                     continue
+        fields_to_scroll = [field_id, "IdJalan", "LebarSisi", field_s_kls_jln]
+        with arcpy.da.SearchCursor(mem_join, fields_to_scroll) as rows:
+            for row in rows:
+                fid, id_jln, lebar, kls = row
+                if fid is None or id_jln is None:
+                    continue
                 
-#                 pair_key = (fid, id_jln)
-#                 if pair_key not in pair_dict:
-#                     pair_dict[pair_key] = [0.0, kls]
-#                 else:
-#                     pair_dict[pair_key][0] += (lebar or 0.0)
-#                     if kls is not None:
-#                         if pair_dict[pair_key][1] is None or kls > pair_dict[pair_key][1]:
-#                             pair_dict[pair_key][1] = kls
+                pair_key = (fid, id_jln)
+                if pair_key not in pair_dict:
+                    pair_dict[pair_key] = [0.0, kls]
+                else:
+                    pair_dict[pair_key][0] += (lebar or 0.0)
+                    if kls is not None:
+                        if pair_dict[pair_key][1] is None or kls > pair_dict[pair_key][1]:
+                            pair_dict[pair_key][1] = kls
 
-#         # Tahap Kedua: Grouping final berdasarkan field_id saja untuk mengisi jalan_dict
-#         jalan_dict = {}
-#         for (fid, id_jln), (sum_lebar, max_kls) in pair_dict.items():
-#             if fid not in jalan_dict:
-#                 jalan_dict[fid] = {
-#                     "count_jalan": 0,
-#                     "lb_dpn": 0.0,
-#                     "s_kls_jln": None
-#                 }
+        # Tahap Kedua: Grouping final berdasarkan field_id saja untuk mengisi jalan_dict
+        jalan_dict = {}
+        for (fid, id_jln), (sum_lebar, max_kls) in pair_dict.items():
+            if fid not in jalan_dict:
+                jalan_dict[fid] = {
+                    "count_jalan": 0,
+                    "lb_dpn": 0.0,
+                    "s_kls_jln": None
+                }
             
-#             jalan_dict[fid]["count_jalan"] += 1
-#             jalan_dict[fid]["lb_dpn"] += sum_lebar
-#             if max_kls is not None:
-#                 if jalan_dict[fid]["s_kls_jln"] is None or max_kls > jalan_dict[fid]["s_kls_jln"]:
-#                     jalan_dict[fid]["s_kls_jln"] = max_kls
+            jalan_dict[fid]["count_jalan"] += 1
+            jalan_dict[fid]["lb_dpn"] += sum_lebar
+            if max_kls is not None:
+                if jalan_dict[fid]["s_kls_jln"] is None or max_kls > jalan_dict[fid]["s_kls_jln"]:
+                    jalan_dict[fid]["s_kls_jln"] = max_kls
 
-#         messages.addMessage("== Memperbarui Atribut Letak Utama (Tahap 1) ==")
-#         with arcpy.da.UpdateCursor(persil_input, [field_id, field_letak, field_s_letak, field_lb_dpn]) as rows:
-#             for row in rows:
-#                 idbid = row[0]
-#                 letak = "Pinggir Jalan"
-#                 skor = 0
-#                 lb_dpn = 0
+        messages.addMessage("== Memperbarui Atribut Letak Utama (Tahap 1) ==")
+        with arcpy.da.UpdateCursor(persil_input, [field_id, field_letak, field_s_letak, field_lb_dpn]) as rows:
+            for row in rows:
+                idbid = row[0]
+                letak = "Pinggir Jalan"
+                skor = 0
+                lb_dpn = 0
 
-#                 if idbid in join_dict:
-#                     letak = join_dict[idbid]
+                if idbid in join_dict:
+                    letak = join_dict[idbid]
 
-#                 if idbid in jalan_dict:
-#                     # Amankan dari kemungkinan tipe data None
-#                     lb_dpn = jalan_dict[idbid].get("lb_dpn") or 0
+                if idbid in jalan_dict:
+                    # Amankan dari kemungkinan tipe data None
+                    lb_dpn = jalan_dict[idbid].get("lb_dpn") or 0
 
-#                 if letak == "Lain-lain":
-#                     skor = 1
-#                 elif idbid in jalan_dict:
-#                     # Ekstrak count_jalan dengan aman, ubah None menjadi 0
-#                     count_jln = jalan_dict[idbid].get("count_jalan") or 0
+                if letak == "Lain-lain":
+                    skor = 1
+                elif idbid in jalan_dict:
+                    # Ekstrak count_jalan dengan aman, ubah None menjadi 0
+                    count_jln = jalan_dict[idbid].get("count_jalan") or 0
                     
-#                     if count_jln > 1:
-#                         letak = "Hook"
-#                         skor = 4
-#                     else:
-#                         letak = "Normal"
-#                         skor = 3
+                    if count_jln > 1:
+                        letak = "Hook"
+                        skor = 4
+                    else:
+                        letak = "Normal"
+                        skor = 3
 
-#                 row[1] = letak
-#                 row[2] = skor
-#                 row[3] = lb_dpn
-#                 rows.updateRow(row)
+                row[1] = letak
+                row[2] = skor
+                row[3] = lb_dpn
+                rows.updateRow(row)
 
-#         messages.addMessage("== Analisis Spasial Tusuk Sate ==")
-#         arcpy.management.MakeFeatureLayer(persil_input, "normal_lyr", f"{field_letak}='Normal'")
+        messages.addMessage("== Analisis Spasial Tusuk Sate ==")
+        arcpy.management.MakeFeatureLayer(persil_input, "normal_lyr", f"{field_letak}='Normal'")
         
-#         count_normal = int(arcpy.management.GetCount("normal_lyr")[0])
-#         if count_normal > 0:
-#             arcpy.management.CopyFeatures("normal_lyr", mem_normal)
-#             arcpy.management.FeatureToPoint(mem_normal, mem_normal_mid, "INSIDE")
+        count_normal = int(arcpy.management.GetCount("normal_lyr")[0])
+        if count_normal > 0:
+            arcpy.management.CopyFeatures("normal_lyr", mem_normal)
+            arcpy.management.FeatureToPoint(mem_normal, mem_normal_mid, "INSIDE")
 
-#             arcpy.analysis.Near(mem_normal_mid, junction, "100 Meters", "LOCATION")
-#             self.add_field_if_not_exists(mem_normal_mid, "P_Line", "DOUBLE")
-#             arcpy.management.CalculateField(mem_normal_mid, "P_Line", "!NEAR_DIST!", "PYTHON3")
+            arcpy.analysis.Near(mem_normal_mid, junction, "100 Meters", "LOCATION")
+            self.add_field_if_not_exists(mem_normal_mid, "P_Line", "DOUBLE")
+            arcpy.management.CalculateField(mem_normal_mid, "P_Line", "!NEAR_DIST!", "PYTHON3")
 
-#             arcpy.analysis.SpatialJoin(mem_normal_mid, mem_split, mem_normal_diss, "JOIN_ONE_TO_ONE", "KEEP_ALL", match_option="INTERSECT")
+            arcpy.analysis.SpatialJoin(mem_normal_mid, mem_split, mem_normal_diss, "JOIN_ONE_TO_ONE", "KEEP_ALL", match_option="INTERSECT")
 
-#             tusuk_dict = {}
-#             with arcpy.da.SearchCursor(mem_normal_diss, [field_id, "P_Line", "LebarSisi"]) as rows:
-#                 for row in rows:
-#                     if row[1] is None or row[2] is None:
-#                         continue
-#                     if row[1] < row[2]:
-#                         tusuk_dict[row[0]] = "Tusuk Sate"
+            tusuk_dict = {}
+            with arcpy.da.SearchCursor(mem_normal_diss, [field_id, "P_Line", "LebarSisi"]) as rows:
+                for row in rows:
+                    if row[1] is None or row[2] is None:
+                        continue
+                    if row[1] < row[2]:
+                        tusuk_dict[row[0]] = "Tusuk Sate"
 
-#             if tusuk_dict:
-#                 with arcpy.da.UpdateCursor(persil_input, [field_id, field_letak, field_s_letak], f"{field_letak}='Normal'") as rows:
-#                     for row in rows:
-#                         idbid = row[0]
-#                         if idbid in tusuk_dict:
-#                             row[1] = "Tusuk Sate"
-#                             row[2] = 2
-#                             rows.updateRow(row)
+            if tusuk_dict:
+                with arcpy.da.UpdateCursor(persil_input, [field_id, field_letak, field_s_letak], f"{field_letak}='Normal'") as rows:
+                    for row in rows:
+                        idbid = row[0]
+                        if idbid in tusuk_dict:
+                            row[1] = "Tusuk Sate"
+                            row[2] = 2
+                            rows.updateRow(row)
 
-#         messages.addMessage("== Finalisasi Dan Pembersihan Memori Layer ==")
-#         for item in cleanup_items:
-#             self.delete_if_exists(item)
+        messages.addMessage("== Finalisasi Dan Pembersihan Memori Layer ==")
+        for item in cleanup_items:
+            self.delete_if_exists(item)
 
-#         if simpan_temp:
-#             output_name = temp_output_name
-#         else:
-#             output_name = "Persil_Layer"
+        if simpan_temp:
+            output_name = temp_output_name
+        else:
+            output_name = "Persil_Layer"
 
-#         self.delete_if_exists(output_name)
-#         arcpy.management.MakeFeatureLayer(update_fc, output_name)
-#         parameters[4].value = output_name
+        self.delete_if_exists(output_name)
+        arcpy.management.MakeFeatureLayer(update_fc, output_name)
+        parameters[4].value = output_name
 
         messages.addMessage("== Seluruh Proses Selesai dengan Berhasil ==")
         return
@@ -1539,6 +1539,7 @@ class Perbaharui_Lebar_Depan_Persil(object):
 
         persil_fc = os.path.join(dataset_path, 'Persil_Layer')
         jalan = os.path.join(dataset_path,"Jaringan_Jalan")
+        arcpy.AddMessage(jalan)
 
         temp_output_name = "Analisis_Persil_Dengan_Jalan_Temp"
         gdb_path=arcpy.env.scratchGDB        
@@ -2276,7 +2277,6 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         )
         hanya_update.value = True
 
-        # --- BARU: Parameter Pemilihan Kelas Jalan ---
         pilihan_kelas_jalan = arcpy.Parameter(
             displayName="Pilih Kelas Jalan yang Dihitung",
             name="pilihan_kelas_jalan",
@@ -2294,7 +2294,17 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
             "Kolektor Sekunder"
         ]
         pilihan_kelas_jalan.value = ["Semuanya"]
-        # ----------------------------------------------
+
+        # --- BARU: Parameter untuk filter hanya yang Null ---
+        hanya_yang_null = arcpy.Parameter(
+            displayName="Hanya Hitung Jarak yang Masih Kosong (Null)",
+            name="hanya_yang_null",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input"
+        )
+        hanya_yang_null.value = True
+        # ---------------------------------------------------
 
         output_persil = arcpy.Parameter(
             displayName="Output Persil",
@@ -2307,8 +2317,9 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         return [
             simpan_temp,
             hanya_update,
-            pilihan_kelas_jalan, # Tambahkan ke list parameter
-            output_persil
+            pilihan_kelas_jalan,
+            hanya_yang_null, # Tambahkan ke list parameter (Index 3)
+            output_persil    # Index berubah menjadi 4
         ]
 
     def isLicensed(self):
@@ -2346,13 +2357,45 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         simpan_temp = parameters[0].value
         hanya_update = parameters[1].value
         
-        # --- BARU: Ekstraksi list pilihan kelas jalan ---
         pilihan_kelas_text = parameters[2].valueAsText
         if pilihan_kelas_text:
-            # Karena multivalue dipisah semicolon, formatnya bisa jadi 'Item 1';'Item 2'
             pilihan_list = [p.strip("'") for p in pilihan_kelas_text.split(";")]
         else:
             pilihan_list = ["Semuanya"]
+
+        hanya_yang_null = parameters[3].value # Parameter baru filter Null
+
+        # --- PINDAHKAN MAPPING KE ATAS UNTUK KEBUTUHAN FILTER ---
+        mapping_pilihan = {
+            "Kolektor Sekunder": "JunctionKls4",
+            "Kolektor Primer": "JunctionKls5",
+            "Arteri Sekunder": "JunctionKls6",
+            "Arteri Primer": "JunctionKls7"
+        }
+        
+        reverse_mapping = {v: k for k, v in mapping_pilihan.items()}
+        
+        namafield = {
+            4: 'JKKOLS',
+            5: 'JKKOLP',
+            6: 'JKATRS',
+            7: 'JKATRP'
+        }
+
+        requested_fc = []
+        if "Semuanya" in pilihan_list:
+            requested_fc = list(mapping_pilihan.values())
+        else:
+            for p in pilihan_list:
+                if p in mapping_pilihan:
+                    requested_fc.append(mapping_pilihan[p])
+
+        # Mendapatkan daftar field tujuan yang akan dihitung (untuk kueri Null)
+        target_fields = []
+        for req_fc in requested_fc:
+            kls = int(req_fc.replace("JunctionKls", ""))
+            target_fields.append(namafield[kls])
+        # --------------------------------------------------------
 
         # 3. Mempersiapkan path untuk dataset dan output sementara
         persil_fc = os.path.join(dataset_path, "Persil_Layer")
@@ -2372,15 +2415,31 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         self.delete_if_exists(persil_layer)
         arcpy.management.MakeFeatureLayer(update_fc, persil_layer)
 
+        # --- BARU: LOGIKA FILTER MULTIPLE (UPDATE & NULL) ---
+        where_clauses = []
+        
+        # Kondisi 1: Hanya data yang perlu update
         if hanya_update:
-            arcpy.management.SelectLayerByAttribute(
-                persil_layer, "NEW_SELECTION", "UPPER(status_per) = 'UPDATE'"
-            )
+            where_clauses.append("UPPER(status_per) = 'UPDATE'")
+        
+        # Kondisi 2: Hanya yang field jaraknya masih Null berdasarkan jalan yang dipilih
+        if hanya_yang_null and target_fields:
+            # Membuat string: (JKKOLS IS NULL OR JKKOLP IS NULL)
+            null_queries = [f"{fld} IS NULL" for fld in target_fields]
+            null_where = " OR ".join(null_queries)
+            where_clauses.append(f"({null_where})")
+        
+        # Gabungkan semua kondisi dan lakukan seleksi
+        if where_clauses:
+            final_where = " AND ".join(where_clauses)
+            messages.addMessage(f"== Menerapkan Filter: {final_where} ==")
+            arcpy.management.SelectLayerByAttribute(persil_layer, "NEW_SELECTION", final_where)
+        # ----------------------------------------------------
 
         # 5. Validasi jumlah feature
         jumlah = int(arcpy.management.GetCount(persil_layer)[0])
         if jumlah == 0:
-            messages.addWarningMessage("== Tidak ada feature yang diproses ==")
+            messages.addWarningMessage("== Tidak ada feature yang perlu diproses (Sudah Terisi atau Tidak Ada Data) ==")
             return
 
         persilcentroid = "Centroid_Persil"
@@ -2406,34 +2465,8 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         outNALayerName = "hasil_kelas"
         impedance_attribute = "P_Jalan"
         
-        namafield = {
-            4: 'JKKOLS',
-            5: 'JKKOLP',
-            6: 'JKATRS',
-            7: 'JKATRP'
-        }
-
         dataset_template_path = os.path.dirname(jaringanjalan_nd_path)
         dataset_kelas_jalan_path = os.path.join(os.path.dirname(dataset_path), "kelas_jalan")
-
-        # --- MODIFIKASI: Mapping Pilihan ke Nama Feature Class ---
-        mapping_pilihan = {
-            "Kolektor Sekunder": "JunctionKls4",
-            "Kolektor Primer": "JunctionKls5",
-            "Arteri Sekunder": "JunctionKls6",
-            "Arteri Primer": "JunctionKls7"
-        }
-        
-        # Buat reverse mapping untuk kemudahan menampilkan pesan error
-        reverse_mapping = {v: k for k, v in mapping_pilihan.items()}
-
-        requested_fc = []
-        if "Semuanya" in pilihan_list:
-            requested_fc = list(mapping_pilihan.values())
-        else:
-            for p in pilihan_list:
-                if p in mapping_pilihan:
-                    requested_fc.append(mapping_pilihan[p])
 
         # 8. Filter Feature Class yang Tersedia
         arcpy.env.workspace = dataset_kelas_jalan_path
@@ -2451,7 +2484,6 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
                 else:
                     messages.addWarningMessage(f"Jalan {nama_jalan_human} tersedia namun kosong/tidak ada feature.")
             else:
-                # Kasih peringatan jika jalan tidak tersedia
                 messages.addWarningMessage(f"Peringatan: Jalan {nama_jalan_human} tidak tersedia di dalam dataset.")
 
         if not list_kelas_jalan:
@@ -2482,8 +2514,8 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
             messages.addMessage(f"== Hitung jarak kelas_jalan: {kelas_jalan} ==")
 
             kelas_jalan_path = os.path.join(dataset_kelas_jalan_path, kelas_jalan)
-            kls = kelas_jalan.replace("JunctionKls", "")
-            nama_field_target = namafield[int(kls)]
+            kls = int(kelas_jalan.replace("JunctionKls", ""))
+            nama_field_target = namafield[kls]
 
             arcpy.na.AddLocations(
                 outNALayer,
@@ -2553,8 +2585,8 @@ class Perbaharui_Jarak_Kelas_Jalan(object):
         self.delete_if_exists(output_name)
         arcpy.management.MakeFeatureLayer(update_fc, output_name)
 
-        # Pastikan index param sesuai (output pindah ke index ke-3 karena parameter baru ada di index 2)
-        parameters[3].value = output_name
+        # Output index dipindah ke 4 karena ada tambahan parameter di index 3
+        parameters[4].value = output_name
 
         messages.addMessage("== Proses selesai ==")
-        return    
+        return

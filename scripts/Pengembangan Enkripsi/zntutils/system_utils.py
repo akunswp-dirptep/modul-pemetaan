@@ -166,7 +166,7 @@ def get_all_config(config_path = None):
     except Exception as e:
         return None
 
-def get_all_berkas_id(process_type = None, DATA_KEY = CREDENTIAL_KEY):
+def get_all_berkas_id(process_type = None, DATA_KEY = CREDENTIAL_KEY, show_can_qc=False):
 
     process_mapping = {
         'Pembuatan ZNT': '01',
@@ -189,13 +189,16 @@ def get_all_berkas_id(process_type = None, DATA_KEY = CREDENTIAL_KEY):
 
                     no_berkas = berkas.get(berkas_id_key, None)
                     bisa_upload = berkas.get('can_upload', False)
+                    can_qc = berkas.get('can_qc', False)
 
                     if mapped_process_code is not None:
                         nomor_depan = (no_berkas or '').split('/')[0]
                         if nomor_depan != mapped_process_code:
                             continue
-
-                    data_berkas.append((no_berkas, bisa_upload ))
+                    if show_can_qc:
+                        data_berkas.append((no_berkas, can_qc ))  
+                    else:         
+                        data_berkas.append((no_berkas, bisa_upload ))
                     
 
                 def sort_key(item):

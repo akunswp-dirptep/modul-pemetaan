@@ -11,8 +11,10 @@ if parent_dir not in sys.path:
 import json
 import os
 
+from zntutils.system_utils import generate_key, decrypt_message
+
 # Path ke file metadata
-metadata_path = r'C:\PenilaianTanah\app-metadata.json'
+metadata_path = r'C:\PenilaianTanah\app-metadata.bin'
 
 # Nilai default jika file gagal dibaca (opsional, tapi disarankan)
 CURRENT_VERSION = None
@@ -21,10 +23,8 @@ CHECK_UPDATE_URL = None
 
 # Membaca file JSON dengan penanganan error (Try-Except)
 try:
-    # Buka file dengan mode 'r' (read)
-    with open(metadata_path, 'r', encoding='utf-8') as file:
-        metadata = json.load(file)
-        
+    metadata = decrypt_message(generate_key(), metadata_path)
+    
     # Ekstrak data menggunakan key yang sesuai di JSON
     CURRENT_VERSION = metadata.get("nomor_versi")
     VERSION_ID = metadata.get("id_versi")

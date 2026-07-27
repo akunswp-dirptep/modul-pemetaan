@@ -12,6 +12,7 @@ if parent_dir not in sys.path:
 from zntutils.system_utils import renew_user_data, get_all_config, get_user_data, clear_user_data, get_all_berkas_id, renew_multiple_user_data
 from zntutils.constant import PREFERRED_BERKAS_ID, TIPE_USER_PIHAK_KETIGA, TIPE_USER_SSO, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
 from zntutils.upload_utils import upload_shapefile_to_sipenta, upload_feature_layer_to_sipenta
+
 class Toolbox:
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the
@@ -316,13 +317,14 @@ class Upload_Revisi_Ke_Sipenta(object):
 
     def getParameterInfo(self):
         # 1. Parameter Berkas
-        berkas_list = get_all_berkas_id() # Tarik seluruh berkas yang ada
+        berkas_list = get_all_berkas_id(show_can_qc=True) # Tarik seluruh berkas yang ada
         berkas_show = []
         can_show = 0
         if berkas_list is not None:
             for berkas in berkas_list:
-                berkas_show.append(f"{berkas[0]}")
-                can_show += 1
+                if berkas[1] == True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
         if can_show == 0:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 

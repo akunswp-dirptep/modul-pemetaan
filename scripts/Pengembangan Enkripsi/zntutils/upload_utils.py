@@ -40,7 +40,6 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
         arcpy.AddError(f"Terdapat kesalahan saat membuat file zip: {str(e)}")
         return None
 
-    # --- BLOK REQUEST DAN ERROR HANDLING DIGABUNG DI SINI ---
     try:
         arcpy.AddMessage('Mengupload file ke server...')
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload"
@@ -71,18 +70,18 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
                 files=files
             )
             
-            # Wajib dipanggil untuk memicu exception jika status 4xx/5xx
+   
             response.raise_for_status() 
             
-            # Jika lolos dari raise_for_status, berarti sukses (200 OK)
+
             arcpy.AddMessage("File berhasil diupload ke modul tatausaha sipenta.")
             return response.json()
 
-    # 1. Tangkap HTTPError (403, 404, 500, dll) DULUAN
+
     except requests.exceptions.HTTPError as e:
         response = e.response
         
-        # Ambil JSON
+
         try:
             error_json = response.json()
             message = error_json.get("message", "")
@@ -92,11 +91,10 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
         # Handle khusus 403
         if response.status_code == 403:
             if "expired" in message.lower():
-                # clear_user_data() 
+                clear_user_data() 
                 arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
             else:
                 error_message = message if message else "Periksa hak akses atau token."
-                # Tampilkan pesan spesifik dari JSON server
                 arcpy.AddError(f"Akses ditolak (403). Pesan: {error_message}")
         else:
             # Jika HTTP error lain (misal 500 Internal Server Error)

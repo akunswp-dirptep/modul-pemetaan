@@ -103,7 +103,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "Ibukota Kabupaten/Kota",
-      "uRI" : "CIMPATH=Map622/Ibukota_Kabupaten_Kota.json",
+      "uRI" : "CIMPATH=Map6221/Ibukota_Kabupaten_Kota.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -991,7 +991,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "Titik_Sampel",
-      "uRI" : "CIMPATH=Map622/Titik_Sampel.json",
+      "uRI" : "CIMPATH=Map6221/Titik_Sampel.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -1356,7 +1356,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "Kecamatan_dissolve_ln",
-      "uRI" : "CIMPATH=Map622/Kecamatan_dissolve_ln.json",
+      "uRI" : "CIMPATH=Map6221/Kecamatan_dissolve_ln.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -1826,7 +1826,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "batas_desa",
-      "uRI" : "CIMPATH=Map622/batas_desa.json",
+      "uRI" : "CIMPATH=Map6221/batas_desa.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -2341,7 +2341,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "JALAN_LN_25K",
-      "uRI" : "CIMPATH=Map622/JALAN_LN_25K.json",
+      "uRI" : "CIMPATH=Map6221/JALAN_LN_25K.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -3033,7 +3033,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "RELKA_LN_25K",
-      "uRI" : "CIMPATH=Map622/RELKA_LN_25K.json",
+      "uRI" : "CIMPATH=Map6221/RELKA_LN_25K.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -3635,7 +3635,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "SUNGAI_LN_25K",
-      "uRI" : "CIMPATH=Map622/SUNGAI_LN_25K.json",
+      "uRI" : "CIMPATH=Map6221/SUNGAI_LN_25K.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -4274,7 +4274,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "BATAS_KAB_Serang",
-      "uRI" : "CIMPATH=Map622/BATAS_KAB_Serang.json",
+      "uRI" : "CIMPATH=Map6221/BATAS_KAB_Serang.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -4598,7 +4598,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "Hutan_Serang_clip",
-      "uRI" : "CIMPATH=Map622/Hutan_Serang_clip.json",
+      "uRI" : "CIMPATH=Map6221/Hutan_Serang_clip.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -5121,7 +5121,7 @@
     {
       "type" : "CIMFeatureLayer",
       "name" : "Zona_Layer",
-      "uRI" : "CIMPATH=Map622/Zona_Layer.json",
+      "uRI" : "CIMPATH=Map6221/Zona_Layer.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -49227,8 +49227,8 @@
   "mapDefinitions" : [
     {
       "type" : "CIMMap",
-      "name" : "Map622",
-      "uRI" : "CIMPATH=Map622/Map622.json",
+      "name" : "Map6221",
+      "uRI" : "CIMPATH=Map6221/Map6221.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -49248,23 +49248,23 @@
         "enableEyeDomeLighting" : true
       },
       "layers" : [
-        "CIMPATH=Map622/Ibukota_Kabupaten_Kota.json",
-        "CIMPATH=Map622/Titik_Sampel.json",
-        "CIMPATH=Map622/Kecamatan_dissolve_ln.json",
-        "CIMPATH=Map622/batas_desa.json",
-        "CIMPATH=Map622/JALAN_LN_25K.json",
-        "CIMPATH=Map622/RELKA_LN_25K.json",
-        "CIMPATH=Map622/SUNGAI_LN_25K.json",
-        "CIMPATH=Map622/BATAS_KAB_Serang.json",
-        "CIMPATH=Map622/Hutan_Serang_clip.json",
-        "CIMPATH=Map622/Zona_Layer.json"
+        "CIMPATH=Map6221/Ibukota_Kabupaten_Kota.json",
+        "CIMPATH=Map6221/Titik_Sampel.json",
+        "CIMPATH=Map6221/Kecamatan_dissolve_ln.json",
+        "CIMPATH=Map6221/batas_desa.json",
+        "CIMPATH=Map6221/JALAN_LN_25K.json",
+        "CIMPATH=Map6221/RELKA_LN_25K.json",
+        "CIMPATH=Map6221/SUNGAI_LN_25K.json",
+        "CIMPATH=Map6221/BATAS_KAB_Serang.json",
+        "CIMPATH=Map6221/Hutan_Serang_clip.json",
+        "CIMPATH=Map6221/Zona_Layer.json"
       ],
       "defaultViewingMode" : "Map",
       "mapType" : "Map",
-      "groundElevationSurfaceLayer" : "CIMPATH=Map622/Ground.json",
+      "groundElevationSurfaceLayer" : "CIMPATH=Map6221/Ground.json",
       "defaultColorVisionDeficiencyMode" : "None",
       "standaloneTables" : [
-        "CIMPATH=Map622/AtributSampel.json"
+        "CIMPATH=Map6221/AtributSampel.json"
       ],
       "datumTransforms" : [
         {
@@ -49616,7 +49616,7 @@
     {
       "type" : "CIMStandaloneTable",
       "name" : "AtributSampel",
-      "uRI" : "CIMPATH=Map622/AtributSampel.json",
+      "uRI" : "CIMPATH=Map6221/AtributSampel.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },
@@ -49740,10 +49740,10 @@
           "marginType" : "Percent",
           "source" : "None"
         },
-        "uRI" : "CIMPATH=Map622/Map622.json",
+        "uRI" : "CIMPATH=Map6221/Map6221.json",
         "view" : {
           "type" : "CIMMapView",
-          "viewableObjectPath" : "CIMPATH=Map622/Map622.json",
+          "viewableObjectPath" : "CIMPATH=Map6221/Map6221.json",
           "viewingMode" : "Map",
           "camera" : {
             "type" : "CIMViewCamera",
@@ -49752,8 +49752,8 @@
             "x" : 163408.15714999987,
             "y" : 820227.9188000001,
             "z" : "NaN",
-            "viewportHeight" : 18115.860067499449,
-            "viewportWidth" : 18580.369299999446
+            "viewportHeight" : 18115.860067499445,
+            "viewportWidth" : 18580.369299999438
           },
           "verticalExaggerationScaleFactor" : 1,
           "timeDisplay" : {
@@ -51693,12 +51693,12 @@
               "camera" : {
                 "type" : "CIMViewCamera",
                 "pitch" : -90,
-                "scale" : 699030.56472777179,
+                "scale" : 699030.56472777168,
                 "x" : 106.12041755876236,
                 "y" : -6.073086346461646,
                 "z" : "NaN",
-                "viewportHeight" : 38446.681060027469,
-                "viewportWidth" : 69903.0564727772
+                "viewportHeight" : 38446.681060027455,
+                "viewportWidth" : 69903.056472777171
               },
               "verticalExaggerationScaleFactor" : 1,
               "timeDisplay" : {
@@ -52397,8 +52397,8 @@
                 "x" : 106.03040667796641,
                 "y" : -6.39519619223063,
                 "z" : "NaN",
-                "viewportHeight" : 115340.04318008435,
-                "viewportWidth" : 209709.16941833511
+                "viewportHeight" : 115340.04318008429,
+                "viewportWidth" : 209709.16941833505
               },
               "verticalExaggerationScaleFactor" : 1,
               "timeDisplay" : {
@@ -52986,7 +52986,6 @@
               "y" : 62.838900000000649
             },
             "lockedAspectRatio" : true,
-            "expanded" : true,
             "frame" : {
               "rings" : [
                 [
@@ -57862,11 +57861,11 @@
               ],
               [
                 92,
-                39.8597261608283517
+                39.8597261608283588
               ],
               [
                 109.57794468315889,
-                39.8597261608283517
+                39.8597261608283588
               ],
               [
                 109.57794468315889,
@@ -60046,11 +60045,11 @@
                   ],
                   [
                     92,
-                    38.7150586044049589
+                    38.715058604404966
                   ],
                   [
                     100.9475004448787,
-                    38.7150586044049589
+                    38.715058604404966
                   ],
                   [
                     100.9475004448787,
@@ -61703,23 +61702,23 @@
             [
               [
                 92,
-                43.1612111111117471
+                42.3999999999999986
               ],
               [
                 92,
                 47.8103563151052313
               ],
               [
-                112.148664040798892,
+                112.148664040798906,
                 47.8103563151052313
               ],
               [
-                112.148664040798892,
-                43.1612111111117471
+                112.148664040798906,
+                42.3999999999999986
               ],
               [
                 92,
-                43.1612111111117471
+                42.3999999999999986
               ]
             ]
           ]
@@ -61779,7 +61778,7 @@
             "visible" : true,
             "rotationCenter" : {
               "x" : 105.467108051215561,
-              "y" : 45.03616603732803
+              "y" : 45.0361660373280372
             },
             "lockedAspectRatio" : true,
             "expanded" : true,
@@ -61795,11 +61794,11 @@
                     47.8103563151052313
                   ],
                   [
-                    112.148664040798892,
+                    112.148664040798906,
                     47.8103563151052313
                   ],
                   [
-                    112.148664040798892,
+                    112.148664040798906,
                     45.0361660373280372
                   ],
                   [
@@ -62034,355 +62033,92 @@
                 }
               },
               {
-                "type" : "CIMGroupElement",
+                "type" : "CIMGraphicElement",
                 "anchor" : "BottomLeftCorner",
-                "name" : "Sistem Proyeksi Grid",
+                "name" : "Sistem Proyeksi dan Grid Judul",
                 "visible" : true,
                 "rotationCenter" : {
                   "x" : 105.467108051215561,
-                  "y" : 45.03616603732803
+                  "y" : 47.179766037327461
                 },
                 "lockedAspectRatio" : true,
-                "expanded" : true,
-                "frame" : {
-                  "rings" : [
-                    [
-                      [
-                        105.467108051215561,
-                        45.0361660373280372
-                      ],
-                      [
-                        105.467108051215561,
-                        47.8103563151052313
-                      ],
-                      [
-                        112.148664040798892,
-                        47.8103563151052313
-                      ],
-                      [
-                        112.148664040798892,
-                        45.0361660373280372
-                      ],
-                      [
-                        105.467108051215561,
-                        45.0361660373280372
-                      ]
-                    ]
-                  ]
-                },
-                "graphicFrame" : {
-                  "type" : "CIMGraphicFrame",
-                  "backgroundSymbol" : {
+                "graphic" : {
+                  "type" : "CIMTextGraphic",
+                  "symbol" : {
                     "type" : "CIMSymbolReference",
                     "symbol" : {
-                      "type" : "CIMPolygonSymbol",
-                      "angleAlignment" : "Map"
-                    }
-                  },
-                  "borderSymbol" : {
-                    "type" : "CIMSymbolReference",
-                    "symbol" : {
-                      "type" : "CIMLineSymbol",
-                      "symbolLayers" : [
-                        {
-                          "type" : "CIMSolidStroke",
-                          "enable" : true,
-                          "capStyle" : "Round",
-                          "joinStyle" : "Round",
-                          "lineStyle3D" : "Strip",
-                          "miterLimit" : 10,
-                          "width" : 1,
-                          "height3D" : 1,
-                          "anchor3D" : "Center",
-                          "color" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              0,
-                              0,
-                              0,
-                              0
-                            ]
+                      "type" : "CIMTextSymbol",
+                      "blockProgression" : "TTB",
+                      "compatibilityMode" : true,
+                      "depth3D" : 1,
+                      "drawSoftHyphen" : true,
+                      "extrapolateBaselines" : true,
+                      "fontEffects" : "Normal",
+                      "fontEncoding" : "Unicode",
+                      "fontFamilyName" : "Arial",
+                      "fontStyleName" : "Regular",
+                      "fontType" : "Unspecified",
+                      "haloSize" : 1,
+                      "height" : 16,
+                      "hinting" : "Default",
+                      "horizontalAlignment" : "Left",
+                      "kerning" : true,
+                      "letterWidth" : 100,
+                      "ligatures" : true,
+                      "lineGapType" : "ExtraLeading",
+                      "shadowColor" : {
+                        "type" : "CIMRGBColor",
+                        "values" : [
+                          0,
+                          0,
+                          0,
+                          100
+                        ]
+                      },
+                      "symbol" : {
+                        "type" : "CIMPolygonSymbol",
+                        "symbolLayers" : [
+                          {
+                            "type" : "CIMSolidFill",
+                            "enable" : true,
+                            "color" : {
+                              "type" : "CIMRGBColor",
+                              "values" : [
+                                0,
+                                0,
+                                0,
+                                100
+                              ]
+                            }
                           }
-                        }
-                      ]
+                        ],
+                        "angleAlignment" : "Map"
+                      },
+                      "textCase" : "Normal",
+                      "textDirection" : "LTR",
+                      "verticalAlignment" : "Bottom",
+                      "verticalGlyphOrientation" : "Right",
+                      "wordSpacing" : 100,
+                      "billboardMode3D" : "FaceNearPlane"
                     }
                   },
-                  "shadowSymbol" : {
-                    "type" : "CIMSymbolReference",
-                    "symbol" : {
-                      "type" : "CIMPolygonSymbol",
-                      "angleAlignment" : "Map"
-                    }
+                  "blendingMode" : "Alpha",
+                  "attributes" : {
+                    "type" : "PropertySet",
+                    "propertySetItems" : [
+                      "CheckSpelling",
+                      true,
+                      "SupportsHyperlinks",
+                      true
+                    ]
                   },
-                  "shadowOffsetX" : 10,
-                  "shadowOffsetY" : -10
-                },
-                "elements" : [
-                  {
-                    "type" : "CIMGraphicElement",
-                    "anchor" : "BottomLeftCorner",
-                    "name" : "Sistem Proyeksi 2",
-                    "visible" : true,
-                    "rotationCenter" : {
-                      "x" : 108.468008051214667,
-                      "y" : 45.03616603732803
-                    },
-                    "lockedAspectRatio" : true,
-                    "graphic" : {
-                      "type" : "CIMTextGraphic",
-                      "symbol" : {
-                        "type" : "CIMSymbolReference",
-                        "symbol" : {
-                          "type" : "CIMTextSymbol",
-                          "blockProgression" : "TTB",
-                          "compatibilityMode" : true,
-                          "depth3D" : 1,
-                          "drawSoftHyphen" : true,
-                          "extrapolateBaselines" : true,
-                          "fontEffects" : "Normal",
-                          "fontEncoding" : "Unicode",
-                          "fontFamilyName" : "Arial",
-                          "fontStyleName" : "Regular",
-                          "fontType" : "Unspecified",
-                          "haloSize" : 1,
-                          "height" : 16,
-                          "hinting" : "Default",
-                          "horizontalAlignment" : "Left",
-                          "kerning" : true,
-                          "letterWidth" : 100,
-                          "ligatures" : true,
-                          "lineGapType" : "ExtraLeading",
-                          "shadowColor" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              0,
-                              0,
-                              0,
-                              100
-                            ]
-                          },
-                          "symbol" : {
-                            "type" : "CIMPolygonSymbol",
-                            "symbolLayers" : [
-                              {
-                                "type" : "CIMSolidFill",
-                                "enable" : true,
-                                "color" : {
-                                  "type" : "CIMRGBColor",
-                                  "values" : [
-                                    0,
-                                    0,
-                                    0,
-                                    100
-                                  ]
-                                }
-                              }
-                            ],
-                            "angleAlignment" : "Map"
-                          },
-                          "textCase" : "Normal",
-                          "textDirection" : "LTR",
-                          "verticalAlignment" : "Bottom",
-                          "verticalGlyphOrientation" : "Right",
-                          "wordSpacing" : 100,
-                          "billboardMode3D" : "FaceNearPlane"
-                        }
-                      },
-                      "blendingMode" : "Alpha",
-                      "attributes" : {
-                        "type" : "PropertySet",
-                        "propertySetItems" : [
-                          "CheckSpelling",
-                          true,
-                          "SupportsHyperlinks",
-                          true
-                        ]
-                      },
-                      "placement" : "Unspecified",
-                      "text" : ": TM-3°\n: WGS-84\n: ...",
-                      "shape" : {
-                        "x" : 108.468008051214667,
-                        "y" : 45.0361660373280372
-                      }
-                    }
-                  },
-                  {
-                    "type" : "CIMGraphicElement",
-                    "anchor" : "BottomLeftCorner",
-                    "name" : "Sistem Proyeksi 1",
-                    "visible" : true,
-                    "rotationCenter" : {
-                      "x" : 105.467108051215575,
-                      "y" : 45.03616603732803
-                    },
-                    "lockedAspectRatio" : true,
-                    "graphic" : {
-                      "type" : "CIMTextGraphic",
-                      "symbol" : {
-                        "type" : "CIMSymbolReference",
-                        "symbol" : {
-                          "type" : "CIMTextSymbol",
-                          "blockProgression" : "TTB",
-                          "compatibilityMode" : true,
-                          "depth3D" : 1,
-                          "drawSoftHyphen" : true,
-                          "extrapolateBaselines" : true,
-                          "fontEffects" : "Normal",
-                          "fontEncoding" : "Unicode",
-                          "fontFamilyName" : "Arial",
-                          "fontStyleName" : "Regular",
-                          "fontType" : "Unspecified",
-                          "haloSize" : 1,
-                          "height" : 16,
-                          "hinting" : "Default",
-                          "horizontalAlignment" : "Left",
-                          "kerning" : true,
-                          "letterWidth" : 100,
-                          "ligatures" : true,
-                          "lineGapType" : "ExtraLeading",
-                          "shadowColor" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              0,
-                              0,
-                              0,
-                              100
-                            ]
-                          },
-                          "symbol" : {
-                            "type" : "CIMPolygonSymbol",
-                            "symbolLayers" : [
-                              {
-                                "type" : "CIMSolidFill",
-                                "enable" : true,
-                                "color" : {
-                                  "type" : "CIMRGBColor",
-                                  "values" : [
-                                    0,
-                                    0,
-                                    0,
-                                    100
-                                  ]
-                                }
-                              }
-                            ],
-                            "angleAlignment" : "Map"
-                          },
-                          "textCase" : "Normal",
-                          "textDirection" : "LTR",
-                          "verticalAlignment" : "Bottom",
-                          "verticalGlyphOrientation" : "Right",
-                          "wordSpacing" : 100,
-                          "billboardMode3D" : "FaceNearPlane"
-                        }
-                      },
-                      "blendingMode" : "Alpha",
-                      "attributes" : {
-                        "type" : "PropertySet",
-                        "propertySetItems" : [
-                          "CheckSpelling",
-                          true,
-                          "SupportsHyperlinks",
-                          true
-                        ]
-                      },
-                      "placement" : "Unspecified",
-                      "text" : "Proyeksi\nDatum\nZona",
-                      "shape" : {
-                        "x" : 105.467108051215575,
-                        "y" : 45.0361660373280372
-                      }
-                    }
-                  },
-                  {
-                    "type" : "CIMGraphicElement",
-                    "anchor" : "BottomLeftCorner",
-                    "name" : "Sistem Proyeksi dan Grid Judul",
-                    "visible" : true,
-                    "rotationCenter" : {
-                      "x" : 105.467108051215561,
-                      "y" : 47.179766037327461
-                    },
-                    "lockedAspectRatio" : true,
-                    "graphic" : {
-                      "type" : "CIMTextGraphic",
-                      "symbol" : {
-                        "type" : "CIMSymbolReference",
-                        "symbol" : {
-                          "type" : "CIMTextSymbol",
-                          "blockProgression" : "TTB",
-                          "compatibilityMode" : true,
-                          "depth3D" : 1,
-                          "drawSoftHyphen" : true,
-                          "extrapolateBaselines" : true,
-                          "fontEffects" : "Normal",
-                          "fontEncoding" : "Unicode",
-                          "fontFamilyName" : "Arial",
-                          "fontStyleName" : "Regular",
-                          "fontType" : "Unspecified",
-                          "haloSize" : 1,
-                          "height" : 16,
-                          "hinting" : "Default",
-                          "horizontalAlignment" : "Left",
-                          "kerning" : true,
-                          "letterWidth" : 100,
-                          "ligatures" : true,
-                          "lineGapType" : "ExtraLeading",
-                          "shadowColor" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              0,
-                              0,
-                              0,
-                              100
-                            ]
-                          },
-                          "symbol" : {
-                            "type" : "CIMPolygonSymbol",
-                            "symbolLayers" : [
-                              {
-                                "type" : "CIMSolidFill",
-                                "enable" : true,
-                                "color" : {
-                                  "type" : "CIMRGBColor",
-                                  "values" : [
-                                    0,
-                                    0,
-                                    0,
-                                    100
-                                  ]
-                                }
-                              }
-                            ],
-                            "angleAlignment" : "Map"
-                          },
-                          "textCase" : "Normal",
-                          "textDirection" : "LTR",
-                          "verticalAlignment" : "Bottom",
-                          "verticalGlyphOrientation" : "Right",
-                          "wordSpacing" : 100,
-                          "billboardMode3D" : "FaceNearPlane"
-                        }
-                      },
-                      "blendingMode" : "Alpha",
-                      "attributes" : {
-                        "type" : "PropertySet",
-                        "propertySetItems" : [
-                          "CheckSpelling",
-                          true,
-                          "SupportsHyperlinks",
-                          true
-                        ]
-                      },
-                      "placement" : "Unspecified",
-                      "text" : "Sistem Proyeksi dan Grid :",
-                      "shape" : {
-                        "x" : 105.467108051215575,
-                        "y" : 47.179766037327461
-                      }
-                    }
+                  "placement" : "Unspecified",
+                  "text" : "Sistem Proyeksi dan Grid :",
+                  "shape" : {
+                    "x" : 105.467108051215575,
+                    "y" : 47.179766037327461
                   }
-                ]
+                }
               }
             ]
           },
@@ -62393,7 +62129,7 @@
             "visible" : true,
             "rotationCenter" : {
               "x" : 92,
-              "y" : 43.16121111111174
+              "y" : 42.3999999999999986
             },
             "lockedAspectRatio" : true,
             "expanded" : true,
@@ -62402,23 +62138,23 @@
                 [
                   [
                     92,
-                    43.1612111111117471
+                    42.3999999999999986
                   ],
                   [
                     92,
-                    47.8103563151052313
+                    47.8103563151052242
                   ],
                   [
-                    103.264359809027766,
-                    47.8103563151052313
+                    103.264359809027781,
+                    47.8103563151052242
                   ],
                   [
-                    103.264359809027766,
-                    43.1612111111117471
+                    103.264359809027781,
+                    42.3999999999999986
                   ],
                   [
                     92,
-                    43.1612111111117471
+                    42.3999999999999986
                   ]
                 ]
               ]
@@ -62472,267 +62208,180 @@
             },
             "elements" : [
               {
-                "type" : "CIMGroupElement",
+                "type" : "CIMGraphicElement",
                 "anchor" : "BottomLeftCorner",
-                "name" : "Sumber Data dan Ketelitian Survei 1",
+                "name" : "Daftar Sumber Data",
                 "visible" : true,
                 "rotationCenter" : {
                   "x" : 92,
-                  "y" : 43.16121111111174
+                  "y" : 42.4000000000000057
                 },
                 "lockedAspectRatio" : true,
-                "expanded" : true,
-                "frame" : {
-                  "rings" : [
-                    [
-                      [
-                        92,
-                        43.1612111111117471
-                      ],
-                      [
-                        92,
-                        47.8103563151052313
-                      ],
-                      [
-                        103.264359809027766,
-                        47.8103563151052313
-                      ],
-                      [
-                        103.264359809027766,
-                        43.1612111111117471
-                      ],
-                      [
-                        92,
-                        43.1612111111117471
-                      ]
-                    ]
-                  ]
-                },
-                "graphicFrame" : {
-                  "type" : "CIMGraphicFrame",
-                  "backgroundSymbol" : {
+                "graphic" : {
+                  "type" : "CIMTextGraphic",
+                  "symbol" : {
                     "type" : "CIMSymbolReference",
                     "symbol" : {
-                      "type" : "CIMPolygonSymbol",
-                      "angleAlignment" : "Map"
-                    }
-                  },
-                  "borderSymbol" : {
-                    "type" : "CIMSymbolReference",
-                    "symbol" : {
-                      "type" : "CIMLineSymbol",
-                      "symbolLayers" : [
-                        {
-                          "type" : "CIMSolidStroke",
-                          "enable" : true,
-                          "capStyle" : "Round",
-                          "joinStyle" : "Round",
-                          "lineStyle3D" : "Strip",
-                          "miterLimit" : 10,
-                          "width" : 1,
-                          "height3D" : 1,
-                          "anchor3D" : "Center",
-                          "color" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              0,
-                              0,
-                              0,
-                              0
-                            ]
+                      "type" : "CIMTextSymbol",
+                      "blockProgression" : "TTB",
+                      "compatibilityMode" : true,
+                      "depth3D" : 1,
+                      "drawSoftHyphen" : true,
+                      "extrapolateBaselines" : true,
+                      "fontEffects" : "Normal",
+                      "fontEncoding" : "Unicode",
+                      "fontFamilyName" : "Arial",
+                      "fontStyleName" : "Regular",
+                      "fontType" : "Unspecified",
+                      "haloSize" : 1,
+                      "height" : 16,
+                      "hinting" : "Default",
+                      "horizontalAlignment" : "Left",
+                      "kerning" : true,
+                      "letterWidth" : 100,
+                      "ligatures" : true,
+                      "lineGapType" : "ExtraLeading",
+                      "shadowColor" : {
+                        "type" : "CIMRGBColor",
+                        "values" : [
+                          0,
+                          0,
+                          0,
+                          100
+                        ]
+                      },
+                      "symbol" : {
+                        "type" : "CIMPolygonSymbol",
+                        "symbolLayers" : [
+                          {
+                            "type" : "CIMSolidFill",
+                            "enable" : true,
+                            "color" : {
+                              "type" : "CIMRGBColor",
+                              "values" : [
+                                0,
+                                0,
+                                0,
+                                100
+                              ]
+                            }
                           }
-                        }
-                      ]
+                        ],
+                        "angleAlignment" : "Map"
+                      },
+                      "textCase" : "Normal",
+                      "textDirection" : "LTR",
+                      "verticalAlignment" : "Bottom",
+                      "verticalGlyphOrientation" : "Right",
+                      "wordSpacing" : 100,
+                      "billboardMode3D" : "FaceNearPlane"
                     }
                   },
-                  "shadowSymbol" : {
+                  "blendingMode" : "Alpha",
+                  "attributes" : {
+                    "type" : "PropertySet",
+                    "propertySetItems" : [
+                      "CheckSpelling",
+                      true,
+                      "SupportsHyperlinks",
+                      true
+                    ]
+                  },
+                  "placement" : "Unspecified",
+                  "text" : "1. Peta Zona Nilai Tanah Lama\n2. Peta Batas Administrasi Kabupaten/Kota...\n3. Peta Kawasan Hutan SK...\n4. Peta Bidang Tanah Kantor Pertanahan \n    Kabupaten/Kota..\n5. Citra Satelit Tahun...\n6. Survei Lapangan Tahun...",
+                  "shape" : {
+                    "x" : 92,
+                    "y" : 42.4000000000000057
+                  }
+                }
+              },
+              {
+                "type" : "CIMGraphicElement",
+                "anchor" : "BottomLeftCorner",
+                "name" : "Sumber Data dan Ketelitian Survei Judul",
+                "visible" : true,
+                "rotationCenter" : {
+                  "x" : 92.0243832465282026,
+                  "y" : 46.5307100477441153
+                },
+                "lockedAspectRatio" : true,
+                "graphic" : {
+                  "type" : "CIMTextGraphic",
+                  "symbol" : {
                     "type" : "CIMSymbolReference",
                     "symbol" : {
-                      "type" : "CIMPolygonSymbol",
-                      "angleAlignment" : "Map"
-                    }
-                  },
-                  "shadowOffsetX" : 10,
-                  "shadowOffsetY" : -10
-                },
-                "elements" : [
-                  {
-                    "type" : "CIMGraphicElement",
-                    "anchor" : "BottomLeftCorner",
-                    "name" : "Daftar Sumber Data",
-                    "visible" : true,
-                    "rotationCenter" : {
-                      "x" : 92,
-                      "y" : 42.4000000000000057
-                    },
-                    "lockedAspectRatio" : true,
-                    "graphic" : {
-                      "type" : "CIMTextGraphic",
-                      "symbol" : {
-                        "type" : "CIMSymbolReference",
-                        "symbol" : {
-                          "type" : "CIMTextSymbol",
-                          "blockProgression" : "TTB",
-                          "compatibilityMode" : true,
-                          "depth3D" : 1,
-                          "drawSoftHyphen" : true,
-                          "extrapolateBaselines" : true,
-                          "fontEffects" : "Normal",
-                          "fontEncoding" : "Unicode",
-                          "fontFamilyName" : "Arial",
-                          "fontStyleName" : "Regular",
-                          "fontType" : "Unspecified",
-                          "haloSize" : 1,
-                          "height" : 16,
-                          "hinting" : "Default",
-                          "horizontalAlignment" : "Left",
-                          "kerning" : true,
-                          "letterWidth" : 100,
-                          "ligatures" : true,
-                          "lineGapType" : "ExtraLeading",
-                          "shadowColor" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              0,
-                              0,
-                              0,
-                              100
-                            ]
-                          },
-                          "symbol" : {
-                            "type" : "CIMPolygonSymbol",
-                            "symbolLayers" : [
-                              {
-                                "type" : "CIMSolidFill",
-                                "enable" : true,
-                                "color" : {
-                                  "type" : "CIMRGBColor",
-                                  "values" : [
-                                    0,
-                                    0,
-                                    0,
-                                    100
-                                  ]
-                                }
-                              }
-                            ],
-                            "angleAlignment" : "Map"
-                          },
-                          "textCase" : "Normal",
-                          "textDirection" : "LTR",
-                          "verticalAlignment" : "Bottom",
-                          "verticalGlyphOrientation" : "Right",
-                          "wordSpacing" : 100,
-                          "billboardMode3D" : "FaceNearPlane"
-                        }
-                      },
-                      "blendingMode" : "Alpha",
-                      "attributes" : {
-                        "type" : "PropertySet",
-                        "propertySetItems" : [
-                          "CheckSpelling",
-                          true,
-                          "SupportsHyperlinks",
-                          true
+                      "type" : "CIMTextSymbol",
+                      "blockProgression" : "TTB",
+                      "compatibilityMode" : true,
+                      "depth3D" : 1,
+                      "drawSoftHyphen" : true,
+                      "extrapolateBaselines" : true,
+                      "fontEffects" : "Normal",
+                      "fontEncoding" : "Unicode",
+                      "fontFamilyName" : "Arial",
+                      "fontStyleName" : "Regular",
+                      "fontType" : "Unspecified",
+                      "haloSize" : 1,
+                      "height" : 16,
+                      "hinting" : "Default",
+                      "horizontalAlignment" : "Left",
+                      "kerning" : true,
+                      "letterWidth" : 100,
+                      "ligatures" : true,
+                      "lineGapType" : "ExtraLeading",
+                      "shadowColor" : {
+                        "type" : "CIMRGBColor",
+                        "values" : [
+                          0,
+                          0,
+                          0,
+                          100
                         ]
                       },
-                      "placement" : "Unspecified",
-                      "text" : "1. Peta Zona Nilai Tanah Lama\n2. Peta Batas Administrasi Kabupaten/Kota...\n3. Peta Kawasan Hutan SK...\n4. Peta Bidang Tanah Kantor Pertanahan \n    Kabupaten/Kota..\n5. Citra Satelit Tahun...\n6. Survei Lapangan Tahun...",
-                      "shape" : {
-                        "x" : 92,
-                        "y" : 42.4000000000000057
-                      }
+                      "symbol" : {
+                        "type" : "CIMPolygonSymbol",
+                        "symbolLayers" : [
+                          {
+                            "type" : "CIMSolidFill",
+                            "enable" : true,
+                            "color" : {
+                              "type" : "CIMRGBColor",
+                              "values" : [
+                                0,
+                                0,
+                                0,
+                                100
+                              ]
+                            }
+                          }
+                        ],
+                        "angleAlignment" : "Map"
+                      },
+                      "textCase" : "Normal",
+                      "textDirection" : "LTR",
+                      "verticalAlignment" : "Bottom",
+                      "verticalGlyphOrientation" : "Right",
+                      "wordSpacing" : 100,
+                      "billboardMode3D" : "FaceNearPlane"
                     }
                   },
-                  {
-                    "type" : "CIMGraphicElement",
-                    "anchor" : "BottomLeftCorner",
-                    "name" : "Sumber Data dan Ketelitian Survei Judul",
-                    "visible" : true,
-                    "rotationCenter" : {
-                      "x" : 92.0243832465282026,
-                      "y" : 46.5307100477441153
-                    },
-                    "lockedAspectRatio" : true,
-                    "graphic" : {
-                      "type" : "CIMTextGraphic",
-                      "symbol" : {
-                        "type" : "CIMSymbolReference",
-                        "symbol" : {
-                          "type" : "CIMTextSymbol",
-                          "blockProgression" : "TTB",
-                          "compatibilityMode" : true,
-                          "depth3D" : 1,
-                          "drawSoftHyphen" : true,
-                          "extrapolateBaselines" : true,
-                          "fontEffects" : "Normal",
-                          "fontEncoding" : "Unicode",
-                          "fontFamilyName" : "Arial",
-                          "fontStyleName" : "Regular",
-                          "fontType" : "Unspecified",
-                          "haloSize" : 1,
-                          "height" : 16,
-                          "hinting" : "Default",
-                          "horizontalAlignment" : "Left",
-                          "kerning" : true,
-                          "letterWidth" : 100,
-                          "ligatures" : true,
-                          "lineGapType" : "ExtraLeading",
-                          "shadowColor" : {
-                            "type" : "CIMRGBColor",
-                            "values" : [
-                              0,
-                              0,
-                              0,
-                              100
-                            ]
-                          },
-                          "symbol" : {
-                            "type" : "CIMPolygonSymbol",
-                            "symbolLayers" : [
-                              {
-                                "type" : "CIMSolidFill",
-                                "enable" : true,
-                                "color" : {
-                                  "type" : "CIMRGBColor",
-                                  "values" : [
-                                    0,
-                                    0,
-                                    0,
-                                    100
-                                  ]
-                                }
-                              }
-                            ],
-                            "angleAlignment" : "Map"
-                          },
-                          "textCase" : "Normal",
-                          "textDirection" : "LTR",
-                          "verticalAlignment" : "Bottom",
-                          "verticalGlyphOrientation" : "Right",
-                          "wordSpacing" : 100,
-                          "billboardMode3D" : "FaceNearPlane"
-                        }
-                      },
-                      "blendingMode" : "Alpha",
-                      "attributes" : {
-                        "type" : "PropertySet",
-                        "propertySetItems" : [
-                          "CheckSpelling",
-                          true,
-                          "SupportsHyperlinks",
-                          true
-                        ]
-                      },
-                      "placement" : "Unspecified",
-                      "text" : "Sumber Data dan Ketelitian Survei :\n",
-                      "shape" : {
-                        "x" : 92.0243832465282026,
-                        "y" : 46.5307100477441224
-                      }
-                    }
+                  "blendingMode" : "Alpha",
+                  "attributes" : {
+                    "type" : "PropertySet",
+                    "propertySetItems" : [
+                      "CheckSpelling",
+                      true,
+                      "SupportsHyperlinks",
+                      true
+                    ]
+                  },
+                  "placement" : "Unspecified",
+                  "text" : "Sumber Data dan Ketelitian Survei :\n",
+                  "shape" : {
+                    "x" : 92.0243832465282026,
+                    "y" : 46.5307100477441224
                   }
-                ]
+                }
               }
             ]
           }
@@ -65075,7 +64724,6 @@
           "x" : 9,
           "y" : 2
         },
-        "expanded" : true,
         "frame" : {
           "rings" : [
             [
@@ -65874,7 +65522,7 @@
     {
       "type" : "CIMElevationSurfaceLayer",
       "name" : "Ground",
-      "uRI" : "CIMPATH=Map622/Ground.json",
+      "uRI" : "CIMPATH=Map6221/Ground.json",
       "sourceModifiedTime" : {
         "type" : "TimeInstant"
       },

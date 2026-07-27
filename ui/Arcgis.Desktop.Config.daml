@@ -50,6 +50,7 @@
 				<group id="pembaruan_nbt" caption="Pembaruan Nilai Bidang Tanah">
 					<menu refID="persiapan_data_pembaruan_nbt" size="Medium"/>
 					<menu refID="pengolahan_data_dasar_pembaruan_nbt" size="Medium" />
+					<menu refID="identifikasi_perubahan_atribut_pembaruan_nbt" size="Medium" />
 					<menu refID="analisis_survey_perubahan" size="Medium" />
 					<menu refID="pengolahan_titik_sampel_pembaruan_nbt" size="Medium" />
 					<menu refID="pengolahan_pembaruan_nbt" size="Medium" />
@@ -366,14 +367,18 @@
 
 				</menu>
 				
-				<menu id="pengolahan_data_dasar_pembaruan_nbt" caption="Identifikasi Perubahan" extendedCaption="Pengolahan Data Dasar" keytip="TA"         
+				<menu id="pengolahan_data_dasar_pembaruan_nbt" caption="Pengolahan Geometri" extendedCaption="Pengolahan Geometri" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png"
 					smallImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png">
 					<menu refID="pengolahan_data_dasar_persil_pembaruan_nbt" />
 					<menu refID="pengolahan_jaringan_jalan_pembaruan_nbt" />
+				</menu>
+
+				<menu id="identifikasi_perubahan_atribut_pembaruan_nbt" caption="Pengolahan Atribut" extendedCaption="Pengolahan Atribut" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png"
+					smallImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png">
 					<menu refID='analisis_persil_dan_jalan_pembaruan_nbt' />
 					<menu refID="pengolahan_zonasi_pembaruan_nbt" />
-
 				</menu>
 
 				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Poligon Persil">

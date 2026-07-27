@@ -1,6 +1,6 @@
 unins000.dat
 unins000.exe
-test_folder/
+app-metadata.json
 __pycache__/
 *.pyc
 *.pyt.xml

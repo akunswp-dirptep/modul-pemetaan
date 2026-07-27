@@ -340,7 +340,6 @@ class Login_Pemeta_Nilai_Tanah:
                         PREFERRED_SERVER_KEY: "Produksi" if use_production else "Belajar",
                         PREFERRED_BERKAS_ID: None
                     }
-                    arcpy.AddMessage(renew_data)
                     renew_multiple_user_data(renew_data)
                     
                 else:
@@ -411,7 +410,6 @@ class Login_Pemeta_Nilai_Tanah:
                     }
             renew_multiple_user_data(renew_data)
             
-            arcpy.AddMessage("Login OK")
 
         except Exception as e:
             arcpy.AddError(str(e))

@@ -2227,12 +2227,13 @@
 					<tooltip heading="Unduh Data Dari Sipenta">Tool untuk mengunduh data pemetaan berdasarkan nomor berkas</tooltip>
 				</button>
 
-				<button id="ButtonUploadRevisiKeSipenta" caption="Upload Revisi ke Sipenta" smallImage="C:\PenilaianTanah\icons\unduhdatadarisipenta.png" largeImage="C:\PenilaianTanah\icons\unduhdatadarisipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUploadRevisiKeSipenta" caption="Upload Revisi ke Sipenta" smallImage="C:\PenilaianTanah\icons\revisi.png" largeImage="C:\PenilaianTanah\icons\revisi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\UnduhDataDariSipenta.pyt\Upload_Revisi_Ke_Sipenta" name="Upload Revisi ke Sipenta" xmlns=""/>
 					</args>
-					<tooltip heading="Upload Revisi ke Sipenta">Tool untuk mengunduh data pemetaan berdasarkan nomor berkas</tooltip>
+					<tooltip heading="Upload Revisi ke Sipenta">Tool untuk mengupload data revisi pemetaan berdasarkan nomor berkas</tooltip>
 				</button>
+				
 		<!-- Button Pembaruan NBT (Restorasi) -->
 			<!-- Menu Persiapan Data -->
 				<button id="ButtonUploadPetaRencanaLokasiKegiatanPembaruanNBT" caption="Upload  Peta Rencana Lokasi Kegiatan (AOI)" smallImage="C:\PenilaianTanah\icons\folder.png" largeImage="C:\PenilaianTanah\icons\folder.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

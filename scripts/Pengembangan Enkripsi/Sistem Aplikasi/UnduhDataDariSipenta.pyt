@@ -330,7 +330,7 @@ class Upload_Revisi_Ke_Sipenta(object):
 
         param_in_feature = arcpy.Parameter(
             name="in_feature",
-            displayName="Input Layer (Persil)",
+            displayName="Feature Layer",
             datatype="GPFeatureLayer",
             parameterType="Required",
             direction="Input")

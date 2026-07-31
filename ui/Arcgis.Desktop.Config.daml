@@ -7,17 +7,13 @@
 			<!-- DAML DI TEMPAT LAIN -->
 			<tabs>
 				<tab id="PentabitMenu" caption="Nilai Bidang Tanah">
-					<!-- <group refID="nbt_1"/> -->
-					<!-- <group refID="nbt_qc"/> -->
-					<!-- <group refID="nbt_2"/> -->
+
 					<group refID="pembaruan_nbt"/>
-					<!-- <group refID="backup_gdb_nbt"/> -->
-					<!-- <group refID="nbt_layout"/> -->
+
 				</tab>
 				<tab id="ZNTMenu" caption="Zona Nilai Tanah">
 					<group refID="group_pembuatan_znt"/>
 					<group refID="group_pembaruan_znt"/>
-					<!-- <group refID="backup_gdb_znt"/> -->
 				</tab>
 				<tab id='SistemAplikasi' caption='Penilaian Tanah'>
 					<group refID='sistem_aplikasi'/>
@@ -26,6 +22,9 @@
 				<!-- <tab id="OGISInternalTools" caption="OGIS Internal">
 					<group refID="group_login_pengguna"/>
 					<group refID="group_pengolahan_znt"/>
+				</tab> -->
+				<!-- <tab id='tabsederhana' caption='Mock Up'>
+					<group refID='portofolio'/>
 				</tab> -->
 			</tabs>
 			
@@ -116,6 +115,10 @@
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
 					<button refID="ButtonUploadRevisiKeSipenta" size="large" />
+				</group>
+
+				<group id="portofolio" caption="Mock Up">
+					<button refID="ButtonUnduhTile" size="large" />
 				</group>
 
 			</groups>
@@ -872,7 +875,13 @@
 
 			<controls>
 				<tool id="tools1" className="tools1" caption="Tools" condition="esri_mapping_mapPane"/>
-				
+		<!-- Tes Wawancara -->
+				<button id="ButtonUnduhTile" caption="Unduh Tile" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\ToolboxUjiCoba.pyt\TileDownloaderTool" name="Unduh Tile" xmlns=""/>
+					</args>
+					<tooltip heading="Unduh Tile">Menu untuk mengunduh tile.</tooltip>
+				</button>
 		<!-- Menu NBT -->
 				<!-- Menu NBT Persiapan -->
 

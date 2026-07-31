@@ -507,10 +507,11 @@ class Import_Workspace(object):
 
                                 # --- LOGIKA PENAMBAHAN MAPPING FIELD ---
                                 if is_json_format:
-                                    arcpy.AddMessage("Mendeteksi file config legacy (.json). Memeriksa layer titik_sampel dan titik_zona...")
+                                    arcpy.AddMessage("Mendeteksi file config legacy (.json). Memeriksa layer titik_sampel, titik_sampel_individual dan titik_zona...")
                                     
                                     # Definisikan path untuk kedua layer
                                     fc_titik_sampel = os.path.join(dataset_path, "titik_sampel")
+                                    fc_titik_sampel_individual = os.path.join(dataset_path, "titik_sampel_individual")
                                     fc_titik_zona = os.path.join(dataset_path, "titik_zona")
 
                                     # Eksekusi mapping jika layer ditemukan
@@ -521,6 +522,10 @@ class Import_Workspace(object):
                                     if arcpy.Exists(fc_titik_zona):
                                         arcpy.AddMessage("Memproses mapping field pada layer: titik_zona")
                                         self.map_legacy_fields(fc_titik_zona)
+
+                                    if arcpy.Exists(fc_titik_sampel_individual):
+                                        arcpy.AddMessage("Memproses mapping field pada layer: titik_sampel_individual")
+                                        self.map_legacy_fields(fc_titik_sampel_individual)                                    
                                 # ---------------------------------------
 
                                 zona_layer_path = os.path.join(dataset_path, 'Zona_Layer')

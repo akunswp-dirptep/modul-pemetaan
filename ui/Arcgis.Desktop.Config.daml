@@ -22,9 +22,10 @@
 					<group refID="group_login_pengguna"/>
 					<group refID="group_pengolahan_znt"/>
 				</tab> -->
-				<!-- <tab id='tabsederhana' caption='Mock Up'>
+				<tab id='tabsederhana' caption='Mock Up'>
 					<group refID='portofolio'/>
-				</tab> -->
+
+				</tab>
 			</tabs>
 			
 			<groups>
@@ -121,8 +122,22 @@
 				</group>
 
 			</groups>
-			
+			<splitButtons>
+				<splitButton id="SplitBtn_Export" caption="Export Data">
+					<button refID="ButtonLoginPemeta" size="large"/>
+					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
+					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
+					<button refID="ButtonUploadRevisiKeSipenta" size="large" />\
+				</splitButton>
+			</splitButtons>
 			<palettes>
+				<buttonPalette id="PaletteAksi" caption="Kumpulan Aksi" itemsInRow="3" showItemCaption="false">
+					<button refID="ButtonLoginPemeta"/>
+					<button refID="ButtonCekPembaruanAplikasi"/>
+					<button refID="ButtonUnduhDataDariSipenta"/>
+					<button refID="ButtonUploadRevisiKeSipenta" />
+				</buttonPalette>
+
 				<toolPalette id="ToolPalette13" caption="Editing" itemsInRow="2">
 					<tool refID="esri_mapping_selectByRectangleTool"/>
 					<tool refID="esri_editing_MergeFeatures"/>
@@ -132,10 +147,11 @@
 					<tool refID="esri_editing_EditVerticesMove"/>
 					<tool refID="esri_editing_SketchAutoCompletePolygonTool"/>
 					<tool refID="esri_editing_SplitCommand"/>
-					<tool refID="esri_editing_ClipCommand"/>
+					<tool refID="esri_mapping_layerSwipeTool"/>
 					<tool refID="esri_mapping_clearSelectionButton"/>
 					<tool refID="esri_editing_DelSelFeaturesBtn"/>
 					<tool refID="esri_editing_SaveEditsBtn"/>
+
 				</toolPalette>
 			</palettes>
 			
@@ -659,7 +675,6 @@
 					<button refID='menu_persiapan_workspace'/>
 					<button refID="ButtonMasukkanDataDasar" size="Medium"/>	
 					<button refID="menu_tambah_citra"/>
-					<toolPalette refID="ToolPalette13"/>
 					<button refID="ButtonSesuaikanAtributJenisZonaPadaZonaLayer" size="Medium"/>	
 					<button refID="ButtonUploadDelineasiZonaAwalNilaiTanah" size="Medium"/>		
 				</menu>

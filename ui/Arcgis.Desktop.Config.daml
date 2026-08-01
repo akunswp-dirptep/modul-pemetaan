@@ -1,8 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <ArcGIS.Desktop xmlns="http://schemas.esri.com/DADF/Registry">
 	<QAT>esri_core_newProjectButton;esri_core_openProjectButton;esri_core_saveProjectButton;esri_core_undoSplitButton;esri_core_redoSplitButton;</QAT>
-	<modules>
-	
+	<modules>	
 		<insertModule id="Custom">
 			<!-- DAML DI TEMPAT LAIN -->
 			<tabs>

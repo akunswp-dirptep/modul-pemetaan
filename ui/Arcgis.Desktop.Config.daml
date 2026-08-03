@@ -22,10 +22,9 @@
 					<group refID="group_login_pengguna"/>
 					<group refID="group_pengolahan_znt"/>
 				</tab> -->
-				<tab id='tabsederhana' caption='Mock Up'>
+				<!-- <tab id='tabsederhana' caption='Mock Up'>
 					<group refID='portofolio'/>
-
-				</tab>
+				</tab> -->
 			</tabs>
 			
 			<groups>

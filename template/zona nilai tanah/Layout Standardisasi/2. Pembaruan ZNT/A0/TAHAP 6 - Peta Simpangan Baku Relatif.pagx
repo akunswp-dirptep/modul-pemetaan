@@ -56853,7 +56853,7 @@
             "visible" : true,
             "rotationCenter" : {
               "x" : 100.858700000000681,
-              "y" : 4.9999999999999991
+              "y" : 5
             },
             "lockedAspectRatio" : true,
             "graphic" : {
@@ -56928,7 +56928,7 @@
                 ]
               },
               "placement" : "Unspecified",
-              "text" : ": ........................BIDANG\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................",
+              "text" : ": ........................ HA\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................",
               "shape" : {
                 "x" : 100.858700000000681,
                 "y" : 5
@@ -57017,7 +57017,7 @@
                 ]
               },
               "placement" : "Unspecified",
-              "text" : "JUMLAH \nJUMLAH ZONA\nTANGGAL PELAKSANAAN\nTANGGAL PENILAIAN\nPELAKSANA\nPENANGGUNG JAWAB PENILAIAN\nPENANGGUNG JAWAB PEMETAAN\nDIPERIKSA",
+              "text" : "LUAS \nJUMLAH ZONA\nTANGGAL PELAKSANAAN\nTANGGAL PENILAIAN\nPELAKSANA\nPENANGGUNG JAWAB PENILAIAN\nPENANGGUNG JAWAB PEMETAAN\nDIPERIKSA",
               "shape" : {
                 "x" : 91.9999999999999858,
                 "y" : 5.0000000000000027
@@ -57107,9 +57107,9 @@
             ]
           },
           "placement" : "Unspecified",
-          "text" : "KEGIATAN PEMBARUAN PETA ZONA NILAI TANAH\nDI KABUPATEN/KOTA ... PROVINSI ... SEJUMLAH ... BIDANG \nTAHUN ANGGARAN ...\n",
+          "text" : "KEGIATAN PEMBARUAN PETA ZONA NILAI TANAH\nDI KABUPATEN/KOTA ... PROVINSI ... SELUAS ... HA \nTAHUN ANGGARAN ...\n",
           "shape" : {
-            "x" : 102,
+            "x" : 101.990858955891923,
             "y" : 12.5000000000000018
           }
         }

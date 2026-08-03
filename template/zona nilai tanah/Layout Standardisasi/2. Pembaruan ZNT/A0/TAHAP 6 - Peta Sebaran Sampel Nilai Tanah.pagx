@@ -56769,7 +56769,7 @@
         "visible" : true,
         "rotationCenter" : {
           "x" : 92,
-          "y" : 5.7487999999993908
+          "y" : 5
         },
         "lockedAspectRatio" : true,
         "frame" : {
@@ -56777,23 +56777,23 @@
             [
               [
                 92,
-                5.7487999999993908
+                5
               ],
               [
                 92,
-                10.8501936509106045
+                10.1013936509112128
               ],
               [
                 106.183465421550153,
-                10.8501936509106045
+                10.1013936509112128
               ],
               [
                 106.183465421550153,
-                5.7487999999993908
+                5
               ],
               [
                 92,
-                5.7487999999993908
+                5
               ]
             ]
           ]
@@ -56853,7 +56853,7 @@
             "visible" : true,
             "rotationCenter" : {
               "x" : 100.858700000000681,
-              "y" : 5.7487999999993908
+              "y" : 5
             },
             "lockedAspectRatio" : true,
             "graphic" : {
@@ -56928,10 +56928,10 @@
                 ]
               },
               "placement" : "Unspecified",
-              "text" : ": ........................BIDANG\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................",
+              "text" : ": ........................ HA\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................",
               "shape" : {
                 "x" : 100.858700000000681,
-                "y" : 5.7487999999993917
+                "y" : 5.0000000000000009
               }
             }
           },
@@ -56942,7 +56942,7 @@
             "visible" : true,
             "rotationCenter" : {
               "x" : 92,
-              "y" : 5.8324857590984855
+              "y" : 5.0836857590990947
             },
             "lockedAspectRatio" : true,
             "graphic" : {
@@ -57017,10 +57017,10 @@
                 ]
               },
               "placement" : "Unspecified",
-              "text" : "JUMLAH \nTANGGAL PELAKSANAAN\nTANGGAL PENILAIAN\nPELAKSANA\nPENANGGUNG JAWAB PENILAIAN\nPENANGGUNG JAWAB PEMETAAN\nDIPERIKSA",
+              "text" : "LUAS \nJUMLAH ZONA\nTANGGAL PELAKSANAAN\nTANGGAL PENILAIAN\nPELAKSANA\nPENANGGUNG JAWAB PENILAIAN\nPENANGGUNG JAWAB PEMETAAN\nDIPERIKSA",
               "shape" : {
                 "x" : 92,
-                "y" : 5.8324857590984864
+                "y" : 5.0836857590990956
               }
             }
           }
@@ -57107,7 +57107,7 @@
             ]
           },
           "placement" : "Unspecified",
-          "text" : "KEGIATAN PEMBARUAN PETA ZONA NILAI TANAH\nDI KABUPATEN/KOTA ... PROVINSI ... SEJUMLAH ... BIDANG\nTAHUN ANGGARAN ...",
+          "text" : "KEGIATAN PEMBARUAN PETA ZONA NILAI TANAH\nDI KABUPATEN/KOTA ... PROVINSI ... SELUAS ... HA\nTAHUN ANGGARAN ...",
           "shape" : {
             "x" : 102,
             "y" : 13.5000000000000018

@@ -57137,32 +57137,32 @@
         "name" : "Rincian Kegiatan",
         "visible" : true,
         "rotationCenter" : {
-          "x" : 92,
-          "y" : 6.5743855902784025
+          "x" : 91.9999999999999858,
+          "y" : 6
         },
         "lockedAspectRatio" : true,
         "frame" : {
           "rings" : [
             [
               [
-                92,
-                6.5743855902784034
+                91.9999999999999858,
+                6
               ],
               [
-                92,
-                11.59202936197979
+                91.9999999999999858,
+                11.7620299689832315
               ],
               [
-                106.183465421550153,
-                11.59202936197979
+                105.139971837023253,
+                11.7620299689832315
               ],
               [
-                106.183465421550153,
-                6.5743855902784034
+                105.139971837023253,
+                6
               ],
               [
-                92,
-                6.5743855902784034
+                91.9999999999999858,
+                6
               ]
             ]
           ]
@@ -57222,7 +57222,7 @@
             "visible" : true,
             "rotationCenter" : {
               "x" : 100.858700000000681,
-              "y" : 6.6371855902780998
+              "y" : 6
             },
             "lockedAspectRatio" : true,
             "graphic" : {
@@ -57297,10 +57297,10 @@
                 ]
               },
               "placement" : "Unspecified",
-              "text" : ": ........................BIDANG\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................",
+              "text" : ": ........................ HA\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................\n: ........................",
               "shape" : {
                 "x" : 100.858700000000681,
-                "y" : 6.6371855902781007
+                "y" : 6
               }
             }
           },
@@ -57310,8 +57310,8 @@
             "name" : "Keterangan Kegiatan",
             "visible" : true,
             "rotationCenter" : {
-              "x" : 92,
-              "y" : 6.5743855902784034
+              "x" : 91.9999999999999858,
+              "y" : 6.0000000000000018
             },
             "lockedAspectRatio" : true,
             "graphic" : {
@@ -57331,7 +57331,7 @@
                   "fontStyleName" : "Regular",
                   "fontType" : "Unspecified",
                   "haloSize" : 1,
-                  "height" : 14,
+                  "height" : 14.000226726740475,
                   "hinting" : "Default",
                   "horizontalAlignment" : "Left",
                   "kerning" : true,
@@ -57386,10 +57386,10 @@
                 ]
               },
               "placement" : "Unspecified",
-              "text" : "LUAS\nTANGGAL PELAKSANAAN\nTANGGAL PENILAIAN\nPELAKSANA\nPENANGGUNG JAWAB PENILAIAN\nPENANGGUNG JAWAB PEMETAAN\nDIPERIKSA",
+              "text" : "LUAS \nJUMLAH ZONA\nTANGGAL PELAKSANAAN\nTANGGAL PENILAIAN\nPELAKSANA\nPENANGGUNG JAWAB PENILAIAN\nPENANGGUNG JAWAB PEMETAAN\nDIPERIKSA",
               "shape" : {
-                "x" : 92,
-                "y" : 6.5743855902784034
+                "x" : 91.9999999999999858,
+                "y" : 6.0000000000000027
               }
             }
           }
@@ -57476,7 +57476,7 @@
             ]
           },
           "placement" : "Unspecified",
-          "text" : "KEGIATAN PEMBARUAN PETA ZONA NILAI TANAH\nDI KABUPATEN/KOTA ... PROVINSI ... SEJUMLAH ... BIDANG\nTAHUN ANGGARAN ...",
+          "text" : "KEGIATAN PEMBARUAN PETA ZONA NILAI TANAH\nDI KABUPATEN/KOTA ... PROVINSI ... SELUAS ... HA\nTAHUN ANGGARAN ...",
           "shape" : {
             "x" : 102,
             "y" : 14.0000000000000018

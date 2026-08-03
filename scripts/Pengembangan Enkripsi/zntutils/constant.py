@@ -562,7 +562,7 @@ KAB_KOTA = {
         "Bone Bolango",
         "Gorontalo",
         "Gorontalo Utara",
-        "Pahuwato",
+        "Pohuwato",
         "Kota Gorontalo"
     ],
     "Sulawesi Barat": [

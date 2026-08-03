@@ -787,9 +787,11 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         # Hapus feature class lama yang urutannya berantakan
         arcpy.management.Delete(feature_class_path)
         
-        # Rename feature class yang sudah rapi ke nama aslinya
-        arcpy.management.Rename(temp_fc_path, file_name)
-
+        arcpy.management.CopyFeatures(temp_fc_path, feature_class_path)
+        
+        # Hapus temporary file hasil reorder
+        arcpy.management.Delete(temp_fc_path)
+        
     def get_config_values(self):
         """
         MENDAPATKAN KONFIGURASI DARI FILE config.json

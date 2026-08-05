@@ -2237,7 +2237,7 @@ class Lihat_Titik_Pembanding(object):
 
         # 1. Validasi jumlah seleksi
         if total_selected == 0:
-            arcpy.AddError(f"Tidak ada titik yang dipilih. Silakan pilih 1 titik pada layer '{layer_individual}' atau '{layer_sampel}'.")
+            arcpy.AddError(f"Tidak ada titik yang dipilih. Silakan pilih 1 titik Individual pada layer '{layer_individual}' atau '{layer_sampel}'.")
             sys.exit(1)
         elif total_selected > 1:
             arcpy.AddError(f"Anda memilih {total_selected} titik secara bersamaan. Tool ini hanya berjalan jika tepat 1 titik individual dipilih.")
@@ -2261,7 +2261,7 @@ class Lihat_Titik_Pembanding(object):
             
             # Validasi khusus jika memilih di layer Titik_Sampel
             if jenis_data != 'Individual':
-                arcpy.AddError(f"Titik yang Anda pilih pada layer '{layer_sampel}' bukan merupakan titik individual (jenis_data = '{jenis_data}').")
+                arcpy.AddError(f"Titik yang Anda pilih pada layer '{layer_sampel}' bukan merupakan titik individual.")
                 sys.exit(1)
         else:
             field_list = ["no_sampel", "pembanding"]

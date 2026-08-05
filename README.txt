@@ -2,10 +2,10 @@ Direktorat Penilaian Tanah dan Ekonomi Pertanahan
 Kementerian ATR/BPN
 
 PENILAIAN TANAH (SIPENTA) - CATATAN RILIS
-Versi: 6.4.4
+Versi: 6.5
 ==================================================
 
-Pembaruan pada versi 6.4.4 berfokus pada peningkatan kemudahan untuk pengguna
-
+[PENAMBAHAN FITUR]
+1. Menambahkan Fitur Lihat Data Pembanding untuk Mengecek Posisi Pembanding dari Data Individual
 [PENYESUAIAN]
-1. Penyesuaian Penyimpanan Penarikan Titik Sampel agar Tidak Error ketika ditarik dari sipenta untuk pemilihan perbaharui sampel terpilih
+1. Menghilangkan Pesan yang tidak dibutuhkan di Rekomendasi Titik Pembanding

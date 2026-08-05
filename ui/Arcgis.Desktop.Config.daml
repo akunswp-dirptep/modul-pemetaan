@@ -856,6 +856,7 @@
 				<menu id="menu_titik_individual" caption="Pengolahan Titik Sampel Individual">
 					<button refID="ButtonRekomendasiPembanding" />
 					<button refID="ButtonPerhitunganIndividual" />
+					<button refID="ButtonLihatTitikPembandingIndividual"/>
 					<button refID="ButtonSetujuiSampelIndividual" />
 					<button refID="ButtonPengembalianTitikSampelIndividual"/>
 				</menu>
@@ -2109,12 +2110,21 @@
 					</args>
 					<tooltip heading="Setujui Sampel Individual">Menu untuk menyetujui titik sampel individual menjadi titik sampel.</tooltip>
 				</button>
+
 				<button id="ButtonPengembalianTitikSampelIndividual" caption="Pengembalian Sampel Individual" smallImage="C:\PenilaianTanah\icons\duplicate3.png" largeImage="C:\PenilaianTanah\icons\duplicate3.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampelIndividual.pyt\Pengembalian_Sampel_Individual" name="Pengembalian Titik Sampel Individual" xmlns=""/>
 					</args>
 					<tooltip heading="Pengembalian Sampel Individual">Menu untuk mengembalikan titik sampel kembali ke titik sampel individual.</tooltip>
 				</button>
+
+				<button id="ButtonLihatTitikPembandingIndividual" caption="Lihat Pembanding" smallImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" largeImage="C:\PenilaianTanah\icons\rekomendasiklaster.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampelIndividual.pyt\Lihat_Titik_Pembanding" name="Lihat Pembanding Individual" xmlns=""/>
+					</args>
+					<tooltip heading="Lihat Pembanding">Menu untuk melihat pembanding pada data individual yang dipilih.</tooltip>
+				</button>
+
 				<button id="ButtonPerhitunganIndividual" caption="Hitung Data Individual" smallImage="C:\PenilaianTanah\icons\hitungindividual.png" largeImage="C:\PenilaianTanah\icons\hitungindividual.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PengolahanTitikSampelIndividual.pyt\Perhitungan_Nilai_Data_Individual" name="Hitung Data Individual" xmlns=""/>

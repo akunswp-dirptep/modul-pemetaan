@@ -10,6 +10,7 @@ if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
     
 from zntutils.zona_layer import get_config_values, delete_bad_file
+from zntutils import sample_point as samplepoint
 
 arcpy.env.outputZFlag = "Disabled"  # Menonaktifkan output nilai Z (3D)
 arcpy.env.outputMFlag = "Disabled"  # Menonaktifkan output nilai M (measure)
@@ -109,14 +110,14 @@ class Periksa_Jenis_Zona(object):
 
         identity_layers = []
 
-        # Identity Titik Sampel
-        arcpy.analysis.Identity(ts_path, zl_path, "identity_ts")
-        identity_layers.append("identity_ts")
-
         # Identity Titik Zona (jika ada)
         if arcpy.Exists(tz_path):
             arcpy.analysis.Identity(tz_path, zl_path, "identity_tz")
             identity_layers.append("identity_tz")
+
+        # Identity Titik Sampel
+        arcpy.analysis.Identity(ts_path, zl_path, "identity_ts")
+        identity_layers.append("identity_ts")
 
         # Dictionary penyimpanan
         listzona = {}
@@ -360,6 +361,12 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
         config_dan_paths = get_config_values()
         sampel = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")
         titik_zona = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
+
+        selected_ids = samplepoint.get_selected_oids('Titik_Sampel')
+        if len(selected_ids) > 0:
+            arcpy.AddError("Terdapat sampel yang terpilih di Titik_Sampel Unselect terlebih dahulu.")
+            sys.exit(1)
+
         zl= "Zona_Layer"
         JNSZN = 1  # Default value untuk Non-Pertanian
         if jenis_zona == "Non-Pertanian":
@@ -425,8 +432,6 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
             # Sinkronisasi ke Titik_Sampel
             self.sinkronisasi_zoning(sampel, "Titik_Sampel_temp")
 
-            # Sinkronisasi ke Titik_Zona (jika ada)
-            self.sinkronisasi_zoning(titik_zona, "Titik_Zona_temp")
             sim_path = os.path.join(config_dan_paths['symbology_folder'], "Simbologi_Sesuaikan_Jenis_Zona.lyrx")
                 
             arcpy.management.MakeFeatureLayer(config_dan_paths['zl_path'], "Zona_Layer")

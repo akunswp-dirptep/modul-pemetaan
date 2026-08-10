@@ -146,6 +146,8 @@ class Pemilihan_Titik_Sampel_Outlier_Manual:
         titik_zona = "Titik_Zona"
         titik_sampel = "Titik_Sampel"
 
+        zonalayer.check_if_there_selected_field()
+
         # Get selection
         selected_ids = samplepoint.get_selected_oids(titik_zona)
         if len(selected_ids) <= 0:

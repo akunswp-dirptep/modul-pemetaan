@@ -360,11 +360,10 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
 
         config_dan_paths = get_config_values()
         sampel = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")
-        titik_zona = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
 
         selected_ids = samplepoint.get_selected_oids('Titik_Sampel')
         if len(selected_ids) > 0:
-            arcpy.AddError("Terdapat sampel yang terpilih di Titik_Sampel Unselect terlebih dahulu.")
+            arcpy.AddError("ERROR: Fitur Editing masih menyala pada Titik_Sampel. Matikan terlebih dahulu sebelum melanjutkan proses.")
             sys.exit(1)
 
         zl= "Zona_Layer"

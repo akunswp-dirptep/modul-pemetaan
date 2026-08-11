@@ -352,7 +352,16 @@ def validate_zona_layer_before_upload(layer):
         desc = arcpy.Describe(layer)
         oid_field_name = desc.OIDFieldName
         shape_type = str(getattr(desc, "shapeType", "")).lower()
+        
+        # 1. BARU: Pengecekan Field Wajib
+        field_names_upper = [field.name.upper() for field in arcpy.ListFields(layer)]
+        wajib_fields = ["NOZN", "JNSZN", "NILAIZN", 'WADMPR', 'WADMKK']
+        missing_fields = [f for f in wajib_fields if f not in field_names_upper]
+        
+        if missing_fields:
+            return f"Validasi gagal: Layer tidak memiliki field wajib yang diperlukan. Pastikan mengupload Zona_Layer yang benar."
 
+        # 2. Mengumpulkan Field Atribut
         attribute_fields = []
         for field in arcpy.ListFields(layer):
             field_name_upper = field.name.upper()
@@ -364,30 +373,116 @@ def validate_zona_layer_before_upload(layer):
                 continue
             attribute_fields.append(field.name)
 
+        # 3. Persiapan Cursor
         cursor_fields = ["OID@"]
         include_shape_area = shape_type == "polygon"
         if include_shape_area:
             cursor_fields.append("SHAPE@AREA")
         cursor_fields.extend(attribute_fields)
 
+        # 4. Validasi per Baris (Row)
         with arcpy.da.SearchCursor(layer, cursor_fields) as cursor:
             for row in cursor:
                 object_id = row[0]
                 current_index = 1
 
+                # Cek Luas Geometri
                 if include_shape_area:
                     shape_area = row[current_index]
                     current_index += 1
                     if shape_area is None or shape_area <= 0:
                         return f"Terdapat baris dengan luas geometri 0 atau tidak valid pada OBJECTID {object_id}."
 
+                # Cek Atribut Kosong
                 if attribute_fields:
                     attribute_values = row[current_index:]
                     if all(is_nullish_value(value) for value in attribute_values):
                         return f"Terdapat baris yang semua nilai atributnya null/kosong pada OBJECTID {object_id}."
+                        
     except arcpy.ExecuteError:
         return f"Gagal memvalidasi layer delineasi: {arcpy.GetMessages(2)}"
     except Exception as exc:
         return f"Gagal memvalidasi layer delineasi: {exc}"
+
+    return None
+
+def validate_kesesuaian_zona(config_dan_paths):
+    """
+    Fungsi untuk mengecek kesesuaian jenis zona antara layer delineasi (Zona Layer)
+    dengan Titik Sampel/Titik Zona.
+    """
+    ts_path = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")
+    tz_path = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
+    zl_path = os.path.join(config_dan_paths['dataset_path'], "Zona_Layer")
+    
+    # Hapus topologi jika tidak diperlukan di proses ini
+    zl_topology_path = os.path.join(config_dan_paths['dataset_path'], "Zona_Layer_Topology")
+    if arcpy.Exists(zl_topology_path):
+        arcpy.management.Delete(zl_topology_path)
+
+    identity_layers = []
+    
+    try:
+        # 1. Identity Titik Zona (jika ada)
+        if arcpy.Exists(tz_path):
+            arcpy.analysis.Identity(tz_path, zl_path, "identity_tz")
+            identity_layers.append("identity_tz")
+
+        # 2. Identity Titik Sampel (jika ada)
+        if arcpy.Exists(ts_path):
+            arcpy.analysis.Identity(ts_path, zl_path, "identity_ts")
+            identity_layers.append("identity_ts")
+
+        # 3. Pengumpulan Data (Dictionary)
+        listzona = {}
+        listsampel = {}
+
+        for identity_fc in identity_layers:
+            with arcpy.da.SearchCursor(identity_fc, ["NOZN", "JNSZN", "Zoning"]) as cursor:
+                for nozona, jenis, zoning in cursor:
+                    if nozona not in listzona:
+                        listzona[nozona] = set()
+                    if jenis is not None:
+                        listzona[nozona].add(jenis)
+
+                    if nozona not in listsampel:
+                        listsampel[nozona] = set()
+                    if zoning is not None:
+                        listsampel[nozona].add(zoning)
+
+        # 4. Pengecekan Perbedaan (Menggantikan UpdateCursor)
+        mismatches = []
+        
+        with arcpy.da.SearchCursor(zl_path, ["NOZN"]) as cursor:
+            for row in cursor:
+                nozona = row[0]
+                
+                zl_type = set(listzona.get(nozona, []))
+                titiksampel = set(listsampel.get(nozona, []))
+
+                # Jika ada perbedaan antara jenis zona dan titik sampel
+                if zl_type != titiksampel:
+                    jenis_str = ", ".join(map(str, sorted(zl_type))) if zl_type else "Kosong"
+                    sampel_str = ", ".join(map(str, sorted(titiksampel))) if titiksampel else "Tidak ada"
+                    
+                    mismatches.append(
+                        f"- NOZN {nozona}: Zona layer ({jenis_str}) vs Titik Sampel ({sampel_str})"
+                    )
+
+        # 5. Kembalikan string jika ada error, atau None jika aman
+        if mismatches:
+            error_message = "Terdapat perbedaan jenis zona pada data berikut:\n" + "\n".join(mismatches)
+            return error_message
+
+    except arcpy.ExecuteError:
+        return f"Gagal memvalidasi kesesuaian zona: {arcpy.GetMessages(2)}"
+    except Exception as exc:
+        return f"Gagal memvalidasi kesesuaian zona: {exc}"
+        
+    finally:
+        # 6. Cleanup temporary identity (ditaruh di blok finally agar selalu tereksekusi)
+        for fc in identity_layers:
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)
 
     return None

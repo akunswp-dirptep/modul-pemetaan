@@ -178,7 +178,11 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
         if validation_error:
             arcpy.AddError(validation_error)
             return
-
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            sys.exit(1)
+            return
 
         validate_document_type(berkas_value, target='Pembaruan ZNT')
         upload_feature_layer_to_sipenta(
@@ -315,7 +319,11 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
-
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            sys.exit(1)
+            return
         validate_document_type(berkas_value, target='Pembaruan ZNT')
         upload_feature_layer_to_sipenta(
             nomor_berkas=berkas_value,
@@ -451,6 +459,11 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            sys.exit(1)
+            return
         validation_error = zonalayer.validate_zona_layer_before_upload(feature_layer)
         if validation_error:
             arcpy.AddError(validation_error)

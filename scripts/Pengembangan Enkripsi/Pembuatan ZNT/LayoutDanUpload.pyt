@@ -168,7 +168,11 @@ class Upload_Peta_Sebaran_Sampel:
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
-
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            sys.exit(1)
+            return
         validation_error = zonalayer.validate_zona_layer_before_upload(feature_layer)
         if validation_error:
             arcpy.AddError(validation_error)
@@ -312,7 +316,11 @@ class Upload_Peta_Simpangan_Baku_Relatif:
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
-
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            sys.exit(1)
+            return
         validation_error = zonalayer.validate_zona_layer_before_upload(feature_layer)
         if validation_error:
             arcpy.AddError(validation_error)
@@ -459,7 +467,11 @@ class Upload_Peta_Zona_Nilai_Tanah:
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
-
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            sys.exit(1)
+            return
         validation_error = zonalayer.validate_zona_layer_before_upload(feature_layer)
         if validation_error:
             arcpy.AddError(validation_error)

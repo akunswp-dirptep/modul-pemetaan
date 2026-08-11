@@ -114,9 +114,27 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
                 "Tahun: {}\n".format(datetime.datetime.now().year))
-        
 
-        params = [input_metode, berkas, output_ts, output_tsi, penjelasan]
+        filter_surveyor = arcpy.Parameter(
+            displayName="Filter Berdasarkan Surveyor",
+            name="filter_surveyor",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input"
+        )
+        filter_surveyor.value = False
+
+        surveyor_list = arcpy.Parameter(
+            displayName="Pilih Surveyor",
+            name="surveyor_list",
+            datatype="GPString",       # Tipe data diubah menjadi string biasa
+            multiValue=True,           # Baris ini ditambahkan untuk mengaktifkan multivalue
+            parameterType="Optional",
+            direction="Input"
+        )
+        surveyor_list.enabled = False # Dinonaktifkan secara default
+
+        params = [input_metode, berkas, filter_surveyor, surveyor_list, output_ts, output_tsi, penjelasan]
         return params
 
     def isLicensed(self):
@@ -127,25 +145,67 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         """Update parameter dynamically"""
         input_metode = parameters[0]
         berkas = parameters[1]
-        output_ts = parameters[2]
-        output_tsi = parameters[3]
-        penjelasan = parameters[4]
+        filter_surveyor = parameters[2]
+        surveyor_list = parameters[3]
+        output_ts = parameters[4]
+        output_tsi = parameters[5]
+        penjelasan = parameters[6]
+        
         is_login = get_user_data(CREDENTIAL_KEY)
 
         if is_login is None:
             input_metode.enabled = False
             berkas.enabled = False
+            filter_surveyor.enabled = False
+            surveyor_list.enabled = False
             output_ts.enabled = False
             output_tsi.enabled = False
             penjelasan.enabled = True
         else:
             input_metode.enabled = True
             berkas.enabled = True
+            filter_surveyor.enabled = True
             output_ts.enabled = True
             output_tsi.enabled = True
             penjelasan.enabled = False
+            
+            # Logika untuk Filter Surveyor
+            if filter_surveyor.value:
+                surveyor_list.enabled = True
+                # Tarik data dari API jika berkas sudah terisi dan list surveyor belum memiliki daftar
+                if berkas.value and not surveyor_list.filter.list:
+                    try:
+                        user_data = get_user_data(CREDENTIAL_KEY)
+                        token = user_data.get(AUTH_KEY, None) if user_data else None
+                        server = get_user_data(PREFERRED_SERVER_KEY)
+                        use_production = True if server == "Produksi" or server is None else False
+                        
+                        if token and berkas.valueAsText != 'Tidak ada berkas yang dapat dipilih':
+                            api_data = self.call_sipenta_api(token, berkas.valueAsText, use_production)
+                            surveyors = set()
+                            
+                            # Ekstrak surveyor dari geojson titik sampel[cite: 2]
+                            if "geojson" in api_data.get("data", {}) and "features" in api_data["data"]["geojson"]:
+                                for f in api_data["data"]["geojson"]["features"]:
+                                    surveyors.add(f["properties"].get("nama_surveyor"))
+                                    
+                            # Ekstrak surveyor dari geojson individual[cite: 2]
+                            if "geojson_individual" in api_data.get("data", {}) and "features" in api_data["data"]["geojson_individual"]:
+                                for f in api_data["data"]["geojson_individual"]["features"]:
+                                    surveyors.add(f["properties"].get("nama_surveyor"))
+                            
+                            if surveyors:
+                                surveyor_list.filter.list = sorted(list(surveyors))
+                            else:
+                                surveyor_list.filter.list = ["Tidak ada surveyor ditemukan"]
+                    except Exception:
+                        # Menampilkan pesan kendala pada filter list jika gagal menarik data
+                        surveyor_list.filter.list = ["Terdapat kendala ketika menarik data surveyor"]
+            else:
+                surveyor_list.enabled = False
+                surveyor_list.value = None
         return
-
+    
     def updateMessages(self, parameters):
         """Validasi dan update messages"""
         return
@@ -153,49 +213,38 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
     def execute(self, parameters, messages):
         """Eksekusi utama tool"""
         user_data = get_user_data(CREDENTIAL_KEY)
-
         berkas_list = get_all_berkas_id()
 
         if berkas_list is None:
-            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan ZNT.")
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih...")
             return
         
         metode = parameters[0].valueAsText
         berkas_value = parameters[1].valueAsText
+        filter_surveyor = parameters[2].value
+        surveyor_list_str = parameters[3].valueAsText
+
+        # Membersihkan string multivalue (contoh: "'Surveyor A';'Surveyor B'")
+        selected_surveyors = []
+        if filter_surveyor and surveyor_list_str:
+            selected_surveyors = [s.strip("'").strip() for s in surveyor_list_str.split(";")]
 
         tahun = datetime.datetime.now().year
         server = get_user_data(PREFERRED_SERVER_KEY)
-        use_production = True if server == "Produksi" or server == None else False
+        use_production = True if server == "Produksi" or server is None else False
         token = user_data.get(AUTH_KEY, None)
   
-
         if metode == 'Reset Seluruh Sampel':
-            self.overwriteSamples(
-                token=token, 
-                no_berkas=berkas_value, 
-                tahun=tahun,  
-                use_production=use_production)
+            self.overwriteSamples(token, berkas_value, tahun, use_production, filter_surveyor, selected_surveyors)
         elif metode == 'Tambahkan Sampel Baru':
-            self.addSamples(
-                token=token, 
-                no_berkas=berkas_value, 
-                tahun=tahun,  
-                use_production=use_production)
-
+            self.addSamples(token, berkas_value, tahun, use_production, filter_surveyor, selected_surveyors)
         elif metode == 'Perbarui Sampel Terpilih':
-            self.updateSelectedFeature(
-                token=token,
-                no_berkas=berkas_value, 
-                tahun=tahun,  
-                use_production=use_production
-            )
+            self.updateSelectedFeature(token, berkas_value, tahun, use_production, filter_surveyor, selected_surveyors)
         
         setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
+        return    
 
-
-        return
-    
-    def overwriteSamples(self, token, no_berkas, tahun, use_production):
+    def overwriteSamples(self, token, no_berkas, tahun, use_production, filter_surveyor=False, selected_surveyors=None):
 
         """
         Fungsi untuk menghapus seluruh data sampel yang ada dan menggantinya dengan data terbaru dari API SIPENTA.
@@ -215,7 +264,8 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             nomor_berkas=no_berkas, 
             use_production=use_production
             )        
-
+        if filter_surveyor and selected_surveyors:
+            api_data = self.filter_api_data_by_surveyor(api_data, selected_surveyors)
         feature_class_path = os.path.join(config_paths['dataset_path'], "Titik_Sampel")
 
         if arcpy.Exists(feature_class_path):
@@ -267,7 +317,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         # Kondisi 3: Menambahkan Layer Kembali Ke Map
         self.refresh_layer_in_map()
 
-    def addSamples(self, token, no_berkas, tahun, use_production):
+    def addSamples(self, token, no_berkas, tahun, use_production, filter_surveyor=False, selected_surveyors=None):
 
         """
         Fungsi untuk menambahkan data sampel baru berdasarkan config last_nomor_entries.
@@ -291,7 +341,8 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                                          nomor_berkas=no_berkas,
                                          use_production=use_production)
         
-
+        if filter_surveyor and selected_surveyors:
+            api_data = self.filter_api_data_by_surveyor(api_data, selected_surveyors)
         # kondisi 2: Mengambil nomor sampel terakhir dari config
         new_last_nomor_entries = self.get_last_nomor_entry(api_data)
 
@@ -431,7 +482,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         self.refresh_layer_in_map()
         arcpy.AddMessage("Proses penambahan data sampel selesai.")
 
-    def updateSelectedFeature(self, token, no_berkas, tahun, use_production):
+    def updateSelectedFeature(self, token, no_berkas, tahun, use_production, filter_surveyor=False, selected_surveyors=None):
         """
         Fungsi untuk memperbaharui titik sampel yang dipilih. Baik untuk Titik_Sampel maupun Titik_Sampel_Individual. Data yang diperbarui hanya data yang dipilih berdasarkan no_sampel.
 
@@ -473,7 +524,8 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             nomor_berkas=no_berkas,
             use_production= use_production)
                            
-
+        if filter_surveyor and selected_surveyors:
+            api_data = self.filter_api_data_by_surveyor(api_data, selected_surveyors)
         try:
             nomor_sampel_values = {
                     'titik_sampel_individual': [],
@@ -944,8 +996,8 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 arcpy.management.MakeFeatureLayer(tsi_path, "Titik_Sampel_Individual")
                 arcpy.management.ApplySymbologyFromLayer("Titik_Sampel_Individual", tsi_simbology_path)
 
-            arcpy.SetParameter(2, "Titik_Sampel")
-            arcpy.SetParameter(3, "Titik_Sampel_Individual")
+            arcpy.SetParameter(4, "Titik_Sampel")
+            arcpy.SetParameter(5, "Titik_Sampel_Individual")
 
                 
         except Exception as e:
@@ -1036,6 +1088,26 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             "features": filtered_samples
         }
 
+    def filter_api_data_by_surveyor(self, api_data, selected_surveyors):
+        """Menyaring data API berdasarkan daftar surveyor yang dipilih pengguna"""
+        if not api_data or "data" not in api_data:
+            return api_data
+            
+        # Filter data titik sampel[cite: 2]
+        if "geojson" in api_data["data"] and "features" in api_data["data"]["geojson"]:
+            features = api_data["data"]["geojson"]["features"]
+            filtered_features = [f for f in features if f["properties"].get("nama_surveyor") in selected_surveyors]
+            api_data["data"]["geojson"]["features"] = filtered_features
+            api_data["data"]["jumlah_data"] = len(filtered_features)
+            
+        # Filter data titik sampel individual[cite: 2]
+        if "geojson_individual" in api_data["data"] and "features" in api_data["data"]["geojson_individual"]:
+            features = api_data["data"]["geojson_individual"]["features"]
+            filtered_features = [f for f in features if f["properties"].get("nama_surveyor") in selected_surveyors]
+            api_data["data"]["geojson_individual"]["features"] = filtered_features
+            api_data["data"]["jumlah_data_individual"] = len(filtered_features)
+            
+        return api_data
 class Tampilkan_Simbologi_Titik_Sampel(object):
     """Tool untuk menampilkan simbologi pada layer Titik Sampel"""
     def __init__(self):

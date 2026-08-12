@@ -486,3 +486,58 @@ def validate_kesesuaian_zona(config_dan_paths):
                 arcpy.management.Delete(fc)
 
     return None
+
+def validasi_klaster_zona(config_dan_paths):
+    """
+    Memvalidasi kesesuaian atribut klaster antara 
+    Titik Zona dan Zona Layer menggunakan tools Identity.
+    """
+    # 1. Ekstrak base path
+    dataset_path = config_dan_paths.get('dataset_path', '')
+    
+    tz_path = os.path.join(dataset_path, "Titik_Zona")
+    zl_path = os.path.join(dataset_path, "Zona_Layer")
+    
+    if not arcpy.Exists(tz_path):
+        return None
+
+    zona_beda = []
+    
+    # 2. Persiapan variabel identity
+    layer_path = tz_path
+    layer_name = "Titik_Zona"
+    identity_fc = r"memory\identity_tz"
+
+    # Helper function internal untuk konversi string dengan aman
+    def safe_str(val):
+        return str(val).strip() if val is not None else None
+
+    # Bersihkan file temporary di memory jika sebelumnya masih ada
+    if arcpy.Exists(identity_fc):
+        arcpy.management.Delete(identity_fc)
+
+    # 3. Jalankan tools Identity
+    arcpy.analysis.Identity(layer_path, zl_path, identity_fc)
+    
+    # Karena jenis zona tidak dicek, kita hanya perlu field NOZN dan klaster
+    kolom_perlu_dicek = ["NOZN", "cluster", "cluster_1"]
+
+    with arcpy.da.SearchCursor(identity_fc, kolom_perlu_dicek) as cursor:
+        for row in cursor:
+            nozona = row[0]
+            cluster_titik = row[1]
+            cluster_zona = row[2]
+
+            cluster_titik_str = safe_str(cluster_titik)
+            cluster_zona_str = safe_str(cluster_zona)
+
+            # Validasi Kesesuaian Cluster
+            if cluster_titik_str != cluster_zona_str:
+                zona_beda.append(
+                    f"NOZN {nozona} (Klaster Titik: {cluster_titik}, Klaster Zona: {cluster_zona})"
+                )
+
+    # Bersihkan output memory setelah kursor selesai membaca
+    arcpy.management.Delete(identity_fc)
+
+    return zona_beda

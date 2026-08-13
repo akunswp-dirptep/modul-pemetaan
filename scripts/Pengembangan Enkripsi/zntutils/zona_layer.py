@@ -487,9 +487,6 @@ def validate_kesesuaian_zona(config_dan_paths):
 
     return None
 
-import os
-import arcpy
-
 def validasi_klaster_zona(config_dan_paths):
     """
     Memvalidasi kesesuaian atribut klaster antara 
@@ -696,3 +693,47 @@ def validasi_cluster_minimal_satu_titik(config_dan_paths):
                     invalid_cluster.append(f"Jenis Zona {jnszn}: Klaster {cl}")
 
         return invalid_cluster
+
+
+def validasi_zona_layer_min_3_titik_sampel(config_dan_paths):
+    dataset_path = config_dan_paths.get('dataset_path', '')
+
+    zl_path = os.path.join(dataset_path, "Zona_Layer")
+    ts_path = os.path.join(dataset_path, 'Titik_Sampel')
+
+    sout = r"memory\sampel_join_all"
+    
+    # Hapus sisa memory jika fungsi dijalankan berulang
+    if arcpy.Exists(sout):
+        arcpy.management.Delete(sout)
+
+    # Lakukan Spatial Join untuk melihat berapa banyak titik sampel yang jatuh di tiap zona
+    arcpy.analysis.SpatialJoin(zl_path, ts_path, sout, 'JOIN_ONE_TO_MANY')
+
+    # 1. Petakan OID dengan NOZN dan inisialisasi jumlah titik sampel = 0 untuk SEMUA zona
+    mapping_oid_dengan_nozn = {}
+    jumlah_titik_per_zona = {}
+    
+    with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "NOZN"]) as cur:
+        for oid, nozn in cur:
+            mapping_oid_dengan_nozn[oid] = nozn
+            jumlah_titik_per_zona[oid] = 0  # Default 0 agar zona yang kosong (0 titik) tetap terdeteksi
+
+    # 2. Hitung akumulasi titik sampel dari hasil Spatial Join
+    with arcpy.da.SearchCursor(sout, ["TARGET_FID", "Join_Count"]) as cur:
+        for fid, jc in cur:
+            if fid in jumlah_titik_per_zona:
+                jumlah_titik_per_zona[fid] += jc
+
+    # 3. Evaluasi semua zona, catat jika titik sampel kurang dari 3
+    invalid = []
+    for fid, count in jumlah_titik_per_zona.items():
+        if count < 3:
+            nozn = mapping_oid_dengan_nozn.get(fid)
+            invalid.append(f"NOZN {nozn} - Jumlah Titik {count}")
+
+    # Bersihkan output memory
+    if arcpy.Exists(sout):
+        arcpy.management.Delete(sout)
+
+    return invalid

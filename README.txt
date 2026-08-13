@@ -10,3 +10,4 @@ Versi: 6.6
 
 [PENYESUAIAN FITUR]
 1. Menyesuaikan Perhitungan Pencilan atau Outlier sehingga langsung menjadikan nilai field klaster Null pada zona yang dihitung
+2. Menambahkan Validasi-Validasi pada Upload data Pembaruan ZNT

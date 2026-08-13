@@ -487,6 +487,9 @@ def validate_kesesuaian_zona(config_dan_paths):
 
     return None
 
+import os
+import arcpy
+
 def validasi_klaster_zona(config_dan_paths):
     """
     Memvalidasi kesesuaian atribut klaster antara 
@@ -502,6 +505,11 @@ def validasi_klaster_zona(config_dan_paths):
         return None
 
     zona_beda = []
+
+    # Helper function internal untuk menambahkan pesan unik (filter duplikat)
+    def tambah_pesan(pesan):
+        if pesan not in zona_beda:
+            zona_beda.append(pesan)
     
     # 2. Persiapan variabel identity
     layer_path = tz_path
@@ -517,9 +525,10 @@ def validasi_klaster_zona(config_dan_paths):
         arcpy.management.Delete(identity_fc)
 
     # 3. Jalankan tools Identity
+    # Identity ini akan menempelkan atribut Zona_Layer ke Titik_Zona yang ada di dalamnya
     arcpy.analysis.Identity(layer_path, zl_path, identity_fc)
     
-    # Karena jenis zona tidak dicek, kita hanya perlu field NOZN dan klaster
+    # Hanya perlu field NOZN dan klaster (cluster dari Titik, cluster_1 dari Zona Layer)
     kolom_perlu_dicek = ["NOZN", "cluster", "cluster_1"]
 
     with arcpy.da.SearchCursor(identity_fc, kolom_perlu_dicek) as cursor:
@@ -531,16 +540,29 @@ def validasi_klaster_zona(config_dan_paths):
             cluster_titik_str = safe_str(cluster_titik)
             cluster_zona_str = safe_str(cluster_zona)
 
-            # Validasi Kesesuaian Cluster
-            if cluster_titik_str != cluster_zona_str:
-                zona_beda.append(
-                    f"NOZN {nozona} (Klaster Titik: {cluster_titik}, Klaster Zona: {cluster_zona})"
-                )
+            is_null_error = False
+
+            # Validasi 1: Klaster Titik tidak boleh Null atau kosong
+            if cluster_titik_str is None or cluster_titik_str == "":
+                tambah_pesan(f"NOZN {nozona} (Klaster pada Titik Zona bernilai Null/Kosong)")
+                is_null_error = True
+
+            # Validasi 2: Klaster Zona tidak boleh Null atau kosong jika ada Titik Zona di dalamnya
+            if cluster_zona_str is None or cluster_zona_str == "":
+                tambah_pesan(f"NOZN {nozona} (Klaster pada Zona Layer bernilai Null/Kosong padahal memiliki Titik Zona)")
+                is_null_error = True
+
+            # Validasi 3: Kesesuaian Cluster
+            # Hanya jalankan validasi ini jika tidak ada yang Null di atas
+            if not is_null_error:
+                if cluster_titik_str != cluster_zona_str:
+                    tambah_pesan(f"NOZN {nozona} (Klaster Titik: {cluster_titik}, Klaster Zona: {cluster_zona})")
 
     # Bersihkan output memory setelah kursor selesai membaca
     arcpy.management.Delete(identity_fc)
 
     return zona_beda
+
 
 def validasi_duplikasi_nozn(config_dan_paths):
         zl_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer')
@@ -641,7 +663,7 @@ def validasi_metode_pembuatan_min_3_titik_sampel(config_dan_paths):
         invalid = []
         for fid, count in zona_outlier.items():
             if count < 3:
-                invalid.append(f"NOZN {mapping_oid_dengan_nozn.get(fid)}: Jumlah Titik{count}")
+                invalid.append(f" NOZN {mapping_oid_dengan_nozn.get(fid)} - Jumlah Titik {count}")
             
         return invalid
 

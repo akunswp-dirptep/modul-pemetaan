@@ -2,8 +2,11 @@ Direktorat Penilaian Tanah dan Ekonomi Pertanahan
 Kementerian ATR/BPN
 
 PENILAIAN TANAH (SIPENTA) - CATATAN RILIS
-Versi: 6.5.2
+Versi: 6.6
 ==================================================
 
-[PENYESUAIAN]
-1. Menyesuaikan Fitur Pemilihan Titik Outlier Manual agar mencegah terjadinya seleksi zona layer
+[PENAMBAHAN FITUR]
+1. Penambahan Fitur Filter Titik Sampel Berdasarkan Surveyor
+
+[PENYESUAIAN FITUR]
+1. Menyesuaikan Perhitungan Pencilan atau Outlier sehingga langsung menjadikan nilai field klaster Null pada zona yang dihitung

@@ -170,6 +170,9 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
         feature_layer = parameters[0].valueAsText
         berkas_value = parameters[1].valueAsText
 
+        configs = zonalayer.get_config_values()
+        ts_path = os.path.join(configs['dataset_path'], 'Titik_Sampel')
+
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
@@ -177,9 +180,26 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
         perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
         if perbedaan_zona:
             arcpy.AddError(perbedaan_zona)
-            sys.exit(1)
             return
-
+        
+        nilai_tanah_negatif_titik_sampel = zonalayer.validasi_nilai_tanah_negatif(ts_path, 'Titik_Sampel')
+        if nilai_tanah_negatif_titik_sampel:
+            for err in nilai_tanah_negatif_titik_sampel:
+                arcpy.AddError(f'Terdapat Nilai Tanah Negatif pada layer Titik Sampel, Nomor Sampel: {err[0]} | Nilai Tanah/m2 : {err[1]}')
+            return
+        
+        terdapat_dua_jenis_titik_dalam_satu_zona = zonalayer.validasi_titik_sampel_dan_titik_zona_dalam_satu_zona(config_dan_paths=configs)
+        if terdapat_dua_jenis_titik_dalam_satu_zona:
+            for err in terdapat_dua_jenis_titik_dalam_satu_zona:
+                arcpy.AddError(f"Terdapat Zona yang memiliki Titik Zona dan Titik Sampel Sekaligus: {sorted(terdapat_dua_jenis_titik_dalam_satu_zona)}")
+            return
+         
+        zona_pembuatan_kurang_dari_3_titik = zonalayer.validasi_metode_pembuatan_min_3_titik_sampel(config_dan_paths=configs)
+        if zona_pembuatan_kurang_dari_3_titik:
+            for err in zona_pembuatan_kurang_dari_3_titik:
+                arcpy.AddError(f"Pada Zona Outlier ini titik sampel kurang dari batas minimum (3 buah):{err}")
+            return
+        
         validate_document_type(berkas_value, target='Pembaruan ZNT')
         upload_feature_layer_to_sipenta(
             nomor_berkas=berkas_value,
@@ -301,6 +321,8 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
         """The source code of the tool."""
         zonalayer.check_if_there_selected_field('Titik_Zona')
         delete_topology_file()
+        configs = zonalayer.get_config_values()
+        tz_path = os.path.join(configs['dataset_path'], 'Titik_Zona')
         user_data = get_user_data(CREDENTIAL_KEY)
 
         berkas_list = get_all_berkas_id(process_type='Pembaruan ZNT')
@@ -315,11 +337,35 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
+
         perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
         if perbedaan_zona:
             arcpy.AddError(perbedaan_zona)
-            sys.exit(1)
             return
+
+        perbedaan_klaster = zonalayer.validasi_klaster_zona(config_dan_paths=configs)
+        if perbedaan_klaster:
+            for err in perbedaan_klaster:
+                arcpy.AddError(f'Terdapat error field klaster antara Titik dan Zona {err}')
+            return
+        
+        nilai_tanah_negatif_titik_zona = zonalayer.validasi_nilai_tanah_negatif(tz_path, 'Titik_Zona')
+        if nilai_tanah_negatif_titik_zona:
+            for err in nilai_tanah_negatif_titik_zona:
+                arcpy.AddError(f'Terdapat Nilai Tanah Negatif pada layer Titik Zona, Nomor Sampel: {err[0]} | Nilai Tanah/m2 : {err[1]}')
+            return
+        
+        terdapat_dua_jenis_titik_dalam_satu_zona = zonalayer.validasi_titik_sampel_dan_titik_zona_dalam_satu_zona(config_dan_paths=configs)
+        if terdapat_dua_jenis_titik_dalam_satu_zona:
+            for err in terdapat_dua_jenis_titik_dalam_satu_zona:
+                arcpy.AddError(f"Terdapat Zona yang memiliki Titik Zona dan Titik Sampel Sekaligus: {sorted(terdapat_dua_jenis_titik_dalam_satu_zona)}")
+            return  
+        
+        minimal_1_titik_dalam_klaster = zonalayer.validasi_cluster_minimal_satu_titik(config_dan_paths=configs)
+        if minimal_1_titik_dalam_klaster:
+            for err in minimal_1_titik_dalam_klaster:
+                arcpy.AddError(f"Terdapat Klaster yang tidak memiliki Titik Zona: {err}")
+            return            
         validate_document_type(berkas_value, target='Pembaruan ZNT')
         upload_feature_layer_to_sipenta(
             nomor_berkas=berkas_value,
@@ -463,14 +509,12 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=configs)
         if perbedaan_zona:
             arcpy.AddError(perbedaan_zona)
-            sys.exit(1)
             return
         
         perbedaan_klaster = zonalayer.validasi_klaster_zona(config_dan_paths=configs)
         if perbedaan_klaster:
             for err in perbedaan_klaster:
-                arcpy.AddError(f'Terdapat perbedaan klaster antara Titik dan Zona {err}')
-            sys.exit(1)
+                arcpy.AddError(f'Terdapat error pada field klaster antara Titik dan Zona {err}')
             return
 
         duplikasi_nozn = zonalayer.validasi_duplikasi_nozn(config_dan_paths=configs)

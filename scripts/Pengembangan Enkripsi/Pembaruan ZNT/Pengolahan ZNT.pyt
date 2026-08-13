@@ -252,7 +252,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
         self.label = "Hitung Nilai ZNT Pencilan Atau Outlier"
-        self.description = ""
+        self.description = "Menghitung nilai ZNT untuk zona pencilan/outlier dan mengosongkan nilai clusternya."
 
     def getParameterInfo(self):
         """Define the tool parameters."""
@@ -261,14 +261,17 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             name="pembulatan",
             datatype="GPLong",
             parameterType="Required",
-            direction="Input")
+            direction="Input"
+        )
         pembulatan.value = 1000
+        
         penjelasan = arcpy.Parameter(
             displayName="Apa yang dilakukan tool ini?",
             name="penjelasan",
             datatype="GPString",
             parameterType="Optional",
-            direction="Input")
+            direction="Input"
+        )
         penjelasan.value = (
             "Tool ini menghitung nilai ZNT untuk zona yang\n"
             "merupakan pencilan atau outlier\n"
@@ -278,33 +281,29 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             "null atau tidak memiliki cluster sama sekali.\n\n"
             "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
-            "Tahun: {}".format(datetime.datetime.now().year))
-        params = [pembulatan, penjelasan]
-        return params
+            f"Tahun: {datetime.datetime.now().year}"
+        )
+        
+        return [pembulatan, penjelasan]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
         return True
 
     def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
+        """Modify the values and properties of parameters before internal validation is performed."""
         return
 
     def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
+        """Modify the messages created by internal validation for each tool parameter."""
         return
 
     def execute(self, parameters, messages):
-
+        # Asumsi 'zonalayer' adalah modul/objek global yang sudah di-import sebelumnya
         zonalayer.check_if_there_selected_field()
         zonalayer.delete_bad_file()
 
         pembulatan = int(parameters[0].valueAsText)
-        config_dan_paths = zonalayer.get_config_values()
-
         arcpy.env.overwriteOutput = True
 
         aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -348,36 +347,27 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             statistics_fields=stat_fields
         )
 
-
         arcpy.AddMessage("Memvalidasi jumlah titik...")
 
         zona_invalid = []
-
         with arcpy.da.SearchCursor(dissolved_output, [zone_id_field, "COUNT_Nilai"]) as cursor:
             for zone_fid, count_nilai in cursor:
                 if count_nilai < 3:
-                    with arcpy.da.SearchCursor(
-                        zona_layer, ["NOZN"], f"OBJECTID = {zone_fid}"
-                    ) as z_cursor:
+                    with arcpy.da.SearchCursor(zona_layer, ["NOZN"], f"OBJECTID = {zone_fid}") as z_cursor:
                         for z_row in z_cursor:
-                            zona_invalid.append(
-                                f"NOZN {z_row[0]} (hanya {count_nilai} titik)"
-                            )
+                            zona_invalid.append(f"NOZN {z_row[0]} (hanya {count_nilai} titik)")
                             break
 
-        # Force release cursor
         del cursor
         gc.collect()
 
         if zona_invalid:
-            arcpy.AddError(
-                "Proses dihentikan. Zona berikut < 3 titik: " + ", ".join(zona_invalid)
-            )
+            arcpy.AddError(f"Proses dihentikan. Zona berikut < 3 titik: {', '.join(zona_invalid)}")
             sys.exit(1)
 
         arcpy.AddMessage("✅ Validasi OK")
 
-
+        # Melakukan Join data hasil dissolve ke zona_layer
         arcpy.management.JoinField(
             in_data=zona_layer,
             in_field="OBJECTID",
@@ -398,55 +388,57 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
 
         existing_fields = [f.name for f in arcpy.ListFields(zona_layer)]
 
+        # Menambahkan field jika belum ada
         for field, ftype in field_map.items():
             if field not in existing_fields:
                 arcpy.management.AddField(zona_layer, field, ftype)
 
-        arcpy.management.CalculateField(
-            zona_layer,
-            "JMLNILAI",
-            "round(!SUM_Nilai!) if !SUM_Nilai! not in [None] else None",
-            "PYTHON3"
-        )
+        # Cek dan tambahkan field 'cluster' jika tidak sengaja belum ada
+        cluster_field = "cluster"
+        existing_fields_lower = [f.lower() for f in existing_fields]
+        
+        if cluster_field.lower() not in existing_fields_lower:
+            arcpy.management.AddField(zona_layer, cluster_field, "TEXT", field_length=50)
+        else:
+            # Ambil nama field cluster sesuai case aslinya di tabel
+            cluster_field = existing_fields[existing_fields_lower.index(cluster_field.lower())]
 
-        arcpy.management.CalculateField(
-            zona_layer,
-            "NILAIZN",
-            "round(!MEAN_Nilai!) if !MEAN_Nilai! not in [None] else None",
-            "PYTHON3"
-        )
+        arcpy.AddMessage("Menghitung nilai atribut...")
+
+        # Kalkulasi atribut
+        arcpy.management.CalculateField(zona_layer, "JMLNILAI", "round(!SUM_Nilai!) if !SUM_Nilai! is not None else None", "PYTHON3")
+        arcpy.management.CalculateField(zona_layer, "NILAIZN", "round(!MEAN_Nilai!) if !MEAN_Nilai! is not None else None", "PYTHON3")
         arcpy.management.CalculateField(zona_layer, "NILMIN", "!MIN_Nilai!", "PYTHON3")
         arcpy.management.CalculateField(zona_layer, "NILMAKS", "!MAX_Nilai!", "PYTHON3")
         arcpy.management.CalculateField(zona_layer, "SMPBAKU", "!STD_Nilai!", "PYTHON3")
         arcpy.management.CalculateField(zona_layer, "JMLSMPL", "!COUNT_Nilai!", "PYTHON3")
+        arcpy.management.CalculateField(zona_layer, "SMPBKREL", "(!SMPBAKU! / !NILAIZN!) * 100 if !NILAIZN! else None", "PYTHON3")
 
+        # Perbaikan indentasi pada code_block python
+        code_block = f"""def format_rp(value):
+    if value:
+        bulat = round(value / {pembulatan}) * {pembulatan}
+        return "Rp. " + format(int(bulat), ",").replace(",", ".")
+    return "Rp. 0"
+"""
+        arcpy.management.CalculateField(zona_layer, "NILBULAT", "format_rp(!NILAIZN!)", "PYTHON3", code_block)
+
+        # === TAMBAHAN KODE: Set field cluster menjadi Null (None) untuk zona yang dihitung nilainya ===
+        # Logika: Jika field COUNT_Nilai (hasil join) ada isinya, berarti zona tersebut ikut dihitung, maka cluster = None
         arcpy.management.CalculateField(
-            zona_layer, "SMPBKREL",
-            "(!SMPBAKU! / !NILAIZN!) * 100 if !NILAIZN! else None",
+            zona_layer, 
+            cluster_field, 
+            f"None if !COUNT_Nilai! is not None else !{cluster_field}!", 
             "PYTHON3"
         )
+        arcpy.AddMessage("✅ Nilai Cluster dikosongkan (Null) untuk zona outlier.")
+        # ==============================================================================================
 
-        code_block = f"""def format_rp(value):
-        if value:
-            bulat = round(value / {pembulatan}) * {pembulatan}
-            return "Rp. " + format(int(bulat), ",").replace(",", ".")
-        return "Rp. 0"
-    """
-
-        arcpy.management.CalculateField(
-            zona_layer,
-            "NILBULAT",
-            "format_rp(!NILAIZN!)",
-            "PYTHON3",
-            code_block
-        )
-
+        # Membersihkan field hasil join statistik
         stat_keywords = ["sum_nilai", "mean_nilai", "min_nilai", "max_nilai", "std_nilai", "count_nilai", "range_nilai"]
-
         delete_fields = [
             f.name for f in arcpy.ListFields(zona_layer)
-            if any(k in f.name.lower() for k in stat_keywords)
-            or f.name.lower().startswith("fid_")
+            if any(k in f.name.lower() for k in stat_keywords) or f.name.lower().startswith("fid_")
         ]
 
         if delete_fields:
@@ -458,7 +450,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
                     if arcpy.Exists(path):
                         arcpy.management.Delete(path)
                     return
-                except:
+                except Exception:
                     time.sleep(1)
                     arcpy.management.ClearWorkspaceCache()
 
@@ -468,12 +460,13 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
 
         safe_delete(identity_output)
         safe_delete(dissolved_output)
+        
+        arcpy.AddMessage("✅ Proses selesai.")
 
     def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
+        """This method takes place after outputs are processed and added to the display."""
         return
-
+    
 class Hitung_Nilai_ZNT_Pembaruan:
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
@@ -556,7 +549,6 @@ class Hitung_Nilai_ZNT_Pembaruan:
             if missing_fields:
 
                 for field_name in missing_fields:
-
                     if  field_name == 'indeks_nilai_tanah':
                         arcpy.AddError("Data Indeks Nilai Tanah tidak ditemukan. Pastikan sudah menjalankan tool Hitung Indeks Nilai Tanah terlebih dahulu.")
                         

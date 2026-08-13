@@ -541,3 +541,136 @@ def validasi_klaster_zona(config_dan_paths):
     arcpy.management.Delete(identity_fc)
 
     return zona_beda
+
+def validasi_duplikasi_nozn(config_dan_paths):
+        zl_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer')
+        nozn_map = {}
+        with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "NOZN"]) as cur:
+            for oid, nozn in cur:
+                if nozn:
+                    nozn_map.setdefault(str(nozn), []).append(oid)
+
+        dup = [k for k, v in nozn_map.items() if len(v) > 1]
+        return dup
+            
+
+def get_field_name(layer_path, expected):
+        for f in arcpy.ListFields(layer_path):
+            if f.name.lower() == expected.lower():
+                return f.name
+        return None
+
+def validasi_nilai_tanah_negatif(layer_path, label):
+        nilai_field = get_field_name(layer_path, "nilai")
+        if not nilai_field:
+            arcpy.AddWarning(f"Field 'nilai' tidak ditemukan pada {label}")
+            sys.exit(0)
+
+        invalid = []
+        with arcpy.da.SearchCursor(layer_path, ["OID@", nilai_field]) as cur:
+            for oid, nilai in cur:
+                if nilai is not None and nilai < 0:
+                    invalid.append((oid, nilai))
+
+        return invalid
+
+def validasi_titik_sampel_dan_titik_zona_dalam_satu_zona(config_dan_paths):
+        dataset_path = config_dan_paths['dataset_path']
+
+        tz_path = os.path.join(dataset_path, "Titik_Zona")
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+        ts_path = os.path.join(dataset_path, 'Titik_Sampel')
+
+        zout = "memory/zona_join"
+        sout = "memory/sampel_join"
+        
+        arcpy.analysis.SpatialJoin(zl_path, tz_path, zout, 'JOIN_ONE_TO_MANY')
+        arcpy.analysis.SpatialJoin(zl_path, ts_path, sout, 'JOIN_ONE_TO_MANY')
+
+        zona_dengan_titik_zona = set()
+        with arcpy.da.SearchCursor(zout, ["Join_Count", "TARGET_FID"]) as cur:
+            for jc, fid in cur:
+                if jc > 0:
+                    zona_dengan_titik_zona.add(fid)
+
+        mapping_oid_dengan_nozn = {}
+        with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "NOZN"]) as cur:
+            for oid, nozn in cur:
+                mapping_oid_dengan_nozn[oid] = nozn
+
+        outlier_nozn = set()
+        with arcpy.da.SearchCursor(sout, ["Join_Count", "TARGET_FID"]) as cur:
+            for jc, fid in cur:
+                if jc > 0 and fid in zona_dengan_titik_zona:
+                    nozn = mapping_oid_dengan_nozn.get(fid)
+                    if nozn:
+                        outlier_nozn.add(nozn)
+
+        return outlier_nozn
+
+def validasi_metode_pembuatan_min_3_titik_sampel(config_dan_paths):
+        dataset_path = config_dan_paths['dataset_path']
+
+        tz_path = os.path.join(dataset_path, "Titik_Zona")
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+        ts_path = os.path.join(dataset_path, 'Titik_Sampel')
+
+        zout = "memory/zona_join"
+        sout = "memory/sampel_join"
+        
+        arcpy.analysis.SpatialJoin(zl_path, tz_path, zout, 'JOIN_ONE_TO_MANY')
+        arcpy.analysis.SpatialJoin(zl_path, ts_path, sout, 'JOIN_ONE_TO_MANY')
+
+        zona_dengan_titik_zona = set()
+        with arcpy.da.SearchCursor(zout, ["Join_Count", "TARGET_FID"]) as cur:
+            for jc, fid in cur:
+                if jc > 0:
+                    zona_dengan_titik_zona.add(fid)
+
+        mapping_oid_dengan_nozn = {}
+        with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "NOZN"]) as cur:
+            for oid, nozn in cur:
+                mapping_oid_dengan_nozn[oid] = nozn
+            
+        zona_outlier = {}
+        with arcpy.da.SearchCursor(sout, ["TARGET_FID", "Join_Count"]) as cur:
+            for fid, jc in cur:
+                if jc > 0 and fid not in zona_dengan_titik_zona:
+                    zona_outlier[fid] = zona_outlier.get(fid, 0) + jc
+
+        invalid = []
+        for fid, count in zona_outlier.items():
+            if count < 3:
+                invalid.append(f"NOZN {mapping_oid_dengan_nozn.get(fid)}: Jumlah Titik{count}")
+            
+        return invalid
+
+def validasi_cluster_minimal_satu_titik(config_dan_paths):
+        dataset_path = config_dan_paths['dataset_path']
+
+        tz_path = os.path.join(dataset_path, "Titik_Zona")
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+
+        zout = "memory/zona_join"        
+        arcpy.analysis.SpatialJoin(zl_path, tz_path, zout, 'JOIN_ONE_TO_MANY')
+
+        zona_dengan_titik_zona = set()
+        with arcpy.da.SearchCursor(zout, ["Join_Count", "TARGET_FID"]) as cur:
+            for jc, fid in cur:
+                if jc > 0:
+                    zona_dengan_titik_zona.add(fid)
+
+        clusters = {'1': {}, '2': {}}
+
+        with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "cluster", "JNSZN"]) as cur:
+            for oid, cl, jnszn in cur:
+                if cl is not None:
+                    clusters[str(jnszn)].setdefault(cl, []).append(oid)
+
+        invalid_cluster = []
+        for jnszn, cluster_dict in clusters.items():
+            for cl, oids in cluster_dict.items():
+                if not any(oid in zona_dengan_titik_zona for oid in oids):
+                    invalid_cluster.append(f"Jenis Zona {jnszn}: Klaster {cl}")
+
+        return invalid_cluster

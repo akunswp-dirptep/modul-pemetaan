@@ -305,8 +305,7 @@ class Upload_Peta_Sebaran_Titik_Zona(object):
                 "Pastikan data sudah benar sebelum diupload.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
-                "Tahun: {}\n".format(datetime.now().year))
-        
+                "Tahun: {}\n".format(datetime.now().year))        
 
         return
 

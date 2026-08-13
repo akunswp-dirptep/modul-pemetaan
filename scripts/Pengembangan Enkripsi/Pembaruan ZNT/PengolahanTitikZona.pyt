@@ -1335,78 +1335,6 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
                 time.sleep(1)
                 arcpy.ClearWorkspaceCache_management()
 
-    def cek_zona_dan_cluster_beda(self, ts_path, zl_path, tz_path):
-
-        zona_beda = []
-
-        layers_to_check = [
-            (ts_path, "Titik_Sampel", r"in_memory\identity_ts")
-        ]
-
-        if arcpy.Exists(tz_path):
-            layers_to_check.append(
-                (tz_path, "Titik_Zona", r"in_memory\identity_tz")
-            )
-
-        for layer_path, layer_name, identity_fc in layers_to_check:
-
-            if arcpy.Exists(identity_fc):
-                arcpy.management.Delete(identity_fc)
-
-            arcpy.analysis.Identity(
-                layer_path,
-                zl_path,
-                identity_fc
-            )
-            kolom_perlu_dicek = ["NOZN", "JNSZN", "Zoning"]
-            if layer_name == 'Titik_Zona':
-                kolom_perlu_dicek = kolom_perlu_dicek + ["cluster", "cluster_1"]
-
-            with arcpy.da.SearchCursor(
-                identity_fc,
-                kolom_perlu_dicek
-            ) as cursor:
-
-                for row in cursor:
-
-                    nozona = row[0]
-                    jenis = row[1]
-                    zoning = row[2]
-
-                    jenis_str = str(jenis).strip() if jenis is not None else None
-                    zoning_str = str(zoning).strip() if zoning is not None else None
-
-                    # Validasi JNSZN
-                    if jenis_str not in ("1", "2"):
-                        zona_beda.append(
-                            f"{layer_name} - NOZN {nozona} "
-                            f"(Jenis Zona tidak valid: {jenis})"
-                        )
-                        continue
-
-                    # Validasi zoning
-                    if jenis_str != zoning_str:
-                        zona_beda.append(
-                            f"{layer_name} - NOZN {nozona} "
-                            f"(Zoning: {zoning}, Jenis Zona: {jenis})"
-                        )
-
-                    # Validasi cluster Titik_Zona
-                    if layer_name == "Titik_Zona":
-                        cluster_titik = row[3]
-                        cluster_zona = row[4]
-                        cluster_titik_str = str(cluster_titik).strip() if cluster_titik is not None else None
-                        cluster_zona_str = str(cluster_zona).strip() if cluster_zona is not None else None
-
-                        if cluster_titik_str != cluster_zona_str:
-                            zona_beda.append(
-                                f"{layer_name} - NOZN {nozona} "
-                                f"(Cluster Titik: {cluster_titik}, Cluster Zona: {cluster_zona})"
-                            )
-
-            arcpy.management.Delete(identity_fc)
-
-        return zona_beda
     # ===============================
     # 🔥 MAIN EXECUTE
     # ===============================
@@ -1435,16 +1363,17 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
             arcpy.AddWarning("Matikan selection Titik Sampel")
             sys.exit(0)
 
-        # ===============================
-        # JENIS ZONA DAN KLASTER
-        # ===============================
-        zona_beda_list = self.cek_zona_dan_cluster_beda(ts_path=ts_path, zl_path=zl_path, tz_path=tz_path)
-        if len(zona_beda_list) > 0:
-            arcpy.AddError(f"Masih terdapat kesalahan {', '.join(zona_beda_list)}")
-            sys.exit(1)
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            return
 
-        arcpy.AddMessage("✅ Tidak ada jenis zona atau cluster yang berbeda antara Zona Layer, Titik Zona dan Titik Sampel")
-
+        perbedaan_klaster = zonalayer.validasi_klaster_zona(config_dan_paths=zonalayer.get_config_values())
+        if perbedaan_klaster:
+            for err in perbedaan_klaster:
+                arcpy.AddError(f'Terdapat error field klaster antara Titik dan Zona {err}')
+            return
+        
         # ===============================
         # VALIDASI NILAI
         # ===============================

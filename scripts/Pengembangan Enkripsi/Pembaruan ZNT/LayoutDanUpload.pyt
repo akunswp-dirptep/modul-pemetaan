@@ -193,7 +193,14 @@ class Upload_Peta_Sebaran_Sampel_Pembaruan(object):
             for err in terdapat_dua_jenis_titik_dalam_satu_zona:
                 arcpy.AddError(f"Terdapat Zona yang memiliki Titik Zona dan Titik Sampel Sekaligus: {sorted(terdapat_dua_jenis_titik_dalam_satu_zona)}")
             return
-         
+        
+        smpbkrel_tidak_memenuhi_syarat = zonalayer.validate_simpangan_baku_relatif(config_dan_paths=configs)
+        if smpbkrel_tidak_memenuhi_syarat == "Skala Kosong":
+            arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi persentase batas toleransi dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
+        elif smpbkrel_tidak_memenuhi_syarat != "Skala Kosong" and smpbkrel_tidak_memenuhi_syarat is not None:
+            arcpy.AddError(f"{smpbkrel_tidak_memenuhi_syarat}")
+            return
+        
         zona_pembuatan_kurang_dari_3_titik = zonalayer.validasi_metode_pembuatan_min_3_titik_sampel(config_dan_paths=configs)
         if zona_pembuatan_kurang_dari_3_titik:
             for err in zona_pembuatan_kurang_dari_3_titik:
@@ -505,6 +512,13 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
 
+        smpbkrel_tidak_memenuhi_syarat = zonalayer.validate_simpangan_baku_relatif(config_dan_paths=configs)
+        if smpbkrel_tidak_memenuhi_syarat == "Skala Kosong":
+            arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi persentase batas toleransi dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
+        elif smpbkrel_tidak_memenuhi_syarat != "Skala Kosong" and smpbkrel_tidak_memenuhi_syarat is not None:
+            arcpy.AddError(f"{smpbkrel_tidak_memenuhi_syarat}")
+            return
+        
         perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=configs)
         if perbedaan_zona:
             arcpy.AddError(perbedaan_zona)

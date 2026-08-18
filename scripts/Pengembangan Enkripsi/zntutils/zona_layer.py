@@ -300,6 +300,7 @@ def get_config_values():
         "kota": configs['WADMKK'],   
         "coor": configs['coord'],
         "gdb_path": configs['gdb_path'],
+        "skala": configs['skala'] if configs['skala'] else None,
         "zl_path": zl_path,
         "appdata": appdata,
         "symbology_folder": symbology_folder,
@@ -466,7 +467,7 @@ def validate_kesesuaian_zona(config_dan_paths):
                     sampel_str = ", ".join(map(str, sorted(titiksampel))) if titiksampel else "Tidak ada"
                     
                     mismatches.append(
-                        f"- NOZN {nozona}: Zona layer ({jenis_str}) vs Titik Sampel ({sampel_str})"
+                        f"- NOZN {nozona}: Zona layer ({jenis_str}) sedangkan Jenis Zona Pada Titik ({sampel_str})"
                     )
 
         # 5. Kembalikan string jika ada error, atau None jika aman
@@ -737,3 +738,65 @@ def validasi_zona_layer_min_3_titik_sampel(config_dan_paths):
         arcpy.management.Delete(sout)
 
     return invalid
+
+def validate_simpangan_baku_relatif(config_dan_paths):
+    """
+    Fungsi untuk mengecek apakah nilai Simpangan Baku Relatif (SMPBKREL)
+    pada tiap zona memenuhi syarat toleransi berdasarkan skala pengerjaan.
+    """
+    zl_path = os.path.join(config_dan_paths['dataset_path'], "Zona_Layer")
+    
+    # 1. Mengambil nilai skala dalam bentuk integer
+    skala = config_dan_paths.get("skala")
+    
+    if skala is None:
+        return "Skala Kosong"
+
+    # 2. Menentukan batas toleransi berdasarkan skala
+    if skala == 2500:
+        toleransi_maksimal = 20.0
+    elif skala == 5000:
+        toleransi_maksimal = 22.5
+    elif skala == 10000:
+        toleransi_maksimal = 25.0
+    elif skala == 25000:
+        toleransi_maksimal = 30.0
+    else:
+        # Jika skala lebih besar dari 25000, Anda bisa menyesuaikan defaultnya
+        toleransi_maksimal = 30.0 
+
+    mismatches = []
+    
+    try:
+        # 3. Pengecekan ketersediaan field yang dibutuhkan
+        existing_fields = [f.name for f in arcpy.ListFields(zl_path)]
+        if "SMPBKREL" not in existing_fields or "NOZN" not in existing_fields:
+            return "Gagal memvalidasi: Field 'SMPBKREL' atau 'NOZN' belum tersedia di Zona_Layer. Harap pastikan kalkulasi ZNT sudah berjalan."
+
+        # 4. Evaluasi nilai per zona
+        with arcpy.da.SearchCursor(zl_path, ["NOZN", "SMPBKREL"]) as cursor:
+            for nozona, smpbkrel in cursor:
+                if smpbkrel is not None:
+                    # Jika nilai simpangan baku relatif melebihi toleransi
+                    if smpbkrel > toleransi_maksimal:
+                        mismatches.append(
+                            f"- NOZN {nozona}: Simpangan Baku Relatif ({round(smpbkrel, 2)}%) melebihi batas {toleransi_maksimal}%"
+                        )
+                else:
+                    pass
+
+        # 5. Kembalikan string error jika ada zona yang melanggar toleransi
+        if mismatches:
+            error_message = (
+                f"Validasi Gagal: Terdapat zona yang melebihi batas toleransi Simpangan Baku Relatif (≤ {toleransi_maksimal}% untuk skala 1:{skala}):\n" + 
+                "\n".join(mismatches)
+            )
+            return error_message
+
+    except arcpy.ExecuteError:
+        return f"Gagal mengeksekusi validasi simpangan baku relatif: {arcpy.GetMessages(2)}"
+    except Exception as exc:
+        return f"Gagal mengeksekusi validasi simpangan baku relatif: {exc}"
+
+    # Jika list mismatches kosong, berarti semua zona aman
+    return None

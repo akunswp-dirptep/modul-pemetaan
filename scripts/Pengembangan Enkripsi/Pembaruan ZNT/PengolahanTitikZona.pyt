@@ -544,11 +544,15 @@ class Pemilihan_Zona_Parsial:
 
         # Cek apakah ada seleksi
         ada_seleksi = len(arcpy.Describe(zl).FIDSet)
+        ada_seleksi_titik_zona = len(arcpy.Describe(titik_zona).FIDSet)
 
         if ada_seleksi <= 0:
             arcpy.AddError('Tidak terdapat feature yang dipilih')
-            sys.exit(1)
+            return
 
+        if ada_seleksi_titik_zona > 0:
+            arcpy.AddError('Terdapat Titik Zona yang terseleksi, unselect terlebih dahulu')
+            return
 
         oid_field = arcpy.Describe(zl).OIDFieldName
         fid_list = arcpy.Describe(zl).FIDSet.split(';')
@@ -559,7 +563,7 @@ class Pemilihan_Zona_Parsial:
 
 
         count = 0
-        with arcpy.da.UpdateCursor(titik_zona, ["cluster", 'no_Sampel', 'OBJECTID'], where_clause_titik_zona) as cursor:
+        with arcpy.da.UpdateCursor(titik_zona, ["cluster", 'no_sampel', 'OBJECTID'], where_clause_titik_zona) as cursor:
             for row in cursor:
                 row[0] = cluster_update
                 cursor.updateRow(row)
@@ -616,6 +620,16 @@ class Rekomendasi_Klaster(object):
         )
         min_points.value = 3
 
+        # [BARU] Parameter Checkbox untuk menampilkan klaster mentah
+        hanya_tampil_klaster = arcpy.Parameter(
+            displayName="Hanya Tampilkan Bentuk Klaster (Tanpa Klip Zona)",
+            name="hanya_tampil_klaster",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input"
+        )
+        hanya_tampil_klaster.value = True
+
         out_feature = arcpy.Parameter(
             name="out_feature",
             datatype="GPFeatureLayer",
@@ -623,7 +637,8 @@ class Rekomendasi_Klaster(object):
             direction="Output"
         )
 
-        params.extend([eps_pertanian, eps_non_pertanian, min_points, out_feature])
+        # [DIUBAH] Tambahkan hanya_tampil_klaster ke dalam list parameter
+        params.extend([eps_pertanian, eps_non_pertanian, min_points, hanya_tampil_klaster, out_feature])
         return params
 
     def execute(self, parameters, messages):
@@ -631,6 +646,9 @@ class Rekomendasi_Klaster(object):
         eps_pertanian = float(parameters[0].value)
         eps_non_pertanian = float(parameters[1].value)
         min_pts = int(parameters[2].value)
+        
+        # [BARU] Ambil nilai parameter checkbox
+        hanya_tampil_klaster = parameters[3].value 
 
         config_dan_paths = zonalayer.get_config_values()
         titik_zona = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
@@ -780,7 +798,8 @@ class Rekomendasi_Klaster(object):
                 cluster_outputs.append(cluster_turun)
 
         if len(cluster_outputs) == 0:
-            raise Exception("Tidak ada cluster yang terbentuk")
+            arcpy.AddWarning("Tidak ada cluster yang terbentuk")
+            return
 
         arcpy.AddMessage("Menggabungkan cluster hasil rekomendasi...")
 
@@ -789,6 +808,24 @@ class Rekomendasi_Klaster(object):
             arcpy.management.CopyFeatures(cluster_outputs[0], merged_cluster_fc)
         else:
             arcpy.management.Merge(cluster_outputs, merged_cluster_fc)
+
+        # =====================================================================
+        # [BARU] LOGIKA JIKA PENGGUNA MEMILIH HANYA MENAMPILKAN KLASTER MENTAH
+        # =====================================================================
+        if hanya_tampil_klaster:
+            arcpy.AddMessage("Opsi 'Hanya Tampilkan Bentuk Klaster' aktif. Melewati proses pemotongan zona...")
+            arcpy.management.CopyFeatures(merged_cluster_fc, out_fc)
+            arcpy.management.MakeFeatureLayer(out_fc, "Rekomendasi_Klaster")
+            
+            # Coba terapkan simbologi (gunakan try-except karena struktur field klaster mentah berbeda dengan klaster dissolve)
+            try:
+                arcpy.management.ApplySymbologyFromLayer("Rekomendasi_Klaster", os.path.join(config_dan_paths['symbology_folder'], "Rekomendasi_Klaster.lyrx"))
+            except:
+                pass 
+            
+            arcpy.SetParameter(4, "Rekomendasi_Klaster") # [DIUBAH] Index Parameter dari 3 menjadi 4
+            return # Keluar dari fungsi (berhenti di sini)
+        # =====================================================================
 
         zona_work = os.path.join(temp_gdb, "zona_layer_rekomendasi")
         arcpy.management.CopyFeatures(zona_layer, zona_work)
@@ -887,7 +924,7 @@ class Rekomendasi_Klaster(object):
         arcpy.AddMessage(f"Selesai. {len(rekomendasi_zona)} zona direkomendasikan sebagai cluster.")
         arcpy.management.MakeFeatureLayer(out_fc, "Rekomendasi_Klaster")
         arcpy.management.ApplySymbologyFromLayer("Rekomendasi_Klaster", os.path.join(config_dan_paths['symbology_folder'], "Rekomendasi_Klaster.lyrx"))
-        arcpy.SetParameter(3, "Rekomendasi_Klaster")
+        arcpy.SetParameter(4, "Rekomendasi_Klaster") # [DIUBAH] Index Parameter dari 3 menjadi 4
 
 class Penyesuaian_Nomor_Zona_Pembaruan:
     def __init__(self):

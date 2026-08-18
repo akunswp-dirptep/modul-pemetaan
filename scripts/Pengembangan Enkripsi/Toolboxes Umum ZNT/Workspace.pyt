@@ -408,7 +408,6 @@ class Import_Workspace(object):
             # Baca file config.json
             if config_path.endswith('.bin'):
                 config_data = get_all_config(config_path) # Asumsi get_all_config terdefinisi di luar
-                arcpy.AddMessage(f"Data konfigurasi yang dibaca dari .bin: {config_data}")
             
             elif config_path.endswith('.json'):
                 with open(config_path, 'r') as config_file:
@@ -424,7 +423,6 @@ class Import_Workspace(object):
             config_data["dataset_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb", "znt_ds")
             config_data["gdb_path"] = os.path.join(output_path, "ZoneNilaiTanah.gdb")
 
-            arcpy.AddMessage(f"Data konfigurasi yang diperbarui: {config_data}")
             
             # Asumsi PROJECT_CONFIG_FILE_NAME dan setup_project_config terdefinisi di luar class
             new_config_path = os.path.join(output_path, PROJECT_CONFIG_FILE_NAME) 

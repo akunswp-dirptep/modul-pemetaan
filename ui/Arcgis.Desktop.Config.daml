@@ -789,7 +789,7 @@
 					<button refID="ButtonLabelTitikZona"/>
 					<button refID="menu_pemisahan_titik_zona_pembaruan_znt" />
 					<button refID="menu_penyesuaian_titik_dan_zona_pembaruan_znt" />
-					<button refID="ButtonZonaParsial" />
+					<button refID="menu_zona_parsial_pembaruan_znt" />
 					<button refID="ButtonPeriksaKesesuaianTitikdanZona"/>
 					<button refID="ButtonHitungIndeksNilaiTanah" />
 					<button refID="ButtonSinkronisasiDataTitikSampelKeSipenta" />

@@ -17,7 +17,7 @@ from zntutils.document import validate_document_type, get_credentials
 from zntutils.upload_utils import upload_shapefile_to_sipenta, upload_feature_layer_to_sipenta
 from zntutils.system_utils import get_user_data, get_all_berkas_id, setup_user_data
 from zntutils.zona_layer import get_config_values, validate_zona_layer_before_upload, check_if_there_selected_field
-
+from zntutils import zona_layer as zonalayer
 #Helper Functions
 def is_internal():
     try:
@@ -1010,6 +1010,15 @@ class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
         server = get_user_data(PREFERRED_SERVER_KEY)
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
+        configs = zonalayer.get_config_values()
+
+        luas_zona_tidak_memenuhi_minimum = zonalayer.validate_luas_minimal_zona(config_dan_paths=configs)
+        if luas_zona_tidak_memenuhi_minimum == "Skala Kosong":
+            arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi luas zona minimum dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
+        elif luas_zona_tidak_memenuhi_minimum != "Skala Kosong" and luas_zona_tidak_memenuhi_minimum is not None:
+            arcpy.AddError(f"{luas_zona_tidak_memenuhi_minimum}")
+            return
+
 
         validation_error = validate_zona_layer_before_upload(feature_layer)
         if validation_error:

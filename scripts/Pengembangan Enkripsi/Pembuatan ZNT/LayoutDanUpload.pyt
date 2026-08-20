@@ -533,7 +533,14 @@ class Upload_Peta_Zona_Nilai_Tanah:
         elif smpbkrel_tidak_memenuhi_syarat != "Skala Kosong" and smpbkrel_tidak_memenuhi_syarat is not None:
             arcpy.AddError(f"{smpbkrel_tidak_memenuhi_syarat}")
             return
-               
+
+        luas_zona_tidak_memenuhi_minimum = zonalayer.validate_luas_minimal_zona(config_dan_paths=configs)
+        if luas_zona_tidak_memenuhi_minimum == "Skala Kosong":
+            arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi luas zona minimum dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
+        elif luas_zona_tidak_memenuhi_minimum != "Skala Kosong" and luas_zona_tidak_memenuhi_minimum is not None:
+            arcpy.AddError(f"{luas_zona_tidak_memenuhi_minimum}")
+            return
+        
         zona_pembuatan_kurang_dari_3_titik = zonalayer.validasi_zona_layer_min_3_titik_sampel(config_dan_paths=configs)
         if zona_pembuatan_kurang_dari_3_titik:
             for err in zona_pembuatan_kurang_dari_3_titik:

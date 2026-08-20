@@ -294,18 +294,19 @@ def get_config_values():
     temp_folder = os.path.join(appdata, "temp")
 
     config_dan_paths = {        
-        "dataset_path": configs['dataset_path'],
-        "tahun": configs['THNNILAI'],
-        "provinsi": configs['WADMPR'] ,
-        "kota": configs['WADMKK'],   
-        "coor": configs['coord'],
-        "gdb_path": configs['gdb_path'],
-        "skala": configs['skala'] if configs['skala'] else None,
+        "dataset_path": configs.get('dataset_path'),
+        "tahun": configs.get('THNNILAI'),
+        "provinsi": configs.get('WADMPR'),
+        "kota": configs.get('WADMKK'),   
+        "coor": configs.get('coord'),
+        "gdb_path": configs.get('gdb_path'),
+        "skala": configs.get('skala'), 
         "zl_path": zl_path,
         "appdata": appdata,
         "symbology_folder": symbology_folder,
         "temp_folder": temp_folder,
-        "ws_dir": ws_dir}
+        "ws_dir": ws_dir
+        }
 
     return config_dan_paths
 
@@ -799,4 +800,64 @@ def validate_simpangan_baku_relatif(config_dan_paths):
         return f"Gagal mengeksekusi validasi simpangan baku relatif: {exc}"
 
     # Jika list mismatches kosong, berarti semua zona aman
+    return None
+
+def validate_luas_minimal_zona(config_dan_paths):
+    """
+    Fungsi untuk mengecek apakah luas area tiap zona memenuhi syarat 
+    Luas Zona Terkecil (minimal unit) berdasarkan skala pengerjaan peta.
+    Aturan: (½ cm x skala peta) x (½ cm x skala peta)
+    """
+    zl_path = os.path.join(config_dan_paths['dataset_path'], "Zona_Layer")
+    
+    # 1. Mengambil nilai skala dalam bentuk integer
+    skala = config_dan_paths.get("skala")
+    
+    if skala is None:
+        return "Skala Kosong"
+
+    if skala == 25000:
+        luas_minimal = 15625.0    # 1,5625 Ha
+    elif skala == 10000:
+        luas_minimal = 2500.0     # 0,25 Ha
+    elif skala == 5000:
+        luas_minimal = 625.0      # 0,0625 Ha
+    elif skala == 2500:
+        luas_minimal = 156.25     # 0,015625 Ha
+    else:
+        luas_minimal = (0.005 * skala) ** 2 
+
+    mismatches = []
+    
+    try:
+        # 3. Pengecekan ketersediaan field yang dibutuhkan
+        existing_fields = [f.name for f in arcpy.ListFields(zl_path)]
+        if "NOZN" not in existing_fields:
+            return "Gagal memvalidasi: Field 'NOZN' belum tersedia di Zona_Layer."
+
+        # 4. Evaluasi nilai luas per zona
+        with arcpy.da.SearchCursor(zl_path, ["NOZN", "SHAPE@AREA"]) as cursor:
+            for nozona, luas_area in cursor:
+                if luas_area is not None:
+
+                    if luas_area < luas_minimal:
+                        mismatches.append(
+                            f"- NOZN {nozona}: Luas area ({round(luas_area, 2)} m2) kurang dari batas minimal ({luas_minimal} m2)"
+                        )
+                else:
+                    mismatches.append(f"- NOZN {nozona}: Geometri kosong atau luas tidak terbaca.")
+
+        # 5. Kembalikan string error jika ada zona yang melanggar ketentuan luas minimal
+        if mismatches:
+            error_message = (
+                f"Validasi Gagal: Terdapat zona dengan luas di bawah batas minimum (≥ {luas_minimal} m2 untuk skala 1:{skala}):\n" + 
+                "\n".join(mismatches)
+            )
+            return error_message
+
+    except arcpy.ExecuteError:
+        return f"Gagal mengeksekusi validasi luas minimal: {arcpy.GetMessages(2)}"
+    except Exception as exc:
+        return f"Gagal mengeksekusi validasi luas minimal: {exc}"
+
     return None

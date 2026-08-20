@@ -1,11 +1,12 @@
-import json
+import json, time
 import arcpy, arcgisscripting
 import sys
 import os
 import datetime
+import requests
 
 from .constant import PROJECT_CONFIG_FILE_NAME
-from .system_utils import get_all_config
+from .system_utils import get_all_config, decrypt_message, generate_key
 
 def is_zona_layer_comply(show_path_message = True):
     """
@@ -861,3 +862,55 @@ def validate_luas_minimal_zona(config_dan_paths):
         return f"Gagal mengeksekusi validasi luas minimal: {exc}"
 
     return None
+
+
+
+def check_required_update():
+    def fetch(url, retries=3):
+    # Mengurangi retries menjadi 3 agar tidak menunggu terlalu lama jika internet mati
+        for i in range(retries):
+            try:
+                r = requests.get(
+                    url,
+                    headers={"User-Agent": "Mozilla/5.0"},
+                    timeout=5 # Menurunkan timeout agar lebih responsif
+                )
+                r.raise_for_status()
+                return r
+            except requests.exceptions.RequestException:
+                if i == retries - 1:
+                    raise
+                time.sleep(2)
+    # Path ke file metadata
+    metadata_path = r'C:\PenilaianTanah\app-metadata.bin'
+
+    # Nilai default jika file gagal dibaca (opsional, tapi disarankan)
+    CURRENT_VERSION = None
+    VERSION_ID = None
+    CHECK_UPDATE_URL = None
+
+    # Membaca file JSON dengan penanganan error (Try-Except)
+    try:
+        metadata = decrypt_message(generate_key(), metadata_path)
+        
+        # Ekstrak data menggunakan key yang sesuai di JSON
+        CURRENT_VERSION = metadata.get("nomor_versi")
+        VERSION_ID = metadata.get("id_versi")
+        CHECK_UPDATE_URL = metadata.get("check_update_url")
+        INSTALLER_URL = metadata.get("installer_url")
+
+    except Exception as e:
+        arcpy.AddMessage(f"Terjadi kesalahan tak terduga: {e}")
+
+    try:
+        response = fetch(url=CHECK_UPDATE_URL)
+        data = response.json()
+
+        latest_version_id = data.get("version_id")
+        latest_version = data.get("version")
+        update_url = data.get("url")
+        min_required_version = data.get('min_required_version')
+        changelog = data.get("changelog", "Tidak ada informasi pembaruan tambahan.")
+
+    except Exception as e:
+        return {"status": "error"}

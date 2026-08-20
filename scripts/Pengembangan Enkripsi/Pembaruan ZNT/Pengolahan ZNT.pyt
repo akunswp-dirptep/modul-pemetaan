@@ -85,6 +85,53 @@ class Hitung_Indeks_Nilai_Tanah:
         zl_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer')
         tz_path = os.path.join(config_dan_paths['dataset_path'], 'Titik_Zona')
 
+        duplikasi_nozn = zonalayer.validasi_duplikasi_nozn(config_dan_paths=config_dan_paths)
+        if duplikasi_nozn:
+            for err in duplikasi_nozn:
+                arcpy.AddError(f'Terdapat Duplikasi NOZN: {err}')
+            return
+        
+        luas_zona_tidak_memenuhi_minimum = zonalayer.validate_luas_minimal_zona(config_dan_paths=config_dan_paths)
+        if luas_zona_tidak_memenuhi_minimum == "Skala Kosong":
+            arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi luas zona minimum dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
+        elif luas_zona_tidak_memenuhi_minimum != "Skala Kosong" and luas_zona_tidak_memenuhi_minimum is not None:
+            arcpy.AddError(f"{luas_zona_tidak_memenuhi_minimum}")
+            return
+        
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=config_dan_paths)
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            return
+        
+        perbedaan_klaster = zonalayer.validasi_klaster_zona(config_dan_paths=config_dan_paths)
+        if perbedaan_klaster:
+            for err in perbedaan_klaster:
+                arcpy.AddError(f'Terdapat error pada field klaster antara Titik dan Zona {err}')
+            return
+        
+        nilai_tanah_negatif_titik_zona = zonalayer.validasi_nilai_tanah_negatif(tz_path, 'Titik_Zona')
+        if nilai_tanah_negatif_titik_zona:
+            for err in nilai_tanah_negatif_titik_zona:
+                arcpy.AddError(f'Terdapat Nilai Tanah Negatif pada layer Titik Zona, Nomor Sampel: {err[0]} | Nilai Tanah/m2 : {err[1]}')
+            return
+
+        terdapat_dua_jenis_titik_dalam_satu_zona = zonalayer.validasi_titik_sampel_dan_titik_zona_dalam_satu_zona(config_dan_paths=config_dan_paths)
+        if terdapat_dua_jenis_titik_dalam_satu_zona:
+            for err in terdapat_dua_jenis_titik_dalam_satu_zona:
+                arcpy.AddError(f"Terdapat Zona yang memiliki Titik Zona dan Titik Sampel Sekaligus: {sorted(terdapat_dua_jenis_titik_dalam_satu_zona)}")
+            return   
+        
+        minimal_1_titik_dalam_klaster = zonalayer.validasi_cluster_minimal_satu_titik(config_dan_paths=config_dan_paths)
+        if minimal_1_titik_dalam_klaster:
+            for err in minimal_1_titik_dalam_klaster:
+                arcpy.AddError(f"Terdapat Klaster yang tidak memiliki Titik Zona: {err}")
+            return
+        
+        validasi_geometri_dan_atribut = zonalayer.validate_zona_layer_before_upload(zl_path)
+        if validasi_geometri_dan_atribut:
+            arcpy.AddError(validasi_geometri_dan_atribut)
+            return 
+        
         arcpy.analysis.SpatialJoin(zl_path, tz_path, zout_path, 'JOIN_ONE_TO_MANY')
         AdaZona = set()
 
@@ -305,7 +352,46 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
 
         pembulatan = int(parameters[0].valueAsText)
         arcpy.env.overwriteOutput = True
+        config_dan_paths = zonalayer.get_config_values()
+        zl_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer')
+        ts_path = os.path.join(config_dan_paths['dataset_path'], 'Titik_Sampel')
 
+        duplikasi_nozn = zonalayer.validasi_duplikasi_nozn(config_dan_paths=config_dan_paths)
+        if duplikasi_nozn:
+            for err in duplikasi_nozn:
+                arcpy.AddError(f'Terdapat Duplikasi NOZN: {err}')
+            return
+        
+        luas_zona_tidak_memenuhi_minimum = zonalayer.validate_luas_minimal_zona(config_dan_paths=config_dan_paths)
+        if luas_zona_tidak_memenuhi_minimum == "Skala Kosong":
+            arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi luas zona minimum dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
+        elif luas_zona_tidak_memenuhi_minimum != "Skala Kosong" and luas_zona_tidak_memenuhi_minimum is not None:
+            arcpy.AddError(f"{luas_zona_tidak_memenuhi_minimum}")
+            return
+        
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=config_dan_paths)
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            return
+        
+        nilai_tanah_negatif_titik_sampel = zonalayer.validasi_nilai_tanah_negatif(ts_path, 'Titik_Sampel')
+        if nilai_tanah_negatif_titik_sampel:
+            for err in nilai_tanah_negatif_titik_sampel:
+                arcpy.AddError(f'Terdapat Nilai Tanah Negatif pada layer Titik Sampel, Nomor Sampel: {err[0]} | Nilai Tanah/m2 : {err[1]}')
+            return
+
+        terdapat_dua_jenis_titik_dalam_satu_zona = zonalayer.validasi_titik_sampel_dan_titik_zona_dalam_satu_zona(config_dan_paths=config_dan_paths)
+        if terdapat_dua_jenis_titik_dalam_satu_zona:
+            for err in terdapat_dua_jenis_titik_dalam_satu_zona:
+                arcpy.AddError(f"Terdapat Zona yang memiliki Titik Zona dan Titik Sampel Sekaligus: {sorted(terdapat_dua_jenis_titik_dalam_satu_zona)}")
+            return   
+        
+        
+        validasi_geometri_dan_atribut = zonalayer.validate_zona_layer_before_upload(zl_path)
+        if validasi_geometri_dan_atribut:
+            arcpy.AddError(validasi_geometri_dan_atribut)
+            return 
+        
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         m = aprx.activeMap
 
@@ -526,6 +612,57 @@ class Hitung_Nilai_ZNT_Pembaruan:
         workspace = arcpy.env.scratchGDB
         arcpy.env.workspace = workspace
 
+        config_dan_paths = zonalayer.get_config_values()
+        zl_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer')
+        tz_path = os.path.join(config_dan_paths['dataset_path'], 'Titik_Zona')
+
+        duplikasi_nozn = zonalayer.validasi_duplikasi_nozn(config_dan_paths=config_dan_paths)
+        if duplikasi_nozn:
+            for err in duplikasi_nozn:
+                arcpy.AddError(f'Terdapat Duplikasi NOZN: {err}')
+            return
+        
+        luas_zona_tidak_memenuhi_minimum = zonalayer.validate_luas_minimal_zona(config_dan_paths=config_dan_paths)
+        if luas_zona_tidak_memenuhi_minimum == "Skala Kosong":
+            arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi luas zona minimum dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
+        elif luas_zona_tidak_memenuhi_minimum != "Skala Kosong" and luas_zona_tidak_memenuhi_minimum is not None:
+            arcpy.AddError(f"{luas_zona_tidak_memenuhi_minimum}")
+            return
+        
+        perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=config_dan_paths)
+        if perbedaan_zona:
+            arcpy.AddError(perbedaan_zona)
+            return
+        
+        perbedaan_klaster = zonalayer.validasi_klaster_zona(config_dan_paths=config_dan_paths)
+        if perbedaan_klaster:
+            for err in perbedaan_klaster:
+                arcpy.AddError(f'Terdapat error pada field klaster antara Titik dan Zona {err}')
+            return
+        
+        nilai_tanah_negatif_titik_zona = zonalayer.validasi_nilai_tanah_negatif(tz_path, 'Titik_Zona')
+        if nilai_tanah_negatif_titik_zona:
+            for err in nilai_tanah_negatif_titik_zona:
+                arcpy.AddError(f'Terdapat Nilai Tanah Negatif pada layer Titik Zona, Nomor Sampel: {err[0]} | Nilai Tanah/m2 : {err[1]}')
+            return
+
+        terdapat_dua_jenis_titik_dalam_satu_zona = zonalayer.validasi_titik_sampel_dan_titik_zona_dalam_satu_zona(config_dan_paths=config_dan_paths)
+        if terdapat_dua_jenis_titik_dalam_satu_zona:
+            for err in terdapat_dua_jenis_titik_dalam_satu_zona:
+                arcpy.AddError(f"Terdapat Zona yang memiliki Titik Zona dan Titik Sampel Sekaligus: {sorted(terdapat_dua_jenis_titik_dalam_satu_zona)}")
+            return   
+        
+        minimal_1_titik_dalam_klaster = zonalayer.validasi_cluster_minimal_satu_titik(config_dan_paths=config_dan_paths)
+        if minimal_1_titik_dalam_klaster:
+            for err in minimal_1_titik_dalam_klaster:
+                arcpy.AddError(f"Terdapat Klaster yang tidak memiliki Titik Zona: {err}")
+            return
+        
+        validasi_geometri_dan_atribut = zonalayer.validate_zona_layer_before_upload(zl_path)
+        if validasi_geometri_dan_atribut:
+            arcpy.AddError(validasi_geometri_dan_atribut)
+            return 
+        
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         m = aprx.activeMap
 

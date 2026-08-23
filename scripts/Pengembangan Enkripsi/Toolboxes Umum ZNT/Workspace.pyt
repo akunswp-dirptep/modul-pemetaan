@@ -245,7 +245,7 @@ class Edit_Workspace(object):
 
         # Parameter 1: Checkbox Perbarui Path & Tampilkan Folder
         update_path = arcpy.Parameter(
-            displayName="Perbarui path folder workspace",
+            displayName="Perbarui lokasi folder workspace",
             name="update_path",
             datatype="GPBoolean",
             parameterType="Optional",

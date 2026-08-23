@@ -148,7 +148,7 @@ class Catatan_Aplikasi:
         hasil = check_update()
 
         if hasil["status"] == "update_available":
-            url_unduh = INSTALLER_URL
+            url_unduh = hasil["url"]
             versi_baru = hasil["version"]
             
             arcpy.AddMessage(f"Ditemukan versi {versi_baru}. Memulai proses pengunduhan...")

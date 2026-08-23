@@ -1,5 +1,6 @@
 import json
-import os, arcpy, datetime
+import os, arcpy, time
+import requests
 from datetime import datetime
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
@@ -7,6 +8,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 from .constant import AUTH_KEY, THIRD_PARTY_DATA_KEY, NIK_KEY, PREFERRED_SERVER_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
+
 def current_year():
     try:
         return int(datetime.now().year)
@@ -299,3 +301,4 @@ def get_login_status():
         
     except Exception as e:
         return False
+

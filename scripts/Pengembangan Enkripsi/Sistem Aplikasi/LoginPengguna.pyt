@@ -8,7 +8,7 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.system_utils import renew_user_data, get_all_config, get_user_data, clear_user_data, get_all_berkas_id, renew_multiple_user_data
+from zntutils.system_utils import decrypt_message, generate_key, get_all_config, get_user_data, clear_user_data, get_all_berkas_id, renew_multiple_user_data
 from zntutils.constant import PREFERRED_BERKAS_ID, TIPE_USER_PIHAK_KETIGA, TIPE_USER_SSO, AUTH_KEY, PREFERRED_SERVER_KEY, YEAR_KEY, SSO_DATA_KEY, CREDENTIAL_KEY
 
 class Toolbox:
@@ -251,6 +251,11 @@ class Login_Pemeta_Nilai_Tanah:
         server = parameters[4].value
 
         if user_data is None:
+            butuh_update_dulu = self.is_required_update()
+            if butuh_update_dulu:
+                arcpy.AddWarning("Terdapat pembaruan Aplikasi, harap unduh pembaruan aplikasi terlebih dahulu melalui menu Cek Pembaruan Aplikasi")
+                return
+            
             pilihan_login = parameters[1].valueAsText
             
             if pilihan_login == "Pemeta ASN ATR/BPN (SSO)":
@@ -291,9 +296,66 @@ class Login_Pemeta_Nilai_Tanah:
         """This method takes place after outputs are processed and
         added to the display."""
 
-
         return
-    
+
+    def is_required_update(self):
+        def fetch(url, retries=3):
+        # Mengurangi retries menjadi 3 agar tidak menunggu terlalu lama jika internet mati
+            for i in range(retries):
+                try:
+                    r = requests.get(
+                        url,
+                        headers={"User-Agent": "Mozilla/5.0"},
+                        timeout=5 
+                    )
+                    r.raise_for_status()
+                    return r
+                except requests.exceptions.RequestException:
+                    if i == retries - 1:
+                        raise
+                    time.sleep(2)
+
+        # Path ke file metadata
+        metadata_path = r'C:\PenilaianTanah\app-metadata.bin'
+
+        CURRENT_VERSION = None
+        NOMOR_BUILD = None
+        VERSION_ID = None
+        CHECK_UPDATE_URL = None
+
+        try:
+            metadata = decrypt_message(generate_key(), metadata_path)
+            
+            # Ekstrak data menggunakan key yang sesuai di JSON
+            CURRENT_VERSION = metadata.get("nomor_versi")
+            NOMOR_BUILD = metadata.get("nomor_build")
+            VERSION_ID = metadata.get("id_versi")
+            CHECK_UPDATE_URL = metadata.get("check_update_url")
+            INSTALLER_URL = metadata.get("installer_url")
+
+        except Exception as e:
+            arcpy.AddError(f"Terjadi kesalahan saat membaca file konfigurasi: {e}")
+            sys.exit()
+
+        try:
+            response = fetch(url=CHECK_UPDATE_URL)
+            data = response.json()
+
+            latest_version_id = data.get("version_id")
+            latest_version = data.get("version")
+            update_url = data.get("url")
+            min_required_version = data.get('min_required_version')
+            changelog = data.get("changelog", "Tidak ada informasi pembaruan tambahan.")
+
+            if NOMOR_BUILD < min_required_version:
+                return True
+            else:
+                return False
+
+        except Exception as e:
+            arcpy.AddError(f"Gagal memeriksa status pembaruan aplikasi. Pastikan koneksi internet Anda stabil. Detail: {e}")
+            sys.exit()
+
     def login_pihak_ketiga(self, nik, password, use_production=True):
         """
         Fungsi untuk memanggil API SIPENTA dan mendapatkan data survey.

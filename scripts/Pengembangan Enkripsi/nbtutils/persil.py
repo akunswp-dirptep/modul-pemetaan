@@ -94,7 +94,7 @@ def get_config_values():
 
     # Validasi path GDB
     if configs["project_config"]['ws_path'] != ws_dir:
-        arcpy.AddError(f"Path Workspace tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki path kembali dengan memperbaharui path workspace di Tools Edit Workspace")
+        arcpy.AddError(f"Alamat Workspace tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki Alamat dengan memperbaharui Alamat folder workspace di Tools Edit Workspace")
         sys.exit(1)
 
     return configs

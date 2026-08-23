@@ -772,7 +772,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
         # Validasi path GDB
         if configs["project_config"]['ws_path'] != ws_dir:
-            arcpy.AddError(f"Path Workspace tidak valid, folder kemungkinan dipindahkan dari tempat awal \nSilahkan perbaiki path dengan memperbaharui path workspace di Tools Edit Workspace")
+            arcpy.AddError(f"Alamat Workspace tidak valid, folder kemungkinan dipindahkan dari tempat awal \nSilahkan perbaiki Alamat dengan memperbaharui Alamat folder workspace di Tools Edit Workspace")
             sys.exit(1)
         
 

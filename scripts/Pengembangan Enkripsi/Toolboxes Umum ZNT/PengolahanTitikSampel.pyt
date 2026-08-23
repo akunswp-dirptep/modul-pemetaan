@@ -868,7 +868,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         # Mengekstrak nilai dari config
         dataset_path = configs['dataset_path']
         if dataset_path is None:
-            arcpy.AddError(f"Path Workspace tidak valid, Workspace kemungkinan dipindahkan dari tempat awal \nSilahkan perbaiki path  dengan memperbaharui path workspace di Tools Edit Workspace")
+            arcpy.AddError(f"Alamat Workspace tidak valid, Workspace kemungkinan dipindahkan dari tempat awal \nSilahkan perbaiki Alamat  dengan memperbaharui Alamat folder workspace di Tools Edit Workspace")
         tahun = configs['THNNILAI']  # Tahun penilaian
         lokasi = configs['WADMPR']   # Kode lokasi
         coor = configs['coord']      # Sistem koordinat

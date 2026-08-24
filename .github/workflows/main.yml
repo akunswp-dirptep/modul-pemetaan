@@ -23,10 +23,10 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         # Menentukan target repositori tujuan
-        repository: Akring-creator/update-version-repo
+        repository: akunswp-dirptep/Rilis-Penilaian-Tanah
         
         # Menggunakan PAT Token untuk izin akses ke repo tujuan
-        token: ${{ secrets.PAT_TOKEN }}
+        token: ${{ secrets.PAT_SECRET }}
         
         # Nama Tag sistem Git (Harus unik setiap kali dijalankan).
         # Di bawah ini menggunakan kombinasi tanggal & waktu agar selalu unik secara otomatis.

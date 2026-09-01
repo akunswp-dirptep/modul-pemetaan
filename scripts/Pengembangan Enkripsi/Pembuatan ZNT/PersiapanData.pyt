@@ -538,6 +538,7 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         5. Field WADMKK, WADMPR, dan THNNILAI akan diisi sesuai dengan nilai yang ada pada config.
         6. Field cluster akan diisi dengan nilai default 1 untuk semua record.
         """
+        arcpy.env.overwriteOutput = True
         input_fl = parameters[0].valueAsText
 
         config_dan_paths = get_config_values()
@@ -550,7 +551,12 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         zl_temp_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer_Temp')
 
         in_table_fields = [f.name for f in arcpy.ListFields(zl_temp_path)]
-        
+        required_fields = ["NOZN", "PENGGUNAAN", "SMPBKREL", "SMPBAKU", "NILAIZN", "JMLSMPL", "NILMIN", "NILMAKS", "WADMKK", "WADMPR", "THNNILAI", "HISTZONE", "cluster","NILBULAT"]
+
+        fields_to_delete = [f for f in required_fields if f in in_table_fields]
+
+        if fields_to_delete:
+            arcpy.management.DeleteField(zl_temp_path, fields_to_delete)
 
         arcpy.management.AddField(zl_temp_path, "NOZN", "LONG")  # Nomor Zona
         arcpy.management.AddField(zl_temp_path, "PENGGUNAAN", "TEXT")  # Jenis Penggunaan Lahan
@@ -563,7 +569,7 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         arcpy.management.AddField(zl_temp_path, "WADMKK", "TEXT")  # Kode Administrasi Kabupaten
         arcpy.management.AddField(zl_temp_path, "WADMPR", "TEXT")  # Kode Administrasi Provinsi
         arcpy.management.AddField(zl_temp_path, "THNNILAI", "LONG")  # Tahun Penilaian
-        arcpy.management.AddField(zl_temp_path, "cluster", "TEXT", field_alias="CLUSTER")  # Cluster Zona
+        arcpy.management.AddField(zl_temp_path, "cluster", "TEXT", field_alias="KLASTER")  # Cluster Zona
 
         arcpy.management.CalculateField(zl_temp_path, "NOZN", "!OBJECTID!", "PYTHON3")
 
@@ -633,10 +639,44 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         if fields_to_delete:
             arcpy.management.DeleteField(zl_temp_path, fields_to_delete)
 
+        # --- Tambahkan field baru yang belum ada di deklarasi awal ---
+        in_table_fields = [f.name for f in arcpy.ListFields(zl_temp_path)]
+        
+        # Fungsi pembantu untuk menambah field jika belum ada
+        def add_field_if_not_exists(fc, name, tipe, alias=None):
+            if name not in in_table_fields:
+                arcpy.management.AddField(fc, name, tipe, field_alias=alias)
+
+        add_field_if_not_exists(zl_temp_path, "JENISSAMPEL", "TEXT")
+        add_field_if_not_exists(zl_temp_path, "HISTZONE", "TEXT")
+        add_field_if_not_exists(zl_temp_path, "BEDA_ZONA", "TEXT", alias="BEDA ZONA")
+        add_field_if_not_exists(zl_temp_path, "JMLNILAI", "DOUBLE")
+        add_field_if_not_exists(zl_temp_path, "NILBULAT", "LONG")
+        add_field_if_not_exists(zl_temp_path, "Luas_M2", "DOUBLE", alias="LUASM2")
+
+        # --- Atur Urutan Field dengan FieldMappings ---
+        # Catatan: THNNILAI merepresentasikan TAHUN
+        urutan_field = [
+            "WADMKK", "WADMPR", "THNNILAI", "cluster", "NOZN", "JNSZN", 
+            "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+            "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
+            "NILAIZN", "NILBULAT", "Luas_M2"
+        ]
+
+        field_mappings = arcpy.FieldMappings()
+
+        # Masukkan field ke mapping sesuai urutan list
+        for field_name in urutan_field:
+            if field_name in [f.name for f in arcpy.ListFields(zl_temp_path)]:
+                fm = arcpy.FieldMap()
+                fm.addInputField(zl_temp_path, field_name)
+                field_mappings.addFieldMap(fm)
+
         arcpy.conversion.FeatureClassToFeatureClass(
             zl_temp_path,
             config_dan_paths['dataset_path'],
             'Zona_Layer',
+            field_mapping=field_mappings
 
         )
         arcpy.management.Delete(zl_temp_path)  # Hapus layer sementara      
@@ -647,9 +687,10 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
 
         zl_path = os.path.join(dataset_path, "Zona_Layer")
         sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Dengan_Transparansi.lyrx")
-
+        
         # Membuat feature layer untuk data Zona_Layer
         arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
+        arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
         
         arcpy.SetParameter(1, "Zona_Layer") 
         

@@ -111,6 +111,8 @@ class Hitung_Luas_Zona_M2:
         zl = "Zona_Layer"
         topo = 'Zona_Layer_Topology'
         topologi = os.path.join(dataset_path, 'Zona_Layer_Topology')
+        zl_path = os.path.join(dataset_path, "Zona_Layer")
+        in_table_fields = [f.name for f in arcpy.ListFields(zl_path)]
 
         try:
             # Pemenuhan kondisi No.2
@@ -121,10 +123,11 @@ class Hitung_Luas_Zona_M2:
                 arcpy.management.Delete(topo)
 
             # Pemenuhan kondisi No.3 dan No.5
-            arcpy.management.AddField(zl, "Luas_M2", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED")
+            if "Luas_M2" not in in_table_fields:
+                arcpy.management.AddField(zl, "Luas_M2", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED")
             
             # Pemenuhan kondisi No.4
-            arcpy.management.CalculateField(zl, "Luas_M2", '!Shape.Area@meter!', "PYTHON3")
+            arcpy.management.CalculateField(zl, "Luas_M2", 'round(!Shape.Area@meter!)', "PYTHON3")
         
         except Exception as e:
             arcpy.AddWarning(f"Gagal menghitung luas zona: {str(e)}")
@@ -191,6 +194,7 @@ class Kodifikasi_Zona:
         # Mendapatkan daftar field yang ada dalam layer
         field_names = [field.name for field in arcpy.ListFields(zl_path)]
 
+        
         # Memeriksa apakah field HISTZONE sudah ada
         if "HISTZONE" not in field_names:
             """
@@ -255,25 +259,34 @@ class Kodifikasi_Zona:
             MEMPROSES LOGIKA HISTZONE:
             - Membandingkan nilai lama (temp1) dengan nilai baru (temp)
             - Menerapkan logika khusus untuk mempertahankan atau menggabungkan nilai
+            - Menghitung ulang jika nilai lama Null/Kosong
             """
             with arcpy.da.UpdateCursor(zl_path, ["temp1", "temp", "temp3"]) as rows:
                 for row in rows:
-                    # Jika nilai lama pendek (<3 karakter)
-                    if len(row[0]) < 3:
-                        if row[0] == row[1]:  # Jika nilai lama sama dengan baru
-                            row[2] = row[1]   # Gunakan nilai baru
-                        elif row[0] != row[1]:  # Jika berbeda
-                            row[2] = row[0] + row[1]  # Gabungkan lama + baru
-                    
-                    # Jika nilai lama panjang (=3 karakter)
+                    # 1. Cek jika nilai lama (temp1) Null, Kosong, atau hanya spasi
+                    if row[0] is None or str(row[0]).strip() == "" or str(row[0]).lower() == "none":
+                        row[2] = row[1]  # Langsung gunakan nilai zona baru
+                        
+                    # 2. Jika nilai lama sudah ada isinya
                     else:
-                        if row[0][-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
-                            row[2] = row[0]  # Pertahankan nilai lama
-                        elif row[0][-2:] != row[1][-2:]:  # Jika 2 karakter akhir berbeda
-                            row[2] = row[0] + row[1]  # Gabungkan lama + baru
+                        nilai_lama = str(row[0])
+                        
+                        # Jika nilai lama pendek (<3 karakter)
+                        if len(nilai_lama) < 3:
+                            if nilai_lama == row[1]:  # Jika nilai lama sama dengan baru
+                                row[2] = row[1]   # Gunakan nilai baru
+                            else:  # Jika berbeda
+                                row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
+                        
+                        # Jika nilai lama panjang (>=3 karakter)
+                        else:
+                            if nilai_lama[-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
+                                row[2] = nilai_lama  # Pertahankan nilai lama
+                            else:  # Jika 2 karakter akhir berbeda
+                                row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
                     
                     rows.updateRow(row)
-                del rows, row
+            del rows, row
             
             # Memindahkan hasil akhir ke field HISTZONE
             arcpy.management.CalculateField(zl_path, "HISTZONE", "!temp3!", "PYTHON3")

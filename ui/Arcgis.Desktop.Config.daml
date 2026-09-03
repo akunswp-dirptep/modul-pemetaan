@@ -720,8 +720,9 @@
 					<button refID="ButtonTampilkanZNT"/>
 					<button refID="ButtonUploadPetaSebaranSampel"/>					
 					<button refID="ButtonUploadPetaStandarDeviasi"/>					
-					<button refID="ButtonUploadPetaZonaNilaiTanah"/>	
-					<button refID="esri_layouts_importPAGX" caption="Import Template Layout" extendedCaption="Import Template Layout"/>
+					<button refID="ButtonUploadPetaZonaNilaiTanah"/>
+					<button refID="layout_peta"/>
+
 				</menu>
 
 				<menu id="menu_backup_dan_ekspor_hasil_znt" caption="Backup dan Ekspor Hasil" extendedCaption="Backup dan Ekspor Hasil" keytip="TA"         
@@ -733,7 +734,15 @@
 					<button refID="ButtonEksporZona"/>
 				</menu>
 
+
+
 				<!-- Menu - Menu Helper -->
+				<menu id="layout_peta" caption="Layout Peta" >
+					<button refID="esri_layouts_importPAGX" caption="Import Template Layout" extendedCaption="Import Template Layout"/>
+					<button refID="ButtonUploadHasilLayout"/>
+
+				</menu>
+
 				<menu id="menu_persiapan_workspace" caption="Persiapan Workspace">
 					<button refID="ButtonBuatLayerZonaAwal" />
 					<button refID="ButtonEditWorkspace"/>
@@ -818,7 +827,7 @@
 					<button refID="ButtonUploadPetaSebaranSampelPembaruan"/>					
 					<button refID="ButtonUploadPetaSebaranTitikZonaPembaruan"/>					
 					<button refID="ButtonUploadPetaZonaNilaiTanahPembaruan"/>
-					<button refID="esri_layouts_importPAGX" caption="Import Template Layout" extendedCaption="Import Template Layout"/>
+					<button refID="layout_peta"/>
 				</menu>
 				
 				<menu id="menu_backup_dan_export_hasil_pembaruan_znt" caption="Backup dan Ekspor Hasil" extendedCaption="Backup dan Ekspor Hasil" keytip="TA"         
@@ -2208,6 +2217,7 @@
 					</args>
 					<tooltip heading="Tampilkan Simpang Baku Relatif">Menu untuk menampilkan Simpang Baku Relatif.</tooltip>
 				</button>
+
 				<button id="ButtonTampilkanZNT" caption="Tampilkan Zona Nilai Tanah" smallImage="C:\PenilaianTanah\icons\basemap.png" largeImage="C:\PenilaianTanah\icons\basemap.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Tampilkan_Simbologi_Pembagian_Kelas" name="Tampilkan Zona Nilai Tanah" xmlns=""/>
@@ -2215,6 +2225,12 @@
 					<tooltip heading="Tampilkan Zona Nilai Tanah">Menu untuk menampilkan Zona Nilai Tanah.</tooltip>
 				</button>
 
+				<button id="ButtonUploadHasilLayout" caption="Upload Hasil Layout ke Sipenta" smallImage="C:\PenilaianTanah\icons\uploadlayoutkesipenta.png" largeImage="C:\PenilaianTanah\icons\uploadlayoutkesipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Upload_Layout_Ke_Sipenta" name="Upload Hasil Layout ke Sipenta" xmlns=""/>
+					</args>
+					<tooltip heading="Upload Hasil Layout ke Sipenta">Menu untuk mengupload hasil layout ke Sipenta.</tooltip>
+				</button>
 			<!-- Menu Backup dan Ekspor Hasil -->
 				<button id="ButtonEksporWorkspace" caption="Ekspor Workspace" smallImage="C:\PenilaianTanah\icons\database_download.png" largeImage="C:\PenilaianTanah\icons\database_download.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>

@@ -862,3 +862,47 @@ def validate_luas_minimal_zona(config_dan_paths):
         return f"Gagal mengeksekusi validasi luas minimal: {exc}"
 
     return None
+
+def delete_topology_file():
+    config_dan_paths = get_config_values()
+    topology_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer_Topology')
+    if arcpy.Exists(topology_path):
+        arcpy.management.Delete(topology_path)
+        arcpy.AddMessage("Berhasil: Topologi Zona_Layer telah dihapus.")
+
+def reorder_fields(fc_path, target_fields):
+        """Fungsi khusus untuk menyusun ulang urutan field pada Feature Class."""
+        arcpy.AddMessage("Menyusun ulang urutan field...")
+        workspace = os.path.dirname(fc_path)
+        fc_name = os.path.basename(fc_path)
+        
+        field_mappings = arcpy.FieldMappings()
+        existing_fields = {f.name.upper(): f.name for f in arcpy.ListFields(fc_path)}
+        
+        # 1. Tambahkan field ke mapping sesuai urutan yang ditentukan
+        for tf in target_fields:
+            if tf.upper() in existing_fields:
+                actual_name = existing_fields[tf.upper()]
+                field_map = arcpy.FieldMap()
+                field_map.addInputField(fc_path, actual_name)
+                field_mappings.addFieldMap(field_map)
+                
+        # 2. Amankan field lain yang mungkin ada agar tidak hilang
+        skip_fields = [tf.upper() for tf in target_fields] + ["SHAPE_LENGTH", "SHAPE_AREA", "SHAPE_LENGHT"]
+        for f in arcpy.ListFields(fc_path):
+            if f.name.upper() not in skip_fields and f.type not in ['OID', 'Geometry']:
+                field_map = arcpy.FieldMap()
+                field_map.addInputField(fc_path, f.name)
+                field_mappings.addFieldMap(field_map)
+
+        # 3. Proses ekspor ke memory dan overwrite file asli
+        temp_name = f"{fc_name}_Temp"
+        temp_path = os.path.join("memory", temp_name)
+
+        if arcpy.Exists(temp_path):
+            arcpy.management.Delete(temp_path)
+
+        arcpy.conversion.FeatureClassToFeatureClass(fc_path, "memory", temp_name, field_mapping=field_mappings)
+        arcpy.management.Delete(fc_path)
+        arcpy.conversion.FeatureClassToFeatureClass(temp_path, workspace, fc_name)
+        arcpy.management.Delete(temp_path)

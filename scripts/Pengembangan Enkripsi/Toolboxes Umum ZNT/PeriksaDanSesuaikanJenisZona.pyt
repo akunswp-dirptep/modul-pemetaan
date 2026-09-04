@@ -199,10 +199,10 @@ class Periksa_Jenis_Zona(object):
                 cursor.updateRow(row)
 
         urutan_field_baru = [
-            "WADMKK", "WADMPR", "TAHUN", "CLUSTER", "NOZN", "JNSZN", 
-            "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
+            "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
             "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
-            "NILAIZN", "NILBULAT", "LUASM2"
+            "NILAIZN", "NILBULAT", "Luas_M2"
         ]
         
         reorder_fields(zl_path, urutan_field_baru)

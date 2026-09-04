@@ -570,6 +570,14 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         arcpy.management.AddField(zl_temp_path, "WADMPR", "TEXT")  # Kode Administrasi Provinsi
         arcpy.management.AddField(zl_temp_path, "THNNILAI", "LONG")  # Tahun Penilaian
         arcpy.management.AddField(zl_temp_path, "cluster", "TEXT", field_alias="KLASTER")  # Cluster Zona
+        arcpy.management.AddField(zl_temp_path, 'SKALA', "TEXT")
+
+        arcpy.AddMessage(config_dan_paths['skala'])
+        if config_dan_paths['skala']:
+            nilai_skala = f"{int(config_dan_paths['skala']):,}".replace(',', '.')
+            str_skala = f"1 : {nilai_skala}"
+            
+            arcpy.management.CalculateField(zl_temp_path, "SKALA", f"'{str_skala}'", "PYTHON3")
 
         arcpy.management.CalculateField(zl_temp_path, "NOZN", "!OBJECTID!", "PYTHON3")
 
@@ -611,6 +619,7 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
 
         desired_fields =[
             "NOZN",
+            "SKALA",
             "NILAIZN",
             "JNSZN",
             "PENGGUNAAN",
@@ -647,7 +656,7 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
             if name not in in_table_fields:
                 arcpy.management.AddField(fc, name, tipe, field_alias=alias)
 
-        add_field_if_not_exists(zl_temp_path, "JENISSAMPEL", "TEXT")
+        add_field_if_not_exists(zl_temp_path, "JENISSAMPEL", "TEXT", alias="JENIS SAMPEL")
         add_field_if_not_exists(zl_temp_path, "HISTZONE", "TEXT")
         add_field_if_not_exists(zl_temp_path, "BEDA_ZONA", "TEXT", alias="BEDA ZONA")
         add_field_if_not_exists(zl_temp_path, "JMLNILAI", "DOUBLE")
@@ -657,7 +666,7 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         # --- Atur Urutan Field dengan FieldMappings ---
         # Catatan: THNNILAI merepresentasikan TAHUN
         urutan_field = [
-            "WADMKK", "WADMPR", "THNNILAI", "cluster", "NOZN", "JNSZN", 
+            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
             "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
             "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
             "NILAIZN", "NILBULAT", "Luas_M2"

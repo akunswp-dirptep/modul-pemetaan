@@ -87,8 +87,8 @@ class Periksa_Jenis_Zona(object):
 
         if arcpy.Exists(zl_topology_path):
             arcpy.management.Delete(zl_topology_path)
-            arcpy.management.ClearWorkspaceCache()
-            arcpy.AddMessage("Topologi lama berhasil dihapus untuk pembaruan data.")
+
+
         ts_path = os.path.join(
             self.config_dan_paths['dataset_path'],
             "Titik_Sampel"
@@ -197,6 +197,7 @@ class Periksa_Jenis_Zona(object):
                     row[2] = "Tidak ada Jenis Zona Titik Sampel"
 
                 cursor.updateRow(row)
+
         urutan_field_baru = [
             "WADMKK", "WADMPR", "TAHUN", "CLUSTER", "NOZN", "JNSZN", 
             "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 

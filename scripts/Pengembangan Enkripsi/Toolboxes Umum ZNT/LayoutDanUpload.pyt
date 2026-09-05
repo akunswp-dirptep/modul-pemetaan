@@ -691,57 +691,65 @@ class Upload_Layout_Ke_Sipenta(object):
         return [param_layout, berkas, param_peta]
 
     def updateParameters(self, parameters):
-        # Otomatis mengambil daftar layout dari project ArcGIS Pro yang sedang dibuka
-        if not parameters[0].altered:
-            try:
-                aprx = arcpy.mp.ArcGISProject("CURRENT")
-                layouts = [lyt.name for lyt in aprx.listLayouts()]
-                parameters[0].filter.type = "ValueList"
+        try:
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            layouts = [lyt.name for lyt in aprx.listLayouts()]
+            
+            parameters[0].filter.type = "ValueList"
+            
+            if len(layouts) > 0:
                 parameters[0].filter.list = layouts
-            except Exception:
-                pass
+            else:
+                parameters[0].filter.list = ['Tidak ada Layout yang dapat dipilih']
+                
+        except Exception:
+            parameters[0].filter.type = "ValueList"
+            parameters[0].filter.list = ['Tidak ada Layout yang dapat dipilih']
 
+        # 3. Update parameter Peta berdasarkan Berkas
         if parameters[1].altered:
             value = parameters[1].valueAsText
-            kode = value[:2]
-            mapping_data = {
-                '01': [
-                    'Peta Zona Awal Nilai Tanah',
-                    'Peta Sebaran Sampel',
-                    'Peta Simpangan Baku Relatif',
-                    'Peta Zona Nilai Tanah'
-                ],
-                '02': [
-                    'Peta Hasil Survei Batas Zona',
-                    'Peta Sebaran Sampel',
-                    'Peta Simpangan Baku Relatif',
-                    'Peta Zona Nilai Tanah'
-                ],
-                '03': [
-                    'Peta Sebaran Sampel',
-                    'Peta Nilai Bidang Tanah'
-                ],
+            if value: 
+                kode = value[:2]
+                mapping_data = {
+                    '01': [
+                        'Peta Zona Awal Nilai Tanah',
+                        'Peta Sebaran Sampel',
+                        'Peta Simpangan Baku Relatif',
+                        'Peta Zona Nilai Tanah'
+                    ],
+                    '02': [
+                        'Peta Hasil Survei Batas Zona',
+                        'Peta Sebaran Sampel',
+                        'Peta Simpangan Baku Relatif',
+                        'Peta Zona Nilai Tanah'
+                    ],
+                    '03': [
+                        'Peta Sebaran Sampel',
+                        'Peta Nilai Bidang Tanah'
+                    ],
+                    '04': [
+                        'Peta Sebaran Sampel',
+                        'Peta Nilai Bidang Tanah'
+                    ]
+                }
                 
-                '04': [
-                    'Peta Sebaran Sampel',
-                    'Peta Nilai Bidang Tanah'
-                ]
-            }
-            list_param = mapping_data[kode]
-            parameters[2].filter.list = list_param
+                if kode in mapping_data:
+                    parameters[2].filter.list = mapping_data[kode]
         return
 
     def updateMessages(self, parameters):
+        # Jika nilai parameter layout adalah pesan kosong, cegah tool berjalan
+        if parameters[0].valueAsText == 'Tidak ada Layout yang dapat dipilih':
+            parameters[0].setErrorMessage("Harap buat layout terlebih dahulu di dalam project ini.")
         return
-
+    
     def execute(self, parameters, messages):
         layout_name = parameters[0].valueAsText
         no_berkas = parameters[1].valueAsText
         param_peta = parameters[2].valueAsText
-
-        berkas_list = get_all_berkas_id()
         
-
+        berkas_list = get_all_berkas_id()
         if berkas_list is None:
             arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembuatan ZNT.")
             return
@@ -804,14 +812,10 @@ class Upload_Layout_Ke_Sipenta(object):
         
         try:
             with open(pdf_path, 'rb') as f:
-                # Format multipart/form-data untuk file upload
                 files = {'file': (pdf_filename, f, 'application/pdf')}
                 
-                # Mengirim request POST
-                # verify=False dapat ditambahkan jika terdapat isu SSL certificate pada server belajar.atrbpn.go.id
                 response = requests.post(url, headers=headers, data=payload_data, files=files) 
 
-            # Evaluasi respon API
             if response.status_code == 200:
                 res_json = response.json()
                 if res_json.get("success"):

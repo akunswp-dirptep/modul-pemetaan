@@ -436,12 +436,20 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             " - Tidak boleh berisi <null>\n"
             " - Tidak boleh berisi nilai selain 1 atau 2"
         )
+        out_zona_layer = arcpy.Parameter(
+            displayName="Output Zona Layer",
+            name="out_zona_layer",
+            datatype="DEFeatureClass", 
+            parameterType="Derived", # Derived artinya otomatis dihasilkan oleh sistem, tidak perlu diinput user
+            direction="Output"
+        )
 
         return [
             znt_awal,
             nomorzone, penjelasan_nomorzone,
             nilai, penjelasan_nilai,
-            jeniszona, penjelasan_jeniszona
+            jeniszona, penjelasan_jeniszona,
+            out_zona_layer
         ]
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
@@ -828,8 +836,9 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             field_mapping=fms
         )
 
-        arcpy.management.Delete(zona_layer_temp_path)  # Hapus layer sementara      
-
+        arcpy.management.Delete(zona_layer_temp_path)  
+        zona_layer_final_path = os.path.join(dataset_path, 'Zona_Layer')
+        parameters[7].value = zona_layer_final_path
         return
 
     def postExecute(self, parameters):

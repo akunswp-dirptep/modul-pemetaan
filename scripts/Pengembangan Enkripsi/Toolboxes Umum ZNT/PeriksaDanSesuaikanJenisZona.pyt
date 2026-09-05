@@ -198,7 +198,16 @@ class Periksa_Jenis_Zona(object):
 
                 cursor.updateRow(row)
 
-        urutan_field_baru = [
+        if "NILAIZN_LAMA" in field_names:
+            urutan_field_baru = [
+            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "NOZN", "cluster", "JNSZN", 
+            "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+            "Keterangan", "NILAIZN_LAMA", "NILBULAT_LAMA", "NILMIN", "NILMAKS", 
+            "JMLNILAI", "SMPBKREL", "SMPBAKU", "NILAIZN", "NILBULAT", 
+            "indeks_nilai_tanah", "Luas_M2"
+        ]
+        else:
+            urutan_field_baru = [
             "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
             "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
             "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 

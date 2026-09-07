@@ -9,7 +9,7 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
     
-from zntutils.zona_layer import get_config_values, delete_bad_file
+from zntutils.zona_layer import get_config_values, delete_bad_file, reorder_fields, delete_topology_file
 from zntutils import sample_point as samplepoint
 
 arcpy.env.outputZFlag = "Disabled"  # Menonaktifkan output nilai Z (3D)
@@ -78,7 +78,16 @@ class Periksa_Jenis_Zona(object):
     def execute(self, parameters, messages):
         """The source code of the tool."""
         delete_bad_file()
+
         self.config_dan_paths = get_config_values()
+        zl_topology_path = os.path.join(
+            self.config_dan_paths['dataset_path'],
+            "Zona_Layer_Topology"
+        )
+
+        if arcpy.Exists(zl_topology_path):
+            arcpy.management.Delete(zl_topology_path)
+
 
         ts_path = os.path.join(
             self.config_dan_paths['dataset_path'],
@@ -154,13 +163,15 @@ class Periksa_Jenis_Zona(object):
         arcpy.management.AddField(
             zl_path,
             "JENISSAMPEL",
-            "TEXT"
+            "TEXT",
+            field_alias="JENIS SAMPEL"
         )
 
         arcpy.management.AddField(
             zl_path,
             "BEDA_ZONA",
-            "TEXT"
+            "TEXT",
+            field_alias="BEDA ZONA"
         )
 
         # Update hasil pemeriksaan
@@ -186,6 +197,24 @@ class Periksa_Jenis_Zona(object):
                     row[2] = "Tidak ada Jenis Zona Titik Sampel"
 
                 cursor.updateRow(row)
+
+        if "NILAIZN_LAMA" in field_names:
+            urutan_field_baru = [
+            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "NOZN", "cluster", "JNSZN", 
+            "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+            "Keterangan", "NILAIZN_LAMA", "NILBULAT_LAMA", "NILMIN", "NILMAKS", 
+            "JMLNILAI", "SMPBKREL", "SMPBAKU", "NILAIZN", "NILBULAT", 
+            "indeks_nilai_tanah", "Luas_M2"
+        ]
+        else:
+            urutan_field_baru = [
+            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
+            "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+            "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
+            "NILAIZN", "NILBULAT", "Luas_M2"
+        ]
+        
+        reorder_fields(zl_path, urutan_field_baru)
 
         # Tampilkan layer hasil
         arcpy.management.MakeFeatureLayer(

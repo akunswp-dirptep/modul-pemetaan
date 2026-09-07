@@ -154,20 +154,11 @@ def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feat
         return
 
     try:
-
-        arcpy.AddMessage(
-            "Mengupload file ke server..."
-        )
-
+        arcpy.AddMessage("Mengupload file ke server...")
         # Konfigurasi URL
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload"
-        
         prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/upload"
-        url = (
-            prod_url
-            if use_production
-            else test_url
-        )
+        url = prod_url if use_production else test_url
 
         # Persiapan Header
         headers = {

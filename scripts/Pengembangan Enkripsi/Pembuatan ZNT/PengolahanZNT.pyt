@@ -307,13 +307,13 @@ class Hitung_Nilai_ZNT_Pembuatan:
         lokasi = config_dan_paths['provinsi']   # Kode lokasi
         coor = config_dan_paths['coor']      # Sistem koordinat
         gdb_path = config_dan_paths['gdb_path']  # Path lengkap GDB
-        identity_output = os.path.join(dataset_path, "IdentitySampel")
+        identity_output = os.path.join('memory', "IdentitySampel")
         titik_sampel = os.path.join(dataset_path, "Titik_Sampel")
 
         if not arcpy.Exists(titik_sampel):
             arcpy.AddError("Layer Titik Sampel tidak ditemukan")
         arcpy.analysis.Identity(titik_sampel, zl_path, identity_output)
-        dissolve_output = os.path.join(dataset_path, "DissolveSampel")
+        dissolve_output = os.path.join('memory', "DissolveSampel")
         field_statistik = [
             ["nilai", "SUM"],
             ["nilai", "MEAN"],

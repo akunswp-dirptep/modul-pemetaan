@@ -367,9 +367,14 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
             else:
                 raise Exception(f"HTTP Error: {e}")
+            
         except requests.exceptions.RequestException as e:
-            arcpy.AddError(f"Error dalam pemanggilan API: {str(e)}")
-            raise arcpy.ExecuteError
+            error_msg = str(e)
+            if "NameResolutionError" in error_msg or "getaddrinfo failed" in error_msg or "Max retries exceeded" in error_msg:
+                arcpy.AddError("Koneksi terputus, silakan cek jaringan internet Anda dan coba lagi.")
+            else:
+                arcpy.AddError(f"Error koneksi ke server: {error_msg}")
+                
         except json.JSONDecodeError as e:
             arcpy.AddError(f"Error ketika mengubah respon API ke JSON: {str(e)}")
             raise arcpy.ExecuteError

@@ -513,19 +513,20 @@ class Simpan_Workspace_Ke_Sipenta:
                     arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
                 else:
                     error_message = message if message else "Periksa hak akses atau token."
-                    # Tampilkan pesan spesifik dari JSON server
                     arcpy.AddError(f"Akses ditolak (403). Pesan: {error_message}")
             else:
                 # Jika HTTP error lain (misal 500 Internal Server Error)
                 arcpy.AddError(f"HTTP Error: {e}")
                 
-        # 2. Tangkap error Request secara umum (misal koneksi putus/timeout)
-        except requests.RequestException as e:
-            arcpy.AddError(f"Error koneksi ke server: {str(e)}")
+        except requests.exceptions.RequestException as e:
+            error_msg = str(e)
+            if "NameResolutionError" in error_msg or "getaddrinfo failed" in error_msg or "Max retries exceeded" in error_msg:
+                arcpy.AddError("Koneksi terputus, silakan cek jaringan internet Anda dan coba lagi.")
+            else:
+                arcpy.AddError(f"Error koneksi ke server: {error_msg}")
             
-        # 3. Tangkap error Python lainnya
         except Exception as e:
-            arcpy.AddError(f"Error umum saat upload: {str(e)}")
+            arcpy.AddError(f"Error  saat upload: {str(e)}")
 
         finally:
             arcpy.management.Delete(zip_path)

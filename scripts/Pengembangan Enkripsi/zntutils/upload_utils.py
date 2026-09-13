@@ -70,18 +70,14 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
                 files=files
             )
             
-   
             response.raise_for_status() 
-            
 
             arcpy.AddMessage("File berhasil diupload ke modul tatausaha sipenta.")
             return response.json()
 
-
     except requests.exceptions.HTTPError as e:
         response = e.response
         
-
         try:
             error_json = response.json()
             message = error_json.get("message", "")
@@ -93,6 +89,9 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
             if "expired" in message.lower():
                 clear_user_data() 
                 arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
+            # Menangkap error tahapan spesifik dengan kalimat yang diparafrase
+            elif "Berkas tidak bisa di upload pada tahapan ini" in message:
+                arcpy.AddError("Data tidak dapat diupload karena posisi berkas di SIPENTA sudah bergeser atau tidak berada pada tahap tempat data seharusnya diunggah.")
             else:
                 error_message = message if message else "Periksa hak akses atau token."
                 arcpy.AddError(f"Akses ditolak (403). Pesan: {error_message}")
@@ -100,17 +99,18 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
             # Jika HTTP error lain (misal 500 Internal Server Error)
             arcpy.AddError(f"HTTP Error: {e}")
             
-    # 2. Tangkap error Request secara umum (misal koneksi putus/timeout)
-    except requests.RequestException as e:
-        arcpy.AddError(f"Error koneksi ke server: {str(e)}")
+    except requests.exceptions.RequestException as e:
+        error_msg = str(e)
+        if "NameResolutionError" in error_msg or "getaddrinfo failed" in error_msg or "Max retries exceeded" in error_msg:
+            arcpy.AddError("Koneksi terputus, silakan cek jaringan internet Anda dan coba lagi.")
+        else:
+            arcpy.AddError(f"Error koneksi ke server: {error_msg}")
         
-    # 3. Tangkap error Python lainnya
     except Exception as e:
-        arcpy.AddError(f"Error umum saat upload: {str(e)}")
+        arcpy.AddError(f"Error saat upload: {str(e)}")
         
     # Jika gagal (masuk except), kembalikan None
     return None
-
 
 def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feature_layer, use_production=True):
     zipname = None
@@ -130,12 +130,14 @@ def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feat
     except Exception as e:
         arcpy.AddError(f"Error creating shapefile output folder: {str(e)}")
         return
+        
     try:
         arcpy.AddMessage(f"Exporting feature class to shapefile: {feature_layer}")
         arcpy.FeatureClassToShapefile_conversion([feature_layer], temp_shapefile_folder)
     except Exception as e:
         arcpy.AddError(f"Error exporting feature class to shapefile: {str(e)}")
         return
+        
     shapefile_base = os.path.join(temp_shapefile_folder, os.path.basename(feature_layer))
     extensions = [".shp", ".shx", ".dbf", ".prj", ".cpg", ".shp.xml", ".sbn", ".sbx"]
     shapefile_components = [shapefile_base + ext for ext in extensions if os.path.exists(shapefile_base + ext)]
@@ -203,14 +205,11 @@ def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feat
         message = ""
 
         try:
-
             error_json = response.json()
-
             message = error_json.get(
                 "message",
                 ""
             )
-
         except Exception:
             pass
 
@@ -219,44 +218,42 @@ def upload_feature_layer_to_sipenta(nomor_berkas, token, param, in_feature, feat
             response.status_code == 403
             and "expired" in message.lower()
         ):
-
             clear_user_data()
+            arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
+            return
 
-            raise Exception(
-                "Token Anda kadaluarsa, "
-                "silakan login ulang."
-            )
-
-        # Forbidden
+        # Forbidden (403)
         elif response.status_code == 403:
-            # Mencoba mem-parsing respons JSON
             try:
                 error_data = response.json()
-                # Mengambil nilai dari 'message', beri nilai default jika tidak ditemukan
                 error_message = error_data.get("message", "Periksa hak akses atau token.")
             except ValueError:
-                # Fallback jika respons ternyata bukan JSON yang valid
                 error_message = "Periksa hak akses atau token."
 
-            raise Exception(f"Akses ditolak (403). Pesan: {error_message}")
+            # Menangkap error tahapan spesifik dan menampilkannya sebagai AddError
+            if "Berkas tidak bisa di upload pada tahapan ini" in error_message:
+                arcpy.AddError("Data tidak dapat diupload karena posisi berkas di SIPENTA sudah bergeser atau tidak berada pada tahap tempat data seharusnya diunggah.")
+            else:
+                arcpy.AddError(f"Akses ditolak (403). Pesan: {error_message}")
+            return
         
         # Error Lain
         else:
-
-            raise Exception(
+            arcpy.AddError(
                 f"HTTP Error {response.status_code}: "
                 f"{message or str(e)}"
             )
+            return
 
-    # Request Error
     except requests.exceptions.RequestException as e:
-
-        arcpy.AddError(
-            f"Error during file upload: {str(e)}"
-        )
-
-    # Error Umum
+        error_msg = str(e)
+        if "NameResolutionError" in error_msg or "getaddrinfo failed" in error_msg or "Max retries exceeded" in error_msg:
+            arcpy.AddError("Koneksi terputus, silakan cek jaringan internet Anda dan coba lagi.")
+        else:
+            arcpy.AddError(f"Error koneksi ke server: {error_msg}")
+        
+    # 3. Tangkap error Python lainnya
     except Exception as e:
-
-        arcpy.AddError(str(e))
+        arcpy.AddError(f"Error saat upload: {str(e)}")
+        
     return

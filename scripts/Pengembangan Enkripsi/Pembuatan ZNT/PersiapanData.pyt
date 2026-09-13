@@ -660,7 +660,7 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         add_field_if_not_exists(zl_temp_path, "HISTZONE", "TEXT")
         add_field_if_not_exists(zl_temp_path, "BEDA_ZONA", "TEXT", alias="BEDA ZONA")
         add_field_if_not_exists(zl_temp_path, "JMLNILAI", "DOUBLE")
-        add_field_if_not_exists(zl_temp_path, "NILBULAT", "LONG")
+        add_field_if_not_exists(zl_temp_path, "NILBULAT", "TEXT")
         add_field_if_not_exists(zl_temp_path, "Luas_M2", "DOUBLE", alias="LUASM2")
 
         # --- Atur Urutan Field dengan FieldMappings ---

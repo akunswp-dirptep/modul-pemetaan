@@ -385,8 +385,8 @@
 				</menu>
 				
 				<menu id="pengolahan_data_dasar_pembaruan_nbt" caption="Pengolahan Geometri" extendedCaption="Pengolahan Geometri" keytip="TA"         
-					largeImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png"
-					smallImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png">
+					largeImage="C:\PenilaianTanah\icons\ubahgeometri.png"
+					smallImage="C:\PenilaianTanah\icons\ubahgeometri.png">
 					<menu refID="pengolahan_data_dasar_persil_pembaruan_nbt" />
 					<menu refID="pengolahan_jaringan_jalan_pembaruan_nbt" />
 				</menu>
@@ -731,7 +731,7 @@
 					<tooltip heading="Backup dan Ekspor Hasil Pengolahan">Backup dan Ekspor Hasil Perhitungan Pembuatan Zona Nilai Tanah.</tooltip>
 					<button refID="ButtonEksporWorkspace" />
 					<button refID="ButtonSimpanWorkspacekeSipenta" />
-					<button refID="ButtonEksporZona"/>
+					<!-- <button refID="ButtonEksporZona"/> -->
 				</menu>
 
 
@@ -836,7 +836,7 @@
 					<tooltip heading="Backup dan Ekspor Hasil Pengolahan">Backup dan Ekspor Hasil Pengolahan Peta Pembaruan Zona Nilai Tanah.</tooltip>
 					<button refID="ButtonEksporWorkspace" />
 					<button refID="ButtonSimpanWorkspacekeSipenta" />
-					<button refID="ButtonEksporZona"/>
+					<!-- <button refID="ButtonEksporZona"/> -->
 				</menu>
 
 				<!-- Menu - Menu Helper -->

@@ -223,7 +223,7 @@ class Rekomendasi_Titik_Pembanding(object):
         zona_beda = []
 
         layers_to_check = [
-            (ts_path, "Titik_Sampel", os.path.join(self.dataset_path, 'identity_ts'))
+            (ts_path, "Titik_Sampel", os.path.join('memory', 'identity_ts'))
         ]
 
         if arcpy.Exists(tz_path):
@@ -1234,7 +1234,7 @@ class Perhitungan_Nilai_Data_Individual(object):
                 if kelas_lokasi == kelas['deskripsi']:
                     return kelas['bobot']
                 
-            arcpy.AddError('Data kelas lokasi pada pembanding tidak bisa dibaca')
+            arcpy.AddError('Data kelas Akses pada pembanding tidak bisa dibaca')
             sys.exit(1)
 
             return bobot_kelas_lokasi[0]['bobot']  # fallback ke kelas_1 jika lebih besar dari semua batas
@@ -1827,7 +1827,7 @@ class Otomatisasi_Penilaian_Titik_Individual(object):
 
     def cek_zona_beda(self, ts_path, zl_path, tz_path):
         zona_beda = []
-        layers_to_check = [(ts_path, "Titik_Sampel", os.path.join(self.dataset_path, 'identity_ts'))]
+        layers_to_check = [(ts_path, "Titik_Sampel", os.path.join('memory', 'identity_ts'))]
         if arcpy.Exists(tz_path):
             layers_to_check.append((tz_path, "Titik_Zona", r"in_memory\identity_tz"))
 

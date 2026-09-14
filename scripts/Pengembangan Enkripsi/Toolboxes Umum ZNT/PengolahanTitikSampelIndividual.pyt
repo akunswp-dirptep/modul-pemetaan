@@ -1446,8 +1446,13 @@ class Setujui_Sampel_Individual(object):
             "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.now().year)
         )
-
-        return [penjelasan]
+        output_zl = arcpy.Parameter(
+            name="output_zl",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        return [penjelasan, output_zl]
 
     def isLicensed(self):
         """Validasi lisensi ArcGIS"""
@@ -1463,8 +1468,15 @@ class Setujui_Sampel_Individual(object):
 
     def execute(self, parameters, messages):
         """Eksekusi utama tool untuk menampilkan simbologi pada layer Titik Sampel"""
-        config_paths = zonalayer.get_config_values()
-        # Hardcoded layer names
+        config_paths = zonalayer.get_config_values()        
+        zl_topology_path = os.path.join(
+            config_paths['dataset_path'],
+            "Zona_Layer_Topology"
+        )
+
+        if arcpy.Exists(zl_topology_path):
+            arcpy.management.Delete(zl_topology_path)
+
         titik_sampel_individual = "Titik_Sampel_Individual"
         titik_sampel = "Titik_Sampel"
 
@@ -1516,6 +1528,113 @@ class Setujui_Sampel_Individual(object):
 
         arcpy.management.DeleteFeatures(temp_layer)
         arcpy.AddMessage(f"Memindahkan {len(selected_ids)} titik dari Titik_Sampel_Individual ke Titik_Sampel")
+        ts_path = os.path.join(config_paths['dataset_path'], "Titik_Sampel")
+        tz_path = os.path.join(config_paths['dataset_path'], "Titik_Zona")
+        zl_path = os.path.join(config_paths['dataset_path'], "Zona_Layer")   
+        sim_path = os.path.join(config_paths['symbology_folder'], "Simbologi_Periksa_Jenis_Zona.lyrx")   
+        identity_layers = []
+
+        # Identity Titik Zona (jika ada)
+        if arcpy.Exists(tz_path):
+            arcpy.analysis.Identity(tz_path, zl_path, "identity_tz")
+            identity_layers.append("identity_tz")
+
+        # Identity Titik Sampel
+        arcpy.analysis.Identity(ts_path, zl_path, "identity_ts")
+        identity_layers.append("identity_ts")
+        # Dictionary penyimpanan
+        listzona = {}
+        listsampel = {}
+
+        for identity_fc in identity_layers:
+            with arcpy.da.SearchCursor(
+                identity_fc,
+                ["NOZN", "JNSZN", "Zoning"]
+            ) as cursor:
+
+                for nozona, jenis, zoning in cursor:
+
+                    if nozona not in listzona:
+                        listzona[nozona] = set()
+                    listzona[nozona].add(jenis)
+
+                    if nozona not in listsampel:
+                        listsampel[nozona] = set()
+
+                    if zoning is not None:
+                        listsampel[nozona].add(zoning)
+
+        field_names = [f.name for f in arcpy.ListFields(zl_path)]
+
+        if "JENISSAMPEL" in field_names:
+            arcpy.management.DeleteField(zl_path, "JENISSAMPEL")
+
+        if "BEDA_ZONA" in field_names:
+            arcpy.management.DeleteField(zl_path, "BEDA_ZONA")
+
+        arcpy.management.AddField(
+            zl_path,
+            "JENISSAMPEL",
+            "TEXT",
+            field_alias="JENIS SAMPEL"
+        )
+
+        arcpy.management.AddField(
+            zl_path,
+            "BEDA_ZONA",
+            "TEXT",
+            field_alias="BEDA ZONA"
+        )
+        with arcpy.da.UpdateCursor(
+            zl_path,
+            ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]
+        ) as cursor:
+
+            for row in cursor:
+                nozona = row[0]
+
+                zl_type = set(listzona.get(nozona, []))
+                titiksampel = set(listsampel.get(nozona, []))
+
+                if zl_type == titiksampel:
+                    row[1] = "Zona Sama"
+                else:
+                    row[1] = "Zona Beda"
+
+                if titiksampel:
+                    row[2] = ", ".join(map(str, sorted(titiksampel)))
+                else:
+                    row[2] = "Tidak ada Jenis Zona Titik Sampel"
+
+                cursor.updateRow(row)
+
+        if "NILAIZN_LAMA" in field_names:
+            urutan_field_baru = [
+            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "NOZN", "cluster", "JNSZN", 
+            "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+            "Keterangan", "NILAIZN_LAMA", "NILBULAT_LAMA", "NILMIN", "NILMAKS", 
+            "JMLNILAI", "SMPBKREL", "SMPBAKU", "NILAIZN", "NILBULAT", 
+            "indeks_nilai_tanah", "Luas_M2"
+        ]
+        else:
+            urutan_field_baru = [
+            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
+            "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+            "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
+            "NILAIZN", "NILBULAT", "Luas_M2"
+        ]
+        
+        zonalayer.reorder_fields(zl_path, urutan_field_baru)
+        arcpy.management.MakeFeatureLayer(
+            zl_path,
+            "Zona_Layer"
+        )
+
+        arcpy.management.ApplySymbologyFromLayer(
+            "Zona_Layer",
+            sim_path
+        )
+        arcpy.SetParameter(1, "Zona_Layer")
         return
 
 class Pengembalian_Sampel_Individual(object):

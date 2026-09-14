@@ -215,8 +215,6 @@ class Periksa_Jenis_Zona(object):
         ]
         
         reorder_fields(zl_path, urutan_field_baru)
-
-        # Tampilkan layer hasil
         arcpy.management.MakeFeatureLayer(
             zl_path,
             "Zona_Layer"

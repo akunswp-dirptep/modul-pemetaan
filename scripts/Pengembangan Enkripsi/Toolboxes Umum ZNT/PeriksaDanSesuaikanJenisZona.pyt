@@ -12,8 +12,8 @@ if parent_dir not in sys.path:
 from zntutils.zona_layer import get_config_values, delete_bad_file, reorder_fields, delete_topology_file
 from zntutils import sample_point as samplepoint
 
-arcpy.env.outputZFlag = "Disabled"  # Menonaktifkan output nilai Z (3D)
-arcpy.env.outputMFlag = "Disabled"  # Menonaktifkan output nilai M (measure)
+arcpy.env.outputZFlag = "Disabled"  
+arcpy.env.outputMFlag = "Disabled"  
 
 class Toolbox:
     def __init__(self):
@@ -86,6 +86,7 @@ class Periksa_Jenis_Zona(object):
     def execute(self, parameters, messages):
         """The source code of the tool."""
         self.config_dan_paths = get_config_values()
+        workspace = self.config_dan_paths['gdb_path']
         
         ts_path = os.path.join(self.config_dan_paths['dataset_path'], "Titik_Sampel")
         tz_path = os.path.join(self.config_dan_paths['dataset_path'], "Titik_Zona")
@@ -115,23 +116,24 @@ class Periksa_Jenis_Zona(object):
         listsampel = {}
 
         for identity_fc in identity_layers:
-            with arcpy.da.SearchCursor(
-                identity_fc,
-                ["NOZN", "JNSZN", "Zoning"]
-            ) as cursor:
-                for nozona, jenis, zoning in cursor:
-                    if nozona is None or str(nozona).strip() == "":
-                        continue
+            with arcpy.da.Editor(workspace) as edit:
+                with arcpy.da.SearchCursor(
+                    identity_fc,
+                    ["NOZN", "JNSZN", "Zoning"]
+                ) as cursor:
+                    for nozona, jenis, zoning in cursor:
+                        if nozona is None or str(nozona).strip() == "":
+                            continue
 
-                    if nozona not in listzona:
-                        listzona[nozona] = set()
-                    if jenis is not None:
-                        listzona[nozona].add(jenis)
+                        if nozona not in listzona:
+                            listzona[nozona] = set()
+                        if jenis is not None:
+                            listzona[nozona].add(jenis)
 
-                    if nozona not in listsampel:
-                        listsampel[nozona] = set()
-                    if zoning is not None:
-                        listsampel[nozona].add(zoning)
+                        if nozona not in listsampel:
+                            listsampel[nozona] = set()
+                        if zoning is not None:
+                            listsampel[nozona].add(zoning)
 
         # Hapus field lama jika ada
         field_names = [f.name for f in arcpy.ListFields(zl_path)]
@@ -145,27 +147,27 @@ class Periksa_Jenis_Zona(object):
         arcpy.management.AddField(zl_path, "JENISSAMPEL", "TEXT", field_alias="JENIS SAMPEL")
         arcpy.management.AddField(zl_path, "BEDA_ZONA", "TEXT", field_alias="BEDA ZONA")
 
-        # Update hasil pemeriksaan
-        with arcpy.da.UpdateCursor(
-            zl_path,
-            ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]
-        ) as cursor:
-            for row in cursor:
-                nozona = row[0]
-                zl_type = set(listzona.get(nozona, []))
-                titiksampel = set(listsampel.get(nozona, []))
+        with arcpy.da.Editor(workspace) as edit:
+            with arcpy.da.UpdateCursor(
+                zl_path,
+                ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]
+            ) as cursor:
+                for row in cursor:
+                    nozona = row[0]
+                    zl_type = set(listzona.get(nozona, []))
+                    titiksampel = set(listsampel.get(nozona, []))
 
-                if zl_type == titiksampel:
-                    row[1] = "Zona Sama"
-                else:
-                    row[1] = "Zona Beda"
+                    if zl_type == titiksampel:
+                        row[1] = "Zona Sama"
+                    else:
+                        row[1] = "Zona Beda"
 
-                if titiksampel:
-                    row[2] = ", ".join(map(str, sorted(titiksampel)))
-                else:
-                    row[2] = "Tidak ada Jenis Zona Titik Sampel"
+                    if titiksampel:
+                        row[2] = ", ".join(map(str, sorted(titiksampel)))
+                    else:
+                        row[2] = "Tidak ada Jenis Zona Titik Sampel"
 
-                cursor.updateRow(row)
+                    cursor.updateRow(row)
 
         if "NILAIZN_LAMA" in field_names:
             urutan_field_baru = [
@@ -225,6 +227,7 @@ class Periksa_Jenis_Zona(object):
 
     def postExecute(self, parameters):
         return
+
 class Sesuaikan_Jenis_Zona(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
@@ -276,6 +279,7 @@ class Sesuaikan_Jenis_Zona(object):
         jenis_zona = parameters[0].valueAsText
 
         config_dan_paths = get_config_values()
+        workspace = config_dan_paths['gdb_path']
         kode_zona = 1
         if jenis_zona == "Non-Pertanian":
             kode_zona = 1
@@ -290,13 +294,14 @@ class Sesuaikan_Jenis_Zona(object):
             if ada_seleksi > 0:
 
                 try:
-                    with arcpy.da.UpdateCursor(zl, ["JNSZN", "PENGGUNAAN"]) as cursor:
-                        for row in cursor:
-                            row[0] = kode_zona  
-                            row[1] = jenis_zona  
-                            cursor.updateRow(row)
-                        del row
-                        del cursor  
+                    with arcpy.da.Editor(workspace) as edit:
+                        with arcpy.da.UpdateCursor(zl, ["JNSZN", "PENGGUNAAN"]) as cursor:
+                            for row in cursor:
+                                row[0] = kode_zona  
+                                row[1] = jenis_zona  
+                                cursor.updateRow(row)
+                            del row
+                            del cursor  
                 
                 except Exception as e:
                     if str(e) == 'Cannot acquire a lock.':
@@ -321,7 +326,7 @@ class Sesuaikan_Jenis_Zona(object):
             elif ada_seleksi == 0:
                 arcpy.AddWarning("Tidak ada fitur yang dipilih pada layer Zona_Layer.")
         return
- 
+
 class Sesuaikan_Jenis_Zona_Lanjutan(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""
@@ -341,7 +346,6 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
         jenis_zona.filter.type = "ValueList"
         jenis_zona.filter.list = ["Pertanian", "Non-Pertanian"]
 
-
         output_zl = arcpy.Parameter(
             name="output_zl",
             datatype="GPFeatureLayer",
@@ -351,28 +355,22 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
 
         return [jenis_zona, output_zl]
 
-
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
         return True
 
     def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
         return
         
     def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter.  This method is called after internal validation."""
         return   
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        delete_bad_file()
         jenis_zona = parameters[0].valueAsText
 
         config_dan_paths = get_config_values()
+        workspace = config_dan_paths['gdb_path']
         sampel = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")
 
         selected_ids = samplepoint.get_selected_oids('Titik_Sampel')
@@ -380,7 +378,7 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
             arcpy.AddError("ERROR: Fitur Editing masih menyala pada Titik_Sampel. Matikan terlebih dahulu sebelum melanjutkan proses.")
             sys.exit(1)
 
-        zl= "Zona_Layer"
+        zl = "Zona_Layer"
         JNSZN = 1  # Default value untuk Non-Pertanian
         if jenis_zona == "Non-Pertanian":
             JNSZN = 1
@@ -397,65 +395,65 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
         missing_fields = [field for field in required_fields if field not in field_names]
 
         if missing_fields:
-            # Jika ada field yang tidak ditemukan
             error_message = "ERROR: Field berikut dibutuhkan tetapi tidak ditemukan: " + ", ".join(missing_fields)
             arcpy.AddError(error_message)
             raise ValueError(error_message)
         
-        a = 1
-        ada_seleksi = 0
         ada_seleksi = len(arcpy.Describe(zl).FIDSet)  # Memeriksa apakah ada fitur yang dipilih
 
         if ada_seleksi > 0:
-            # Update field-field di Zona Layer untuk fitur yang dipilih
-            try:            
-                rows = arcpy.UpdateCursor(zl)
-                for row in rows:
-                    row.setValue("JNSZN", JNSZN)  # Mengatur nilai JNSZN
-                    row.setValue("JENISSAMPEL", JNSZN)  # Mengatur nilai JENISSAMPEL
-                    row.setValue("PENGGUNAAN", jenis_zona)  # Mengatur nilai PENGGUNAAN
-                    rows.updateRow(row)
-                del row
-                del rows
+            try:
+                with arcpy.da.Editor(workspace) as edit:
+
+                    with arcpy.da.UpdateCursor(zl, ["JNSZN", "JENISSAMPEL", "PENGGUNAAN"]) as cursor1:
+                        for row in cursor1:
+                            row[0] = JNSZN            # JNSZN
+                            row[1] = str(JNSZN)       # JENISSAMPEL
+                            row[2] = jenis_zona       # PENGGUNAAN
+                            cursor1.updateRow(row)
+
+                    with arcpy.da.UpdateCursor(zl, ["JNSZN", "JENISSAMPEL", "BEDA_ZONA"]) as cursor2:
+                        for row in cursor2:
+                            JNSZN_str = str(row[0]) if row[0] is not None else ""
+                            jenissampel_list = []
+                            
+                            if row[1] is not None:
+                                jenissampel_list = [str(x).strip() for x in str(row[1]).split(",")]
+                                
+                            if JNSZN_str and JNSZN_str in jenissampel_list:
+                                row[2] = "Zona Sama"  # Menandai kesesuaian zona
+                            elif row[1] is not None: 
+                                row[2] = "Zona Beda"  # Menandai ketidaksesuaian zona
+                            else: 
+                                row[2] = "Tidak ada Jenis Zona Titik Sampel"  # Default value
+                                
+                            cursor2.updateRow(row)
+                            
             except Exception as e:
-                    if str(e) == 'Cannot acquire a lock.':
-                        arcpy.AddError(f'Tutup tabel atribut pada layer Zona_Layer sebelum menjalankan tool ini.')
-                        return
-                    else:
-                        arcpy.AddError(f"ERROR: Terjadi kesalahan saat mengupdate atribut jenis zona. {e}")
-                        return
+                if 'Cannot acquire a lock' in str(e):
+                    arcpy.AddError('Tutup tabel atribut pada layer Zona_Layer sebelum menjalankan tool ini.')
+                    return
+                else:
+                    arcpy.AddError(f"ERROR: Terjadi kesalahan saat mengupdate atribut jenis zona. {e}")
+                    return
 
-
-            cursor = arcpy.da.UpdateCursor(zl, ["JNSZN", "JENISSAMPEL","BEDA_ZONA"])
-            for row in cursor:
-                JNSZN_str = str(row[0])  # Konversi JNSZN ke string
-                jenissampel_list = []
-                if row[1] is not None:
-                    # Memisahkan nilai JENISSAMPEL yang dipisahkan koma
-                    jenissampel_list = [x.strip() for x in row[1].split(",")]
-                if JNSZN_str in jenissampel_list:
-                    row[2] = "Zona Sama"  # Menandai kesesuaian zona
-                elif row[1] is not None: 
-                    row[2] = "Zona Beda"  # Menandai ketidaksesuaian zona
-                else: 
-                    row[2] = "Tidak ada Jenis Zona Titik Sampel"  # Default value
-                cursor.updateRow(row)
-            del row, cursor
-
-            # Sinkronisasi ke Titik_Sampel
-            self.sinkronisasi_zoning(sampel, "Titik_Sampel_temp")
+            self.sinkronisasi_zoning(sampel, "Titik_Sampel_temp", workspace)
 
             sim_path = os.path.join(config_dan_paths['symbology_folder'], "Simbologi_Sesuaikan_Jenis_Zona.lyrx")
                 
-            arcpy.management.MakeFeatureLayer(config_dan_paths['zl_path'], "Zona_Layer")
-            arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+
+            arcpy.management.MakeFeatureLayer(os.path.join(config_dan_paths['dataset_path'], "Zona_Layer"), "Zona_Layer")
+            if arcpy.Exists(sim_path):
+                arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+            
             arcpy.SetParameter(1, "Zona_Layer")
         return
     
-    def sinkronisasi_zoning(self, layer_path, temp_name):
+    def sinkronisasi_zoning(self, layer_path, temp_name, workspace):
         if not arcpy.Exists(layer_path):
             return
-        zl= "Zona_Layer"
+            
+        zl = "Zona_Layer"
         out_temp_fc = fr"in_memory\{temp_name}"
 
         arcpy.analysis.SpatialJoin(
@@ -478,13 +476,14 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
             ["JNSZN"]
         )
 
-        with arcpy.da.UpdateCursor(layer_path, ["JNSZN", "Zoning"]) as cursor:
-            for row in cursor:
-                if row[0] is not None and row[1] != row[0]:
-                    row[1] = row[0]
-                cursor.updateRow(row)
+
+        with arcpy.da.Editor(workspace) as edit:
+            with arcpy.da.UpdateCursor(layer_path, ["JNSZN", "Zoning"]) as cursor:
+                for row in cursor:
+
+                    if row[0] is not None and row[1] != row[0]:
+                        row[1] = row[0]
+                        cursor.updateRow(row)
 
         arcpy.management.DeleteField(layer_path, "JNSZN")
-        arcpy.management.Delete(out_temp_fc)
-
- 
+        arcpy.management.Delete(out_temp_fc) 

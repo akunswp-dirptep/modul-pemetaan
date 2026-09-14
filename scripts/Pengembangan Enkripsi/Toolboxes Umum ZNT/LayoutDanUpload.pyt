@@ -41,10 +41,10 @@ class Cek_Topologi(object):
         
     def getParameterInfo(self):
         """Define parameter definitions"""
-       
+
         znt_layer = arcpy.Parameter(
             name="znt_layer",
-            datatype="GPFeatureLayer",
+            datatype="GPTopologyLayer", 
             parameterType="Derived",
             direction="Output"
         )
@@ -64,33 +64,25 @@ class Cek_Topologi(object):
             "3. Zona dengan kesalahan topologi akan ditampilkan pada peta.\n"
             "\n"
             "Direktorat Penilaian Tanah dan Ekonomi Pertanahan\n"
-            "Kementrian ATR/BPN\n"
+            "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.datetime.now().year)
-
         )
 
         return [znt_layer, penjelasan]
-
 
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
         return True
 
     def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
         return
 
     def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter.  This method is called after internal validation."""
         return
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-
-        config_dan_paths =zonalayer.get_config_values()
+        config_dan_paths = zonalayer.get_config_values()
 
         # Mengambil nilai konfigurasi
         dataset_path = config_dan_paths['dataset_path']  # Path dataset utama
@@ -100,16 +92,17 @@ class Cek_Topologi(object):
 
         if arcpy.Exists(topologi_path):
             arcpy.management.Delete(topologi_path)
+            
         arcpy.management.CreateTopology(dataset_path, topo_name)
         arcpy.management.AddFeatureClassToTopology(topologi_path, lay_main, 1, 1)
         arcpy.management.AddRuleToTopology(topologi_path, "Must Not Have Gaps (Area)", lay_main)
         arcpy.management.AddRuleToTopology(topologi_path, "Must Not Overlap (Area)", lay_main)
         arcpy.management.ValidateTopology(topologi_path)
-        aprx = arcpy.mp.ArcGISProject('CURRENT')
-        current_map = aprx.activeMap
-        current_map.addDataFromPath(topologi_path)
-        return
 
+        arcpy.SetParameter(0, topologi_path)
+        
+        return
+    
 class Tampilkan_Simbologi_Pembagian_Kelas(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""

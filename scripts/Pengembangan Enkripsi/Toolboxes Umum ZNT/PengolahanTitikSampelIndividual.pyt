@@ -107,7 +107,11 @@ class Rekomendasi_Titik_Pembanding(object):
 
 
         if len(check_if_there_zona_beda) > 0:
-            arcpy.AddError(f"Masih terdapat zona yang berbeda dengan titik sampelnya: {', '.join(check_if_there_zona_beda)}\nJalankan Tools Periksa Jenis Zona untuk mengecek lebih lanjut\nKemudian Perbaiki dengan Tools, Sesuaikan Atribut Jenis Zona (Lanjutan).")
+
+            daftar_beda = '\n '.join(check_if_there_zona_beda)
+
+            arcpy.AddError(f"Masih terdapat zona yang berbeda dengan titik sampelnya:\n {daftar_beda}\n\nJalankan Tools Periksa Jenis Zona untuk mengecek lebih lanjut.\nKemudian Perbaiki dengan Tools Sesuaikan Atribut Jenis Zona (Lanjutan).")
+
             sys.exit(1)
 
         if arcpy.Exists(self.titik_sampel_individu_path):
@@ -227,9 +231,7 @@ class Rekomendasi_Titik_Pembanding(object):
         ]
 
         if arcpy.Exists(tz_path):
-            layers_to_check.append(
-                (tz_path, "Titik_Zona", r"in_memory\identity_tz")
-            )
+            layers_to_check.append((tz_path, "Titik_Zona", r"in_memory\identity_tz"))
 
         for layer_path, layer_name, identity_fc in layers_to_check:
 
@@ -250,10 +252,9 @@ class Rekomendasi_Titik_Pembanding(object):
 
                 for nozona, jenis, zoning in cursor:
                     if str(jenis) != str(zoning):
-                        zona_beda.append(
-                            f"{layer_name} - NOZN {nozona} "
-                            f"(Zoning: {zoning}, Jenis Zona: {jenis})"
-                        )
+                        info_beda = f"{layer_name} - NOZN {nozona} (Zoning: {zoning}, Jenis Zona: {jenis})"
+                        if info_beda not in zona_beda:
+                            zona_beda.append(info_beda)
 
             arcpy.management.Delete(identity_fc)
 
@@ -1469,13 +1470,7 @@ class Setujui_Sampel_Individual(object):
     def execute(self, parameters, messages):
         """Eksekusi utama tool untuk menampilkan simbologi pada layer Titik Sampel"""
         config_paths = zonalayer.get_config_values()        
-        zl_topology_path = os.path.join(
-            config_paths['dataset_path'],
-            "Zona_Layer_Topology"
-        )
-
-        if arcpy.Exists(zl_topology_path):
-            arcpy.management.Delete(zl_topology_path)
+        workspace = config_paths['gdb_path']
 
         titik_sampel_individual = "Titik_Sampel_Individual"
         titik_sampel = "Titik_Sampel"
@@ -1547,22 +1542,23 @@ class Setujui_Sampel_Individual(object):
         listsampel = {}
 
         for identity_fc in identity_layers:
-            with arcpy.da.SearchCursor(
-                identity_fc,
-                ["NOZN", "JNSZN", "Zoning"]
-            ) as cursor:
+            with arcpy.da.Editor(workspace) as edit:
+                with arcpy.da.SearchCursor(
+                    identity_fc,
+                    ["NOZN", "JNSZN", "Zoning"]
+                ) as cursor:
 
-                for nozona, jenis, zoning in cursor:
+                    for nozona, jenis, zoning in cursor:
 
-                    if nozona not in listzona:
-                        listzona[nozona] = set()
-                    listzona[nozona].add(jenis)
+                        if nozona not in listzona:
+                            listzona[nozona] = set()
+                        listzona[nozona].add(jenis)
 
-                    if nozona not in listsampel:
-                        listsampel[nozona] = set()
+                        if nozona not in listsampel:
+                            listsampel[nozona] = set()
 
-                    if zoning is not None:
-                        listsampel[nozona].add(zoning)
+                        if zoning is not None:
+                            listsampel[nozona].add(zoning)
 
         field_names = [f.name for f in arcpy.ListFields(zl_path)]
 
@@ -1585,28 +1581,29 @@ class Setujui_Sampel_Individual(object):
             "TEXT",
             field_alias="BEDA ZONA"
         )
-        with arcpy.da.UpdateCursor(
-            zl_path,
-            ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]
-        ) as cursor:
+        with arcpy.da.Editor(workspace) as edit:
+            with arcpy.da.UpdateCursor(
+                zl_path,
+                ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]
+            ) as cursor:
 
-            for row in cursor:
-                nozona = row[0]
+                for row in cursor:
+                    nozona = row[0]
 
-                zl_type = set(listzona.get(nozona, []))
-                titiksampel = set(listsampel.get(nozona, []))
+                    zl_type = set(listzona.get(nozona, []))
+                    titiksampel = set(listsampel.get(nozona, []))
 
-                if zl_type == titiksampel:
-                    row[1] = "Zona Sama"
-                else:
-                    row[1] = "Zona Beda"
+                    if zl_type == titiksampel:
+                        row[1] = "Zona Sama"
+                    else:
+                        row[1] = "Zona Beda"
 
-                if titiksampel:
-                    row[2] = ", ".join(map(str, sorted(titiksampel)))
-                else:
-                    row[2] = "Tidak ada Jenis Zona Titik Sampel"
+                    if titiksampel:
+                        row[2] = ", ".join(map(str, sorted(titiksampel)))
+                    else:
+                        row[2] = "Tidak ada Jenis Zona Titik Sampel"
 
-                cursor.updateRow(row)
+                    cursor.updateRow(row)
 
         if "NILAIZN_LAMA" in field_names:
             urutan_field_baru = [

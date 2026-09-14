@@ -109,19 +109,10 @@ class Hitung_Luas_Zona_M2:
         # Pemenuhan kondisi No.1
         check_if_there_selected_field()
         zl = "Zona_Layer"
-        topo = 'Zona_Layer_Topology'
-        topologi = os.path.join(dataset_path, 'Zona_Layer_Topology')
         zl_path = os.path.join(dataset_path, "Zona_Layer")
         in_table_fields = [f.name for f in arcpy.ListFields(zl_path)]
 
         try:
-            # Pemenuhan kondisi No.2
-            if arcpy.Exists(topologi):
-                arcpy.management.RemoveFeatureClassFromTopology(topologi, "Zona_Layer")
-
-            if arcpy.Exists(topo):
-                arcpy.management.Delete(topo)
-
             # Pemenuhan kondisi No.3 dan No.5
             if "Luas_M2" not in in_table_fields:
                 arcpy.management.AddField(zl, "Luas_M2", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED")
@@ -188,6 +179,7 @@ class Kodifikasi_Zona:
 
         config_dan_paths = get_config_values()
         zl_path = config_dan_paths['zl_path']
+        workspace = config_dan_paths['gdb_path']
 
         check_if_there_selected_field()
 
@@ -261,32 +253,33 @@ class Kodifikasi_Zona:
             - Menerapkan logika khusus untuk mempertahankan atau menggabungkan nilai
             - Menghitung ulang jika nilai lama Null/Kosong
             """
-            with arcpy.da.UpdateCursor(zl_path, ["temp1", "temp", "temp3"]) as rows:
-                for row in rows:
-                    # 1. Cek jika nilai lama (temp1) Null, Kosong, atau hanya spasi
-                    if row[0] is None or str(row[0]).strip() == "" or str(row[0]).lower() == "none":
-                        row[2] = row[1]  # Langsung gunakan nilai zona baru
-                        
-                    # 2. Jika nilai lama sudah ada isinya
-                    else:
-                        nilai_lama = str(row[0])
-                        
-                        # Jika nilai lama pendek (<3 karakter)
-                        if len(nilai_lama) < 3:
-                            if nilai_lama == row[1]:  # Jika nilai lama sama dengan baru
-                                row[2] = row[1]   # Gunakan nilai baru
-                            else:  # Jika berbeda
-                                row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
-                        
-                        # Jika nilai lama panjang (>=3 karakter)
+            with arcpy.da.Editor(workspace) as edit:
+                with arcpy.da.UpdateCursor(zl_path, ["temp1", "temp", "temp3"]) as rows:
+                    for row in rows:
+                        # 1. Cek jika nilai lama (temp1) Null, Kosong, atau hanya spasi
+                        if row[0] is None or str(row[0]).strip() == "" or str(row[0]).lower() == "none":
+                            row[2] = row[1]  # Langsung gunakan nilai zona baru
+                            
+                        # 2. Jika nilai lama sudah ada isinya
                         else:
-                            if nilai_lama[-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
-                                row[2] = nilai_lama  # Pertahankan nilai lama
-                            else:  # Jika 2 karakter akhir berbeda
-                                row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
-                    
-                    rows.updateRow(row)
-            del rows, row
+                            nilai_lama = str(row[0])
+                            
+                            # Jika nilai lama pendek (<3 karakter)
+                            if len(nilai_lama) < 3:
+                                if nilai_lama == row[1]:  # Jika nilai lama sama dengan baru
+                                    row[2] = row[1]   # Gunakan nilai baru
+                                else:  # Jika berbeda
+                                    row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
+                            
+                            # Jika nilai lama panjang (>=3 karakter)
+                            else:
+                                if nilai_lama[-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
+                                    row[2] = nilai_lama  # Pertahankan nilai lama
+                                else:  # Jika 2 karakter akhir berbeda
+                                    row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
+                        
+                        rows.updateRow(row)
+                del rows, row
             
             # Memindahkan hasil akhir ke field HISTZONE
             arcpy.management.CalculateField(zl_path, "HISTZONE", "!temp3!", "PYTHON3")

@@ -46,7 +46,6 @@ class Periksa_Jenis_Zona(object):
             "Tool ini digunakan untuk memeriksa kesesuaian jenis zona\n"
             "antara Zona Layer dan Titik Sampel.\n"
             "\n"
-
             "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.now().year))
@@ -58,62 +57,45 @@ class Periksa_Jenis_Zona(object):
             direction="Output"
         )
 
-        return [penjelasan, output_zl]
+        output_ts = arcpy.Parameter(
+            name="output_ts",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        
+        output_tz = arcpy.Parameter(
+            name="output_tz",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [penjelasan, output_zl, output_ts, output_tz]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
         return True
 
     def updateParameters(self, parameters):
-        """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
         return
 
     def updateMessages(self, parameters):
-        """Modify the messages created by internal validation for each tool
-        parameter. This method is called after internal validation."""
         return
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        delete_bad_file()
-
         self.config_dan_paths = get_config_values()
-        zl_topology_path = os.path.join(
-            self.config_dan_paths['dataset_path'],
-            "Zona_Layer_Topology"
-        )
+        
+        ts_path = os.path.join(self.config_dan_paths['dataset_path'], "Titik_Sampel")
+        tz_path = os.path.join(self.config_dan_paths['dataset_path'], "Titik_Zona")
+        zl_path = os.path.join(self.config_dan_paths['dataset_path'], "Zona_Layer")
+        sim_path = os.path.join(self.config_dan_paths['symbology_folder'], "Simbologi_Periksa_Jenis_Zona.lyrx")
 
-        if arcpy.Exists(zl_topology_path):
-            arcpy.management.Delete(zl_topology_path)
+        sim_ts_path = os.path.join(self.config_dan_paths['symbology_folder'], "Titik_Sampel.lyrx")
+        sim_tz_path = os.path.join(self.config_dan_paths['symbology_folder'], "Titik_Zona.lyrx") 
 
-
-        ts_path = os.path.join(
-            self.config_dan_paths['dataset_path'],
-            "Titik_Sampel"
-        )
-
-        tz_path = os.path.join(
-            self.config_dan_paths['dataset_path'],
-            "Titik_Zona"
-        )
-
-        zl_path = os.path.join(
-            self.config_dan_paths['dataset_path'],
-            "Zona_Layer"
-        )
-
-        sim_path = os.path.join(
-            self.config_dan_paths['symbology_folder'],
-            "Simbologi_Periksa_Jenis_Zona.lyrx"
-        )
-
-        zl_topology_path = os.path.join(
-            self.config_dan_paths['dataset_path'],
-            "Zona_Layer_Topology"
-        )
-
+        zl_topology_path = os.path.join(self.config_dan_paths['dataset_path'], "Zona_Layer_Topology")
         if arcpy.Exists(zl_topology_path):
             arcpy.management.Delete(zl_topology_path)
 
@@ -137,16 +119,17 @@ class Periksa_Jenis_Zona(object):
                 identity_fc,
                 ["NOZN", "JNSZN", "Zoning"]
             ) as cursor:
-
                 for nozona, jenis, zoning in cursor:
+                    if nozona is None or str(nozona).strip() == "":
+                        continue
 
                     if nozona not in listzona:
                         listzona[nozona] = set()
-                    listzona[nozona].add(jenis)
+                    if jenis is not None:
+                        listzona[nozona].add(jenis)
 
                     if nozona not in listsampel:
                         listsampel[nozona] = set()
-
                     if zoning is not None:
                         listsampel[nozona].add(zoning)
 
@@ -155,34 +138,20 @@ class Periksa_Jenis_Zona(object):
 
         if "JENISSAMPEL" in field_names:
             arcpy.management.DeleteField(zl_path, "JENISSAMPEL")
-
         if "BEDA_ZONA" in field_names:
             arcpy.management.DeleteField(zl_path, "BEDA_ZONA")
 
         # Tambah field baru
-        arcpy.management.AddField(
-            zl_path,
-            "JENISSAMPEL",
-            "TEXT",
-            field_alias="JENIS SAMPEL"
-        )
-
-        arcpy.management.AddField(
-            zl_path,
-            "BEDA_ZONA",
-            "TEXT",
-            field_alias="BEDA ZONA"
-        )
+        arcpy.management.AddField(zl_path, "JENISSAMPEL", "TEXT", field_alias="JENIS SAMPEL")
+        arcpy.management.AddField(zl_path, "BEDA_ZONA", "TEXT", field_alias="BEDA ZONA")
 
         # Update hasil pemeriksaan
         with arcpy.da.UpdateCursor(
             zl_path,
             ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]
         ) as cursor:
-
             for row in cursor:
                 nozona = row[0]
-
                 zl_type = set(listzona.get(nozona, []))
                 titiksampel = set(listsampel.get(nozona, []))
 
@@ -215,16 +184,36 @@ class Periksa_Jenis_Zona(object):
         ]
         
         reorder_fields(zl_path, urutan_field_baru)
-        arcpy.management.MakeFeatureLayer(
-            zl_path,
-            "Zona_Layer"
-        )
+        
 
-        arcpy.management.ApplySymbologyFromLayer(
-            "Zona_Layer",
-            sim_path
-        )
+        if arcpy.Exists(ts_path):
+            arcpy.management.MakeFeatureLayer(ts_path, "Titik_Sampel")
+            if arcpy.Exists(sim_ts_path):
+                arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", sim_ts_path)
+            arcpy.management.SelectLayerByLocation("Titik_Sampel", "INTERSECT", zl_path, invert_spatial_relationship=True)
+            
+            count_ts = int(arcpy.management.GetCount("Titik_Sampel")[0])
+            if count_ts > 0:
+                arcpy.AddError(f"PERINGATAN: Terdapat {count_ts} Titik Sampel yang berada di LUAR Zona Layer. Lihat titik Terpilih di Peta!")
+            
+            arcpy.SetParameter(2, "Titik_Sampel")
 
+        if arcpy.Exists(tz_path):
+            arcpy.management.MakeFeatureLayer(tz_path, "Titik_Zona")
+            if arcpy.Exists(sim_tz_path):
+                arcpy.management.ApplySymbologyFromLayer("Titik_Zona", sim_tz_path)
+            arcpy.management.SelectLayerByLocation("Titik_Zona", "INTERSECT", zl_path, invert_spatial_relationship=True)
+            
+            count_tz = int(arcpy.management.GetCount("Titik_Zona")[0])
+            if count_tz > 0:
+                arcpy.AddError(f"PERINGATAN: Terdapat {count_tz} Titik Zona yang berada di LUAR Zona Layer. Lihat titik Terpilih di Peta!")
+            
+            arcpy.SetParameter(3, "Titik_Zona")
+            
+        arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
+        if arcpy.Exists(sim_path):
+            arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+            
         arcpy.SetParameter(1, "Zona_Layer")
 
         # Cleanup temporary identity
@@ -233,11 +222,9 @@ class Periksa_Jenis_Zona(object):
                 arcpy.management.Delete(fc)
 
         return
+
     def postExecute(self, parameters):
-        """This method takes place after outputs are processed and
-        added to the display."""
         return
-    
 class Sesuaikan_Jenis_Zona(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""

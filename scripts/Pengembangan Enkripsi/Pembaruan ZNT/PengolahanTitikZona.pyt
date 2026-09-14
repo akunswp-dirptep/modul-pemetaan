@@ -981,8 +981,9 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
         dataset_path = config_dan_paths['dataset_path']
         symbology_folder = config_dan_paths['symbology_folder']
         zl_path = os.path.join(dataset_path, 'Zona_Layer')
-        self.check_and_prepare_nomor_zona(zl_path)
-        self.recodify_histzone(zl_path)
+        workspace = config_dan_paths['gdb_path']
+        self.check_and_prepare_nomor_zona(zl_path, workspace=workspace)
+        self.recodify_histzone(zl_path, workspace)
 
         zl_path = os.path.join(dataset_path, "Zona_Layer")
         sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Pada_Zona.lyrx")
@@ -996,7 +997,7 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
         added to the display."""
         return
 
-    def check_and_prepare_nomor_zona(self, layer):
+    def check_and_prepare_nomor_zona(self, layer, workspace):
         """
         Memastikan tidak ada nomor zona yang null atau terduplikat.
         Jika ada duplikasi, zona dengan luas (Luas_M2) terbesar mempertahankan nomor zonanya,
@@ -1010,51 +1011,51 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
 
         # Kumpulkan data zona: {nomorzone: [(FID, luas), ...]}
         zona_data = {}
-        
-        with arcpy.da.SearchCursor(layer, ['OID@', nomorzone_field, luas_field]) as cursor:
-            for row in cursor:
-                fid, nozone, luas = row
-                if nozone is not None:
-                    if nozone not in zona_data:
-                        zona_data[nozone] = []
-                    zona_data[nozone].append((fid, luas if luas is not None else 0))
-        
-        # Tentukan FID mana yang harus di-null-kan (duplikat dengan luas lebih kecil)
-        fids_to_nullify = []
-        
-        for nozone, records in zona_data.items():
-            if len(records) > 1:  # Ada duplikasi
-                # Urutkan berdasarkan luas (descending), ambil yang terluas
-                records_sorted = sorted(records, key=lambda x: x[1], reverse=True)
-                # Semua kecuali yang luasnya terbesar akan di-null-kan
-                for fid, luas in records_sorted[1:]:
-                    fids_to_nullify.append(fid)
-        
-        # Null-kan nomor zona yang duplikat (kecuali yang nilai tertinggi)
-        if fids_to_nullify:
-            with arcpy.da.UpdateCursor(layer, ['OID@', nomorzone_field]) as cursor:
+        with arcpy.da.Editor(workspace) as edit:
+            with arcpy.da.SearchCursor(layer, ['OID@', nomorzone_field, luas_field]) as cursor:
                 for row in cursor:
-                    if row[0] in fids_to_nullify:
-                        row[1] = -1
+                    fid, nozone, luas = row
+                    if nozone is not None:
+                        if nozone not in zona_data:
+                            zona_data[nozone] = []
+                        zona_data[nozone].append((fid, luas if luas is not None else 0))
+        
+            # Tentukan FID mana yang harus di-null-kan (duplikat dengan luas lebih kecil)
+            fids_to_nullify = []
+            
+            for nozone, records in zona_data.items():
+                if len(records) > 1:  # Ada duplikasi
+                    # Urutkan berdasarkan luas (descending), ambil yang terluas
+                    records_sorted = sorted(records, key=lambda x: x[1], reverse=True)
+                    # Semua kecuali yang luasnya terbesar akan di-null-kan
+                    for fid, luas in records_sorted[1:]:
+                        fids_to_nullify.append(fid)
+            
+            # Null-kan nomor zona yang duplikat (kecuali yang nilai tertinggi)
+            if fids_to_nullify:
+                with arcpy.da.UpdateCursor(layer, ['OID@', nomorzone_field]) as cursor:
+                    for row in cursor:
+                        if row[0] in fids_to_nullify:
+                            row[1] = -1
+                            cursor.updateRow(row)
+            
+            # Cari nomor zona maksimum yang valid
+            max_nozone = 0
+            with arcpy.da.SearchCursor(layer, [nomorzone_field]) as cursor:
+                for row in cursor:
+                    if row[0] is not None and int(row[0]) > max_nozone:
+                        max_nozone = int(row[0])
+            
+            # Isi ulang nomor zona yang sudah ditandai dengan auto-increment
+            current_nozone = max_nozone
+            with arcpy.da.UpdateCursor(layer, [nomorzone_field]) as cursor:
+                for row in cursor:
+                    if row[0] == -1:
+                        current_nozone += 1
+                        row[0] = current_nozone
                         cursor.updateRow(row)
-        
-        # Cari nomor zona maksimum yang valid
-        max_nozone = 0
-        with arcpy.da.SearchCursor(layer, [nomorzone_field]) as cursor:
-            for row in cursor:
-                if row[0] is not None and int(row[0]) > max_nozone:
-                    max_nozone = int(row[0])
-        
-        # Isi ulang nomor zona yang sudah ditandai dengan auto-increment
-        current_nozone = max_nozone
-        with arcpy.da.UpdateCursor(layer, [nomorzone_field]) as cursor:
-            for row in cursor:
-                if row[0] == -1:
-                    current_nozone += 1
-                    row[0] = current_nozone
-                    cursor.updateRow(row)
 
-    def recodify_histzone(self, zl_path):
+    def recodify_histzone(self, zl_path, workspace):
         try:
             # Mendapatkan daftar field yang ada dalam layer
             field_names = [field.name for field in arcpy.ListFields(zl_path)]
@@ -1124,24 +1125,25 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
                 - Membandingkan nilai lama (temp1) dengan nilai baru (temp)
                 - Menerapkan logika khusus untuk mempertahankan atau menggabungkan nilai
                 """
-                with arcpy.da.UpdateCursor(zl_path, ["temp1", "temp", "temp3"]) as rows:
-                    for row in rows:
-                        # Jika nilai lama pendek (<3 karakter)
-                        if len(row[0]) < 3:
-                            if row[0] == row[1]:  # Jika nilai lama sama dengan baru
-                                row[2] = row[1]   # Gunakan nilai baru
-                            elif row[0] != row[1]:  # Jika berbeda
-                                row[2] = row[0] + row[1]  # Gabungkan lama + baru
-                        
-                        # Jika nilai lama panjang (=3 karakter)
-                        else:
-                            if row[0][-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
-                                row[2] = row[0]  # Pertahankan nilai lama
-                            elif row[0][-2:] != row[1][-2:]:  # Jika 2 karakter akhir berbeda
-                                row[2] = row[0] + row[1]  # Gabungkan lama + baru
-                        
-                        rows.updateRow(row)
-                del rows, row
+                with arcpy.da.Editor(workspace) as edit:
+                    with arcpy.da.UpdateCursor(zl_path, ["temp1", "temp", "temp3"]) as rows:
+                        for row in rows:
+                            # Jika nilai lama pendek (<3 karakter)
+                            if len(row[0]) < 3:
+                                if row[0] == row[1]:  # Jika nilai lama sama dengan baru
+                                    row[2] = row[1]   # Gunakan nilai baru
+                                elif row[0] != row[1]:  # Jika berbeda
+                                    row[2] = row[0] + row[1]  # Gabungkan lama + baru
+                            
+                            # Jika nilai lama panjang (=3 karakter)
+                            else:
+                                if row[0][-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
+                                    row[2] = row[0]  # Pertahankan nilai lama
+                                elif row[0][-2:] != row[1][-2:]:  # Jika 2 karakter akhir berbeda
+                                    row[2] = row[0] + row[1]  # Gabungkan lama + baru
+                            
+                            rows.updateRow(row)
+                    del rows, row
                 
                 # Memindahkan hasil akhir ke field HISTZONE
                 arcpy.management.CalculateField(zl_path, "HISTZONE", "!temp3!", "PYTHON3")

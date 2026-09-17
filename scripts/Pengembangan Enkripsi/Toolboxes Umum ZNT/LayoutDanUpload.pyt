@@ -9,7 +9,7 @@ if parent_dir not in sys.path:
 from zntutils.constant import PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
-from zntutils.system_utils import get_user_data, get_all_berkas_id, setup_user_data 
+from zntutils.system_utils import get_user_data, get_all_berkas_id, setup_user_data , clear_user_data
 from zntutils import document
 
 
@@ -611,10 +611,13 @@ class Tampilkan_Jenis_Penggunaan_Dengan_Transparansi_Pada_Zona(object):
         return
 
 class Upload_Layout_Ke_Sipenta(object):
+    
     def __init__(self):
         self.label = "Upload Hasil Layout ke Sipenta"
         self.description = "Eksport layout dari ArcGIS Pro ke PDF dan otomatis kirim ke SIPENTA."
         self.canRunInBackground = False
+        # Simpan state berkas sebelumnya agar parameter tidak selalu ter-reset
+        self.previous_berkas = None
 
     def getParameterInfo(self):
         # Dropdown list Layout dari Project Aktif
@@ -627,9 +630,9 @@ class Upload_Layout_Ke_Sipenta(object):
                     berkas_show.append(f"{berkas[0]}")
                     can_show += 1
             if can_show == 0:
-                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+                berkas_show = ["Tidak ada berkas yang dapat dipilih"]
         else:
-            berkas_show = ['Tidak ada berkas yang dapat dipilih'] 
+            berkas_show = ["Tidak ada berkas yang dapat dipilih"] 
 
         param_layout = arcpy.Parameter(
             displayName="Pilih Layout",
@@ -644,93 +647,163 @@ class Upload_Layout_Ke_Sipenta(object):
             name="link",
             datatype="GPString",
             parameterType="Required",
-            direction="Input")
+            direction="Input"
+        )
 
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
 
         if berkas_list:
-            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
             berkas.value = preferred_berkas   
         else:
-            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+            berkas.value = "Tidak ada berkas yang dapat dipilih"
         
         # Dropdown Parameter Peta
         param_peta = arcpy.Parameter(
-            displayName="Parameter Peta",
+            displayName="Jenis Peta",
             name="param_peta",
             datatype="GPString",
             parameterType="Required",
             direction="Input"
         )
-        
-        # Daftar parameter sesuai request
         param_peta.filter.type = "ValueList"
-        param_peta.filter.list = [
-            'pembuatan_znt_peta_pdf_zona_awal_nilai_tanah',
-            'pembuatan_znt_peta_pdf_sebaran_sampel',
-            'pembuatan_znt_peta_pdf_standar_deviasi',
-            'pembuatan_znt_peta_pdf_znt',
-            'pembaruan_znt_peta_hasil_survei_batas_zona_pdf',
-            'pembaruan_znt_peta_sebaran_sampel_nilai_tanah',
-            'pembaruan_znt_peta_simpangan_baku_relatif',
-            'pembaruan_znt_peta_zona_nilai_tanah',
-            'pembuatan_nbt_peta_sebaran_sampel',
-            'pembuatan_nbt_peta_nilai_bidang_tanah',
-            'pembaruan_nbt_peta_sebaran_sampel',
-            'pembaruan_nbt_peta_nilai_bidang_tanah'
-        ]
+        # Set default awal saat pertama kali dibuka
+        param_peta.filter.list = ["Pilih Berkas Terlebih Dahulu"]
+        
+        list_ttd = arcpy.Parameter(
+            displayName="Pilih Penandatangan",
+            name="surveyor_list",
+            datatype="GPString",       
+            multiValue=True,           
+            parameterType="Required",
+            direction="Input"
+        )
+        list_ttd.filter.type = "ValueList"
+        # Set default awal saat pertama kali dibuka
+        list_ttd.filter.list = ["Pilih Berkas Terlebih Dahulu"]
 
-        return [param_layout, berkas, param_peta]
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        
+        penjelasan.value = (
+            "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+            "Kementerian ATR/BPN.\n"
+            f"Tahun: {datetime.datetime.now().year}\n"
+        )
+        
+        return [param_layout, berkas, param_peta, list_ttd, penjelasan]
 
     def updateParameters(self, parameters):
-        try:
-            aprx = arcpy.mp.ArcGISProject("CURRENT")
-            layouts = [lyt.name for lyt in aprx.listLayouts()]
-            
-            parameters[0].filter.type = "ValueList"
-            
-            if len(layouts) > 0:
-                parameters[0].filter.list = layouts
-            else:
-                parameters[0].filter.list = ['Tidak ada Layout yang dapat dipilih']
-                
-        except Exception:
-            parameters[0].filter.type = "ValueList"
-            parameters[0].filter.list = ['Tidak ada Layout yang dapat dipilih']
+        param_layout = parameters[0]
+        berkas = parameters[1]
+        param_peta = parameters[2]
+        list_ttd = parameters[3]
+        penjelasan = parameters[4]
 
-        # 3. Update parameter Peta berdasarkan Berkas
-        if parameters[1].altered:
-            value = parameters[1].valueAsText
-            if value: 
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            param_layout.enabled = False
+            berkas.enabled = False
+            param_peta.enabled = False
+            list_ttd.enabled = False
+            penjelasan.enabled = True
+            return 
+        else:
+            penjelasan.value = (
+                "Pastikan layout sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                f"Tahun: {datetime.datetime.now().year}\n"
+            )
+            
+            try:
+                aprx = arcpy.mp.ArcGISProject("CURRENT")
+                layouts = [lyt.name for lyt in aprx.listLayouts()]
+                param_layout.filter.type = "ValueList"
+                
+                if len(layouts) > 0:
+                    param_layout.filter.list = layouts
+                else:
+                    param_layout.filter.list = ['Tidak ada Layout yang dapat dipilih']
+            except Exception:
+                param_layout.filter.type = "ValueList"
+                param_layout.filter.list = ['Tidak ada Layout yang dapat dipilih']
+
+            value = berkas.valueAsText
+
+            if value and value != "Tidak ada berkas yang dapat dipilih" and value.strip() != "":
+                
                 kode = value[:2]
                 mapping_data = {
-                    '01': [
-                        'Peta Zona Awal Nilai Tanah',
-                        'Peta Sebaran Sampel',
-                        'Peta Simpangan Baku Relatif',
-                        'Peta Zona Nilai Tanah'
-                    ],
-                    '02': [
-                        'Peta Hasil Survei Batas Zona',
-                        'Peta Sebaran Sampel',
-                        'Peta Simpangan Baku Relatif',
-                        'Peta Zona Nilai Tanah'
-                    ],
-                    '03': [
-                        'Peta Sebaran Sampel',
-                        'Peta Nilai Bidang Tanah'
-                    ],
-                    '04': [
-                        'Peta Sebaran Sampel',
-                        'Peta Nilai Bidang Tanah'
-                    ]
+                    "01": ["Peta Zona Awal Nilai Tanah", "Peta Sebaran Sampel", "Peta Simpangan Baku Relatif", "Peta Zona Nilai Tanah"],
+                    "02": ["Peta Hasil Survei Batas Zona", "Peta Sebaran Sampel", "Peta Simpangan Baku Relatif", "Peta Zona Nilai Tanah"],
+                    "03": ["Peta Sebaran Sampel", "Peta Nilai Bidang Tanah"],
+                    "04": ["Peta Sebaran Sampel", "Peta Nilai Bidang Tanah"],
                 }
-                
+
                 if kode in mapping_data:
-                    parameters[2].filter.list = mapping_data[kode]
+                    param_peta.filter.list = mapping_data[kode]
+                else:
+                    param_peta.filter.list = ["Jenis peta tidak ditemukan"]
+
+                # ====================================================================================
+                # KUNCI PERBAIKAN:
+                # Hanya reset nilai dan panggil API TTD JIKA parameter Berkas (parameters[1]) yang
+                # baru saja di-alter (diubah) OLEH PENGGUNA dan belum di-validate oleh UI.
+                # Jika user mengklik parameter Jenis Peta, maka berkas.altered tidak memicu reset.
+                # ====================================================================================
+                if berkas.altered and not berkas.hasBeenValidated:
+                    # Reset nilai terpilih sebelumnya karena berkas berganti
+                    list_ttd.value = None
+                    param_peta.value = None
+                    
+                    # Tarik data TTD via API
+                    try:
+                        user_data = get_user_data(CREDENTIAL_KEY)
+                        token = user_data.get(AUTH_KEY, None) if user_data else None
+                        server = get_user_data(PREFERRED_SERVER_KEY)
+                        use_production = True if server == "Produksi" or server is None else False
+                        
+                        if token:
+                            api_data = self.call_tte_api(token, value, use_production)
+                            penandatangan = set()
+                            
+                            if api_data and "data" in api_data:
+                                for f in api_data["data"]:
+                                    if "nama" in f:
+                                        penandatangan.add(f["nama"])
+                            
+                            if penandatangan:
+                                list_ttd.filter.list = sorted(list(penandatangan))
+                            else:
+                                list_ttd.filter.list = ["Tidak ada penandatangan ditemukan"]
+                        else:
+                            list_ttd.filter.list = ["Token tidak valid/tidak ditemukan"]
+
+                    except Exception:
+                        list_ttd.filter.list = ["Terdapat kendala ketika menarik data penandatangan"]
+
+            # --- JIKA BERKAS KOSONG ATAU BELUM DIPILIH ---
+            else:
+                param_peta.filter.list = ["Pilih Berkas Terlebih Dahulu"]
+                list_ttd.filter.list = ["Pilih Berkas Terlebih Dahulu"]
+                # Hanya reset nilainya jika memang belum di-reset
+                if param_peta.value: 
+                    param_peta.value = None
+                if list_ttd.value:
+                    list_ttd.value = None
+
         return
 
+        return
     def updateMessages(self, parameters):
         # Jika nilai parameter layout adalah pesan kosong, cegah tool berjalan
         if parameters[0].valueAsText == 'Tidak ada Layout yang dapat dipilih':
@@ -787,7 +860,6 @@ class Upload_Layout_Ke_Sipenta(object):
 
         param_upload = mapping_param[kode_param]
 
-        # Proses Upload (Sesuai parameter dari screenshot Postman/Insomnia)
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload/layout"
         prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/upload/layout"
         url = prod_url if use_production else test_url
@@ -822,3 +894,63 @@ class Upload_Layout_Ke_Sipenta(object):
             arcpy.AddError(f"Terjadi kesalahan saat menghubungi API: {str(e)}")
 
         return
+
+    def call_tte_api(self, token, nomor_berkas, use_production=True):
+
+        # URL untuk testing dan produksi
+        test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/spesimen?no_berkas={nomor_berkas}"
+        prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/spesimen?no_berkas={nomor_berkas}"
+    
+        url = prod_url if use_production else test_url
+
+        try:
+            # Mengambil data dari API
+            arcpy.AddMessage("Mengambil data Titik Sampel...")
+            headers = {
+                    "Authorization": f"Bearer {token}"
+                }
+            response = requests.get(url, headers=headers, timeout=60)  
+            response.raise_for_status()  # Akan raise exception untuk HTTP error
+            
+            data = response.json()
+            
+            if not data:
+                arcpy.AddError('Server Tidak mengirimkan Apapun')
+
+            return data
+        except requests.exceptions.HTTPError as e:
+        # Ambil response dari exception
+            response = e.response
+
+            try:
+                error_json = response.json()
+                message = error_json.get("message", "")
+            except Exception:
+                message = ""
+
+            # Handle khusus token expired
+            if response.status_code == 403 and "expired" in message.lower():
+                clear_user_data()
+                raise Exception("Token Anda kadaluarsa, silakan login ulang.")
+            
+            if response.status_code == 404 and message:
+                arcpy.AddError(message)
+                sys.exit(0)
+
+            # Handle forbidden biasa
+            elif response.status_code == 403:
+                raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
+
+            else:
+                raise Exception(f"HTTP Error: {e}")
+        
+        except requests.exceptions.RequestException as e:
+            error_msg = str(e)
+            if "NameResolutionError" in error_msg or "getaddrinfo failed" in error_msg or "Max retries exceeded" in error_msg:
+                arcpy.AddError("Koneksi terputus, silakan cek jaringan internet Anda dan coba lagi.")
+            else:
+                arcpy.AddError(f"Error koneksi ke server: {error_msg}")
+                
+        except json.JSONDecodeError as e:
+            arcpy.AddError(f"Error ketika mengubah respon API ke JSON: {str(e)}")
+            raise arcpy.ExecuteError

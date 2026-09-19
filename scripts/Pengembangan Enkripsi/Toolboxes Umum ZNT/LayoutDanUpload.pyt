@@ -30,7 +30,7 @@ class Toolbox:
                       Tampilkan_Jenis_Penggunaan_Pada_Zona,
                       Tampilkan_Jenis_Penggunaan_Dengan_Transparansi_Pada_Zona,
                       Upload_Layout_Ke_Sipenta,
-                      Tambah_Box_TTE]
+                      Tambah_Kotak_TTE]
 
 class Cek_Topologi(object):
     def __init__(self):
@@ -768,6 +768,9 @@ class Upload_Layout_Ke_Sipenta(object):
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         layout = aprx.listLayouts(layout_name)[0]
 
+        spesimen_tte = self.check_tte_box(layout_name)
+        arcpy.AddMessage(str(spesimen_tte).replace("'", '"'))
+
 
         scratch_folder = arcpy.env.scratchFolder
         pdf_filename = f"{layout_name.replace(' ', '_')}.pdf"
@@ -808,7 +811,8 @@ class Upload_Layout_Ke_Sipenta(object):
         
         payload_data = {
             "no_berkas": no_berkas,
-            "param": param_upload
+            "param": param_upload,
+            'spesimen': str(spesimen_tte).replace("'", '"')
         }
 
         arcpy.AddMessage("Mengirim file PDF ke API SIPENTA...")
@@ -833,7 +837,37 @@ class Upload_Layout_Ke_Sipenta(object):
 
         return
 
-class Tambah_Box_TTE(object):
+    def check_tte_box(self, layout_name):
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        layout = aprx.listLayouts(layout_name)[0] 
+
+        spesimen_list = []
+        urutan = 1
+
+        elements = layout.listElements("TEXT_ELEMENT", "TTE_*")
+        for el in elements:
+            try:
+                id_spesimen = int(el.name.split("_")[1])
+                
+                spesimen = {
+                    "id_spesimen": id_spesimen,
+                    "urutan": urutan,
+                    "position": {
+                        "x": round(el.elementPositionX, 2) * 10,
+                        "y": round(el.elementPositionY, 2) * 10,
+                        "width": round(el.elementWidth, 2) * 10,
+                        "height": round(el.elementHeight, 2) * 10
+                    }
+                }
+                spesimen_list.append(spesimen)
+                urutan += 1
+            except (IndexError, ValueError):
+                continue
+
+        # 3. Mengembalikan array of objects untuk dirakit menjadi payload
+        return spesimen_list
+
+class Tambah_Kotak_TTE(object):
     def __init__(self):
         self.label = "Tambah Kotak TTE"
         self.description = "Membuat kotak placeholder TTE di Layout aktif"
@@ -913,7 +947,7 @@ class Tambah_Box_TTE(object):
             return 
         else:
             penjelasan.value = (
-                "Pastikan layout sudah benar sebelum diupload.\n\n"
+                "Pastikan spesimen TTE sudah ditambahkan di SIPENTA.\n\n"
                 "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
                 "Kementerian ATR/BPN.\n"
                 f"Tahun: {datetime.datetime.now().year}\n"
@@ -954,7 +988,6 @@ class Tambah_Box_TTE(object):
                 api_data = self.call_tte_api(token, berkas, use_production)
                             
                 if api_data and "data" in api_data:
-                    # [PERBAIKAN BUG] Menyimpan object lengkap ke dictionary agar id_spesimen tidak hilang
                     unique_ttd = {}
                     for f in api_data["data"]:
                         nama = f.get("nama")
@@ -974,7 +1007,7 @@ class Tambah_Box_TTE(object):
             arcpy.AddError(f'Terdapat kendala: {str(e)}')
             raise arcpy.ExecuteError
 
-        # [PERBAIKAN BUG] membalik posisi count dan data_tte (karena enumerate formatnya index, value)
+        self.hapus_elemen_tte(layout_name)
         for count, data_tte in enumerate(list_ttd):
             self.create_tte_text_box(data_tte, count, layout_name)
             
@@ -1036,212 +1069,100 @@ class Tambah_Box_TTE(object):
                 
         except json.JSONDecodeError as e:
             raise Exception(f"Error ketika mengubah respon API ke JSON: {str(e)}")
-        
-    # def create_tte_text_box(self, data_tte, count, layout_name):
-    #     aprx = arcpy.mp.ArcGISProject("CURRENT")
-    #     lyt = aprx.listLayouts(layout_name)[0]
-        
-    #     # Penempatan bergeser sedikit untuk setiap kotak agar tidak bertumpuk
-    #     x_min, y_min = 2.0 + count, 2.0 + count
-    #     width, height = 6.0, 2.0 
-        
-    #     arr = arcpy.Array([
-    #         arcpy.Point(x_min, y_min),
-    #         arcpy.Point(x_min, y_min + height),
-    #         arcpy.Point(x_min + width, y_min + height),
-    #         arcpy.Point(x_min + width, y_min),
-    #         arcpy.Point(x_min, y_min)
-    #     ])
-    #     polygon_geom = arcpy.Polygon(arr)
-        
-    #     id_spesimen = data_tte.get('id_spesimen', '0')
-    #     nama = data_tte.get('nama', 'Tanpa Nama')
-    #     jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
-        
-    #     element_name = f"TTE_{id_spesimen}"
-        
-    #     # Teks dengan format multi-baris
-    #     display_text = f"[ TEMPAT TTE ]\n{jabatan}\n{nama}\n(ID: {id_spesimen})"
-        
-    #     try:
-    #         # 1. Buat elemen teks polygon standar
-    #         new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)
-            
-    #         # --- 2. MODIFIKASI CIM UNTUK FORMAT RATA TENGAH ---
-    #         cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
-    #         cim_elm = new_text_el.getDefinition(cim_version)
-            
-    #         # Akses pengaturan teks melalui properti 'graphic'
-    #         cim_elm.graphic.symbol.symbol.horizontalAlignment = 'Center'
-    #         cim_elm.graphic.symbol.symbol.verticalAlignment = 'Center'
-            
-    #         # Terapkan modifikasi kembali ke elemen teks
-    #         new_text_el.setDefinition(cim_elm)
-    #         # --------------------------------------------------
-            
-    #         arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan dengan format rata tengah.")
-        
-    #     except AttributeError as e:
-    #         arcpy.AddError("Gagal memodifikasi CIM teks. Pastikan menggunakan ArcGIS Pro versi 3.0 ke atas.")
-    #         arcpy.AddError(f"Detail Error Asli: {str(e)}")
-    #         raise arcpy.ExecuteError
-            
-    #     except Exception as e:
-    #         arcpy.AddError(f"Terjadi kesalahan saat membuat kotak: {str(e)}")
-    #         raise arcpy.ExecuteError
-    def create_tte_text_box(self, data_tte, count, layout_name):    
+
+    def hapus_elemen_tte(self, layout_name):
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         lyt = aprx.listLayouts(layout_name)[0]
+        semua_elemen = lyt.listElements()
+        jumlah_dihapus = 0
         
-        # --- 1. CARI ELEMEN TEMPLATE ---
-        template_els = lyt.listElements("TEXT_ELEMENT", "Template_TTE")
-        if not template_els:
-            arcpy.AddError("Gagal: Elemen teks bernama 'Template_TTE' tidak ditemukan di layout.")
+        for el in semua_elemen:
+
+            if el.name and "TTE_" in el.name:
+                try:
+
+                    if hasattr(lyt, 'deleteElement'):
+                        lyt.deleteElement(el)
+                    elif hasattr(el, 'delete'):
+                        el.delete()
+                    else:
+                        el.visible = False
+                        el.elementPositionX = -9999
+                        el.elementPositionY = -9999
+                    
+                    jumlah_dihapus += 1
+                    arcpy.AddMessage(f"Elemen '{el.name}' berhasil dihilangkan.")
+                    
+                except Exception as e:
+                    arcpy.AddWarning(f"Gagal memproses elemen {el.name}: {str(e)}")
+                    
+        return jumlah_dihapus
+
+    def create_tte_text_box(self, data_tte, count, layout_name):
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        lyt = aprx.listLayouts(layout_name)[0]
+        nama_layout_template_item = "Template_Item"
+        pagx_file_path = r"C:\PenilaianTanah\template\zona nilai tanah\Layout Standardisasi\6. Template Sistem\Template_Item.pagx"
+        template_layouts = aprx.listLayouts(nama_layout_template_item)
+        if not template_layouts:
+            try:
+                aprx.importDocument(pagx_file_path)
+                arcpy.AddMessage(f"Layout '{nama_layout_template_item}' otomatis diimpor dari file .pagx.")
+                template_layouts = aprx.listLayouts(nama_layout_template_item)
+            except Exception as e:
+                arcpy.AddError(f"{e}")
+                raise arcpy.ExecuteError
+        template_lyt = template_layouts[0]
+        tte_template_items = template_lyt.listElements("TEXT_ELEMENT", "Template_TTE")
+        if not tte_template_items:
+            arcpy.AddError('Template TTE Tidak ditemukan')
             raise arcpy.ExecuteError
-            
-        template_el = template_els[0]
+
+        tte_template_item = tte_template_items[0]
+
         cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
-        # -------------------------------
-        
-        # Penempatan bergeser sedikit agar kotak tidak bertumpuk di satu titik
-        x_min, y_min = 2.0 + (count * 0.5), 2.0 + (count * 0.5)
-        width, height = 6.0, 2.0 
-        
+        x_initial, y_initial = 90 + count, 2 + count
+        width, height = 9.0, 3.0
         arr = arcpy.Array([
-            arcpy.Point(x_min, y_min),
-            arcpy.Point(x_min, y_min + height),
-            arcpy.Point(x_min + width, y_min + height),
-            arcpy.Point(x_min + width, y_min),
-            arcpy.Point(x_min, y_min)
+            arcpy.Point(x_initial, y_initial),
+            arcpy.Point(x_initial, y_initial + height),
+            arcpy.Point(x_initial + width, y_initial + height),
+            arcpy.Point(x_initial + width, y_initial),
+            arcpy.Point(x_initial, y_initial),
+
         ])
         polygon_geom = arcpy.Polygon(arr)
-        
         id_spesimen = data_tte.get('id_spesimen', '0')
         nama = data_tte.get('nama', 'Tanpa Nama')
         jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
+        nip = data_tte.get('nip', '0')
         
         element_name = f"TTE_{id_spesimen}"
-        display_text = f"[ TEMPAT TTE ]\n{jabatan}\n{nama}\n(ID: {id_spesimen})"
+        display_text = f"[ Akan ditandatangani secara elektronik oleh ]\n\n{jabatan}\n{nama}\n"
         
         try:
-            # 2. Buat elemen baru sebagai "wadah"
             new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)
             
-            # 3. Tarik data struktur format (CIM) dari wadah baru dan template
             cim_new = new_text_el.getDefinition(cim_version)
-            cim_template = template_el.getDefinition(cim_version)
+            cim_template = tte_template_item.getDefinition(cim_version)
             
-            # 4. Simpan posisi (shape) dan isi teks yang digenerate oleh script
             new_shape = cim_new.graphic.shape
             new_text = cim_new.graphic.text
             
-            # 5. COPY-PASTE SELURUH GRAFIS TEMPLATE KE ELEMEN BARU
-            # Ini akan menarik semua warna, hatch pattern, outline, callout, dan font
+
             cim_new.graphic = cim_template.graphic
             
-            # 6. Kembalikan posisi dan isi teks ke wadah baru agar tidak sama persis dengan template
             cim_new.graphic.shape = new_shape
             cim_new.graphic.text = new_text
             
-            # 7. Terapkan perubahan kembali ke elemen teks
             new_text_el.setDefinition(cim_new)
             
-            arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan persis dengan format Template.")
+            arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan mengambil gaya dari template.")
         
         except AttributeError as e:
-            arcpy.AddError("Gagal memodifikasi format. Pastikan menggunakan ArcGIS Pro versi 3.0 ke atas.")
-            arcpy.AddError(f"Detail Error Asli: {str(e)}")
+            arcpy.AddError(f"Detail Error : {str(e)}")
             raise arcpy.ExecuteError
             
         except Exception as e:
             arcpy.AddError(f"Terjadi kesalahan saat membuat kotak: {str(e)}")
             raise arcpy.ExecuteError
-
-
-    # def create_tte_text_box(self, data_tte, count, layout_name):
-    #     aprx = arcpy.mp.ArcGISProject("CURRENT")
-    #     lyt = aprx.listLayouts(layout_name)[0]
-        
-    #     # --- 1. CEK DAN IMPOR LAYOUT TEMPLATE ---
-    #     nama_layout_template = "Template_Layout" 
-        
-    #     # Ganti path ini dengan lokasi file .pagx Anda di komputer/server
-    #     path_file_pagx = r"C:\Lokasi\Penyimpanan\Template_Layout.pagx"
-        
-    #     template_layouts = aprx.listLayouts(nama_layout_template)
-        
-    #     # Jika layout template belum ada di dalam project, impor dari .pagx
-    #     if not template_layouts:
-    #         try:
-    #             aprx.importDocument(path_file_pagx)
-    #             arcpy.AddMessage(f"Layout '{nama_layout_template}' otomatis diimpor dari file .pagx.")
-    #             # Refresh list layout setelah impor
-    #             template_layouts = aprx.listLayouts(nama_layout_template)
-    #         except Exception as e:
-    #             arcpy.AddError(f"Gagal mengimpor file template .pagx. Pastikan path file benar: {path_file_pagx}")
-    #             arcpy.AddError(f"Detail Error Asli: {str(e)}")
-    #             raise arcpy.ExecuteError
-                
-    #     template_lyt = template_layouts[0]
-    #     template_els = template_lyt.listElements("TEXT_ELEMENT", "Template_TTE")
-        
-    #     if not template_els:
-    #         arcpy.AddError(f"Gagal: Elemen 'Template_TTE' tidak ditemukan di layout '{nama_layout_template}'.")
-    #         raise arcpy.ExecuteError
-            
-    #     template_el = template_els[0]
-    #     cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
-    #     # ----------------------------------------
-        
-    #     # Penempatan bergeser sedikit agar kotak tidak bertumpuk di satu titik
-    #     x_min, y_min = 2.0 + (count * 0.5), 2.0 + (count * 0.5)
-    #     width, height = 6.0, 2.0 
-        
-    #     arr = arcpy.Array([
-    #         arcpy.Point(x_min, y_min),
-    #         arcpy.Point(x_min, y_min + height),
-    #         arcpy.Point(x_min + width, y_min + height),
-    #         arcpy.Point(x_min + width, y_min),
-    #         arcpy.Point(x_min, y_min)
-    #     ])
-    #     polygon_geom = arcpy.Polygon(arr)
-        
-    #     id_spesimen = data_tte.get('id_spesimen', '0')
-    #     nama = data_tte.get('nama', 'Tanpa Nama')
-    #     jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
-        
-    #     element_name = f"TTE_{id_spesimen}"
-    #     display_text = f"[ TEMPAT TTE ]\n{jabatan}\n{nama}\n(ID: {id_spesimen})"
-        
-    #     try:
-    #         # Buat elemen baru sebagai "wadah" di layout utama
-    #         new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)
-            
-    #         # Tarik data struktur format (CIM)
-    #         cim_new = new_text_el.getDefinition(cim_version)
-    #         cim_template = template_el.getDefinition(cim_version)
-            
-    #         # Simpan posisi (shape) dan isi teks yang digenerate oleh script
-    #         new_shape = cim_new.graphic.shape
-    #         new_text = cim_new.graphic.text
-            
-    #         # Copy seluruh grafis dari template layout
-    #         cim_new.graphic = cim_template.graphic
-            
-    #         # Kembalikan posisi dan isi teks ke wadah baru
-    #         cim_new.graphic.shape = new_shape
-    #         cim_new.graphic.text = new_text
-            
-    #         # Terapkan perubahan
-    #         new_text_el.setDefinition(cim_new)
-            
-    #         arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan mengambil gaya dari template.")
-        
-    #     except AttributeError as e:
-    #         arcpy.AddError("Gagal memodifikasi format. Pastikan menggunakan ArcGIS Pro versi 3.0 ke atas.")
-    #         arcpy.AddError(f"Detail Error Asli: {str(e)}")
-    #         raise arcpy.ExecuteError
-            
-    #     except Exception as e:
-    #         arcpy.AddError(f"Terjadi kesalahan saat membuat kotak: {str(e)}")
-    #         raise arcpy.ExecuteError

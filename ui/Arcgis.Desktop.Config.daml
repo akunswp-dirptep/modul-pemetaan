@@ -739,6 +739,7 @@
 				<!-- Menu - Menu Helper -->
 				<menu id="layout_peta" caption="Layout Peta" >
 					<button refID="esri_layouts_importPAGX" caption="Import Template Layout" extendedCaption="Import Template Layout"/>
+					<button refID="ButtonMenambahkanTempatTTE" />
 					<button refID="ButtonUploadHasilLayout"/>
 
 				</menu>
@@ -2223,6 +2224,13 @@
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Tampilkan_Simbologi_Pembagian_Kelas" name="Tampilkan Zona Nilai Tanah" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Zona Nilai Tanah">Menu untuk menampilkan Zona Nilai Tanah.</tooltip>
+				</button>
+
+				<button id="ButtonMenambahkanTempatTTE" caption="Tambah Kotak TTE" smallImage="C:\PenilaianTanah\icons\qr-code.png" largeImage="C:\PenilaianTanah\icons\qr-code.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Tambah_Kotak_TTE" name="Tambah Kotak TTE" xmlns=""/>
+					</args>
+					<tooltip heading="Tambah Kotak TTE">Menu untuk menambah Kotak TTE.</tooltip>
 				</button>
 
 				<button id="ButtonUploadHasilLayout" caption="Upload Hasil Layout ke Sipenta" smallImage="C:\PenilaianTanah\icons\uploadlayoutkesipenta.png" largeImage="C:\PenilaianTanah\icons\uploadlayoutkesipenta.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

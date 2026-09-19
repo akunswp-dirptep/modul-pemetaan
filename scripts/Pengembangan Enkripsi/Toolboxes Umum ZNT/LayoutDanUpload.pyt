@@ -660,9 +660,9 @@ class Upload_Layout_Ke_Sipenta(object):
         else:
             berkas.value = "Tidak ada berkas yang dapat dipilih"
         
-        # Dropdown Parameter Peta
         param_peta = arcpy.Parameter(
-            displayName="Jenis Peta",
+
+            displayName="Jenis Layout Peta",
             name="param_peta",
             datatype="GPString",
             parameterType="Required",
@@ -694,8 +694,7 @@ class Upload_Layout_Ke_Sipenta(object):
         param_layout = parameters[0]
         berkas = parameters[1]
         param_peta = parameters[2]
-        penjelasan = parameters[4]
-
+        penjelasan = parameters[3]
         is_login = get_user_data(CREDENTIAL_KEY)
 
         if is_login is None:
@@ -711,7 +710,7 @@ class Upload_Layout_Ke_Sipenta(object):
                 "Kementerian ATR/BPN.\n"
                 f"Tahun: {datetime.datetime.now().year}\n"
             )
-            
+
             try:
                 aprx = arcpy.mp.ArcGISProject("CURRENT")
                 layouts = [lyt.name for lyt in aprx.listLayouts()]
@@ -766,16 +765,15 @@ class Upload_Layout_Ke_Sipenta(object):
         user_data = get_user_data(CREDENTIAL_KEY)
         token = user_data.get(AUTH_KEY, None)
 
-        # Mendapatkan objek layout
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         layout = aprx.listLayouts(layout_name)[0]
 
-        # Menentukan path output PDF sementara (menggunakan scratch folder bawaan ArcGIS)
+
         scratch_folder = arcpy.env.scratchFolder
         pdf_filename = f"{layout_name.replace(' ', '_')}.pdf"
         pdf_path = os.path.join(scratch_folder, pdf_filename)
 
-        # Proses Export
+
         arcpy.AddMessage(f"Mengekspor layout '{layout_name}' ke format PDF...")
         layout.exportToPDF(pdf_path)
         arcpy.AddMessage(f"Export berhasil: {pdf_path}")

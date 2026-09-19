@@ -655,9 +655,8 @@ class Upload_Layout_Ke_Sipenta(object):
         else:
             berkas.value = 'Tidak ada berkas yang dapat dipilih'
         
-        # Dropdown Parameter Peta
         param_peta = arcpy.Parameter(
-            displayName="Parameter Peta",
+            displayName="Jenis Layout Peta",
             name="param_peta",
             datatype="GPString",
             parameterType="Required",
@@ -666,70 +665,93 @@ class Upload_Layout_Ke_Sipenta(object):
         
         # Daftar parameter sesuai request
         param_peta.filter.type = "ValueList"
-        param_peta.filter.list = [
-            'pembuatan_znt_peta_pdf_zona_awal_nilai_tanah',
-            'pembuatan_znt_peta_pdf_sebaran_sampel',
-            'pembuatan_znt_peta_pdf_standar_deviasi',
-            'pembuatan_znt_peta_pdf_znt',
-            'pembaruan_znt_peta_hasil_survei_batas_zona_pdf',
-            'pembaruan_znt_peta_sebaran_sampel_nilai_tanah',
-            'pembaruan_znt_peta_simpangan_baku_relatif',
-            'pembaruan_znt_peta_zona_nilai_tanah',
-            'pembuatan_nbt_peta_sebaran_sampel',
-            'pembuatan_nbt_peta_nilai_bidang_tanah',
-            'pembaruan_nbt_peta_sebaran_sampel',
-            'pembaruan_nbt_peta_nilai_bidang_tanah'
-        ]
+        param_peta.filter.list = []
 
-        return [param_layout, berkas, param_peta]
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        
+        penjelasan.value = (
+            "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+            "Kementerian ATR/BPN.\n"
+            f"Tahun: {datetime.datetime.now().year}\n"
+        )
+        
+
+        return [param_layout, berkas, param_peta, penjelasan]
 
     def updateParameters(self, parameters):
-        try:
-            aprx = arcpy.mp.ArcGISProject("CURRENT")
-            layouts = [lyt.name for lyt in aprx.listLayouts()]
-            
-            parameters[0].filter.type = "ValueList"
-            
-            if len(layouts) > 0:
-                parameters[0].filter.list = layouts
-            else:
-                parameters[0].filter.list = ['Tidak ada Layout yang dapat dipilih']
-                
-        except Exception:
-            parameters[0].filter.type = "ValueList"
-            parameters[0].filter.list = ['Tidak ada Layout yang dapat dipilih']
+        param_layout = parameters[0]
+        berkas = parameters[1]
+        param_peta = parameters[2]
+        penjelasan = parameters[3]
 
-        # 3. Update parameter Peta berdasarkan Berkas
-        if parameters[1].altered:
-            value = parameters[1].valueAsText
-            if value: 
-                kode = value[:2]
-                mapping_data = {
-                    '01': [
-                        'Peta Zona Awal Nilai Tanah',
-                        'Peta Sebaran Sampel',
-                        'Peta Simpangan Baku Relatif',
-                        'Peta Zona Nilai Tanah'
-                    ],
-                    '02': [
-                        'Peta Hasil Survei Batas Zona',
-                        'Peta Sebaran Sampel',
-                        'Peta Simpangan Baku Relatif',
-                        'Peta Zona Nilai Tanah'
-                    ],
-                    '03': [
-                        'Peta Sebaran Sampel',
-                        'Peta Nilai Bidang Tanah'
-                    ],
-                    '04': [
-                        'Peta Sebaran Sampel',
-                        'Peta Nilai Bidang Tanah'
-                    ]
-                }
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            param_layout.enabled = False
+            berkas.enabled = False
+            param_peta.enabled = False
+            penjelasan.enabled = True
+            return 
+        else:
+            penjelasan.value = (
+                "Pastikan layout sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                f"Tahun: {datetime.datetime.now().year}\n"
+            )
+            try:
+                aprx = arcpy.mp.ArcGISProject("CURRENT")
+                layouts = [lyt.name for lyt in aprx.listLayouts()]
                 
-                if kode in mapping_data:
-                    parameters[2].filter.list = mapping_data[kode]
-        return
+                parameters[0].filter.type = "ValueList"
+                
+                if len(layouts) > 0:
+                    parameters[0].filter.list = layouts
+                else:
+                    parameters[0].filter.list = ['Tidak ada Layout yang dapat dipilih']
+                    
+            except Exception:
+                parameters[0].filter.type = "ValueList"
+                parameters[0].filter.list = ['Tidak ada Layout yang dapat dipilih']
+
+            # 3. Update parameter Peta berdasarkan Berkas
+            if parameters[1].altered:
+                value = parameters[1].valueAsText
+                if value: 
+                    kode = value[:2]
+                    mapping_data = {
+                        '01': [
+                            'Peta Zona Awal Nilai Tanah',
+                            'Peta Sebaran Sampel',
+                            'Peta Simpangan Baku Relatif',
+                            'Peta Zona Nilai Tanah'
+                        ],
+                        '02': [
+                            'Peta Hasil Survei Batas Zona',
+                            'Peta Sebaran Sampel',
+                            'Peta Simpangan Baku Relatif',
+                            'Peta Zona Nilai Tanah'
+                        ],
+                        '03': [
+                            'Peta Sebaran Sampel',
+                            'Peta Nilai Bidang Tanah'
+                        ],
+                        '04': [
+                            'Peta Sebaran Sampel',
+                            'Peta Nilai Bidang Tanah'
+                        ]
+                    }
+                    
+                    if kode in mapping_data:
+                        parameters[2].filter.list = mapping_data[kode]
+            return
 
     def updateMessages(self, parameters):
         # Jika nilai parameter layout adalah pesan kosong, cegah tool berjalan
@@ -744,7 +766,7 @@ class Upload_Layout_Ke_Sipenta(object):
         
         berkas_list = get_all_berkas_id()
         if berkas_list is None:
-            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembuatan ZNT.")
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid.")
             return
 
         server = get_user_data(PREFERRED_SERVER_KEY)
@@ -753,16 +775,15 @@ class Upload_Layout_Ke_Sipenta(object):
         user_data = get_user_data(CREDENTIAL_KEY)
         token = user_data.get(AUTH_KEY, None)
 
-        # Mendapatkan objek layout
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         layout = aprx.listLayouts(layout_name)[0]
 
-        # Menentukan path output PDF sementara (menggunakan scratch folder bawaan ArcGIS)
+
         scratch_folder = arcpy.env.scratchFolder
         pdf_filename = f"{layout_name.replace(' ', '_')}.pdf"
         pdf_path = os.path.join(scratch_folder, pdf_filename)
 
-        # Proses Export
+
         arcpy.AddMessage(f"Mengekspor layout '{layout_name}' ke format PDF...")
         layout.exportToPDF(pdf_path)
         arcpy.AddMessage(f"Export berhasil: {pdf_path}")

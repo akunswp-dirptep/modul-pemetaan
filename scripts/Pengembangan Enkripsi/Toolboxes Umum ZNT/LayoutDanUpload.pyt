@@ -29,7 +29,8 @@ class Toolbox:
                       Tampilkan_Sebaran_Titik_Sampel_Dan_Titik_Zona,
                       Tampilkan_Jenis_Penggunaan_Pada_Zona,
                       Tampilkan_Jenis_Penggunaan_Dengan_Transparansi_Pada_Zona,
-                      Upload_Layout_Ke_Sipenta]
+                      Upload_Layout_Ke_Sipenta,
+                      Tambah_Box_TTE]
 
 class Cek_Topologi(object):
     def __init__(self):
@@ -671,17 +672,6 @@ class Upload_Layout_Ke_Sipenta(object):
         # Set default awal saat pertama kali dibuka
         param_peta.filter.list = ["Pilih Berkas Terlebih Dahulu"]
         
-        list_ttd = arcpy.Parameter(
-            displayName="Pilih Penandatangan",
-            name="surveyor_list",
-            datatype="GPString",       
-            multiValue=True,           
-            parameterType="Required",
-            direction="Input"
-        )
-        list_ttd.filter.type = "ValueList"
-        # Set default awal saat pertama kali dibuka
-        list_ttd.filter.list = ["Pilih Berkas Terlebih Dahulu"]
 
         penjelasan = arcpy.Parameter(
             displayName="Informasi Tools",
@@ -698,13 +688,12 @@ class Upload_Layout_Ke_Sipenta(object):
             f"Tahun: {datetime.datetime.now().year}\n"
         )
         
-        return [param_layout, berkas, param_peta, list_ttd, penjelasan]
+        return [param_layout, berkas, param_peta, penjelasan]
 
     def updateParameters(self, parameters):
         param_layout = parameters[0]
         berkas = parameters[1]
         param_peta = parameters[2]
-        list_ttd = parameters[3]
         penjelasan = parameters[4]
 
         is_login = get_user_data(CREDENTIAL_KEY)
@@ -713,7 +702,6 @@ class Upload_Layout_Ke_Sipenta(object):
             param_layout.enabled = False
             berkas.enabled = False
             param_peta.enabled = False
-            list_ttd.enabled = False
             penjelasan.enabled = True
             return 
         else:
@@ -754,56 +742,8 @@ class Upload_Layout_Ke_Sipenta(object):
                 else:
                     param_peta.filter.list = ["Jenis peta tidak ditemukan"]
 
-                # ====================================================================================
-                # KUNCI PERBAIKAN:
-                # Hanya reset nilai dan panggil API TTD JIKA parameter Berkas (parameters[1]) yang
-                # baru saja di-alter (diubah) OLEH PENGGUNA dan belum di-validate oleh UI.
-                # Jika user mengklik parameter Jenis Peta, maka berkas.altered tidak memicu reset.
-                # ====================================================================================
-                if berkas.altered and not berkas.hasBeenValidated:
-                    # Reset nilai terpilih sebelumnya karena berkas berganti
-                    list_ttd.value = None
-                    param_peta.value = None
-                    
-                    # Tarik data TTD via API
-                    try:
-                        user_data = get_user_data(CREDENTIAL_KEY)
-                        token = user_data.get(AUTH_KEY, None) if user_data else None
-                        server = get_user_data(PREFERRED_SERVER_KEY)
-                        use_production = True if server == "Produksi" or server is None else False
-                        
-                        if token:
-                            api_data = self.call_tte_api(token, value, use_production)
-                            penandatangan = set()
-                            
-                            if api_data and "data" in api_data:
-                                for f in api_data["data"]:
-                                    if "nama" in f:
-                                        penandatangan.add(f["nama"])
-                            
-                            if penandatangan:
-                                list_ttd.filter.list = sorted(list(penandatangan))
-                            else:
-                                list_ttd.filter.list = ["Tidak ada penandatangan ditemukan"]
-                        else:
-                            list_ttd.filter.list = ["Token tidak valid/tidak ditemukan"]
-
-                    except Exception:
-                        list_ttd.filter.list = ["Terdapat kendala ketika menarik data penandatangan"]
-
-            # --- JIKA BERKAS KOSONG ATAU BELUM DIPILIH ---
-            else:
-                param_peta.filter.list = ["Pilih Berkas Terlebih Dahulu"]
-                list_ttd.filter.list = ["Pilih Berkas Terlebih Dahulu"]
-                # Hanya reset nilainya jika memang belum di-reset
-                if param_peta.value: 
-                    param_peta.value = None
-                if list_ttd.value:
-                    list_ttd.value = None
-
         return
 
-        return
     def updateMessages(self, parameters):
         # Jika nilai parameter layout adalah pesan kosong, cegah tool berjalan
         if parameters[0].valueAsText == 'Tidak ada Layout yang dapat dipilih':
@@ -817,7 +757,7 @@ class Upload_Layout_Ke_Sipenta(object):
         
         berkas_list = get_all_berkas_id()
         if berkas_list is None:
-            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembuatan ZNT.")
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid.")
             return
 
         server = get_user_data(PREFERRED_SERVER_KEY)
@@ -895,8 +835,154 @@ class Upload_Layout_Ke_Sipenta(object):
 
         return
 
-    def call_tte_api(self, token, nomor_berkas, use_production=True):
+class Tambah_Box_TTE(object):
+    def __init__(self):
+        self.label = "Tambah Kotak TTE"
+        self.description = "Membuat kotak placeholder TTE di Layout aktif"
+        self.canRunInBackground = False
 
+    def getParameterInfo(self):
+        berkas_list = get_all_berkas_id()
+        berkas_show = []
+        
+        if berkas_list:
+            can_show = 0
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ["Tidak ada berkas yang dapat dipilih"]
+        else:
+            berkas_show = ["Tidak ada berkas yang dapat dipilih"] 
+
+        param_layout = arcpy.Parameter(
+            displayName="Pilih Layout",
+            name="layout_name",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+            
+        try:
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            param_layout.filter.list = [lyt.name for lyt in aprx.listLayouts()]
+        except Exception:
+            param_layout.filter.list = []
+
+        param_berkas = arcpy.Parameter(
+            displayName="Berkas",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        param_berkas.filter.type = "ValueList"
+        param_berkas.filter.list = berkas_show
+
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            param_berkas.value = preferred_berkas   
+        else:
+            param_berkas.value = "Tidak ada berkas yang dapat dipilih"
+
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        
+        penjelasan.value = (
+            "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+            "Kementerian ATR/BPN.\n"
+            f"Tahun: {datetime.datetime.now().year}\n"
+        )
+        return [param_layout, param_berkas, penjelasan]
+    
+    def updateParameters(self, parameters):
+        param_layout = parameters[0]
+        berkas = parameters[1]
+        penjelasan = parameters[2]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            param_layout.enabled = False
+            berkas.enabled = False
+            penjelasan.enabled = False
+            return 
+        else:
+            penjelasan.value = (
+                "Pastikan layout sudah benar sebelum diupload.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                f"Tahun: {datetime.datetime.now().year}\n"
+            )
+            
+            try:
+                aprx = arcpy.mp.ArcGISProject("CURRENT")
+                layouts = [lyt.name for lyt in aprx.listLayouts()]
+                param_layout.filter.type = "ValueList"
+                
+                if len(layouts) > 0:
+                    param_layout.filter.list = layouts
+                else:
+                    param_layout.filter.list = ['Tidak ada Layout yang dapat dipilih']
+            except Exception:
+                param_layout.filter.type = "ValueList"
+                param_layout.filter.list = ['Tidak ada Layout yang dapat dipilih']
+        return
+    
+    def updateMessages(self, parameters):
+        # Jika nilai parameter layout adalah pesan kosong, cegah tool berjalan
+        if parameters[0].valueAsText == 'Tidak ada Layout yang dapat dipilih':
+            parameters[0].setErrorMessage("Harap buat layout terlebih dahulu di dalam project ini.")
+        return
+    
+    def execute(self, parameters, messages):
+        layout_name = parameters[0].valueAsText
+        berkas = parameters[1].valueAsText
+
+        list_ttd = []
+        try:
+            user_data = get_user_data(CREDENTIAL_KEY)
+            token = user_data.get(AUTH_KEY, None) if user_data else None
+            server = get_user_data(PREFERRED_SERVER_KEY)
+            use_production = True if server == "Produksi" or server is None else False
+                        
+            if token:
+                api_data = self.call_tte_api(token, berkas, use_production)
+                            
+                if api_data and "data" in api_data:
+                    # [PERBAIKAN BUG] Menyimpan object lengkap ke dictionary agar id_spesimen tidak hilang
+                    unique_ttd = {}
+                    for f in api_data["data"]:
+                        nama = f.get("nama")
+                        if nama not in unique_ttd:
+                            unique_ttd[nama] = f
+                    
+                    if unique_ttd:
+                        # Ubah dari dictionary kembali ke list untuk di-looping
+                        list_ttd = list(unique_ttd.values())
+                    else:
+                        arcpy.AddError('Tidak ditemukan spesimen tandatangan untuk berkas yang dipilih')
+                        raise arcpy.ExecuteError
+                else:
+                    arcpy.AddError('Data API tidak valid atau tidak menemukan spesimen.')
+                    raise arcpy.ExecuteError
+        except Exception as e:
+            arcpy.AddError(f'Terdapat kendala: {str(e)}')
+            raise arcpy.ExecuteError
+
+        # [PERBAIKAN BUG] membalik posisi count dan data_tte (karena enumerate formatnya index, value)
+        for count, data_tte in enumerate(list_ttd):
+            self.create_tte_text_box(data_tte, count, layout_name)
+            
+        return
+    
+    def call_tte_api(self, token, nomor_berkas, use_production=True):
         # URL untuk testing dan produksi
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/spesimen?no_berkas={nomor_berkas}"
         prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/spesimen?no_berkas={nomor_berkas}"
@@ -905,23 +991,22 @@ class Upload_Layout_Ke_Sipenta(object):
 
         try:
             # Mengambil data dari API
-            arcpy.AddMessage("Mengambil data Titik Sampel...")
+            arcpy.AddMessage("Mengambil data Spesimen TTE...")
             headers = {
                     "Authorization": f"Bearer {token}"
                 }
             response = requests.get(url, headers=headers, timeout=60)  
-            response.raise_for_status()  # Akan raise exception untuk HTTP error
+            response.raise_for_status()
             
             data = response.json()
-            
             if not data:
                 arcpy.AddError('Server Tidak mengirimkan Apapun')
+                raise arcpy.ExecuteError
 
             return data
+            
         except requests.exceptions.HTTPError as e:
-        # Ambil response dari exception
             response = e.response
-
             try:
                 error_json = response.json()
                 message = error_json.get("message", "")
@@ -933,24 +1018,232 @@ class Upload_Layout_Ke_Sipenta(object):
                 clear_user_data()
                 raise Exception("Token Anda kadaluarsa, silakan login ulang.")
             
+            # [PERBAIKAN BUG] Jangan pakai sys.exit(0) di ArcGIS Pro, gunakan raise arcpy.ExecuteError
             if response.status_code == 404 and message:
                 arcpy.AddError(message)
-                sys.exit(0)
+                raise arcpy.ExecuteError
 
             # Handle forbidden biasa
             elif response.status_code == 403:
                 raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
-
             else:
                 raise Exception(f"HTTP Error: {e}")
         
         except requests.exceptions.RequestException as e:
             error_msg = str(e)
             if "NameResolutionError" in error_msg or "getaddrinfo failed" in error_msg or "Max retries exceeded" in error_msg:
-                arcpy.AddError("Koneksi terputus, silakan cek jaringan internet Anda dan coba lagi.")
+                raise Exception("Koneksi terputus, silakan cek jaringan internet Anda dan coba lagi.")
             else:
-                arcpy.AddError(f"Error koneksi ke server: {error_msg}")
+                raise Exception(f"Error koneksi ke server: {error_msg}")
                 
         except json.JSONDecodeError as e:
-            arcpy.AddError(f"Error ketika mengubah respon API ke JSON: {str(e)}")
+            raise Exception(f"Error ketika mengubah respon API ke JSON: {str(e)}")
+        
+    # def create_tte_text_box(self, data_tte, count, layout_name):
+    #     aprx = arcpy.mp.ArcGISProject("CURRENT")
+    #     lyt = aprx.listLayouts(layout_name)[0]
+        
+    #     # Penempatan bergeser sedikit untuk setiap kotak agar tidak bertumpuk
+    #     x_min, y_min = 2.0 + count, 2.0 + count
+    #     width, height = 6.0, 2.0 
+        
+    #     arr = arcpy.Array([
+    #         arcpy.Point(x_min, y_min),
+    #         arcpy.Point(x_min, y_min + height),
+    #         arcpy.Point(x_min + width, y_min + height),
+    #         arcpy.Point(x_min + width, y_min),
+    #         arcpy.Point(x_min, y_min)
+    #     ])
+    #     polygon_geom = arcpy.Polygon(arr)
+        
+    #     id_spesimen = data_tte.get('id_spesimen', '0')
+    #     nama = data_tte.get('nama', 'Tanpa Nama')
+    #     jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
+        
+    #     element_name = f"TTE_{id_spesimen}"
+        
+    #     # Teks dengan format multi-baris
+    #     display_text = f"[ TEMPAT TTE ]\n{jabatan}\n{nama}\n(ID: {id_spesimen})"
+        
+    #     try:
+    #         # 1. Buat elemen teks polygon standar
+    #         new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)
+            
+    #         # --- 2. MODIFIKASI CIM UNTUK FORMAT RATA TENGAH ---
+    #         cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
+    #         cim_elm = new_text_el.getDefinition(cim_version)
+            
+    #         # Akses pengaturan teks melalui properti 'graphic'
+    #         cim_elm.graphic.symbol.symbol.horizontalAlignment = 'Center'
+    #         cim_elm.graphic.symbol.symbol.verticalAlignment = 'Center'
+            
+    #         # Terapkan modifikasi kembali ke elemen teks
+    #         new_text_el.setDefinition(cim_elm)
+    #         # --------------------------------------------------
+            
+    #         arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan dengan format rata tengah.")
+        
+    #     except AttributeError as e:
+    #         arcpy.AddError("Gagal memodifikasi CIM teks. Pastikan menggunakan ArcGIS Pro versi 3.0 ke atas.")
+    #         arcpy.AddError(f"Detail Error Asli: {str(e)}")
+    #         raise arcpy.ExecuteError
+            
+    #     except Exception as e:
+    #         arcpy.AddError(f"Terjadi kesalahan saat membuat kotak: {str(e)}")
+    #         raise arcpy.ExecuteError
+    def create_tte_text_box(self, data_tte, count, layout_name):    
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        lyt = aprx.listLayouts(layout_name)[0]
+        
+        # --- 1. CARI ELEMEN TEMPLATE ---
+        template_els = lyt.listElements("TEXT_ELEMENT", "Template_TTE")
+        if not template_els:
+            arcpy.AddError("Gagal: Elemen teks bernama 'Template_TTE' tidak ditemukan di layout.")
             raise arcpy.ExecuteError
+            
+        template_el = template_els[0]
+        cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
+        # -------------------------------
+        
+        # Penempatan bergeser sedikit agar kotak tidak bertumpuk di satu titik
+        x_min, y_min = 2.0 + (count * 0.5), 2.0 + (count * 0.5)
+        width, height = 6.0, 2.0 
+        
+        arr = arcpy.Array([
+            arcpy.Point(x_min, y_min),
+            arcpy.Point(x_min, y_min + height),
+            arcpy.Point(x_min + width, y_min + height),
+            arcpy.Point(x_min + width, y_min),
+            arcpy.Point(x_min, y_min)
+        ])
+        polygon_geom = arcpy.Polygon(arr)
+        
+        id_spesimen = data_tte.get('id_spesimen', '0')
+        nama = data_tte.get('nama', 'Tanpa Nama')
+        jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
+        
+        element_name = f"TTE_{id_spesimen}"
+        display_text = f"[ TEMPAT TTE ]\n{jabatan}\n{nama}\n(ID: {id_spesimen})"
+        
+        try:
+            # 2. Buat elemen baru sebagai "wadah"
+            new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)
+            
+            # 3. Tarik data struktur format (CIM) dari wadah baru dan template
+            cim_new = new_text_el.getDefinition(cim_version)
+            cim_template = template_el.getDefinition(cim_version)
+            
+            # 4. Simpan posisi (shape) dan isi teks yang digenerate oleh script
+            new_shape = cim_new.graphic.shape
+            new_text = cim_new.graphic.text
+            
+            # 5. COPY-PASTE SELURUH GRAFIS TEMPLATE KE ELEMEN BARU
+            # Ini akan menarik semua warna, hatch pattern, outline, callout, dan font
+            cim_new.graphic = cim_template.graphic
+            
+            # 6. Kembalikan posisi dan isi teks ke wadah baru agar tidak sama persis dengan template
+            cim_new.graphic.shape = new_shape
+            cim_new.graphic.text = new_text
+            
+            # 7. Terapkan perubahan kembali ke elemen teks
+            new_text_el.setDefinition(cim_new)
+            
+            arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan persis dengan format Template.")
+        
+        except AttributeError as e:
+            arcpy.AddError("Gagal memodifikasi format. Pastikan menggunakan ArcGIS Pro versi 3.0 ke atas.")
+            arcpy.AddError(f"Detail Error Asli: {str(e)}")
+            raise arcpy.ExecuteError
+            
+        except Exception as e:
+            arcpy.AddError(f"Terjadi kesalahan saat membuat kotak: {str(e)}")
+            raise arcpy.ExecuteError
+
+
+    # def create_tte_text_box(self, data_tte, count, layout_name):
+    #     aprx = arcpy.mp.ArcGISProject("CURRENT")
+    #     lyt = aprx.listLayouts(layout_name)[0]
+        
+    #     # --- 1. CEK DAN IMPOR LAYOUT TEMPLATE ---
+    #     nama_layout_template = "Template_Layout" 
+        
+    #     # Ganti path ini dengan lokasi file .pagx Anda di komputer/server
+    #     path_file_pagx = r"C:\Lokasi\Penyimpanan\Template_Layout.pagx"
+        
+    #     template_layouts = aprx.listLayouts(nama_layout_template)
+        
+    #     # Jika layout template belum ada di dalam project, impor dari .pagx
+    #     if not template_layouts:
+    #         try:
+    #             aprx.importDocument(path_file_pagx)
+    #             arcpy.AddMessage(f"Layout '{nama_layout_template}' otomatis diimpor dari file .pagx.")
+    #             # Refresh list layout setelah impor
+    #             template_layouts = aprx.listLayouts(nama_layout_template)
+    #         except Exception as e:
+    #             arcpy.AddError(f"Gagal mengimpor file template .pagx. Pastikan path file benar: {path_file_pagx}")
+    #             arcpy.AddError(f"Detail Error Asli: {str(e)}")
+    #             raise arcpy.ExecuteError
+                
+    #     template_lyt = template_layouts[0]
+    #     template_els = template_lyt.listElements("TEXT_ELEMENT", "Template_TTE")
+        
+    #     if not template_els:
+    #         arcpy.AddError(f"Gagal: Elemen 'Template_TTE' tidak ditemukan di layout '{nama_layout_template}'.")
+    #         raise arcpy.ExecuteError
+            
+    #     template_el = template_els[0]
+    #     cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
+    #     # ----------------------------------------
+        
+    #     # Penempatan bergeser sedikit agar kotak tidak bertumpuk di satu titik
+    #     x_min, y_min = 2.0 + (count * 0.5), 2.0 + (count * 0.5)
+    #     width, height = 6.0, 2.0 
+        
+    #     arr = arcpy.Array([
+    #         arcpy.Point(x_min, y_min),
+    #         arcpy.Point(x_min, y_min + height),
+    #         arcpy.Point(x_min + width, y_min + height),
+    #         arcpy.Point(x_min + width, y_min),
+    #         arcpy.Point(x_min, y_min)
+    #     ])
+    #     polygon_geom = arcpy.Polygon(arr)
+        
+    #     id_spesimen = data_tte.get('id_spesimen', '0')
+    #     nama = data_tte.get('nama', 'Tanpa Nama')
+    #     jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
+        
+    #     element_name = f"TTE_{id_spesimen}"
+    #     display_text = f"[ TEMPAT TTE ]\n{jabatan}\n{nama}\n(ID: {id_spesimen})"
+        
+    #     try:
+    #         # Buat elemen baru sebagai "wadah" di layout utama
+    #         new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)
+            
+    #         # Tarik data struktur format (CIM)
+    #         cim_new = new_text_el.getDefinition(cim_version)
+    #         cim_template = template_el.getDefinition(cim_version)
+            
+    #         # Simpan posisi (shape) dan isi teks yang digenerate oleh script
+    #         new_shape = cim_new.graphic.shape
+    #         new_text = cim_new.graphic.text
+            
+    #         # Copy seluruh grafis dari template layout
+    #         cim_new.graphic = cim_template.graphic
+            
+    #         # Kembalikan posisi dan isi teks ke wadah baru
+    #         cim_new.graphic.shape = new_shape
+    #         cim_new.graphic.text = new_text
+            
+    #         # Terapkan perubahan
+    #         new_text_el.setDefinition(cim_new)
+            
+    #         arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan mengambil gaya dari template.")
+        
+    #     except AttributeError as e:
+    #         arcpy.AddError("Gagal memodifikasi format. Pastikan menggunakan ArcGIS Pro versi 3.0 ke atas.")
+    #         arcpy.AddError(f"Detail Error Asli: {str(e)}")
+    #         raise arcpy.ExecuteError
+            
+    #     except Exception as e:
+    #         arcpy.AddError(f"Terjadi kesalahan saat membuat kotak: {str(e)}")
+    #         raise arcpy.ExecuteError

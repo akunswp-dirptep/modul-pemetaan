@@ -169,7 +169,6 @@ class Buat_Workspace(object):
             "gdb_path": gdb_path 
         }
         
-        # Pastikan fungsi setup_project_config sudah terdefinisi
         setup_project_config(config_data, local_conf_path)
 
         if arcpy.Exists(gdb_path):

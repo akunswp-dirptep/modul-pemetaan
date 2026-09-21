@@ -10,7 +10,16 @@ script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
-from nbtutils import persil
+from nbtutils import persil, constant
+from zntutils.constant import PREFERRED_BERKAS_ID, CREDENTIAL_KEY, PREFERRED_SERVER_KEY, AUTH_KEY, NAMA_PROVINSI, KAB_KOTA
+from zntutils import system_utils
+
+
+def current_year():
+    try:
+        return int(datetime.now().year)
+    except Exception:
+        return None
 class Toolbox:
     def __init__(self):
         """Define the toolbox (the name of the toolbox is the name of the
@@ -19,7 +28,223 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Import_Workspace]
+        self.tools = [Import_Workspace, Buat_Workspace]
+
+class Buat_Workspace(object):
+
+    def __init__(self):
+        self.label = "Buat Workspace NBT"
+        self.description = ""
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+
+        workspace_folder = arcpy.Parameter(
+            displayName='Workspace',
+            name='folder_path',
+            datatype='DEFolder',
+            parameterType='Required',
+            direction='Input'
+        )
+
+        koordinat_system = arcpy.Parameter(
+            displayName='Referensi Sistem Koordinat',
+            name='spatial_reference',
+            datatype='GPSpatialReference',
+            parameterType='Required',
+            direction='Input'
+        )
+
+        provinsi = arcpy.Parameter(
+            displayName="Provinsi",
+            name="provinsi",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        
+        provinsi.filter.type = "ValueList"
+        provinsi.filter.list = NAMA_PROVINSI
+
+        kab_kota = arcpy.Parameter(
+            displayName="Kabupaten/Kota",
+            name="kab_kota",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+
+        tahun_penilaian = arcpy.Parameter(
+            displayName="Tahun Penilaian",
+            name="tahun_penilaian",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        tahun_penilaian.value = current_year()
+
+        output_fl = arcpy.Parameter(
+            name='fl_output',
+            datatype='GPFeatureLayer',
+            parameterType='Derived',
+            direction='Output'
+        )
+
+        return [koordinat_system, workspace_folder,  provinsi, kab_kota, tahun_penilaian, output_fl]
+
+    def updateParameters(self, parameters):
+        prov = parameters[2].valueAsText  # parameter Provinsi
+        kab = parameters[3]               # parameter Kab/Kota
+
+        if prov:
+            kab.filter.type = "ValueList"
+            kab.filter.list = KAB_KOTA.get(prov, [])
+        else:
+            kab.filter.list = []
+
+    def execute(self, parameters, messages):
+
+        folder_path = parameters[1].valueAsText
+        spatial_reference = parameters[0].value
+        provinsi = parameters[2].valueAsText
+        kab_kota = parameters[3].valueAsText
+        tahun_penilaian = parameters[4].value
+
+        appdata = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+        conf_path = os.path.join(folder_path, constant.PROJECT_CONFIG_FILE_NAME)
+        id = str(uuid.uuid4())
+
+        if arcpy.Exists(conf_path):
+            arcpy.management.Delete(conf_path)
+
+        gdbname = "NilaiBidangTanah.gdb"
+
+        dataset = "nbt_ds"
+        dataset_fasilitas = "fasilitas_ds"
+        dataset_resiko = "resiko_ds"
+
+        spatial_analysis_ds = "spatial_analysis_template_ds"
+
+        utils_folder = os.path.join(appdata, 'nbtutils')
+
+        spatial_analysis_ds_path = os.path.join(
+            utils_folder,
+            "template.gdb",
+            spatial_analysis_ds
+        )
+
+        gdb_path = os.path.join(folder_path, gdbname)
+
+        dataset_path = os.path.join(gdb_path, dataset)
+        dataset_fasilitas_path = os.path.join(gdb_path, dataset_fasilitas)
+        dataset_resiko_path = os.path.join(gdb_path, dataset_resiko)
+
+        nd_path = os.path.join(
+            gdb_path,
+            spatial_analysis_ds,
+            constant.TEMPLATE_LAYER_NETWORK_DATASET_JARINGAN_JALAN
+        )
+
+        jaringan_jalan_nd_path = os.path.join(
+            gdb_path,
+            spatial_analysis_ds,
+            constant.TEMPLATE_LAYER_FEATURE_CLASS_JARINGAN_JALAN
+        )
+
+        json_config = {
+            'project_config': {
+                'id': id,
+                'ws_path': folder_path,
+                'conf_path': conf_path,
+                'gdb_path': gdb_path,
+                'dataset_path': dataset_path,
+                'skala': 1000,
+                'provinsi': provinsi,
+                'kab_kota': kab_kota,
+                'tahun_penilaian': tahun_penilaian,
+                'daftar_variabel_path': os.path.join(
+                    folder_path,
+                    constant.KONFIG_DAFTAR_VARIABEL
+                )
+            },
+
+            'jaringan_jalan_config': {
+                'path': {
+                    constant.TEMPLATE_LAYER_NETWORK_DATASET_JARINGAN_JALAN: nd_path,
+                    constant.TEMPLATE_LAYER_FEATURE_CLASS_JARINGAN_JALAN: jaringan_jalan_nd_path
+                },
+                'skoring' : constant.SKORING_KELAS_JALAN
+            },
+
+            'persil_config': {
+                'skoring' : {
+                    'zonasi' : constant.SKORING_ZONASI,
+                    'bentuk_persil' : constant.SKORING_BENTUK_PERSIL,
+                    'letak' : constant.SKORING_LETAK
+                }
+
+            },
+
+            'fasilitas_config': {
+                'dataset_path': dataset_fasilitas_path
+            },
+
+            'resiko_config': {
+                'dataset_path': dataset_resiko_path
+            }
+        }
+
+        conf_file = open(conf_path, "w")
+        conf_file.write(json.dumps(json_config, indent=4))
+        conf_file.close()
+
+        if arcpy.Exists(gdb_path):
+            arcpy.management.Delete(gdb_path)
+
+        system_utils.setup_project_config(json_config, conf_path)
+
+        arcpy.management.CreateFileGDB(folder_path, gdbname)
+        arcpy.management.CreateFeatureDataset(gdb_path,  dataset,  spatial_reference)
+        arcpy.management.CreateFeatureDataset(gdb_path, dataset_fasilitas, spatial_reference)
+        arcpy.management.CreateFeatureDataset(gdb_path, dataset_resiko, spatial_reference)
+
+        fl = arcpy.management.CreateFeatureclass(
+            dataset_path,
+            constant.LAYER_PERSIL,
+            "POLYGON",
+            spatial_reference=spatial_reference
+        )[0]
+
+        arcpy.AddMessage("Menyalin template ke dalam workspace baru")
+
+        saved_template = os.path.join(gdb_path, spatial_analysis_ds)
+
+        arcpy.management.Project(
+            spatial_analysis_ds_path,
+            saved_template,
+            spatial_reference
+        )
+
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+
+        folder_connections = aprx.folderConnections
+
+        if not any(
+            fc['connectionString'] == folder_path
+            for fc in folder_connections
+        ):
+
+            folder_connections.append({
+                'connectionString': folder_path,
+                'isHomeFolder': False
+            })
+
+            aprx.updateFolderConnections(
+                folder_connections,
+                validate=True
+            )
+        arcpy.SetParameter(5, fl)
+        arcpy.AddMessage("Workspace berhasil dibuat")
 
 
 class Import_Workspace(object):

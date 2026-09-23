@@ -605,12 +605,6 @@ class Buat_Workspace_Pembaruan_NBT(object):
 
 class Masukkan_Data_NBT_Sebelumnya(object):
 
-    def __init__(self):
-
-        self.label = "Masukkan Data NBT Sebelumnya"
-        self.description = ""
-        self.canRunInBackground = False
-
     DEFAULT_VARIABEL = [
 
         ["Kelurahan", "WADMKD", ["KELURAHAN", "KEL", "WADMKD"]],
@@ -641,8 +635,6 @@ class Masukkan_Data_NBT_Sebelumnya(object):
 
     AUTO_CREATE_FIELDS = [
 
-        
-
         ("BENTUK", "TEXT", 50),
         ("LETAK", "TEXT", 50),
         ("ELEVASI", "TEXT", 50),
@@ -660,7 +652,11 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         ("LONGSOR", "SHORT")
     ]
 
+    def __init__(self):
 
+        self.label = "Masukkan Data NBT Sebelumnya"
+        self.description = ""
+        self.canRunInBackground = False
 
     def getParameterInfo(self):
 
@@ -759,6 +755,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
 
     def updateParameters(self, parameters):
         gunakan_data_perubahan = parameters[2]
+        gunakan_data_perubahan.enabled = False
 
         if gunakan_data_perubahan.value:
             parameters[3].enabled = True
@@ -778,11 +775,8 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         if not nbt_layer:
             return
 
-        # ==========================================
-        # KODE BARU: Refresh tabel jika input layer berubah
         if parameters[0].altered and not parameters[0].hasBeenValidated:
             daftar_variabel.value = None
-        # ==========================================
 
         field_names = [f.name.upper() for f in arcpy.ListFields(nbt_layer)]
 
@@ -832,14 +826,13 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         dest_temp_path = r"in_memory\Persil_Lama"
 
         self.delete_if_exists(dest_temp_path)
-        # ==========================================
-        # KODE BARU: Hapus data target lama sebelum diolah
+
         persil_layer = os.path.join(
             dataset_path,
             constant.LAYER_PERSIL
         )
         self.delete_if_exists(persil_layer)
-        # ==========================================
+
         arcpy.management.CopyFeatures(
             peta_lama_input,
             dest_temp_path
@@ -1000,10 +993,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             "SHAPE_AREA"
         }
 
-        fields_data = arcpy.ListFields(
-            dest_temp_path
-        )
-
+        fields_data = arcpy.ListFields(dest_temp_path)
 
         for field in fields_data:
 
@@ -1017,14 +1007,8 @@ class Masukkan_Data_NBT_Sebelumnya(object):
             if not is_protected:
 
                 try:
-
-                    arcpy.management.DeleteField(
-                        dest_temp_path,
-                        field_name
-                    )
-
+                    arcpy.management.DeleteField(dest_temp_path,  field_name)
                 except Exception as e:
-
                     arcpy.AddWarning(str(e))
 
         existing_fields = [

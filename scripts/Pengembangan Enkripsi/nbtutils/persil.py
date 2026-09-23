@@ -2,8 +2,14 @@ import json
 import arcpy, arcgisscripting
 import sys
 import os
-from .constant import LAYER_PERSIL
+from .constant import LAYER_PERSIL, PROJECT_CONFIG_FILE_NAME
 
+script_dir = os.path.dirname(__file__)
+parent_dir = os.path.dirname(script_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from zntutils import system_utils
 
 def is_persil_layer_comply(show_path_message = True):
     """
@@ -86,13 +92,15 @@ def get_config_values():
     """
     persil_path = is_persil_layer_comply(show_path_message=False)  # Validasi compliance layer zona
     ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(persil_path)))  # Navigasi ke root workspace
-    config_path = os.path.join(ws_dir, "project_config.json")  # Path ke file config
+    config_path = os.path.join(ws_dir, "config.json")  # Path ke file config
+    new_config_path = os.path.join(ws_dir, PROJECT_CONFIG_FILE_NAME)  # Path ke file config baru (bin)
     configs = None
     if arcpy.Exists(config_path):
          with open(config_path, 'r') as f:
             configs = json.load(f)
+    elif arcpy.Exists(new_config_path):
+        configs = system_utils.get_all_config(new_config_path)  
 
-    # Validasi path GDB
     if configs["project_config"]['ws_path'] != ws_dir:
         arcpy.AddError(f"Alamat Workspace tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki Alamat dengan memperbaharui Alamat folder workspace di Tools Edit Workspace")
         sys.exit(1)

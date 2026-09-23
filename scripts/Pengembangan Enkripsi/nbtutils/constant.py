@@ -75,8 +75,8 @@ SKORING_BENTUK_PERSIL = {
 
 SKORING_LETAK = {
     "Lain-lain": 1,
-    "Normal": 2,
-    "Tusuk sate": 3,
+    "Tusuk sate": 2,
+    "Normal": 3,
     "Hook": 4,
 }
 

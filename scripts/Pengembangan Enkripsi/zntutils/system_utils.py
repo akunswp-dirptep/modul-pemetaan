@@ -15,12 +15,10 @@ def current_year():
     except Exception:
         return None
  
-# Cryptography Functions
 def generate_key():
     password = 'bpnri-jakarta'
     salt = b'Sisinga@2-Jakarta'  
 
-    # Derive proper key dari password
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
@@ -80,7 +78,6 @@ def reload_all_toolboxes_in_folder(toolbox_folder):
         
     # Load toolbox di proyek saat ini
     try:
-        # Hapus dan reload menggunakan ImportToolbox (lebih reliable)
         for pyt_file in pyt_files:
             pyt_path = os.path.join(toolbox_folder, pyt_file)
             try:
@@ -113,7 +110,6 @@ def setup_user_data(key:str, value:str):
                 data = decrypt_message(generate_key(), config_path)                    
                 # Validasi format JSON
                 if key not in data or not isinstance(data.get(key), str):
-                    # Format tidak sesuai, tambahkan atau perbarui data
                     data[key] = value
                 
                 if data[key] != value:

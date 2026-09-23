@@ -28,7 +28,7 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Import_Workspace, Buat_Workspace]
+        self.tools = [Import_Workspace, Buat_Workspace, Edit_Workspace]
 
 class Buat_Workspace(object):
 
@@ -124,6 +124,7 @@ class Buat_Workspace(object):
         dataset_resiko = "resiko_ds"
 
         spatial_analysis_ds = "spatial_analysis_template_ds"
+        # spatial_analysis_ds = "ds_znt_template"
 
         utils_folder = os.path.join(appdata, 'nbtutils')
 
@@ -169,10 +170,6 @@ class Buat_Workspace(object):
             },
 
             'jaringan_jalan_config': {
-                'path': {
-                    constant.TEMPLATE_LAYER_NETWORK_DATASET_JARINGAN_JALAN: nd_path,
-                    constant.TEMPLATE_LAYER_FEATURE_CLASS_JARINGAN_JALAN: jaringan_jalan_nd_path
-                },
                 'skoring' : constant.SKORING_KELAS_JALAN
             },
 
@@ -193,10 +190,6 @@ class Buat_Workspace(object):
                 'dataset_path': dataset_resiko_path
             }
         }
-
-        conf_file = open(conf_path, "w")
-        conf_file.write(json.dumps(json_config, indent=4))
-        conf_file.close()
 
         if arcpy.Exists(gdb_path):
             arcpy.management.Delete(gdb_path)
@@ -246,6 +239,217 @@ class Buat_Workspace(object):
         arcpy.SetParameter(5, fl)
         arcpy.AddMessage("Workspace berhasil dibuat")
 
+class Edit_Workspace(object):
+
+    def __init__(self):
+        self.label = "Edit Workspace"
+        self.description = (
+            "Tool untuk membaca dan mengedit konfigurasi workspace NBT."
+        )
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        workspace_folder = arcpy.Parameter(
+            displayName="Pilih Folder Workspace",
+            name="workspace_folder",
+            datatype="DEFolder",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        update_path = arcpy.Parameter(
+            displayName="Perbarui lokasi folder workspace",
+            name="update_path",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input",
+        )
+        update_path.value = False
+
+        provinsi = arcpy.Parameter(
+            displayName="Provinsi",
+            name="provinsi",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+        )
+        provinsi.filter.type = "ValueList"
+        provinsi.filter.list = NAMA_PROVINSI
+
+        kab_kota = arcpy.Parameter(
+            displayName="Kabupaten/Kota",
+            name="kab_kota",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        tahun_penilaian = arcpy.Parameter(
+            displayName="Tahun Penilaian",
+            name="tahun_penilaian",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        out_layer = arcpy.Parameter(
+            displayName="Output Layer",
+            name="out_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output",
+        )
+
+        return [
+            workspace_folder,
+            update_path,
+            provinsi,
+            kab_kota,
+            tahun_penilaian,
+            out_layer,
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        ws_param = parameters[0]
+        prov_param = parameters[2]
+        kab_param = parameters[3]
+        thn_param = parameters[4]
+
+        # Otomatis isi parameter dari file konfigurasi jika folder dipilih
+        if ws_param.value and not ws_param.hasBeenValidated:
+            ws_folder = ws_param.valueAsText
+            config_path = os.path.join(
+                ws_folder, constant.PROJECT_CONFIG_FILE_NAME
+            )
+
+            if os.path.exists(config_path):
+                try:
+                    config_data = system_utils.get_all_config(config_path)
+                    project_config = config_data.get("project_config")
+
+                    if isinstance(project_config, dict):
+                        if not prov_param.altered:
+                            prov_param.value = project_config.get("provinsi")
+                        if not kab_param.altered:
+                            kab_param.value = project_config.get("kab_kota")
+                        if not thn_param.altered:
+                            thn_param.value = project_config.get("tahun_penilaian")
+                except Exception:
+                    pass
+
+        # Update pilihan filter Kabupaten/Kota berdasarkan Provinsi
+        prov = prov_param.valueAsText
+        if prov:
+            kab_param.filter.type = "ValueList"
+            kab_param.filter.list = KAB_KOTA.get(prov, [])
+        else:
+            kab_param.filter.list = []
+
+    def updateMessages(self, parameters):
+        ws_param = parameters[0]
+        if ws_param.value:
+            config_path = os.path.join(
+                ws_param.valueAsText, constant.PROJECT_CONFIG_FILE_NAME
+            )
+            if not os.path.exists(config_path):
+                ws_param.setErrorMessage(
+                    "File konfigurasi (config) tidak ditemukan di dalam folder ini."
+                )
+
+    def execute(self, parameters, messages):
+        ws_folder = parameters[0].valueAsText
+        update_path_flag = parameters[1].value
+        WADMPR = parameters[2].valueAsText
+        WADMKK = parameters[3].valueAsText
+        THNNILAI = parameters[4].valueAsText
+
+        config_path = os.path.join(
+            ws_folder, constant.PROJECT_CONFIG_FILE_NAME
+        )
+
+        if not os.path.exists(config_path):
+            arcpy.AddError(
+                "Proses dihentikan: File konfigurasi tidak ditemukan."
+            )
+            return
+
+        try:
+            # 1. Baca dan validasi data konfigurasi
+            config_data = system_utils.get_all_config(config_path)
+            if not isinstance(config_data, dict):
+                arcpy.AddError(
+                    "Format file konfigurasi tidak valid atau rusak."
+                )
+                return
+
+            project_config = config_data.get("project_config", {})
+
+            # 2. Timpa informasi atribut
+            project_config["provinsi"] = WADMPR
+            project_config["kab_kota"] = WADMKK
+            project_config["tahun_penilaian"] = THNNILAI
+
+            # 3. Logika Perbarui Path, Folder Connections, & Muat Layer
+            if update_path_flag:
+                config_data["ws_path"] = ws_folder
+                config_data["gdb_path"] = os.path.join(
+                    ws_folder, "ZoneNilaiTanah.gdb"
+                )
+                config_data["dataset_path"] = os.path.join(
+                    ws_folder, "ZoneNilaiTanah.gdb", "znt_ds"
+                )
+                arcpy.AddMessage("✅ Path Workspace, GDB, dan Dataset telah disesuaikan.")
+
+                # Update Folder Connections di Catalog ArcGIS Pro
+                aprx = arcpy.mp.ArcGISProject("CURRENT")
+                folder_connections = aprx.folderConnections
+
+                if not any(
+                    fc["connectionString"] == ws_folder
+                    for fc in folder_connections
+                ):
+                    folder_connections.append(
+                        {"connectionString": ws_folder, "isHomeFolder": False}
+                    )
+                    aprx.updateFolderConnections(
+                        folder_connections, validate=True
+                    )
+                    arcpy.AddMessage(
+                        f"📂 Folder {ws_folder} berhasil ditambahkan ke Folder Connections."
+                    )
+                else:
+                    arcpy.AddMessage(
+                        "ℹ️ Folder ini sudah terhubung di Catalog ArcGIS Pro."
+                    )
+
+                # Set Layer Output ke Peta
+                zona_layer_path = os.path.join(
+                    config_data["dataset_path"], "Zona_Layer"
+                )
+                if arcpy.Exists(zona_layer_path):
+                    arcpy.SetParameter(5, zona_layer_path)  # Index 5 = out_layer
+                    arcpy.AddMessage(
+                        "🗺️ Layer Zona_Layer berhasil dimuat ke dalam peta."
+                    )
+                else:
+                    arcpy.AddWarning(
+                        f"⚠️ Zona_Layer tidak ditemukan di: {zona_layer_path}"
+                    )
+
+            # 4. Tulis kembali konfigurasi
+            system_utils.setup_project_config(config_data, config_path)
+
+            arcpy.AddMessage("✅ Konfigurasi workspace berhasil disimpan!")
+            arcpy.AddMessage(f"   -> Tahun Penilaian: {THNNILAI}")
+            arcpy.AddMessage(f"   -> Lokasi: {WADMKK}, {WADMPR}")
+
+        except Exception as e:
+            arcpy.AddError(
+                f"Terjadi kesalahan saat mengedit file konfigurasi: {e}"
+            )
 
 class Import_Workspace(object):
 

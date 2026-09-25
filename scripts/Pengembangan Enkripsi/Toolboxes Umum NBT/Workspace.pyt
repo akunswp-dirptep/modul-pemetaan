@@ -28,7 +28,12 @@ class Toolbox:
         self.alias = "toolbox"
 
         # List of tool classes associated with this toolbox
-        self.tools = [Import_Workspace, Buat_Workspace, Edit_Workspace]
+        self.tools = [Import_Workspace, 
+                      Buat_Workspace, 
+                      Edit_Konfigurasi_Umum_Workspace,
+                      Edit_Skoring_Kelas_Jalan_Workspace,
+                      Edit_Skoring_Zonasi_Workspace
+                      ]
 
 class Buat_Workspace(object):
 
@@ -239,12 +244,12 @@ class Buat_Workspace(object):
         arcpy.SetParameter(5, fl)
         arcpy.AddMessage("Workspace berhasil dibuat")
 
-class Edit_Workspace(object):
+class Edit_Konfigurasi_Umum_Workspace(object):
 
     def __init__(self):
-        self.label = "Edit Workspace"
+        self.label = "Edit Konfigurasi Umum"
         self.description = (
-            "Tool untuk membaca dan mengedit konfigurasi workspace NBT."
+            "Tool untuk membaca dan mengedit konfigurasi Umum workspace NBT."
         )
         self.canRunInBackground = False
 
@@ -450,6 +455,318 @@ class Edit_Workspace(object):
             arcpy.AddError(
                 f"Terjadi kesalahan saat mengedit file konfigurasi: {e}"
             )
+
+class Edit_Skoring_Kelas_Jalan_Workspace(object):
+
+    def __init__(self):
+        self.label = "Edit Skoring Kelas Jalan"
+        self.description = "Tool untuk membaca dan mengedit nilai skoring kelas jalan pada konfigurasi workspace NBT."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        # 0. Parameter Folder Workspace
+        workspace_folder = arcpy.Parameter(
+            displayName="Pilih Folder Workspace",
+            name="workspace_folder",
+            datatype="DEFolder",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        # 1. Parameter Setapak
+        param_setapak = arcpy.Parameter(
+            displayName="Skor Setapak",
+            name="skor_setapak",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        # 2. Parameter Lokal Sekunder
+        param_lokal_sekunder = arcpy.Parameter(
+            displayName="Skor Lokal Sekunder",
+            name="skor_lokal_sekunder",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        # 3. Parameter Lokal Primer
+        param_lokal_primer = arcpy.Parameter(
+            displayName="Skor Lokal Primer",
+            name="skor_lokal_primer",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        # 4. Parameter Kolektor Sekunder
+        param_kolektor_sekunder = arcpy.Parameter(
+            displayName="Skor Kolektor Sekunder",
+            name="skor_kolektor_sekunder",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        # 5. Parameter Kolektor Primer
+        param_kolektor_primer = arcpy.Parameter(
+            displayName="Skor Kolektor Primer",
+            name="skor_kolektor_primer",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        # 6. Parameter Arteri Sekunder
+        param_arteri_sekunder = arcpy.Parameter(
+            displayName="Skor Arteri Sekunder",
+            name="skor_arteri_sekunder",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        # 7. Parameter Arteri Primer
+        param_arteri_primer = arcpy.Parameter(
+            displayName="Skor Arteri Primer",
+            name="skor_arteri_primer",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        return [
+            workspace_folder,
+            param_setapak,
+            param_lokal_sekunder,
+            param_lokal_primer,
+            param_kolektor_sekunder,
+            param_kolektor_primer,
+            param_arteri_sekunder,
+            param_arteri_primer
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        ws_param = parameters[0]
+
+        # Otomatis isi parameter skor dari file konfigurasi jika folder dipilih
+        if ws_param.value and not ws_param.hasBeenValidated:
+            ws_folder = ws_param.valueAsText
+            config_path = os.path.join(ws_folder, constant.PROJECT_CONFIG_FILE_NAME)
+
+            if os.path.exists(config_path):
+                try:
+                    config_data = system_utils.get_all_config(config_path)
+                    
+                    # Ambil data skoring kelas jalan
+                    jalan_config = config_data.get("jaringan_jalan_config", {}).get("skoring", {}).get("kelas_jalan", {})
+
+                    if isinstance(jalan_config, dict):
+                        # Set nilai parameter jika user belum mengubahnya secara manual
+                        if not parameters[1].altered:
+                            parameters[1].value = jalan_config.get("Setapak", 1)
+                        if not parameters[2].altered:
+                            parameters[2].value = jalan_config.get("Lokal Sekunder", 2)
+                        if not parameters[3].altered:
+                            parameters[3].value = jalan_config.get("Lokal Primer", 3)
+                        if not parameters[4].altered:
+                            parameters[4].value = jalan_config.get("Kolektor Sekunder", 4)
+                        if not parameters[5].altered:
+                            parameters[5].value = jalan_config.get("Kolektor Primer", 5)
+                        if not parameters[6].altered:
+                            parameters[6].value = jalan_config.get("Arteri Sekunder", 6)
+                        if not parameters[7].altered:
+                            parameters[7].value = jalan_config.get("Arteri Primer", 7)
+                except Exception:
+                    pass
+
+    def updateMessages(self, parameters):
+        ws_param = parameters[0]
+        if ws_param.value:
+            config_path = os.path.join(ws_param.valueAsText, constant.PROJECT_CONFIG_FILE_NAME)
+            if not os.path.exists(config_path):
+                ws_param.setErrorMessage("File konfigurasi (config) tidak ditemukan di dalam folder ini.")
+
+    def execute(self, parameters, messages):
+        ws_folder = parameters[0].valueAsText
+        
+        # Ambil nilai input dari user
+        val_setapak = parameters[1].value
+        val_lokal_sekunder = parameters[2].value
+        val_lokal_primer = parameters[3].value
+        val_kolektor_sekunder = parameters[4].value
+        val_kolektor_primer = parameters[5].value
+        val_arteri_sekunder = parameters[6].value
+        val_arteri_primer = parameters[7].value
+
+        config_path = os.path.join(ws_folder, constant.PROJECT_CONFIG_FILE_NAME)
+
+        if not os.path.exists(config_path):
+            arcpy.AddError("Proses dihentikan: File konfigurasi tidak ditemukan.")
+            return
+
+        try:
+            # 1. Baca data konfigurasi
+            config_data = system_utils.get_all_config(config_path)
+            if not isinstance(config_data, dict):
+                arcpy.AddError("Format file konfigurasi tidak valid atau rusak.")
+                return
+
+            # 2. Pastikan struktur dictionary untuk jaringan jalan tersedia
+            if "jaringan_jalan_config" not in config_data:
+                config_data["jaringan_jalan_config"] = {}
+            if "skoring" not in config_data["jaringan_jalan_config"]:
+                config_data["jaringan_jalan_config"]["skoring"] = {}
+            if "kelas_jalan" not in config_data["jaringan_jalan_config"]["skoring"]:
+                config_data["jaringan_jalan_config"]["skoring"]["kelas_jalan"] = {}
+
+            # 3. Timpa nilai skoring kelas jalan dengan inputan baru
+            config_data["jaringan_jalan_config"]["skoring"]["kelas_jalan"]["Setapak"] = val_setapak
+            config_data["jaringan_jalan_config"]["skoring"]["kelas_jalan"]["Lokal Sekunder"] = val_lokal_sekunder
+            config_data["jaringan_jalan_config"]["skoring"]["kelas_jalan"]["Lokal Primer"] = val_lokal_primer
+            config_data["jaringan_jalan_config"]["skoring"]["kelas_jalan"]["Kolektor Sekunder"] = val_kolektor_sekunder
+            config_data["jaringan_jalan_config"]["skoring"]["kelas_jalan"]["Kolektor Primer"] = val_kolektor_primer
+            config_data["jaringan_jalan_config"]["skoring"]["kelas_jalan"]["Arteri Sekunder"] = val_arteri_sekunder
+            config_data["jaringan_jalan_config"]["skoring"]["kelas_jalan"]["Arteri Primer"] = val_arteri_primer
+
+            # 4. Tulis kembali konfigurasi (Simpan)
+            system_utils.setup_project_config(config_data, config_path)
+
+            # 5. Pesan sukses
+            arcpy.AddMessage("✅ Konfigurasi skoring kelas jalan berhasil disimpan!")
+            arcpy.AddMessage(f"   -> Setapak: {val_setapak}")
+            arcpy.AddMessage(f"   -> Lokal Sekunder: {val_lokal_sekunder}")
+            arcpy.AddMessage(f"   -> Lokal Primer: {val_lokal_primer}")
+            arcpy.AddMessage(f"   -> Kolektor Sekunder: {val_kolektor_sekunder}")
+            arcpy.AddMessage(f"   -> Kolektor Primer: {val_kolektor_primer}")
+            arcpy.AddMessage(f"   -> Arteri Sekunder: {val_arteri_sekunder}")
+            arcpy.AddMessage(f"   -> Arteri Primer: {val_arteri_primer}")
+
+        except Exception as e:
+            arcpy.AddError(f"Terjadi kesalahan saat mengedit file konfigurasi: {e}")
+
+class Edit_Skoring_Zonasi_Workspace(object):
+
+    def __init__(self):
+        self.label = "Edit Skoring Zonasi"
+        self.description = "Tool untuk membaca, menambah, menghapus, dan mengedit nilai skoring zonasi pada konfigurasi workspace NBT."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        # 0. Parameter Folder Workspace
+        workspace_folder = arcpy.Parameter(
+            displayName="Pilih Folder Workspace",
+            name="workspace_folder",
+            datatype="DEFolder",
+            parameterType="Required",
+            direction="Input",
+        )
+
+        # 1. Parameter Value Table untuk Zonasi
+        param_zonasi = arcpy.Parameter(
+            displayName="Tabel Skoring Zonasi",
+            name="skoring_zonasi",
+            datatype="GPValueTable",
+            parameterType="Required",
+            direction="Input",
+        )
+        
+        # Mendefinisikan 2 kolom: Kolom 1 untuk Nama (String), Kolom 2 untuk Skor (Long/Integer)
+        param_zonasi.columns = [["GPString", "Nama Zonasi"], ["GPLong", "Skor"]]
+
+        return [workspace_folder, param_zonasi]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        ws_param = parameters[0]
+        zonasi_param = parameters[1]
+
+        # Otomatis isi parameter dari file konfigurasi jika folder dipilih
+        if ws_param.value and not ws_param.hasBeenValidated:
+            ws_folder = ws_param.valueAsText
+            config_path = os.path.join(ws_folder, constant.PROJECT_CONFIG_FILE_NAME)
+
+            if os.path.exists(config_path):
+                try:
+                    config_data = system_utils.get_all_config(config_path)
+                    
+                    # Ambil data skoring zonasi
+                    zonasi_dict = config_data.get("persil_config", {}).get("skoring", {}).get("zonasi", {})
+
+                    if isinstance(zonasi_dict, dict):
+                        # Jika user belum mengutak-atik tabel, isi dengan data dari JSON
+                        if not zonasi_param.altered:
+                            # Format ValueTable membutuhkan List of Lists: [[nama1, skor1], [nama2, skor2]]
+                            table_values = []
+                            for nama, skor in zonasi_dict.items():
+                                table_values.append([nama, skor])
+                            
+                            zonasi_param.values = table_values
+                except Exception:
+                    pass
+
+    def updateMessages(self, parameters):
+        ws_param = parameters[0]
+        if ws_param.value:
+            config_path = os.path.join(ws_param.valueAsText, constant.PROJECT_CONFIG_FILE_NAME)
+            if not os.path.exists(config_path):
+                ws_param.setErrorMessage("File konfigurasi (config) tidak ditemukan di dalam folder ini.")
+
+    def execute(self, parameters, messages):
+        ws_folder = parameters[0].valueAsText
+        zonasi_table_values = parameters[1].value # Mengembalikan list of lists / recordset
+
+        config_path = os.path.join(ws_folder, constant.PROJECT_CONFIG_FILE_NAME)
+
+        if not os.path.exists(config_path):
+            arcpy.AddError("Proses dihentikan: File konfigurasi tidak ditemukan.")
+            return
+
+        try:
+            # 1. Baca data konfigurasi
+            config_data = system_utils.get_all_config(config_path)
+            if not isinstance(config_data, dict):
+                arcpy.AddError("Format file konfigurasi tidak valid atau rusak.")
+                return
+
+            # 2. Pastikan struktur dictionary untuk persil_config tersedia
+            if "persil_config" not in config_data:
+                config_data["persil_config"] = {}
+            if "skoring" not in config_data["persil_config"]:
+                config_data["persil_config"]["skoring"] = {}
+            
+            # 3. Konversi data dari Value Table UI kembali menjadi Dictionary
+            new_zonasi_dict = {}
+            if zonasi_table_values:
+                for row in zonasi_table_values:
+                    # row[0] adalah Nama Zonasi, row[1] adalah Skor
+                    nama_zonasi = row[0]
+                    skor_zonasi = row[1]
+                    
+                    if nama_zonasi: # Pastikan namanya tidak kosong
+                        # Handle jika user mengosongkan skor, beri default 0
+                        new_zonasi_dict[nama_zonasi] = int(skor_zonasi) if skor_zonasi is not None else 0
+
+            # 4. Timpa data zonasi lama dengan dictionary yang baru dibuat
+            config_data["persil_config"]["skoring"]["zonasi"] = new_zonasi_dict
+
+            # 5. Tulis kembali konfigurasi (Simpan ke JSON)
+            system_utils.setup_project_config(config_data, config_path)
+
+            # 6. Pesan sukses
+            arcpy.AddMessage("✅ Konfigurasi skoring zonasi berhasil diperbarui!")
+            arcpy.AddMessage("Daftar Skoring Zonasi saat ini:")
+            for k, v in new_zonasi_dict.items():
+                arcpy.AddMessage(f"   -> {k}: {v}")
+
+        except Exception as e:
+            arcpy.AddError(f"Terjadi kesalahan saat mengedit file konfigurasi: {e}")
 
 class Import_Workspace(object):
 

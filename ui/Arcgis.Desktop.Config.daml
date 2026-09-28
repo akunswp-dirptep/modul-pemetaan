@@ -432,6 +432,7 @@
 					<button refID="ButtonTampilkanSimbologiKelasJalan" size="Medium"/>
 					
 				</menu>
+
 				<menu id="workspace_pembaruan_nbt" caption="Persiapan Workspace">
 					<button refID="ButtonBuatWorkspacePembaruanNBT" size="Medium"/>
 					<menu refID="perbaharui_konfigurasi_workspace" size="Medium"/>					
@@ -439,7 +440,8 @@
 				
 
 				<menu id="perbaharui_konfigurasi_workspace" caption="Edit Workspace">
-					<button refID="ButtonEditWorkspaceKonfigurasiProjectNBT" size="Medium"/>				
+					<button refID="ButtonEditWorkspaceKonfigurasiProjectNBT" size="Medium"/>
+					<button refID="ButtonEditSkoringZonasiWorkspace" size="medium"/>				
 				</menu>
 
 				<menu id="sesuaikan_atribut_jaringan_jalan" caption="Sesuaikan Atribut Jaringan Jalan">
@@ -2325,11 +2327,18 @@
 					<tooltip heading="Buat Workspace">Menu untuk Membuat Workspace NBT.</tooltip>
 				</button>
 
-				<button id="ButtonEditWorkspaceKonfigurasiProjectNBT" caption="Konfigurasi Umum" smallImage="C:\PenilaianTanah\icons\workspace.png" largeImage="C:\PenilaianTanah\icons\workspace.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonEditWorkspaceKonfigurasiProjectNBT" caption="Konfigurasi Umum" smallImage="C:\PenilaianTanah\icons\konfigurasi_umum.png" largeImage="C:\PenilaianTanah\icons\konfigurasi_umum.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\Workspace.pyt\Edit_Konfigurasi_Umum_Workspace" name="Konfigurasi Umum" xmlns=""/>
 					</args>
 					<tooltip heading="Konfigurasi Umum">Menu untuk melakukan perubahan pada konfigurasi umum Workspace NBT.</tooltip>
+				</button>
+
+				<button id="ButtonEditSkoringZonasiWorkspace" caption="Perbaharui Skoring Zonasi" smallImage="C:\PenilaianTanah\icons\skoring_zonasi.png" largeImage="C:\PenilaianTanah\icons\skoring_zonasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\Workspace.pyt\Edit_Skoring_Zonasi_Workspace" name="Perbaharui Skoring Zonasi" xmlns=""/>
+					</args>
+					<tooltip heading="Perbaharui Skoring Zonasi">Menu untuk melakukan perubahan pada Skoring Zonasi Workspace NBT.</tooltip>
 				</button>
 
 				<button id="ButtonImportWorkspaceNBT" caption="Import Workspace" smallImage="C:\PenilaianTanah\icons\importworkspace.png" largeImage="C:\PenilaianTanah\icons\importworkspace.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

@@ -652,8 +652,8 @@ class Edit_Skoring_Kelas_Jalan_Workspace(object):
 class Edit_Skoring_Zonasi_Workspace(object):
 
     def __init__(self):
-        self.label = "Edit Skoring Zonasi"
-        self.description = "Tool untuk membaca, menambah, menghapus, dan mengedit nilai skoring zonasi pada konfigurasi workspace NBT."
+        self.label = "Perbaharui Skoring Zonasi"
+        self.description = "Tool untuk membaca, menambah, menghapus, dan memperbaharui nilai skoring zonasi pada konfigurasi workspace NBT."
         self.canRunInBackground = False
 
     def getParameterInfo(self):

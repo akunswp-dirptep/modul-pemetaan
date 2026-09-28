@@ -1632,7 +1632,7 @@ class Masukkan_Data_Jaringan_Jalan(object):
         interest_fields = [field_skor_jalan, field_lebar_jalan]
         configs=persil.get_config_values()
         dataset_path=configs["project_config"]["dataset_path"]
-        jaringan_jalan_path=configs["jaringan_jalan_config"]["path"]["Jaringan_Jalan"]
+        jaringan_jalan_path=os.path.join(dataset_path, 'Jaringan_Jalan')
         jaringan_jalan="Jaringan_Jalan"
         topologi_jaringan_jalan_path=os.path.join(dataset_path,'Topologi_Jaringan_Jalan')
         if arcpy.Exists(topologi_jaringan_jalan_path):
@@ -1760,12 +1760,13 @@ class Masukkan_Data_Jaringan_Jalan(object):
 class Masukkan_Data_Fasilitas(object):
     def __init__(self):
         self.label = "Masukkan Data Fasilitas"
-        self.description = ""
+        self.description = "Alat untuk memasukkan data fasilitas baru atau yang sudah ada ke dalam Geodatabase NBT."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
+
         mode_input = arcpy.Parameter(
-            displayName="Mode Input",
+            displayName="Pilih Mode Input",
             name="mode_input",
             datatype="GPString",
             parameterType="Required",
@@ -1779,6 +1780,40 @@ class Masukkan_Data_Fasilitas(object):
         ]
         mode_input.value = "Fasilitas Wajib"
 
+        # ================= KATEGORI 1: DATA FASILITAS (SELALU DIGUNAKAN) =================
+
+        fasilitas_path = arcpy.Parameter(
+            displayName="Feature Class Fasilitas (Point)",
+            name="fasilitas_path",
+            datatype="DEFeatureClass",
+            parameterType="Required",
+            direction="Input"
+        )
+        fasilitas_path.category = "Data Utama Fasilitas"
+
+
+        keterangan = arcpy.Parameter(
+            displayName="Field Keterangan Fasilitas",
+            name="keterangan",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        keterangan.parameterDependencies = [fasilitas_path.name]
+        keterangan.category = "Data Utama Fasilitas"
+
+        # ================= KATEGORI 2: FASILITAS BARU =================
+
+        nama_fasilitas = arcpy.Parameter(
+            displayName="Nama Fasilitas Baru (Maks 8 Huruf)",
+            name="nama_fasilitas",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        nama_fasilitas.category = "Pengaturan Fasilitas Baru"
+
+        # ================= KATEGORI 3: DATA NBT SEBELUMNYA =================
         nbt_sebelumnya_path = arcpy.Parameter(
             displayName="Data NBT Sebelumnya",
             name="nbt_sebelumnya_path",
@@ -1786,55 +1821,34 @@ class Masukkan_Data_Fasilitas(object):
             parameterType="Optional",
             direction="Input"
         )
+        nbt_sebelumnya_path.category = "Transfer Atribut NBT Sebelumnya"
 
         existing_field = arcpy.Parameter(
-            displayName="Field Existing",
+            displayName="Pilih Fasilitas Wajib (Field Existing)",
             name="existing_field",
             datatype="GPString",
             parameterType="Optional",
             direction="Input"
         )
         existing_field.filter.type = "ValueList"
-        existing_field.filter.list = [
-            "JKCBD", "JKKES", "JKPDDKN", "JKTRANSP", "JKPMRNTH"
-        ]
+        existing_field.filter.list = ["JKCBD", "JKKES", "JKPDDKN", "JKTRANSP", "JKPMRNTH"]
+        existing_field.category = "Transfer Atribut NBT Sebelumnya"
 
-        fasilitas_path = arcpy.Parameter(
-            displayName="Feature Class Fasilitas",
-            name="fasilitas_path",
-            datatype="DEFeatureClass",
-            parameterType="Optional",
-            direction="Input"
-        )
-
-        nama_fasilitas = arcpy.Parameter(
-            displayName="Nama Fasilitas Baru",
-            name="nama_fasilitas",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input"
-        )
-
+        # 6. Field Jarak NBT
         jarak_field = arcpy.Parameter(
-            displayName="Field Jarak Fasilitas",
+            displayName="Field Jarak Fasilitas di NBT Sebelumnya",
             name="jarak_field",
             datatype="Field",
             parameterType="Optional",
             direction="Input"
         )
         jarak_field.parameterDependencies = [nbt_sebelumnya_path.name]
-        
-        keterangan = arcpy.Parameter(
-            displayName="Field Keterangan Fasilitas",
-            name="keterangan",
-            datatype="Field",
-            parameterType="Optional",
-            direction="Input"
-        )
-        keterangan.parameterDependencies = [fasilitas_path.name]
+        jarak_field.category = "Transfer Atribut NBT Sebelumnya"
 
+        # ================= OUTPUT LAYER =================
+        # 7. Output Layer (Untuk ditambahkan ke peta)
         output_layer = arcpy.Parameter(
-            displayName="Output Fasilitas",
+            displayName="Output Fasilitas Layer",
             name="output_layer",
             datatype="GPFeatureLayer",
             parameterType="Derived",
@@ -1842,14 +1856,14 @@ class Masukkan_Data_Fasilitas(object):
         )
 
         return [
-            mode_input,
-            nbt_sebelumnya_path,
-            existing_field,
-            fasilitas_path,
-            nama_fasilitas,
-            jarak_field,
-            keterangan,
-            output_layer
+            mode_input,          
+            fasilitas_path,      
+            keterangan,          
+            nama_fasilitas,      
+            nbt_sebelumnya_path, 
+            existing_field,      
+            jarak_field,         
+            output_layer         
         ]
 
     def isLicensed(self):
@@ -1859,48 +1873,50 @@ class Masukkan_Data_Fasilitas(object):
         mode_input = parameters[0].valueAsText
         
         if mode_input == "Fasilitas Wajib":
-            parameters[1].enabled = True
-            parameters[2].enabled = True
-            parameters[3].enabled = True
-            parameters[4].enabled = False
-            parameters[5].enabled = True
-            parameters[6].enabled = True
+            parameters[3].enabled = False 
+            parameters[4].enabled = True  
+            parameters[5].enabled = True  
+            parameters[6].enabled = True  
+            
         elif mode_input == "Tambah Fasilitas Baru":
-            parameters[1].enabled = False
-            parameters[2].enabled = False
-            parameters[3].enabled = True
-            parameters[4].enabled = True
-            parameters[5].enabled = False
-            parameters[6].enabled = True
+            parameters[3].enabled = True  
+            parameters[4].enabled = False 
+            parameters[5].enabled = False 
+            parameters[6].enabled = False 
+            
         elif mode_input == "Tambah Fasilitas dari NBT Sebelumnya":
-            parameters[1].enabled = True
-            parameters[2].enabled = False
-            parameters[3].enabled = True
-            parameters[4].enabled = True
-            parameters[5].enabled = True
-            parameters[6].enabled = True
+            parameters[3].enabled = True  
+            parameters[4].enabled = True  
+            parameters[5].enabled = False 
+            parameters[6].enabled = True  
         return
 
     def updateMessages(self, parameters):
-        nama_fasilitas = parameters[4].valueAsText
-        if nama_fasilitas:
-            if len(nama_fasilitas) > 8:
-                parameters[4].setErrorMessage("Nama fasilitas maksimal 8 huruf")
+        mode_input = parameters[0].valueAsText
+        
+        if mode_input in ["Tambah Fasilitas Baru", "Tambah Fasilitas dari NBT Sebelumnya"]:
+            nama_fasilitas = parameters[3].valueAsText
+            if nama_fasilitas and len(nama_fasilitas) > 8:
+                parameters[3].setErrorMessage("Nama fasilitas maksimal 8 huruf")
         return
 
     def copy_fasilitas(self, fasilitas_path, dataset_path, nama_fasilitas, keterangan_field, messages):
+        arcpy.env.overwriteOutput = True 
+        
         output_fc = os.path.join(dataset_path, nama_fasilitas)
+        
         if arcpy.Exists(output_fc):
-            messages.addWarningMessage(f"{nama_fasilitas} sudah ada, menghapus lama")
-            arcpy.management.Delete(output_fc)
+            messages.addWarningMessage(f"Layer '{nama_fasilitas}' sudah ada, mencoba menghapus atau menimpa data yang lama...")
+            try:
+                arcpy.management.Delete(output_fc)
+            except Exception as e:
+                messages.addWarningMessage(f"Peringatan: Tidak bisa menghapus '{nama_fasilitas}' karena file sedang dikunci/dibuka di peta. Sistem akan mencoba menimpanya secara otomatis.")
 
-        # Mengatur Field Mapping agar HANYA memasukkan field keterangan
         field_mappings = arcpy.FieldMappings()
         if keterangan_field:
             fm = arcpy.FieldMap()
             fm.addInputField(fasilitas_path, keterangan_field)
-            
-            # Ubah nama field di feature class tujuan menjadi "keterangan"
+
             out_field = fm.outputField
             out_field.name = "keterangan"
             out_field.aliasName = "Keterangan"
@@ -1908,7 +1924,6 @@ class Masukkan_Data_Fasilitas(object):
             
             field_mappings.addFieldMap(fm)
 
-        # Proses copy (field lain akan terbuang otomatis, menyisakan OID, Shape, dan 'keterangan')
         arcpy.conversion.FeatureClassToFeatureClass(
             fasilitas_path,
             dataset_path,
@@ -1927,16 +1942,22 @@ class Masukkan_Data_Fasilitas(object):
             if arcpy.Exists(fc):
                 arcpy.management.Delete(fc)
 
-        messages.addMessage("== Membuat centroid source ==")
+        messages.addMessage("Mempersiapkan Key Penggabungan Berdasarkan Centroid")
         arcpy.management.FeatureToPoint(source_fc, source_point, "INSIDE")
-
-        messages.addMessage("== Membuat centroid target ==")
         arcpy.management.FeatureToPoint(target_fc, target_point, "INSIDE")
 
-        messages.addMessage("== Spatial Join (Closest) ==")
+        messages.addMessage("Mulai Memindahkan data")
+        
+
         field_mappings = arcpy.FieldMappings()
         field_mappings.addTable(target_point)
+        
+        idx = field_mappings.findFieldMapIndex(target_field)
+        if idx != -1:
+            field_mappings.removeFieldMap(idx)
+            
         field_mappings.addTable(source_point)
+        # ==============================================================
 
         arcpy.analysis.SpatialJoin(
             target_features=target_point,
@@ -1944,12 +1965,11 @@ class Masukkan_Data_Fasilitas(object):
             out_feature_class=join_result,
             join_operation="JOIN_ONE_TO_ONE",
             join_type="KEEP_ALL",
-            field_mapping=field_mappings,
+            field_mapping=field_mappings, # Menggunakan mapping yang sudah diperbaiki
             match_option="CLOSEST",
             search_radius=f"{max_distance} Meters"
         )
 
-        messages.addMessage("== Membaca hasil join ==")
         value_dict = {}
         with arcpy.da.SearchCursor(join_result, ["TARGET_FID", source_field]) as rows:
             for target_oid, nilai in rows:
@@ -1957,7 +1977,7 @@ class Masukkan_Data_Fasilitas(object):
                     continue
                 value_dict[target_oid] = nilai
 
-        messages.addMessage(f"== {len(value_dict)} pasangan ditemukan ==")
+        messages.addMessage(f"{len(value_dict)} pasangan ditemukan")
         updated = 0
         skipped = 0
 
@@ -1971,16 +1991,25 @@ class Masukkan_Data_Fasilitas(object):
                 else:
                     skipped += 1
 
-        messages.addMessage(f"== {updated} bidang berhasil diupdate ==")
-        messages.addMessage(f"== {skipped} bidang dilewati ==")
+        messages.addMessage(f"{updated} bidang berhasil diperbaharui")
+        messages.addMessage(f"{skipped} bidang dilewati")
 
+        # Bersihkan temporary files
         for fc in [source_point, target_point, join_result]:
             if arcpy.Exists(fc):
                 arcpy.management.Delete(fc)
 
     def execute(self, parameters, messages):
         messages.addMessage("== Proses dimulai ==")
+        
         mode_input = parameters[0].valueAsText
+        fasilitas_path = parameters[1].valueAsText
+        keterangan_field = parameters[2].valueAsText
+        nama_fasilitas = parameters[3].valueAsText
+        nbt_sebelumnya_path = parameters[4].valueAsText
+        field_existing = parameters[5].valueAsText
+        field_jarak = parameters[6].valueAsText
+
         configs = persil.get_config_values()
         persil_path = os.path.join(configs["project_config"]["dataset_path"], "Persil_Layer")
         dataset_path = configs["fasilitas_config"]["dataset_path"]
@@ -1991,29 +2020,22 @@ class Masukkan_Data_Fasilitas(object):
             spatial_ref = arcpy.Describe(persil_path).spatialReference
             arcpy.management.CreateFeatureDataset(gdb_path, os.path.basename(dataset_path), spatial_ref)
 
-        if mode_input == "Fasilitas Wajib":
-            nbt_sebelumnya_path = parameters[1].valueAsText
-            field_existing = parameters[2].valueAsText
-            fasilitas_path = parameters[3].valueAsText
-            field_jarak = parameters[5].valueAsText
-            keterangan_field = parameters[6].valueAsText
+        output_fc = None
+        layer_name = ""
 
+        # --- LOGIKA BERDASARKAN MODE ---
+        if mode_input == "Fasilitas Wajib":
             if not field_existing:
                 raise arcpy.ExecuteError("Field existing belum dipilih")
-            if not fasilitas_path:
-                raise arcpy.ExecuteError("Feature class fasilitas tidak valid")
-
-            nama_fasilitas = field_existing[2:]
-            self.copy_fasilitas(fasilitas_path, dataset_path, nama_fasilitas, keterangan_field, messages)
+            
+            nama_fasilitas = field_existing[2:] # Hapus "JK", contoh: JKCBD -> CBD
+            output_fc = self.copy_fasilitas(fasilitas_path, dataset_path, nama_fasilitas, keterangan_field, messages)
             self.transfer_centroid(nbt_sebelumnya_path, persil_path, field_jarak, field_existing, messages)
+            
+            layer_name = f"Fasilitas_{nama_fasilitas}"
+            messages.addMessage(f"Fasilitas Wajib {nama_fasilitas} berhasil diproses")
 
         elif mode_input == "Tambah Fasilitas Baru":
-            fasilitas_path = parameters[3].valueAsText
-            nama_fasilitas = parameters[4].valueAsText
-            keterangan_field = parameters[6].valueAsText
-
-            if not fasilitas_path:
-                raise arcpy.ExecuteError("Feature class fasilitas tidak valid")
             if not nama_fasilitas:
                 raise arcpy.ExecuteError("Nama fasilitas belum diisi")
 
@@ -2033,21 +2055,12 @@ class Masukkan_Data_Fasilitas(object):
             configs["fasilitas_config"]["mapping_fasilitas"] = mapping_fasilitas
             persil.set_config_values(configs)
 
-            arcpy.management.MakeFeatureLayer(output_fc, nama_fasilitas)
-            arcpy.SetParameter(7, nama_fasilitas)
-            messages.addMessage(f"== Fasilitas {nama_fasilitas} berhasil ditambahkan ==")
+            layer_name = f"Fasilitas_{nama_fasilitas}"
+            messages.addMessage(f"Fasilitas Baru {nama_fasilitas} berhasil ditambahkan")
 
         elif mode_input == "Tambah Fasilitas dari NBT Sebelumnya":
-            nbt_sebelumnya_path = parameters[1].valueAsText
-            fasilitas_path = parameters[3].valueAsText
-            nama_fasilitas = parameters[4].valueAsText
-            field_jarak = parameters[5].valueAsText
-            keterangan_field = parameters[6].valueAsText
-
             if not nbt_sebelumnya_path:
                 raise arcpy.ExecuteError("NBT sebelumnya belum dipilih")
-            if not fasilitas_path:
-                raise arcpy.ExecuteError("Feature class fasilitas tidak valid")
             if not nama_fasilitas:
                 raise arcpy.ExecuteError("Nama fasilitas belum diisi")
 
@@ -2069,11 +2082,27 @@ class Masukkan_Data_Fasilitas(object):
             configs["fasilitas_config"]["mapping_fasilitas"] = mapping_fasilitas
             persil.set_config_values(configs)
 
-            arcpy.management.MakeFeatureLayer(output_fc, nama_fasilitas)
-            arcpy.SetParameter(7, nama_fasilitas)
-            messages.addMessage(f"== Fasilitas {nama_fasilitas} berhasil ditambahkan dari NBT sebelumnya ==")
+            layer_name = f"Fasilitas_{nama_fasilitas}"
+            messages.addMessage(f"Fasilitas {nama_fasilitas} berhasil ditambahkan dari NBT sebelumnya")
 
-        messages.addMessage("== Proses selesai ==")
+        # --- MEMASUKKAN LAYER KE PETA (Berlaku untuk SEMUA mode) ---
+        if output_fc and arcpy.Exists(output_fc):
+            symbology_mapping = {
+                'CBD' : r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Fasilitas_CBD.lyrx",
+                'KES' : r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Fasilitas_KES.lyrx",
+                'PDDKN' : r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Fasilitas_PDDKN.lyrx",
+                'PMRNTH' : r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Fasilitas_PMRNTH.lyrx",
+                'TRANSP' : r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Fasilitas_TRANSP.lyrx",
+            }
+            simbology_file = symbology_mapping.get(nama_fasilitas, r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Fasilitas_LAINNYA.lyrx")
+
+            arcpy.management.MakeFeatureLayer(output_fc, layer_name)
+            arcpy.management.ApplySymbologyFromLayer(layer_name, simbology_file)
+            
+            arcpy.SetParameter(7, layer_name)
+            messages.addMessage(f"Layer '{layer_name}' ditambahkan ke map")
+
+        messages.addMessage("Proses selesai")
         return
     
 class Masukkan_Data_Risiko(object):

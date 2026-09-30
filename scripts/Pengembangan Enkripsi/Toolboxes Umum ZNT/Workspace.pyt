@@ -1321,7 +1321,7 @@ class Cek_Zona_Awal(object):
         fields_to_add = [
             ["Err_Luas", "TEXT", 10], ["Err_Potong", "TEXT", 10], 
             ["Err_1Prsl", "TEXT", 10], ["Err_Tindih", "TEXT", 10], # Tambahan Field Overlap
-            ["Luas_M2", "DOUBLE", None], ["Jml_Prsl", "SHORT", None], 
+            ["Luas_M2", "DOUBLE", None], ["Jml_Prsl", "LONG", None], 
             ["UID_Zona", "LONG", None] 
         ]
         for fld in fields_to_add:
@@ -1440,7 +1440,7 @@ class Cek_Zona_Awal(object):
         ) as cursor:
             for row in cursor:
                 uid = row[0]
-
+                
                 if uid in zona_status:
                     row[1] = zona_status[uid]["err_luas"]
                     row[2] = "Ya" if zona_potong_flag.get(uid, False) else "Tidak"

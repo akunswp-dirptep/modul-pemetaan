@@ -1351,7 +1351,10 @@ class Cek_Zona_Awal(object):
             arcpy.management.AddField(out_zona, fld[0], fld[1], field_length=fld[2])
 
         # Kalkulasi UID_Zona menggunakan ID asli
-        arcpy.management.CalculateField(out_zona, "UID_Zona", "!OBJECTID!", "PYTHON3")
+        oid_field = arcpy.Describe(out_zona).OIDFieldName
+
+        # Kalkulasi UID_Zona secara dinamis
+        arcpy.management.CalculateField(out_zona, "UID_Zona", f"!{oid_field}!", "PYTHON3")
 
         zona_status = {}
         with arcpy.da.SearchCursor(out_zona, ["OID@", "UID_Zona", "SHAPE@AREA"]) as cursor:
@@ -1404,7 +1407,8 @@ class Cek_Zona_Awal(object):
         
         arcpy.management.CopyFeatures(in_persil, mem_persil)
         arcpy.management.AddField(mem_persil, "UID_Persil", "LONG")
-        arcpy.management.CalculateField(mem_persil, "UID_Persil", "!OBJECTID!", "PYTHON3")
+        oid_persil = arcpy.Describe(mem_persil).OIDFieldName
+        arcpy.management.CalculateField(mem_persil, "UID_Persil", f"!{oid_persil}!", "PYTHON3")
 
         persil_area_dict = {}
         with arcpy.da.SearchCursor(mem_persil, ['UID_Persil', 'SHAPE@AREA']) as cursor:

@@ -1241,7 +1241,6 @@ class Unduh_Workspace(object):
             arcpy.AddError(f"Error saat memproses file zip: {e}")
             return False, None
 
-
 class Cek_Zona_Awal(object):
     def __init__(self):
         self.label = "Cek Aturan Zona Berdasarkan Persil"
@@ -1281,7 +1280,15 @@ class Cek_Zona_Awal(object):
             parameterType="Required",
             direction="Output")
 
-        return [param0, param1, skala, param3]
+        # [MODIFIKASI] Parameter baru untuk output layer area potong
+        param4 = arcpy.Parameter(
+            displayName="Output Area Potong (Layer Berbeda)",
+            name="out_potong",
+            datatype="DEFeatureClass",
+            parameterType="Optional",
+            direction="Output")
+
+        return [param0, param1, skala, param3, param4]
 
     def isLicensed(self):
         return True
@@ -1297,29 +1304,28 @@ class Cek_Zona_Awal(object):
         in_persil = parameters[1].valueAsText
         skala = parameters[2].value
         out_zona = parameters[3].valueAsText
+        out_potong = parameters[4].valueAsText if parameters[4].valueAsText else None
 
         # --- 0. Cek Sistem Koordinat (Harus TM-3) ---
         messages.addMessage("--> Memeriksa Sistem Koordinat Layer...")
         sr_zona = arcpy.Describe(in_zona).spatialReference
         sr_persil = arcpy.Describe(in_persil).spatialReference
 
-        # Nama sistem koordinat diubah ke huruf kapital agar mudah dicek
         nama_sr_zona = sr_zona.name.upper() if sr_zona.name else ""
         nama_sr_persil = sr_persil.name.upper() if sr_persil.name else ""
 
-        # Cek apakah mengandung "TM3" atau "TM-3"
         is_zona_tm3 = "TM3" in nama_sr_zona or "TM-3" in nama_sr_zona
         is_persil_tm3 = "TM3" in nama_sr_persil or "TM-3" in nama_sr_persil
 
         if not is_zona_tm3:
             arcpy.AddError(f"ERROR: Sistem koordinat Layer Zona bukan TM-3. (Sistem saat ini: {sr_zona.name}). Proses dihentikan.")
-            return  # Hentikan eksekusi
+            return
 
         if not is_persil_tm3:
             arcpy.AddError(f"ERROR: Sistem koordinat Layer Persil bukan TM-3. (Sistem saat ini: {sr_persil.name}). Proses dihentikan.")
-            return  # Hentikan eksekusi
+            return
             
-        messages.addMessage("✅ Sistem koordinat valid (TM-3). Melanjutkan proses...")
+        messages.addMessage("Sistem koordinat valid (TM-3). Melanjutkan proses...")
 
         # --- 1. Tentukan Luas Minimal ---
         if skala == "1:25.000":
@@ -1333,14 +1339,12 @@ class Cek_Zona_Awal(object):
             
         messages.addMessage(f"--> Target Skala: {skala} | Luas minimal: {luas_minimal} m2")
 
-        # Samakan Environment Koordinat agar hitungan luas akurat
         arcpy.env.outputCoordinateSystem = arcpy.Describe(in_zona).spatialReference
 
         # --- 2. Persiapkan Output & Custom ID Zona ---
         messages.addMessage("--> Membuat output layer dan Custom ID Zona...")
         arcpy.management.CopyFeatures(in_zona, out_zona)
 
-        # Tambahkan field operasional (Ditambah Err_Tindih)
         fields_to_add = [
             ["Err_Luas", "TEXT", 10], ["Err_Potong", "TEXT", 10], 
             ["Err_1Prsl", "TEXT", 10], ["Err_Tindih", "TEXT", 10], 
@@ -1350,10 +1354,7 @@ class Cek_Zona_Awal(object):
         for fld in fields_to_add:
             arcpy.management.AddField(out_zona, fld[0], fld[1], field_length=fld[2])
 
-        # Kalkulasi UID_Zona menggunakan ID asli
         oid_field = arcpy.Describe(out_zona).OIDFieldName
-
-        # Kalkulasi UID_Zona secara dinamis
         arcpy.management.CalculateField(out_zona, "UID_Zona", f"!{oid_field}!", "PYTHON3")
 
         zona_status = {}
@@ -1430,15 +1431,18 @@ class Cek_Zona_Awal(object):
 
         zona_persil_count = {uid: 0 for uid in zona_status.keys()}
         zona_potong_flag = {uid: False for uid in zona_status.keys()}
-        
-        # [MODIFIKASI] Dictionary untuk menyimpan rasio tutupan persil terbesar pada zona
         zona_max_coverage = {uid: 0 for uid in zona_status.keys()} 
+        
+        # [MODIFIKASI] List untuk menampung fitur polygon dari area perpotongan
+        koleksi_potongan = []
 
-        with arcpy.da.SearchCursor(memory_intersect, ["UID_Zona", "UID_Persil", 'SHAPE@AREA']) as cursor:
+        # [MODIFIKASI] Tambahkan "SHAPE@" di SearchCursor untuk mengambil geometri poligon
+        with arcpy.da.SearchCursor(memory_intersect, ["UID_Zona", "UID_Persil", 'SHAPE@AREA', 'SHAPE@']) as cursor:
             for row in cursor:
                 z_uid = row[0]
                 p_uid = row[1]
                 int_area = row[2]
+                shape_geom = row[3] # Menyimpan poligon irisan
 
                 if p_uid not in persil_area_dict or z_uid not in zona_status:
                     continue
@@ -1447,11 +1451,9 @@ class Cek_Zona_Awal(object):
                 if p_area == 0:
                     continue
 
-                # [MODIFIKASI] Hitung rasio seberapa besar potongan persil menutupi luas zona
                 z_area = zona_status[z_uid]["luas"]
                 rasio_tutupan_zona = int_area / z_area if z_area > 0 else 0
                 
-                # Simpan rasio terbesar yang ditemukan dalam zona tersebut
                 if rasio_tutupan_zona > zona_max_coverage[z_uid]:
                     zona_max_coverage[z_uid] = rasio_tutupan_zona
 
@@ -1462,9 +1464,13 @@ class Cek_Zona_Awal(object):
                 elif int_area > MIN_AREA_POTONG:
                     zona_potong_flag[z_uid] = True
                     zona_persil_count[z_uid] += 1
+                    
+                    # [MODIFIKASI] Tangkap bentuk potongan untuk layer baru
+                    if out_potong:
+                        koleksi_potongan.append((shape_geom, z_uid))
 
-        # --- 6. Simpan Hasil ---
-        messages.addMessage("--> Menyimpan hasil ke Attribute Table...")
+        # --- 6. Simpan Hasil ke Atribut Tabel Zona ---
+        messages.addMessage("--> Menyimpan hasil ke Attribute Table Utama...")
 
         with arcpy.da.UpdateCursor(
             out_zona,
@@ -1478,22 +1484,42 @@ class Cek_Zona_Awal(object):
                     row[2] = "Ya" if zona_potong_flag.get(uid, False) else "Tidak"
                     
                     jml = zona_persil_count.get(uid, 0)
-                    max_cov = zona_max_coverage.get(uid, 0) # Ambil rasio tutupan terbesar
+                    max_cov = zona_max_coverage.get(uid, 0) 
                     
                     row[3] = "Ya" if (jml == 1 and max_cov >= 0.95) else "Tidak"
-                    
                     row[4] = "Ya" if zona_tindih_flag.get(uid, False) else "Tidak" 
                     row[5] = zona_status[uid]["luas"]
                     row[6] = jml
 
                 cursor.updateRow(row)
 
-        # Hapus field UID_Zona di output akhir agar tabel tetap rapi
-        arcpy.management.DeleteField(out_zona, "UID_Zona")
+        # --- 7. [MODIFIKASI] Pembuatan Layer Area Potong Berbeda ---
+        if out_potong and len(koleksi_potongan) > 0:
+            messages.addMessage(f"--> Mengekspor {len(koleksi_potongan)} area perpotongan ke layer terpisah...")
+            
+            # Pisahkan workspace (gdb/folder) dan nama file
+            out_ws = os.path.dirname(out_potong)
+            out_nm = os.path.basename(out_potong)
+            
+            # Buat Feature Class kosong bertipe poligon
+            arcpy.management.CreateFeatureclass(
+                out_path=out_ws, 
+                out_name=out_nm, 
+                geometry_type="POLYGON", 
+                spatial_reference=arcpy.env.outputCoordinateSystem
+            )
+            
+            # Tambah field untuk referensi potongan
+            arcpy.management.AddField(out_potong, "UID_Zona", "LONG")
+
+            # Insert setiap bidang perpotongan ke dalam feature class baru
+            with arcpy.da.InsertCursor(out_potong, ["SHAPE@", "UID_Zona"]) as icur:
+                for potong_data in koleksi_potongan:
+                    icur.insertRow(potong_data)
 
         # Bersihkan memory
         arcpy.management.Delete(mem_persil)
         arcpy.management.Delete(memory_intersect)
 
-        messages.addMessage("✅ Proses Selesai. Silakan periksa Layer Output.")
+        messages.addMessage("Proses Selesai. Silakan periksa Layer Output.")
         return

@@ -1241,8 +1241,6 @@ class Unduh_Workspace(object):
             arcpy.AddError(f"Error saat memproses file zip: {e}")
             return False, None
 
-import arcpy
-import os
 
 class Cek_Zona_Awal(object):
     def __init__(self):
@@ -1465,3 +1463,4 @@ class Cek_Zona_Awal(object):
 
         messages.addMessage("✅ Proses Selesai. Silakan periksa Layer Output.")
         return
+

@@ -114,6 +114,7 @@
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
 					<button refID="ButtonUploadRevisiKeSipenta" size="large" />
+					<button refID="ButtonCekZonaAwal" size="large" />
 				</group>
 
 				<group id="portofolio" caption="Mock Up">
@@ -1767,6 +1768,8 @@
 					</args>
 					<tooltip heading="Unduh Workspace">Menu untuk memngunduh workspace.</tooltip>
 				</button>
+
+
 				
 				<button id="ButtonMasukkanDataDasar" caption="Masukkan Data Dasar" smallImage="C:\PenilaianTanah\icons\location.png" largeImage="C:\PenilaianTanah\icons\location.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
@@ -2043,6 +2046,12 @@
 		
 		<!-- Digunakan keduanya (Pembaruan dan Pembuatan ZNT)-->
 				<!-- Menu Persiapan Data -->
+				<button id="ButtonCekZonaAwal" caption="Cek Zona Awal" smallImage="C:\PenilaianTanah\icons\ubahgeometri.png" largeImage="C:\PenilaianTanah\icons\ubahgeometri.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\Workspace.pyt\Cek_Zona_Awal" name="Cek Zona Awal" xmlns=""/>
+					</args>
+					<tooltip heading="Cek Zona Awal">Menu untuk memngecek zona awal.</tooltip>
+				</button>
 				<button id="ButtonTambahkanCitra"
 						caption="Basemap Lokal"
 						smallImage="C:\PenilaianTanah\icons\layer.png"

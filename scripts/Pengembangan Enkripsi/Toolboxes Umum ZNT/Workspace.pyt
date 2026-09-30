@@ -1320,7 +1320,7 @@ class Cek_Zona_Awal(object):
         # Tambahkan field operasional (Ditambah Err_Tindih)
         fields_to_add = [
             ["Err_Luas", "TEXT", 10], ["Err_Potong", "TEXT", 10], 
-            ["Err_1Prsl", "TEXT", 10], ["Err_Tindih", "TEXT", 10], # Tambahan Field Overlap
+            ["Err_1Prsl", "TEXT", 10], ["Err_Tindih", "TEXT", 10], 
             ["Luas_M2", "DOUBLE", None], ["Jml_Prsl", "LONG", None], 
             ["UID_Zona", "LONG", None] 
         ]
@@ -1348,7 +1348,6 @@ class Cek_Zona_Awal(object):
         if arcpy.Exists(mem_zona_copy):
             arcpy.management.Delete(mem_zona_copy)
             
-        # Kopi zona untuk cross-intersect dan buat ID Pembanding
         arcpy.management.CopyFeatures(out_zona, mem_zona_copy)
         arcpy.management.AddField(mem_zona_copy, "UID_Zona_C", "LONG")
         arcpy.management.CalculateField(mem_zona_copy, "UID_Zona_C", "!UID_Zona!", "PYTHON3")
@@ -1357,24 +1356,20 @@ class Cek_Zona_Awal(object):
         if arcpy.Exists(mem_overlap):
             arcpy.management.Delete(mem_overlap)
 
-        # Intersect zona dengan dirinya sendiri
         arcpy.analysis.PairwiseIntersect([out_zona, mem_zona_copy], mem_overlap)
         
         zona_tindih_flag = {uid: False for uid in zona_status.keys()}
         
-        # Evaluasi Tumpang Tindih
         with arcpy.da.SearchCursor(mem_overlap, ["UID_Zona", "UID_Zona_C", "SHAPE@AREA"]) as cursor:
             for row in cursor:
                 uid1 = row[0]
                 uid2 = row[1]
                 area_overlap = row[2]
                 
-                # Jika bersinggungan tapi ID beda, dan luasan overlap lebih dari toleransi 0.1 m2
                 if uid1 != uid2 and area_overlap > 0.1:
                     zona_tindih_flag[uid1] = True
                     zona_tindih_flag[uid2] = True
 
-        # Bersihkan memory untuk overlap
         arcpy.management.Delete(mem_zona_copy)
         arcpy.management.Delete(mem_overlap)
 
@@ -1408,6 +1403,9 @@ class Cek_Zona_Awal(object):
 
         zona_persil_count = {uid: 0 for uid in zona_status.keys()}
         zona_potong_flag = {uid: False for uid in zona_status.keys()}
+        
+        # [MODIFIKASI] Dictionary untuk menyimpan rasio tutupan persil terbesar pada zona
+        zona_max_coverage = {uid: 0 for uid in zona_status.keys()} 
 
         with arcpy.da.SearchCursor(memory_intersect, ["UID_Zona", "UID_Persil", 'SHAPE@AREA']) as cursor:
             for row in cursor:
@@ -1422,6 +1420,14 @@ class Cek_Zona_Awal(object):
                 if p_area == 0:
                     continue
 
+                # [MODIFIKASI] Hitung rasio seberapa besar potongan persil menutupi luas zona
+                z_area = zona_status[z_uid]["luas"]
+                rasio_tutupan_zona = int_area / z_area if z_area > 0 else 0
+                
+                # Simpan rasio terbesar yang ditemukan dalam zona tersebut
+                if rasio_tutupan_zona > zona_max_coverage[z_uid]:
+                    zona_max_coverage[z_uid] = rasio_tutupan_zona
+
                 rasio_irisan = int_area / p_area
 
                 if rasio_irisan >= TOLERANCE_FULL:
@@ -1433,7 +1439,6 @@ class Cek_Zona_Awal(object):
         # --- 6. Simpan Hasil ---
         messages.addMessage("--> Menyimpan hasil ke Attribute Table...")
 
-        # UpdateCursor diperbarui untuk menyertakan Err_Tindih
         with arcpy.da.UpdateCursor(
             out_zona,
             ["UID_Zona", "Err_Luas", "Err_Potong", "Err_1Prsl", "Err_Tindih", "Luas_M2", "Jml_Prsl"]
@@ -1446,9 +1451,11 @@ class Cek_Zona_Awal(object):
                     row[2] = "Ya" if zona_potong_flag.get(uid, False) else "Tidak"
                     
                     jml = zona_persil_count.get(uid, 0)
-                    row[3] = "Ya" if jml == 1 else "Tidak"
+                    max_cov = zona_max_coverage.get(uid, 0) # Ambil rasio tutupan terbesar
                     
-                    row[4] = "Ya" if zona_tindih_flag.get(uid, False) else "Tidak" # Err_Tindih
+                    row[3] = "Ya" if (jml == 1 and max_cov >= 0.95) else "Tidak"
+                    
+                    row[4] = "Ya" if zona_tindih_flag.get(uid, False) else "Tidak" 
                     row[5] = zona_status[uid]["luas"]
                     row[6] = jml
 
@@ -1457,10 +1464,9 @@ class Cek_Zona_Awal(object):
         # Hapus field UID_Zona di output akhir agar tabel tetap rapi
         arcpy.management.DeleteField(out_zona, "UID_Zona")
 
-        # Bersihkan memory (Best practice)
+        # Bersihkan memory
         arcpy.management.Delete(mem_persil)
         arcpy.management.Delete(memory_intersect)
 
         messages.addMessage("✅ Proses Selesai. Silakan periksa Layer Output.")
         return
-

@@ -1298,6 +1298,29 @@ class Cek_Zona_Awal(object):
         skala = parameters[2].value
         out_zona = parameters[3].valueAsText
 
+        # --- 0. Cek Sistem Koordinat (Harus TM-3) ---
+        messages.addMessage("--> Memeriksa Sistem Koordinat Layer...")
+        sr_zona = arcpy.Describe(in_zona).spatialReference
+        sr_persil = arcpy.Describe(in_persil).spatialReference
+
+        # Nama sistem koordinat diubah ke huruf kapital agar mudah dicek
+        nama_sr_zona = sr_zona.name.upper() if sr_zona.name else ""
+        nama_sr_persil = sr_persil.name.upper() if sr_persil.name else ""
+
+        # Cek apakah mengandung "TM3" atau "TM-3"
+        is_zona_tm3 = "TM3" in nama_sr_zona or "TM-3" in nama_sr_zona
+        is_persil_tm3 = "TM3" in nama_sr_persil or "TM-3" in nama_sr_persil
+
+        if not is_zona_tm3:
+            arcpy.AddError(f"ERROR: Sistem koordinat Layer Zona bukan TM-3. (Sistem saat ini: {sr_zona.name}). Proses dihentikan.")
+            return  # Hentikan eksekusi
+
+        if not is_persil_tm3:
+            arcpy.AddError(f"ERROR: Sistem koordinat Layer Persil bukan TM-3. (Sistem saat ini: {sr_persil.name}). Proses dihentikan.")
+            return  # Hentikan eksekusi
+            
+        messages.addMessage("✅ Sistem koordinat valid (TM-3). Melanjutkan proses...")
+
         # --- 1. Tentukan Luas Minimal ---
         if skala == "1:25.000":
             luas_minimal = 15625.0

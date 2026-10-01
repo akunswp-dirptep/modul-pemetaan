@@ -1280,7 +1280,6 @@ class Cek_Zona_Awal(object):
             parameterType="Required",
             direction="Output")
 
-        # [MODIFIKASI] Parameter baru untuk output layer area potong
         param4 = arcpy.Parameter(
             displayName="Output Area Potong (Layer Berbeda)",
             name="out_potong",
@@ -1465,7 +1464,6 @@ class Cek_Zona_Awal(object):
                     zona_potong_flag[z_uid] = True
                     zona_persil_count[z_uid] += 1
                     
-                    # [MODIFIKASI] Tangkap bentuk potongan untuk layer baru
                     if out_potong:
                         koleksi_potongan.append((shape_geom, z_uid))
 

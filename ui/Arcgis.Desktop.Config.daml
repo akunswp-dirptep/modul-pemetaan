@@ -399,28 +399,13 @@
 				</menu>
 
 				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Poligon Persil">
-					<button refID="identifikasi_perubahan_persil" />
-					<separator/>
-
-					<button refID="ButtonMenentukanPerubahanMengelompok" size="Medium"/>
-					<button refID="ButtonResetPersilCluster" size="Medium"/>
-					<button refID="ButtonMemasukkanDataKePersilLayer" size="Medium"/>
-
-					<separator/>
-
-					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
-
-					<separator/>
-					<button refID="ButtonAnalisisBentukPersil" size="Medium"/>
-					<button refID="ButtonEditBentukPersil" size="Medium"/>
-				</menu>
-				<!--  -->
-				<menu id="identifikasi_perubahan_persil" caption="Identifikasi Perubahan" >        
 					<button refID="ButtonIdentifikasiPerubahanPersil" size="Medium"/>
 					<button refID="ButtonTampilkanSimbologiPersil" size="Medium"/>
 					<button refID="ButtonPeriksaPerubahanPersil" size="Medium"/>
 					<button refID="ButtonSetStatusPerubahanPersil" size="Medium"/>
+					<button refID="ButtonMemasukkanDataKePersilLayer" size="Medium"/>
 				</menu>
+				<!--  -->
 				<!--  -->
 				
 				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Jaringan Jalan">
@@ -451,7 +436,11 @@
 				</menu>
 
 				<menu id="analisis_persil_dan_jalan_pembaruan_nbt" caption="Analisis Persil Dengan Jalan">
-					
+					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
+					<button refID="ButtonAnalisisBentukPersil" size="Medium"/>
+					<button refID="ButtonEditBentukPersil" size="Medium"/>
+					<button refID="ButtonMenentukanPerubahanMengelompok" size="Medium"/>
+					<button refID="ButtonResetPersilCluster" size="Medium"/>
 					<button refID='ButtonBuatNertworkDataset' size="Medium" />
 					<button refID="ButtonUpdateKelasDanLebarJalanPersil" size="Medium"/>
 					<button refID='ButtonTampilkanSimbologi' size="Medium" />

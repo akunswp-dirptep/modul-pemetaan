@@ -41,7 +41,7 @@ class Toolbox:
 
 class Identifikasi_Perubahan_Persil(object):
     def __init__(self):
-        self.label="Tes Identifikasi Perubahan Persil"
+        self.label="Identifikasi Perubahan Persil"
         self.description=""
         self.canRunInBackground=False
 
@@ -144,7 +144,7 @@ class Identifikasi_Perubahan_Persil(object):
         if output_name == "Persil_Baru":
             sim_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Persil_Baru_Layer.lyrx"
         else:
-            sim_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Indikator_Perubahan_Persil_Layer.lyrx"
+            sim_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Indikator_Perubahan_Persil.lyrx"
         if not os.path.exists(sim_path):
             arcpy.AddWarning(f"File simbolik {sim_path} tidak ditemukan. Simbologi tidak akan diterapkan.")
         else:
@@ -158,17 +158,14 @@ class Identifikasi_Perubahan_Persil(object):
         return output_name, output_path, sim_path
 
     def execute(self,parameters,messages):
-        messages.addMessage("== Proses dimulai ==")
+        messages.addMessage("Proses dimulai")
 
         configs=persil.get_config_values()
 
         dataset_path=configs["project_config"]["dataset_path"]
-
         konfigurasi_variabel_path=configs["project_config"]["daftar_variabel_path"]
-
         peta_baru_input=parameters[0].valueAsText
-
-        peta_lama_input=os.path.join(dataset_path,"Persil_Layer")
+        peta_lama_input=os.path.join(dataset_path, "Persil_Layer")
 
         if not arcpy.Exists(peta_lama_input):
             messages.addErrorMessage("Persil_Lama belum tersedia")
@@ -193,6 +190,8 @@ class Identifikasi_Perubahan_Persil(object):
         temp_lama_path=r"in_memory\Peta_Temp_Lama"
         temp_baru_path=r"in_memory\Peta_Temp_Baru"
         indikator_temp=r"in_memory\Indikator_Perubahan"
+        persil_baru_path=os.path.join(dataset_path, "Persil_Baru")
+        identifikasi_perubahan_persil_path = os.path.join(dataset_path, "Indikator_Perubahan_Persil")
 
         memory_layers=[
             dest_lama_path,
@@ -200,6 +199,8 @@ class Identifikasi_Perubahan_Persil(object):
             temp_lama_path,
             temp_baru_path,
             indikator_temp,
+            persil_baru_path,
+            identifikasi_perubahan_persil_path,
             "PetaLamaLayer_Temp",
             "PetaBaruLayer_Temp"
         ]
@@ -223,23 +224,26 @@ class Identifikasi_Perubahan_Persil(object):
 
         self.extract_changed_features(dest_baru_path,dest_lama_path,"PetaBaruLayer_Temp",temp_baru_path)
 
+        self.set_default_value(temp_lama_path, "sumber_persil", "Persil Lama", field_alias="Sumber Persil")
+        self.set_default_value(temp_baru_path, "sumber_persil", "Persil Baru", field_alias="Sumber Persil")
+
         arcpy.management.Merge([temp_baru_path,temp_lama_path],indikator_temp)
 
         self.set_default_value(indikator_temp,"indikator_perubahan","Indikator Periksa", field_alias="Indikator Perubahan")
         self.set_default_value(indikator_temp, 'kelompok_perubahan', None, 'SHORT', 'Kelompok Perubahan')
         self.set_default_value(indikator_temp, 'klaster_zona', None, 'SHORT', 'Klaster Zona')
 
-        f_lyr_name, lyr_path, sim_lyr_path =self.save_layer(dest_baru_path, dataset_path,"Persil_Baru")
+        f_lyr_name, lyr_path, sim_f_lyr_path =self.save_layer(dest_baru_path, dataset_path,"Persil_Baru")
         arcpy.management.MakeFeatureLayer(lyr_path, f_lyr_name)
-        arcpy.management.ApplySymbologyFromLayer(f_lyr_name, sim_lyr_path)
+        arcpy.management.ApplySymbologyFromLayer(f_lyr_name, sim_f_lyr_path)
         arcpy.SetParameter(1, f_lyr_name)
+        parameters[1].symbology = sim_f_lyr_path
         
-        s_lyr_name, lyr_path, sim_lyr_path =self.save_layer(indikator_temp, dataset_path,"Indikator_Perubahan_Persil")
+        s_lyr_name, lyr_path, sim_s_lyr_path =self.save_layer(indikator_temp, dataset_path,"Indikator_Perubahan_Persil")
         arcpy.management.MakeFeatureLayer(lyr_path, s_lyr_name)
-        arcpy.management.ApplySymbologyFromLayer(s_lyr_name, sim_lyr_path)
+        arcpy.management.ApplySymbologyFromLayer(s_lyr_name, sim_s_lyr_path)
         arcpy.SetParameter(2, s_lyr_name)
-
-        
+        parameters[2].symbology = sim_s_lyr_path
 
         return
 
@@ -262,7 +266,7 @@ class Tampilkan_Simbologi_Persil(object):
         
         penjelasan.value = (
             "Tool ini digunakan untuk menampilkan simbologi pada\n"
-            "layer Persil.\n\n"
+            "layer Identifikasi_Perubahan_Persil dan Persil_Baru.\n\n"
             "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
             "Kementerian ATR/BPN\n"
             "Tahun: {}".format(datetime.now().year)
@@ -304,7 +308,7 @@ class Tampilkan_Simbologi_Persil(object):
         persil_path = os.path.join(dataset_path, 'Persil_Baru')
         sim_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Persil_Baru_Layer.lyrx"
         indi_path = os.path.join(dataset_path, 'Indikator_Perubahan_Persil')
-        sim_indi_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Indikator_Perubahan_Persil_Layer.lyrx"
+        sim_indi_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Indikator_Perubahan_Persil.lyrx"
 
         arcpy.management.MakeFeatureLayer(persil_path, 'Persil_Baru')
         arcpy.management.ApplySymbologyFromLayer('Persil_Baru', sim_path)

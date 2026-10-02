@@ -942,7 +942,7 @@ class Hitung_Resiko_Persil(object):
         )
 
         datasetresiko_path = (
-            configs["resiko_config"]["dataset_path"]
+            configs["risiko_config"]["dataset_path"]
         )
 
         # =================================================

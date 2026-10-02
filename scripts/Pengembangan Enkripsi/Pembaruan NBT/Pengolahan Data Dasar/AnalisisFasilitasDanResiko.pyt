@@ -151,7 +151,7 @@ class Hapus_Fasilitas_dan_Resiko(object):
         )
 
         datasetresiko_path = (
-            configs["resiko_config"]["dataset_path"]
+            configs["risiko_config"]["dataset_path"]
         )
 
         # =================================================
@@ -417,7 +417,7 @@ class Tambah_Resiko(object):
         configs = persil.get_config_values()
 
         dataset_path = (
-            configs["resiko_config"]["dataset_path"]
+            configs["risiko_config"]["dataset_path"]
         )
 
         gdb_path = (
@@ -844,7 +844,7 @@ class Hitung_Resiko_Persil(object):
         )
 
         datasetresiko_path = (
-            configs["resiko_config"]["dataset_path"]
+            configs["risiko_config"]["dataset_path"]
         )
 
         # =================================================

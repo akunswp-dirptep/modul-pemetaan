@@ -39,7 +39,6 @@ class Toolbox:
         # List of tool classes associated with this toolbox
         self.tools = [Upload_Peta_Rencana_Lokasi_Kegiatan_AOI,
                       Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI,
-                      Buat_Workspace_Pembaruan_NBT,
                       Masukkan_Data_NBT_Sebelumnya,
                       Masukkan_Data_Jaringan_Jalan,
                       Masukkan_Data_Fasilitas,
@@ -332,276 +331,6 @@ class Upload_Peta_Lokasi_Kegiatan_Disepakati_AOI(object):
 
         setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return
-
-class Buat_Workspace_Pembaruan_NBT(object):
-
-    def __init__(self):
-        self.label = "Buat Workspace NBT"
-        self.description = ""
-        self.canRunInBackground = False
-
-    def getParameterInfo(self):
-
-        workspace_folder = arcpy.Parameter(
-            displayName='Folder Penyimpanan',
-            name='folder_path',
-            datatype='DEFolder',
-            parameterType='Required',
-            direction='Input'
-        )
-
-        koordinat_system = arcpy.Parameter(
-            displayName='Koordinat / Spatial Reference',
-            name='spatial_reference',
-            datatype='GPSpatialReference',
-            parameterType='Required',
-            direction='Input'
-        )
-
-        provinsi = arcpy.Parameter(
-            displayName="Provinsi",
-            name="provinsi",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-        
-        provinsi.filter.type = "ValueList"
-        provinsi.filter.list = NAMA_PROVINSI
-
-        kab_kota = arcpy.Parameter(
-            displayName="Kabupaten/Kota",
-            name="kab_kota",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input")
-
-        tahun_penilaian = arcpy.Parameter(
-            displayName="Tahun Penilaian",
-            name="tahun_penilaian",
-            datatype="GPLong",
-            parameterType="Required",
-            direction="Input"
-        )
-
-        tahun_penilaian.value = current_year()
-
-        output_fl = arcpy.Parameter(
-            name='fl_output',
-            datatype='GPFeatureLayer',
-            parameterType='Derived',
-            direction='Output'
-        )
-
-        return [workspace_folder, koordinat_system, provinsi, kab_kota, tahun_penilaian, output_fl]
-
-    def updateParameters(self, parameters):
-        prov = parameters[2].valueAsText  # parameter Provinsi
-        kab = parameters[3]               # parameter Kab/Kota
-
-        if prov:
-            kab.filter.type = "ValueList"
-            kab.filter.list = KAB_KOTA.get(prov, [])
-        else:
-            kab.filter.list = []
-
-    def execute(self, parameters, messages):
-
-        folder_path = parameters[0].valueAsText
-        spatial_reference = parameters[1].value
-        provinsi = parameters[2].valueAsText
-        kab_kota = parameters[3].valueAsText
-        tahun_penilaian = parameters[4].value
-
-        appdata = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-        conf_path = os.path.join(folder_path, "project_config.json")
-
-        if arcpy.Exists(conf_path):
-            arcpy.management.Delete(conf_path)
-
-        gdbname = "NilaiBidangTanah.gdb"
-
-        dataset = "nbt_ds"
-        dataset_fasilitas = "fasilitas"
-        dataset_resiko = "resiko"
-
-        gdbtemplate = "ds_znt_template"
-
-        utils_folder = os.path.join(appdata, 'nbtutils')
-
-        gdbtemplate_path = os.path.join(
-            utils_folder,
-            "template.gdb",
-            gdbtemplate
-        )
-
-        gdb_path = os.path.join(folder_path, gdbname)
-
-        dataset_path = os.path.join(gdb_path, dataset)
-        dataset_fasilitas_path = os.path.join(gdb_path, dataset_fasilitas)
-        dataset_resiko_path = os.path.join(gdb_path, dataset_resiko)
-
-        sisi_jalan_path = os.path.join(dataset_path, constant.LAYER_SISI_JALAN)
-
-        jaringan_jalan_path = os.path.join(
-            dataset_path,
-            constant.LAYER_JARINGAN_JALAN
-        )
-
-        midpoint_jalan_path = os.path.join(
-            dataset_path,
-            constant.LAYER_TITIK_TENGAH_JARINGAN_JALAN
-        )
-
-        nd_path = os.path.join(
-            gdb_path,
-            gdbtemplate,
-            constant.TEMPLATE_LAYER_NETWORK_DATASET_JARINGAN_JALAN
-        )
-
-        jaringan_jalan_nd_path = os.path.join(
-            gdb_path,
-            gdbtemplate,
-            constant.TEMPLATE_LAYER_FEATURE_CLASS_JARINGAN_JALAN
-        )
-
-        persil_path = os.path.join(dataset_path, constant.LAYER_PERSIL)
-
-        persil_line_path = os.path.join(
-            dataset_path,
-            constant.LAYER_PERSIL_LINE
-        )
-
-        persil_split_path = os.path.join(
-            dataset_path,
-            constant.LAYER_BELAHAN_PERSIL
-        )
-
-        persil_centroid_path = os.path.join(
-            dataset_path,
-            constant.LAYER_CENTROID_PERSIL
-        )
-
-        persil_split_midpoint_path = os.path.join(
-            dataset_path,
-            constant.LAYER_TITIK_TENGAH_BELAHAN_PERSIL
-        )
-
-        json_config = {
-            'project_config': {
-                'ws_path': folder_path,
-                'conf_path': conf_path,
-                'gdb_path': gdb_path,
-                'dataset_path': dataset_path,
-                'provinsi': provinsi,
-                'kab_kota': kab_kota,
-                'tahun_penilaian': tahun_penilaian,
-                'daftar_variabel_path': os.path.join(
-                    folder_path,
-                    constant.KONFIG_DAFTAR_VARIABEL
-                )
-            },
-
-            'jaringan_jalan_config': {
-                'path': {
-                    constant.LAYER_SISI_JALAN: sisi_jalan_path,
-                    constant.LAYER_JARINGAN_JALAN: jaringan_jalan_path,
-                    constant.LAYER_TITIK_TENGAH_JARINGAN_JALAN: midpoint_jalan_path,
-                    constant.TEMPLATE_LAYER_NETWORK_DATASET_JARINGAN_JALAN: nd_path,
-                    constant.TEMPLATE_LAYER_FEATURE_CLASS_JARINGAN_JALAN: jaringan_jalan_nd_path
-                },
-                'skoring' : constant.SKORING_KELAS_JALAN
-            },
-
-            'persil_config': {
-                'path': {
-                    constant.LAYER_PERSIL: persil_path,
-                    constant.LAYER_PERSIL_LINE: persil_line_path,
-                    constant.LAYER_BELAHAN_PERSIL: persil_split_path,
-                    constant.LAYER_CENTROID_PERSIL: persil_centroid_path,
-                    constant.LAYER_TITIK_TENGAH_BELAHAN_PERSIL: persil_split_midpoint_path
-                },
-                'skoring' : {
-                    'zonasi' : constant.SKORING_ZONASI,
-                    'bentuk_persil' : constant.SKORING_BENTUK_PERSIL,
-                    'letak' : constant.SKORING_LETAK
-                }
-
-            },
-
-            'fasilitas_config': {
-                'dataset_path': dataset_fasilitas_path
-            },
-
-            'resiko_config': {
-                'dataset_path': dataset_resiko_path
-            }
-        }
-
-        conf_file = open(conf_path, "w")
-        conf_file.write(json.dumps(json_config, indent=4))
-        conf_file.close()
-
-        if arcpy.Exists(gdb_path):
-            arcpy.management.Delete(gdb_path)
-
-        arcpy.management.CreateFileGDB(folder_path, gdbname)
-
-        arcpy.management.CreateFeatureDataset(
-            gdb_path,
-            dataset,
-            spatial_reference
-        )
-
-        arcpy.management.CreateFeatureDataset(
-            gdb_path,
-            dataset_fasilitas,
-            spatial_reference
-        )
-
-        arcpy.management.CreateFeatureDataset(
-            gdb_path,
-            dataset_resiko,
-            spatial_reference
-        )
-
-        fl = arcpy.management.CreateFeatureclass(
-            dataset_path,
-            constant.LAYER_PERSIL,
-            "POLYGON",
-            spatial_reference=spatial_reference
-        )[0]
-
-        arcpy.AddMessage("== Project template ==")
-
-        outproject = os.path.join(gdb_path, gdbtemplate)
-
-        arcpy.management.Project(
-            gdbtemplate_path,
-            outproject,
-            spatial_reference
-        )
-
-        aprx = arcpy.mp.ArcGISProject("CURRENT")
-
-        folder_connections = aprx.folderConnections
-
-        if not any(
-            fc['connectionString'] == folder_path
-            for fc in folder_connections
-        ):
-
-            folder_connections.append({
-                'connectionString': folder_path,
-                'isHomeFolder': False
-            })
-
-            aprx.updateFolderConnections(
-                folder_connections,
-                validate=True
-            )
-        arcpy.SetParameter(5, fl)
-        arcpy.AddMessage("Workspace berhasil dibuat")
 
 class Masukkan_Data_NBT_Sebelumnya(object):
 
@@ -1760,7 +1489,7 @@ class Masukkan_Data_Jaringan_Jalan(object):
 class Masukkan_Data_Fasilitas(object):
     def __init__(self):
         self.label = "Masukkan Data Fasilitas"
-        self.description = "Alat untuk memasukkan data fasilitas baru atau yang sudah ada ke dalam Geodatabase NBT."
+        self.description = "Tool untuk memasukkan data fasilitas baru atau yang sudah ada ke dalam Geodatabase NBT."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -1779,8 +1508,6 @@ class Masukkan_Data_Fasilitas(object):
             "Tambah Fasilitas dari NBT Sebelumnya"
         ]
         mode_input.value = "Fasilitas Wajib"
-
-        # ================= KATEGORI 1: DATA FASILITAS (SELALU DIGUNAKAN) =================
 
         fasilitas_path = arcpy.Parameter(
             displayName="Feature Class Fasilitas (Point)",
@@ -1802,8 +1529,6 @@ class Masukkan_Data_Fasilitas(object):
         keterangan.parameterDependencies = [fasilitas_path.name]
         keterangan.category = "Data Utama Fasilitas"
 
-        # ================= KATEGORI 2: FASILITAS BARU =================
-
         nama_fasilitas = arcpy.Parameter(
             displayName="Nama Fasilitas Baru (Maks 8 Huruf)",
             name="nama_fasilitas",
@@ -1813,7 +1538,6 @@ class Masukkan_Data_Fasilitas(object):
         )
         nama_fasilitas.category = "Pengaturan Fasilitas Baru"
 
-        # ================= KATEGORI 3: DATA NBT SEBELUMNYA =================
         nbt_sebelumnya_path = arcpy.Parameter(
             displayName="Data NBT Sebelumnya",
             name="nbt_sebelumnya_path",
@@ -1834,7 +1558,6 @@ class Masukkan_Data_Fasilitas(object):
         existing_field.filter.list = ["JKCBD", "JKKES", "JKPDDKN", "JKTRANSP", "JKPMRNTH"]
         existing_field.category = "Transfer Atribut NBT Sebelumnya"
 
-        # 6. Field Jarak NBT
         jarak_field = arcpy.Parameter(
             displayName="Field Jarak Fasilitas di NBT Sebelumnya",
             name="jarak_field",
@@ -1845,8 +1568,6 @@ class Masukkan_Data_Fasilitas(object):
         jarak_field.parameterDependencies = [nbt_sebelumnya_path.name]
         jarak_field.category = "Transfer Atribut NBT Sebelumnya"
 
-        # ================= OUTPUT LAYER =================
-        # 7. Output Layer (Untuk ditambahkan ke peta)
         output_layer = arcpy.Parameter(
             displayName="Output Fasilitas Layer",
             name="output_layer",
@@ -1957,7 +1678,6 @@ class Masukkan_Data_Fasilitas(object):
             field_mappings.removeFieldMap(idx)
             
         field_mappings.addTable(source_point)
-        # ==============================================================
 
         arcpy.analysis.SpatialJoin(
             target_features=target_point,
@@ -1965,7 +1685,7 @@ class Masukkan_Data_Fasilitas(object):
             out_feature_class=join_result,
             join_operation="JOIN_ONE_TO_ONE",
             join_type="KEEP_ALL",
-            field_mapping=field_mappings, # Menggunakan mapping yang sudah diperbaiki
+            field_mapping=field_mappings,
             match_option="CLOSEST",
             search_radius=f"{max_distance} Meters"
         )
@@ -1994,13 +1714,12 @@ class Masukkan_Data_Fasilitas(object):
         messages.addMessage(f"{updated} bidang berhasil diperbaharui")
         messages.addMessage(f"{skipped} bidang dilewati")
 
-        # Bersihkan temporary files
         for fc in [source_point, target_point, join_result]:
             if arcpy.Exists(fc):
                 arcpy.management.Delete(fc)
 
     def execute(self, parameters, messages):
-        messages.addMessage("== Proses dimulai ==")
+        messages.addMessage("Proses dimulai")
         
         mode_input = parameters[0].valueAsText
         fasilitas_path = parameters[1].valueAsText
@@ -2016,19 +1735,18 @@ class Masukkan_Data_Fasilitas(object):
         gdb_path = configs["project_config"]["gdb_path"]
 
         if not arcpy.Exists(dataset_path):
-            messages.addMessage("== Membuat dataset fasilitas ==")
+            messages.addMessage("Membuat dataset fasilitas")
             spatial_ref = arcpy.Describe(persil_path).spatialReference
             arcpy.management.CreateFeatureDataset(gdb_path, os.path.basename(dataset_path), spatial_ref)
 
         output_fc = None
         layer_name = ""
 
-        # --- LOGIKA BERDASARKAN MODE ---
         if mode_input == "Fasilitas Wajib":
             if not field_existing:
                 raise arcpy.ExecuteError("Field existing belum dipilih")
             
-            nama_fasilitas = field_existing[2:] # Hapus "JK", contoh: JKCBD -> CBD
+            nama_fasilitas = field_existing[2:] 
             output_fc = self.copy_fasilitas(fasilitas_path, dataset_path, nama_fasilitas, keterangan_field, messages)
             self.transfer_centroid(nbt_sebelumnya_path, persil_path, field_jarak, field_existing, messages)
             
@@ -2085,7 +1803,6 @@ class Masukkan_Data_Fasilitas(object):
             layer_name = f"Fasilitas_{nama_fasilitas}"
             messages.addMessage(f"Fasilitas {nama_fasilitas} berhasil ditambahkan dari NBT sebelumnya")
 
-        # --- MEMASUKKAN LAYER KE PETA (Berlaku untuk SEMUA mode) ---
         if output_fc and arcpy.Exists(output_fc):
             symbology_mapping = {
                 'CBD' : r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Fasilitas_CBD.lyrx",
@@ -2117,19 +1834,48 @@ class Masukkan_Data_Risiko(object):
 
 
         mode_input = arcpy.Parameter(
-            displayName="Mode Input",
+            displayName="Pilih Mode Input",
             name="mode_input",
             datatype="GPString",
             parameterType="Required",
             direction="Input"
         )
-
         mode_input.filter.type = "ValueList"
         mode_input.filter.list = [
-            "Risiko Standar",
-            "Risiko Tambahan"
+            "Risiko Wajib",
+            "Tambah Risiko Baru",
+            "Tambah Risiko dari NBT Sebelumnya"
         ]
-        mode_input.value = "Risiko Standar"
+        mode_input.value = "Risiko Wajib"
+
+        risiko_path = arcpy.Parameter(
+            displayName="Feature Class Risiko (Polygon)",
+            name="Risiko_path",
+            datatype="DEFeatureClass",
+            parameterType="Required",
+            direction="Input"
+        )
+        risiko_path.category = "Data Utama Risiko"
+
+
+        keterangan = arcpy.Parameter(
+            displayName="Field Keterangan Fasilitas",
+            name="keterangan",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input"
+        )
+        keterangan.parameterDependencies = [risiko_path.name]
+        keterangan.category = "Data Utama Risiko"
+
+        nama_risiko = arcpy.Parameter(
+            displayName="Nama Risiko Baru (Maks 10 Huruf)",
+            name="nama_Risiko",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        nama_risiko.category = "Pengaturan Risiko Baru"
 
         nbt_sebelumnya_path = arcpy.Parameter(
             displayName="Data NBT Sebelumnya",
@@ -2138,60 +1884,31 @@ class Masukkan_Data_Risiko(object):
             parameterType="Optional",
             direction="Input"
         )
+        nbt_sebelumnya_path.category = "Transfer Atribut NBT Sebelumnya"
 
         existing_field = arcpy.Parameter(
-            displayName="Field Risiko Standar",
+            displayName="Pilih Risiko Wajib (Field Existing)",
             name="existing_field",
             datatype="GPString",
             parameterType="Optional",
             direction="Input"
         )
-
         existing_field.filter.type = "ValueList"
-        existing_field.filter.list = [
-            "BANJIR",
-            "LONGSOR",
-        ]
+        existing_field.filter.list = ["BANJIR", "LONGSOR"]
+        existing_field.category = "Transfer Atribut NBT Sebelumnya"
 
-        risiko_path = arcpy.Parameter(
-            displayName="Data Risiko (Feature Class)",
-            name="risiko_path",
-            datatype="DEFeatureClass",
-            parameterType="Optional",
-            direction="Input"
-        )
-
-
-        nama_risiko = arcpy.Parameter(
-            displayName="Nama Risiko Tambahan",
-            name="nama_risiko",
-            datatype="GPString",
-            parameterType="Optional",
-            direction="Input"
-        )
-
-
-        idbidang_field = arcpy.Parameter(
-            displayName="Field IDBidang",
-            name="idbidang_field",
+        skor_risiko = arcpy.Parameter(
+            displayName="Field Skor Risiko di NBT Sebelumnya",
+            name="skor_Risiko",
             datatype="Field",
             parameterType="Optional",
             direction="Input"
         )
-        idbidang_field.parameterDependencies = [nbt_sebelumnya_path.name]
-
-
-        jarak_field = arcpy.Parameter(
-            displayName="Field Penilaian Risiko",
-            name="jarak_field",
-            datatype="Field",
-            parameterType="Optional",
-            direction="Input"
-        )
-        jarak_field.parameterDependencies = [nbt_sebelumnya_path.name]
+        skor_risiko.parameterDependencies = [nbt_sebelumnya_path.name]
+        skor_risiko.category = "Transfer Atribut NBT Sebelumnya"
 
         output_layer = arcpy.Parameter(
-            displayName="Output Risiko",
+            displayName="Output Risiko Layer",
             name="output_layer",
             datatype="GPFeatureLayer",
             parameterType="Derived",
@@ -2199,15 +1916,16 @@ class Masukkan_Data_Risiko(object):
         )
 
         return [
-            mode_input,
-            nbt_sebelumnya_path,
-            existing_field,
-            risiko_path,
-            nama_risiko,
-            idbidang_field,
-            jarak_field,
-            output_layer
+            mode_input,          
+            risiko_path,      
+            keterangan,          
+            nama_risiko,      
+            nbt_sebelumnya_path, 
+            existing_field,      
+            skor_risiko,         
+            output_layer         
         ]
+
 
 
     def isLicensed(self):
@@ -2217,254 +1935,229 @@ class Masukkan_Data_Risiko(object):
     def updateParameters(self, parameters):
 
         mode_input = parameters[0].valueAsText
-
-        if mode_input == "Risiko Standar":
-
-            # nbt sebelumnya
-            parameters[1].enabled = True
-
-            # field existing
-            parameters[2].enabled = True
-
-            # fasilitas baru
-            parameters[3].enabled = True
-            parameters[4].enabled = False
-
-            # field nbt
-            parameters[5].enabled = True
-            parameters[6].enabled = True
-
-        # =================================================
-        # MODE TAMBAH FASILITAS BARU
-        # =================================================
-
-        elif mode_input == "Risiko Tambahan":
-
-            # nbt sebelumnya
-            parameters[1].enabled = False
-
-            # field existing
-            parameters[2].enabled = False
-
-            # fasilitas baru
-            parameters[3].enabled = True
-            parameters[4].enabled = True
-
-            # field nbt
-            parameters[5].enabled = False
-            parameters[6].enabled = False
-
+        
+        if mode_input == "Risiko Wajib":
+            parameters[3].enabled = False 
+            parameters[4].enabled = True  
+            parameters[5].enabled = True  
+            parameters[6].enabled = True  
+            
+        elif mode_input == "Tambah Risiko Baru":
+            parameters[3].enabled = True  
+            parameters[4].enabled = False 
+            parameters[5].enabled = False 
+            parameters[6].enabled = False 
+            
+        elif mode_input == "Tambah Risiko dari NBT Sebelumnya":
+            parameters[3].enabled = True  
+            parameters[4].enabled = True  
+            parameters[5].enabled = False 
+            parameters[6].enabled = True  
         return
     
     def updateMessages(self, parameters):
 
         mode_input = parameters[0].valueAsText
-
-        nama_fasilitas = parameters[4].valueAsText
-
-        if mode_input == "Risiko Tambahan":
-
-            if nama_fasilitas:
-
-                if len(nama_fasilitas) > 8:
-
-                    parameters[4].setErrorMessage(
-                        "Nama fasilitas maksimal 8 huruf"
-                    )
-
+        
+        if mode_input in ["Tambah Risiko Baru", "Tambah Risiko dari NBT Sebelumnya"]:
+            nama_risiko = parameters[3].valueAsText
+            if nama_risiko and len(nama_risiko) > 10:
+                parameters[3].setErrorMessage("Nama risiko maksimal 10 huruf")
         return
-    
-    def execute(self, parameters, messages):
 
-        messages.addMessage("== Proses dimulai ==")
+    def copy_risiko(self, risiko_path, dataset_path, nama_risiko, keterangan_field, messages):
+        arcpy.env.overwriteOutput = True 
+        
+        output_fc = os.path.join(dataset_path, nama_risiko)
+        
+        if arcpy.Exists(output_fc):
+            messages.addWarningMessage(f"Layer '{nama_risiko}' sudah ada, mencoba menghapus atau menimpa data yang lama...")
+            try:
+                arcpy.management.Delete(output_fc)
+            except Exception as e:
+                messages.addWarningMessage(f"Peringatan: Tidak bisa menghapus '{nama_risiko}' karena file sedang dikunci/dibuka di peta. Sistem akan mencoba menimpanya secara otomatis.")
 
-        mode_input = parameters[0].valueAsText
+        field_mappings = arcpy.FieldMappings()
+        if keterangan_field:
+            fm = arcpy.FieldMap()
+            fm.addInputField(risiko_path, keterangan_field)
 
-        configs = persil.get_config_values()
+            out_field = fm.outputField
+            out_field.name = "keterangan"
+            out_field.aliasName = "Keterangan"
+            fm.outputField = out_field
+            
+            field_mappings.addFieldMap(fm)
 
-        persil_path = os.path.join(
-            configs["project_config"]["dataset_path"],
-            "Persil_Layer"
+        arcpy.conversion.FeatureClassToFeatureClass(
+            risiko_path,
+            dataset_path,
+            nama_risiko,
+            field_mapping=field_mappings
+        )
+        return output_fc
+
+    def transfer_centroid(self, source_fc, target_fc, source_field, target_field, messages, max_distance=5):
+        scratch_gdb = arcpy.env.scratchGDB
+        source_point = os.path.join(scratch_gdb, "tmp_source_centroid")
+        target_point = os.path.join(scratch_gdb, "tmp_target_centroid")
+        join_result = os.path.join(scratch_gdb, "tmp_spatial_join")
+
+        for fc in [source_point, target_point, join_result]:
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)
+
+        messages.addMessage("Mempersiapkan Key Penggabungan Berdasarkan Centroid")
+        arcpy.management.FeatureToPoint(source_fc, source_point, "INSIDE")
+        arcpy.management.FeatureToPoint(target_fc, target_point, "INSIDE")
+
+        messages.addMessage("Mulai Memindahkan data")
+        
+
+        field_mappings = arcpy.FieldMappings()
+        field_mappings.addTable(target_point)
+        
+        idx = field_mappings.findFieldMapIndex(target_field)
+        if idx != -1:
+            field_mappings.removeFieldMap(idx)
+            
+        field_mappings.addTable(source_point)
+
+        arcpy.analysis.SpatialJoin(
+            target_features=target_point,
+            join_features=source_point,
+            out_feature_class=join_result,
+            join_operation="JOIN_ONE_TO_ONE",
+            join_type="KEEP_ALL",
+            field_mapping=field_mappings,
+            match_option="CLOSEST",
+            search_radius=f"{max_distance} Meters"
         )
 
-        #  Mode NBT Sebelumnya
+        value_dict = {}
+        with arcpy.da.SearchCursor(join_result, ["TARGET_FID", source_field]) as rows:
+            for target_oid, nilai in rows:
+                if nilai is None:
+                    continue
+                value_dict[target_oid] = nilai
 
-        if mode_input == "Risiko Standar":
+        messages.addMessage(f"{len(value_dict)} pasangan ditemukan")
+        updated = 0
+        skipped = 0
 
-            nbt_sebelumnya_path = parameters[1].valueAsText
+        with arcpy.da.UpdateCursor(target_fc, ["OID@", target_field]) as rows:
+            for row in rows:
+                oid = row[0]
+                if oid in value_dict:
+                    row[1] = value_dict[oid]
+                    rows.updateRow(row)
+                    updated += 1
+                else:
+                    skipped += 1
 
-            field_existing = parameters[2].valueAsText
+        messages.addMessage(f"{updated} bidang berhasil diperbaharui")
+        messages.addMessage(f"{skipped} bidang dilewati")
 
-            field_idbidang = parameters[5].valueAsText
+        for fc in [source_point, target_point, join_result]:
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)
 
-            field_jarak = parameters[6].valueAsText
+    def execute(self, parameters, messages):
 
-            risiko_path = parameters[3].valueAsText
+        mode_input = parameters[0].valueAsText
+        risiko_path = parameters[1].valueAsText
+        keterangan_field = parameters[2].valueAsText
+        nama_risiko = parameters[3].valueAsText
+        nbt_sebelumnya_path = parameters[4].valueAsText
+        field_existing = parameters[5].valueAsText
+        field_skor = parameters[6].valueAsText
 
+        configs = persil.get_config_values()
+        persil_path = os.path.join(configs["project_config"]["dataset_path"], "Persil_Layer")
+        dataset_path = configs["risiko_config"]["dataset_path"]
+        gdb_path = configs["project_config"]["gdb_path"]
+
+        if not arcpy.Exists(dataset_path):
+            messages.addMessage("Membuat dataset risiko")
+            spatial_ref = arcpy.Describe(persil_path).spatialReference
+            arcpy.management.CreateFeatureDataset(gdb_path, os.path.basename(dataset_path), spatial_ref)
+
+        output_fc = None
+        layer_name = ""
+
+        if mode_input == "Risiko Wajib":
             if not field_existing:
-                raise arcpy.ExecuteError(
-                    "Field existing belum dipilih"
-                )
+                raise arcpy.ExecuteError("Field existing belum dipilih")
             
-            if not risiko_path:
-                raise arcpy.ExecuteError(
-                    "Feature class Risiko tidak valid"
-                )
-
-
+            output_fc = self.copy_risiko(risiko_path, dataset_path, field_existing , keterangan_field, messages)
+            self.transfer_centroid(nbt_sebelumnya_path, persil_path, field_skor, field_existing, messages)
             nama_risiko = field_existing
-            gdb_path = configs["project_config"]["gdb_path"]
+            layer_name = f"Risiko_{field_existing}"
+            messages.addMessage(f"Risiko Wajib {field_existing } berhasil diproses")
 
-            dataset_path = os.path.join(gdb_path, 'resiko')
-            persil_ds_path = configs["project_config"]["dataset_path"]
-            persil_path = os.path.join(persil_ds_path, 'Persil_Layer')
-
-            # Membuat Dataset Risiko
-
-            if not arcpy.Exists(dataset_path):
-                messages.addMessage( "== Membuat dataset risiko ==" )
-                spatial_ref = arcpy.Describe(persil_path).spatialReference
-                arcpy.management.CreateFeatureDataset(
-                    gdb_path,
-                    os.path.basename(dataset_path),
-                    spatial_ref
-                )
-
-            output_fc = os.path.join( dataset_path,  nama_risiko )
-
-            if arcpy.Exists(output_fc):
-                arcpy.management.Delete(output_fc)
-
-            arcpy.conversion.FeatureClassToFeatureClass(
-                risiko_path,
-                dataset_path,
-                nama_risiko
-            )
-
-            messages.addMessage(
-                f"== Copy nilai {field_jarak} ke {field_existing} =="
-            )
-
-            data_dict = {}
-
-            with arcpy.da.SearchCursor(
-                nbt_sebelumnya_path,
-                [field_idbidang, field_jarak]
-            ) as cursor:
-
-                for row in cursor:
-
-                    data_dict[row[0]] = row[1]
-
-            updated = 0
-
-            with arcpy.da.UpdateCursor(
-                persil_path,
-                [field_idbidang, field_existing]
-            ) as cursor:
-
-                for row in cursor:
-
-                    idbidang = row[0]
-
-                    if idbidang in data_dict:
-
-                        row[1] = data_dict[idbidang]
-                        cursor.updateRow(row)
-
-                        updated += 1
-
-            messages.addMessage(
-                f"== {updated} bidang berhasil diupdate =="
-            )
-
-        # Mode Fasilitas Baru
-
-        elif mode_input == "Risiko Tambahan":
-
-            risiko_path = parameters[3].valueAsText
-            nama_risiko = parameters[4].valueAsText
-
-            if not risiko_path:
-                raise arcpy.ExecuteError(
-                    "Feature class fasilitas tidak valid"
-                )
-
+        elif mode_input == "Tambah Risiko Baru":
             if not nama_risiko:
-                raise arcpy.ExecuteError(
-                    "Nama Risiko belum diisi"
-                )
+                raise arcpy.ExecuteError("Nama risiko belum diisi")
 
             nama_risiko = nama_risiko.upper()
+            output_fc = self.copy_risiko(risiko_path, dataset_path, nama_risiko, keterangan_field, messages)
 
-            gdb_path = configs["project_config"]["gdb_path"]
-            dataset_path = os.path.join(gdb_path, 'resiko')
-            persil_ds_path = configs["project_config"]["dataset_path"]
-            persil_path = os.path.join(persil_ds_path, 'Persil_Layer')
-
-            # Membuat Dataset Fasilitas
-
-            if not arcpy.Exists(dataset_path):
-
-                messages.addMessage(
-                    "== Membuat dataset fasilitas =="
-                )
-
-                spatial_ref = arcpy.Describe(persil_ds_path).spatialReference
-
-                arcpy.management.CreateFeatureDataset(
-                    gdb_path,
-                    os.path.basename(dataset_path),
-                    spatial_ref
-                )
-
-            output_fc = os.path.join(
-                dataset_path,
-                nama_risiko
-            )
-
-            if arcpy.Exists(output_fc):
-                arcpy.management.Delete(output_fc)
-
-            arcpy.conversion.FeatureClassToFeatureClass(
-                risiko_path,
-                dataset_path,
-                nama_risiko
-            )
-
-            existing_fields = [
-                field.name
-                for field in arcpy.ListFields(persil_path)
-            ]
-
+            existing_fields = [field.name for field in arcpy.ListFields(persil_path)]
             if nama_risiko not in existing_fields:
+                arcpy.management.AddField(persil_path, nama_risiko, "SHORT")
 
-                arcpy.management.AddField(
-                    persil_path,
-                    nama_risiko,
-                    "DOUBLE"
-                )
-
-            mapping_fasilitas = configs["resiko_config"].get("mapping_fasilitas", {})
-
-            mapping_fasilitas[nama_risiko] = {
-                "nama_fasilitas": nama_risiko,
+            mapping_risiko = configs["risiko_config"].get("mapping_risiko", {})
+            mapping_risiko[nama_risiko] = {
+                "nama_risiko": nama_risiko,
                 "file_path": output_fc
             }
-
-            configs[
-                "fasilitas_config"
-            ]["mapping_fasilitas"] = mapping_fasilitas
-
+            configs["risiko_config"]["mapping_risiko"] = mapping_risiko
             persil.set_config_values(configs)
 
-            arcpy.management.MakeFeatureLayer(
-                output_fc,
-                nama_risiko
-            )
+            layer_name = f"Risiko_{nama_risiko}"
+            messages.addMessage(f"Risiko Baru {nama_risiko} berhasil ditambahkan")
 
-            arcpy.SetParameter( 7, nama_risiko )
+        elif mode_input == "Tambah Risiko dari NBT Sebelumnya":
+            if not nbt_sebelumnya_path:
+                raise arcpy.ExecuteError("NBT sebelumnya belum dipilih")
+            if not nama_risiko:
+                raise arcpy.ExecuteError("Nama risiko belum diisi")
 
-        messages.addMessage("== Proses selesai ==")
+            nama_risiko = nama_risiko.upper()
+            field_risiko = f"{nama_risiko}"
+            output_fc = self.copy_risiko(risiko_path, dataset_path, nama_risiko, keterangan_field, messages)
+
+            existing_fields = [field.name for field in arcpy.ListFields(persil_path)]
+            if field_risiko not in existing_fields:
+                arcpy.management.AddField(persil_path, field_risiko, "SHORT")
+
+            self.transfer_centroid(nbt_sebelumnya_path, persil_path, field_skor, field_risiko, messages)
+
+            mapping_risiko = configs["risiko_config"].get("mapping_risiko", {})
+            mapping_risiko[field_risiko] = {
+                "nama_risiko": nama_risiko,
+                "file_path": output_fc
+            }
+            configs["risiko_config"]["mapping_risiiko"] = mapping_risiko
+            persil.set_config_values(configs)
+
+            layer_name = f"Risiko_{nama_risiko}"
+            messages.addMessage(f"Risiko {nama_risiko} berhasil ditambahkan dari NBT sebelumnya")
+
+        if output_fc and arcpy.Exists(output_fc):
+            symbology_mapping = {
+                'BANJIR' : r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_BANJIR.lyrx",
+                'LONGSOR' : r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_LONGSOR.lyrx",
+            }
+            arcpy.AddMessage(nama_risiko)
+            simbology_file = symbology_mapping.get(nama_risiko, r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_LAINNYA.lyrx")
+
+            arcpy.management.MakeFeatureLayer(output_fc, layer_name)
+            arcpy.management.ApplySymbologyFromLayer(layer_name, simbology_file)
+            
+            arcpy.SetParameter(7, layer_name)
+            messages.addMessage(f"Layer '{layer_name}' ditambahkan ke map")
+
+        messages.addMessage("Proses selesai")
 
         return

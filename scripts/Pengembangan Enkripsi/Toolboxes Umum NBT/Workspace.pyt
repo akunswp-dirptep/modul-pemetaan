@@ -191,7 +191,7 @@ class Buat_Workspace(object):
                 'dataset_path': dataset_fasilitas_path
             },
 
-            'resiko_config': {
+            'risiko_config': {
                 'dataset_path': dataset_resiko_path
             }
         }

@@ -35,7 +35,7 @@
       "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "ID",
+        "displayField" : "UID_Baru",
         "editable" : true,
         "fieldDescriptions" : [
           {
@@ -61,36 +61,8 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "ID",
-            "fieldName" : "ID",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "WADMKC",
-            "fieldName" : "WADMKC",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "WADMKD",
-            "fieldName" : "WADMKD",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "TIPEHAK",
-            "fieldName" : "TIPEHAK",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "LUASM2",
-            "fieldName" : "LUASM2",
+            "alias" : "Shape_Leng",
+            "fieldName" : "Shape_Leng",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -103,8 +75,8 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "LBRDPN",
-            "fieldName" : "LBRDPN",
+            "alias" : "Shape_Le_1",
+            "fieldName" : "Shape_Le_1",
             "numberFormat" : {
               "type" : "CIMNumericFormat",
               "alignmentOption" : "esriAlignRight",
@@ -117,218 +89,29 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "LBRJLN",
-            "fieldName" : "LBRJLN",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
+            "alias" : "UID_Baru",
+            "fieldName" : "UID_Baru",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "JKATRP",
-            "fieldName" : "JKATRP",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "JKATRS",
-            "fieldName" : "JKATRS",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "JKKOLP",
-            "fieldName" : "JKKOLP",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "JKKOLS",
-            "fieldName" : "JKKOLS",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "NILAIBD",
-            "fieldName" : "NILAIBD",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "NIB",
-            "fieldName" : "NIB",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "ls_asal",
-            "fieldName" : "ls_asal",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
+            "alias" : "UID_Lama",
+            "fieldName" : "UID_Lama",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
             "alias" : "Sumber Persil",
-            "fieldName" : "sumber_persil",
+            "fieldName" : "Sumber",
             "visible" : true,
             "searchMode" : "Exact"
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "S_LETAK",
-            "fieldName" : "S_LETAK",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "S_ZONASI",
-            "fieldName" : "S_ZONASI",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "S_BENTUK",
-            "fieldName" : "S_BENTUK",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "S_KLS_JLN",
-            "fieldName" : "S_KLS_JLN",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "S_ELEVASI",
-            "fieldName" : "S_ELEVASI",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 6
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "Indikator Perubahan",
-            "fieldName" : "indikator_perubahan",
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "Kelompok Perubahan",
-            "fieldName" : "kelompok_perubahan",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
-            },
-            "visible" : true,
-            "searchMode" : "Exact"
-          },
-          {
-            "type" : "CIMFieldDescription",
-            "alias" : "Klaster Zona",
-            "fieldName" : "klaster_zona",
-            "numberFormat" : {
-              "type" : "CIMNumericFormat",
-              "alignmentOption" : "esriAlignRight",
-              "alignmentWidth" : 0,
-              "roundingOption" : "esriRoundNumberOfDecimals",
-              "roundingValue" : 0
-            },
+            "alias" : "Keterangan Perubahan",
+            "fieldName" : "Keterangan",
             "visible" : true,
             "searchMode" : "Exact"
           },
@@ -364,7 +147,7 @@
         "dataConnection" : {
           "type" : "CIMFeatureDatasetDataConnection",
           "featureDataset" : "nbt_ds",
-          "workspaceConnectionString" : "DATABASE=..\\Workspace-Workspace\\[2] Perbaruan Key Config\\NilaiBidangTanah.gdb",
+          "workspaceConnectionString" : "DATABASE=E:\\Akmal\\FOLDER TES TOOLS NBT JANGAN DIPINDAH\\Pembaruan NBT\\Workspace-Workspace\\[2] Perbaruan Key Config\\NilaiBidangTanah.gdb",
           "workspaceFactory" : "FileGDB",
           "dataset" : "Indikator_Perubahan_Persil",
           "datasetType" : "esriDTFeatureClass"
@@ -372,30 +155,6 @@
         "studyAreaSpatialRel" : "esriSpatialRelUndefined",
         "searchOrder" : "esriSearchOrderSpatial"
       },
-      "featureTemplates" : [
-        {
-          "type" : "CIMRowTemplate",
-          "name" : "Persil Baru",
-          "defaultValues" : {
-            "type" : "PropertySet",
-            "propertySetItems" : [
-              "SUMBER_PERSIL",
-              "Persil Baru"
-            ]
-          }
-        },
-        {
-          "type" : "CIMRowTemplate",
-          "name" : "Persil Lama",
-          "defaultValues" : {
-            "type" : "PropertySet",
-            "propertySetItems" : [
-              "SUMBER_PERSIL",
-              "Persil Lama"
-            ]
-          }
-        }
-      ],
       "htmlPopupEnabled" : true,
       "selectable" : true,
       "featureCacheType" : "Session",
@@ -682,7 +441,7 @@
         },
         "defaultSymbolPatch" : "Default",
         "fields" : [
-          "sumber_persil"
+          "Sumber"
         ],
         "groups" : [
           {

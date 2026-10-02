@@ -398,11 +398,9 @@
 					<menu refID="pengolahan_zonasi_pembaruan_nbt" />
 				</menu>
 
-				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Poligon Persil">
+				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Data Persil">
 					<button refID="ButtonIdentifikasiPerubahanPersil" size="Medium"/>
 					<button refID="ButtonTampilkanSimbologiPersil" size="Medium"/>
-					<button refID="ButtonPeriksaPerubahanPersil" size="Medium"/>
-					<button refID="ButtonSetStatusPerubahanPersil" size="Medium"/>
 					<button refID="ButtonMemasukkanDataKePersilLayer" size="Medium"/>
 				</menu>
 				<!--  -->

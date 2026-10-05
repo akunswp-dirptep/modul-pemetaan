@@ -5,8 +5,10 @@ PENILAIAN TANAH (SIPENTA) - CATATAN RILIS
 Versi: 6.10
 ==================================================
 
-[PENYESUAIAN FITUR]
-1. Memperbaiki Bug NOZN
-
 [PENAMBAHAN FITUR]
 1. Pengecekan Zona Awal
+
+[PENYESUAIAN FITUR]
+1. Memperbaiki Bug NOZN dan JNSZN
+2. Menyesuaikan Tampilan Pesan Pada Fitur Login Pengguna
+

@@ -509,7 +509,6 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         config_and_paths = get_config_values()
         dataset_path = config_and_paths['dataset_path']
 
-        # --- Validasi: pastikan field nomorzone dan nilai tidak NULL dan bernilai numerik
         fields = [nomorzone, nilai, jeniszona]
 
         if not znt_lama:
@@ -575,7 +574,6 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
 
         arcpy.AddMessage("Validasi field nomor zona dan nilai: OK.")
 
-        # --- Proses memasukkan data ZNT sebelumnya ke layer ZNT saat ini
         zona_layer_path = os.path.join(dataset_path, "Zona_Layer")
         zona_layer_temp_path = 'in_memory/Zona_Layer_Temp'
 
@@ -606,9 +604,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             field_mapping=field_mappings
         )
 
-        # ======================
-        # FIELD CALCULATIONS
-        # ======================
+
 
         """
         Simpan data lama dahulu
@@ -651,28 +647,24 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         arcpy.management.CalculateField(zona_layer_temp_path, "NILBULAT_LAMA", f"get(!{nilai}!, '1000')", "PYTHON3", code_block2)  # Salin nilai bulat
         arcpy.management.DeleteField(zona_layer_temp_path, nilai)  # Hapus field nilai asli jika berbeda
 
-        # Dapatkan daftar field beserta tipe datanya dalam bentuk dictionary
         existing_fields = {f.name: f.type for f in arcpy.ListFields(zona_layer_temp_path)}
 
-        # Cek apakah 'NOZN' sudah ada di dalam tabel
         if 'NOZN' in existing_fields:
-            # Jika NOZN ada dan bertipe Double
+
             if existing_fields['NOZN'] == 'Double':
                 
-                # Jika field sumber yang dikirim pengguna juga bernama 'NOZN'
+
                 if nomorzone == 'NOZN':
-                    # 1. Buat field temporary untuk menampung data
+
                     arcpy.management.AddField(zona_layer_temp_path, "NOZN_TEMP", "LONG")
                     arcpy.management.CalculateField(zona_layer_temp_path, "NOZN_TEMP", "!NOZN!", "PYTHON3")
                     
-                    # 2. Hapus field NOZN yang lama (bertipe Double)
+
                     arcpy.management.DeleteField(zona_layer_temp_path, "NOZN")
                     
-                    # 3. Buat kembali field NOZN dengan tipe LONG dan kembalikan datanya
                     arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
                     arcpy.management.CalculateField(zona_layer_temp_path, "NOZN", "int(!NOZN_TEMP!)", "PYTHON3")
                     
-                    # 4. Hapus field temporary
                     arcpy.management.DeleteField(zona_layer_temp_path, "NOZN_TEMP")
                     
                 else:
@@ -682,12 +674,10 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
                     arcpy.management.CalculateField(zona_layer_temp_path, "NOZN", f"int(!{nomorzone}!)", "PYTHON3")
                     
             else:
-                # Jika NOZN sudah ada dan tipenya sudah benar (bukan Double)
                 if nomorzone != 'NOZN':
                     arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
 
         else:
-            # Jika 'NOZN' belum ada sama sekali
             arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
             arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
 
@@ -701,30 +691,58 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             str_skala = f"1 : {nilai_skala}"
             arcpy.management.CalculateField(zona_layer_temp_path, "SKALA", f"'{str_skala}'", "PYTHON3")
         
+
+        if config_and_paths['skala']:
+            nilai_skala = f"{int(config_and_paths['skala']):,}".replace(',', '.')
+            str_skala = f"1 : {nilai_skala}"
+            arcpy.management.CalculateField(zona_layer_temp_path, "SKALA", f"'{str_skala}'", "PYTHON3")
         
-
         if jeniszona:
-            if jeniszona != "JNSZN":  
-                arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
-                arcpy.management.CalculateField(zona_layer_temp_path, 'JNSZN', f"!{jeniszona}!", "PYTHON3")
-                arcpy.management.CalculateField(zona_layer_temp_path, 'PENGGUNAAN', f"get_jenis_zona(!{jeniszona}!)", "PYTHON3", kode_jenis_zona)
-                arcpy.management.DeleteField(zona_layer_temp_path, jeniszona)
+            if 'JNSZN' in existing_fields:
+                if existing_fields['JNSZN'] == 'Double':
+                    if jeniszona == 'JNSZN':
+                        arcpy.management.AddField(zona_layer_temp_path, "JNSZN_TEMP", "SHORT")
+                        arcpy.management.CalculateField(zona_layer_temp_path, "JNSZN_TEMP", "!JNSZN!", "PYTHON3")
+                        
+                        arcpy.management.DeleteField(zona_layer_temp_path, "JNSZN")
+                        
+                        arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
+                        arcpy.management.CalculateField(zona_layer_temp_path, "JNSZN", "int(!JNSZN_TEMP!)", "PYTHON3")
+                        
+                        arcpy.management.DeleteField(zona_layer_temp_path, "JNSZN_TEMP")
+                    else:
+                        arcpy.management.DeleteField(zona_layer_temp_path, "JNSZN")
+                        arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
+                        arcpy.management.CalculateField(zona_layer_temp_path, "JNSZN", f"int(!{jeniszona}!)", "PYTHON3")
+                else:
+                    if jeniszona != 'JNSZN':
+                        arcpy.management.CalculateField(zona_layer_temp_path, 'JNSZN', f"int(!{jeniszona}!)", "PYTHON3")
             else:
-                if "PENGGUNAAN" not in [f.name for f in arcpy.ListFields(zona_layer_temp_path)]:
-                    arcpy.management.AddField(zona_layer_temp_path, "PENGGUNAAN", "TEXT")
-                    arcpy.management.CalculateField(zona_layer_temp_path, 'PENGGUNAAN', f"get_jenis_zona(!{jeniszona}!)", "PYTHON3", kode_jenis_zona)
-        else:
                 arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
-                arcpy.management.CalculateField(zona_layer_temp_path, "JNSZN", "1", "PYTHON3")  # Set default ke 1
-                arcpy.management.AddField(zona_layer_temp_path, "PENGGUNAAN", "TEXT")
-                arcpy.management.CalculateField(zona_layer_temp_path, "PENGGUNAAN", "'Non-Pertanian'", "PYTHON3")  # Set default
+                arcpy.management.CalculateField(zona_layer_temp_path, 'JNSZN', f"int(!{jeniszona}!)", "PYTHON3")
 
+            if jeniszona != "JNSZN":
+                arcpy.management.DeleteField(zona_layer_temp_path, jeniszona)
+
+            if "PENGGUNAAN" not in [f.name for f in arcpy.ListFields(zona_layer_temp_path)]:
+                arcpy.management.AddField(zona_layer_temp_path, "PENGGUNAAN", "TEXT")
+            
+            arcpy.management.CalculateField(zona_layer_temp_path, 'PENGGUNAAN', "get_jenis_zona(!JNSZN!)", "PYTHON3", kode_jenis_zona)
+
+        else:
+            if 'JNSZN' not in existing_fields:
+                arcpy.management.AddField(zona_layer_temp_path, "JNSZN", "SHORT")
+            
+            arcpy.management.CalculateField(zona_layer_temp_path, "JNSZN", "1", "PYTHON3")  # Set default ke 1
+            
+            if "PENGGUNAAN" not in [f.name for f in arcpy.ListFields(zona_layer_temp_path)]:
+                arcpy.management.AddField(zona_layer_temp_path, "PENGGUNAAN", "TEXT")
+            
+            arcpy.management.CalculateField(zona_layer_temp_path, "PENGGUNAAN", "'Non-Pertanian'", "PYTHON3")  # Set default
         self.check_and_prepare_nomor_zona(zona_layer_temp_path)
 
-        # --- Hapus field yang tidak diinginkan ---
         all_fields = [f.name for f in arcpy.ListFields(zona_layer_temp_path)]
         
-        # Dapatkan nama field geometri dan ObjectID
         desc = arcpy.Describe(zona_layer_temp_path)
         shape_field_name = desc.shapeFieldName
         oid_field_name = desc.OIDFieldName
@@ -732,7 +750,6 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         # Field yang ingin dipertahankan
         desired_fields = ["NOZN", "NILAIZN", "SKALA", "JNSZN", "PENGGUNAAN", "NILAIZN_LAMA", "NILBULAT", "NILBULAT_LAMA", "HISTZONE", shape_field_name, oid_field_name]
         
-        # Tambahkan field yang diperlukan sistem (seperti Shape_Length, Shape_Area) ke daftar yang dipertahankan
         for field in desc.fields:
             if not field.editable:
                 if field.name not in desired_fields:
@@ -762,9 +779,7 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
             field_name = field_info['name']
             field_type = field_info['data_type']
             
-            # Periksa apakah field sudah ada
             if field_name in existing_fields_details:
-                # Jika tipe data tidak sesuai, hapus field tersebut
                 if existing_fields_details[field_name].upper() != field_type.upper():
                     arcpy.management.DeleteField(zona_layer_temp_path, field_name)
                     arcpy.management.AddField(zona_layer_temp_path, field_name, field_type)

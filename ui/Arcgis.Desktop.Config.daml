@@ -407,7 +407,7 @@
 				<!--  -->
 				
 				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Jaringan Jalan">
-					<menu refID="sesuaikan_atribut_jaringan_jalan" size="Medium"/>
+					<button refID="ButtonSetAtributJaringanJalan" size="Medium"/>
 					<button refID="ButtonValidasiTopologiJaringanJalan" size="Medium"/>
 					<button refID="ButtonUpdateSimbologiLebarJalan" size="Medium"/>
 					<button refID="ButtonDeteksiOutlierJaringanJalan" size="Medium"/>
@@ -428,7 +428,7 @@
 				</menu>
 
 				<menu id="sesuaikan_atribut_jaringan_jalan" caption="Sesuaikan Atribut Jaringan Jalan">
-					<button refID="ButtonSetAtributJaringanJalan" size="Medium"/>
+					
 					<button refID="ButtonSesuaikanAtributKelasJalan" size="Medium"/>		
 					<button refID="ButtonSesuaikanAtributLebarJalan" size="Medium"/>				
 				</menu>

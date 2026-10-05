@@ -6,7 +6,8 @@ Versi: 6.10
 ==================================================
 
 [PENAMBAHAN FITUR]
-1. Pengecekan Zona Awal
+1. Penambahan Menu Baru [Tool Umum ZNT]
+2. Penambahan Fitur [Pengecekan Zona Awal]
 
 [PENYESUAIAN FITUR]
 1. Memperbaiki Bug NOZN dan JNSZN

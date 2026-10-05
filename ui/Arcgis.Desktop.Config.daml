@@ -106,7 +106,7 @@
 					<menu refID="menu_penggabungan_znt" size="large"/>
 				</group>
 			<!-- Sistem Aplikasi -->
-				<group id="sistem_aplikasi" caption="Penilaian Tanah">
+				<group id="sistem_aplikasi" caption="Sistem Aplikasi">
 					<button refID="ButtonLoginPemeta" size="large"/>
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 					<button refID="ButtonUnduhDataDariSipenta" size="large"/>

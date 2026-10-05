@@ -868,6 +868,7 @@ class Upload_Layout_Ke_Sipenta(object):
         return spesimen_list
 
 class Tambah_Kotak_TTE(object):
+    
     def __init__(self):
         self.label = "Tambah Kotak TTE"
         self.description = "Membuat kotak placeholder TTE di Layout aktif"

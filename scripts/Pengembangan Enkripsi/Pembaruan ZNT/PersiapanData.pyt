@@ -650,10 +650,46 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         arcpy.management.CalculateField(zona_layer_temp_path, "NILAIZN_LAMA", f"get(!{nilai}!)", "PYTHON3", code_block)  # Salin nilai asli
         arcpy.management.CalculateField(zona_layer_temp_path, "NILBULAT_LAMA", f"get(!{nilai}!, '1000')", "PYTHON3", code_block2)  # Salin nilai bulat
         arcpy.management.DeleteField(zona_layer_temp_path, nilai)  # Hapus field nilai asli jika berbeda
-        
-        # NOZN tidak terbaca,
-        arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
-        arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
+
+        # Dapatkan daftar field beserta tipe datanya dalam bentuk dictionary
+        existing_fields = {f.name: f.type for f in arcpy.ListFields(zona_layer_temp_path)}
+
+        # Cek apakah 'NOZN' sudah ada di dalam tabel
+        if 'NOZN' in existing_fields:
+            # Jika NOZN ada dan bertipe Double
+            if existing_fields['NOZN'] == 'Double':
+                
+                # Jika field sumber yang dikirim pengguna juga bernama 'NOZN'
+                if nomorzone == 'NOZN':
+                    # 1. Buat field temporary untuk menampung data
+                    arcpy.management.AddField(zona_layer_temp_path, "NOZN_TEMP", "LONG")
+                    arcpy.management.CalculateField(zona_layer_temp_path, "NOZN_TEMP", "!NOZN!", "PYTHON3")
+                    
+                    # 2. Hapus field NOZN yang lama (bertipe Double)
+                    arcpy.management.DeleteField(zona_layer_temp_path, "NOZN")
+                    
+                    # 3. Buat kembali field NOZN dengan tipe LONG dan kembalikan datanya
+                    arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
+                    arcpy.management.CalculateField(zona_layer_temp_path, "NOZN", "int(!NOZN_TEMP!)", "PYTHON3")
+                    
+                    # 4. Hapus field temporary
+                    arcpy.management.DeleteField(zona_layer_temp_path, "NOZN_TEMP")
+                    
+                else:
+                    # Jika NOZN bukan field sumber, aman untuk langsung dihapus dan dibuat ulang
+                    arcpy.management.DeleteField(zona_layer_temp_path, "NOZN")
+                    arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
+                    arcpy.management.CalculateField(zona_layer_temp_path, "NOZN", f"int(!{nomorzone}!)", "PYTHON3")
+                    
+            else:
+                # Jika NOZN sudah ada dan tipenya sudah benar (bukan Double)
+                if nomorzone != 'NOZN':
+                    arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
+
+        else:
+            # Jika 'NOZN' belum ada sama sekali
+            arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
+            arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
 
         if nomorzone != "NOZN":
             arcpy.management.DeleteField(zona_layer_temp_path, nomorzone)

@@ -844,19 +844,45 @@ class Upload_Layout_Ke_Sipenta(object):
         spesimen_list = []
         urutan = 1
 
+        # 1. Dapatkan ukuran layout ArcGIS saat ini
+        layout_width = layout.pageWidth
+        layout_height = layout.pageHeight
+        
+        # 2. Tentukan ukuran A0 dalam milimeter
+        # Cek apakah layout berbentuk Landscape atau Portrait
+        if layout_width > layout_height:
+            # Landscape A0: 1189 x 841 mm
+            a0_width_mm = 1189.0
+            a0_height_mm = 841.0
+        else:
+            # Portrait A0: 841 x 1189 mm
+            a0_width_mm = 841.0
+            a0_height_mm = 1189.0
+
+        # 3. Buat rasio skala dari layout asal ke A0
+        # Ini akan otomatis mengkonversi satuan (misal cm ke mm) dan memperbesar/memperkecil posisi
+        scale_x = a0_width_mm / layout_width
+        scale_y = a0_height_mm / layout_height
+
         elements = layout.listElements("TEXT_ELEMENT", "TTE_*")
         for el in elements:
             try:
                 id_spesimen = int(el.name.split("_")[1])
                 
+                # 4. Kalikan posisi dan ukuran elemen dengan rasio skala
+                x_scaled = el.elementPositionX * scale_x
+                y_scaled = el.elementPositionY * scale_y
+                width_scaled = el.elementWidth * scale_x
+                height_scaled = el.elementHeight * scale_y
+                
                 spesimen = {
                     "id_spesimen": id_spesimen,
                     "urutan": urutan,
                     "position": {
-                        "x": round(el.elementPositionX, 2) * 10,
-                        "y": round(el.elementPositionY, 2) * 10,
-                        "width": round(el.elementWidth, 2) * 10,
-                        "height": round(el.elementHeight, 2) * 10
+                        "x": round(x_scaled, 2),
+                        "y": round(y_scaled, 2),
+                        "width": round(width_scaled, 2),
+                        "height": round(height_scaled, 2)
                     }
                 }
                 spesimen_list.append(spesimen)
@@ -864,7 +890,6 @@ class Upload_Layout_Ke_Sipenta(object):
             except (IndexError, ValueError):
                 continue
 
-        # 3. Mengembalikan array of objects untuk dirakit menjadi payload
         return spesimen_list
 
 class Tambah_Kotak_TTE(object):

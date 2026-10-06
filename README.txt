@@ -10,6 +10,7 @@ Versi: 6.10
 2. Penambahan Fitur [Pengecekan Zona Awal]
 
 [PENYESUAIAN FITUR]
-1. Memperbaiki Bug NOZN dan JNSZN
-2. Menyesuaikan Tampilan Pesan Pada Fitur Login Pengguna
+1. Menyesuaikan Tampilan Pesan Pada Fitur Login Pengguna
 
+[PERBAIKAN BUG]
+1. Memperbaiki Bug NOZN dan JNSZN

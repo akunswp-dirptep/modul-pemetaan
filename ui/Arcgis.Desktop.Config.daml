@@ -411,7 +411,6 @@
 					<button refID="ButtonValidasiTopologiJaringanJalan" size="Medium"/>
 					<button refID="ButtonUpdateSimbologiLebarJalan" size="Medium"/>
 					<button refID="ButtonDeteksiOutlierJaringanJalan" size="Medium"/>
-					<button refID="ButtonSetOutlierLebarJalan" size="Medium"/>
 					<button refID="ButtonTampilkanSimbologiKelasJalan" size="Medium"/>
 					
 				</menu>

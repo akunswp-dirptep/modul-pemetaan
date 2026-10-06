@@ -300,8 +300,6 @@ class Sesuaikan_Jenis_Zona(object):
                                 row[0] = kode_zona  
                                 row[1] = jenis_zona  
                                 cursor.updateRow(row)
-                            del row
-                            del cursor  
                 
                 except Exception as e:
                     if str(e) == 'Cannot acquire a lock.':

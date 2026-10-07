@@ -789,19 +789,16 @@ class Upload_Layout_Ke_Sipenta(object):
         if not tte_template_items:
             arcpy.AddError('Template TTE Tidak ditemukan')
             raise arcpy.ExecuteError
-        arcpy.AddMessage(len(blank_template_items))
+
         tte_template_item = tte_template_items[0]
         blank_template_item = blank_template_items[0]
 
         cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
         spesimen_tte = self.check_tte_box(layout_name)
-        arcpy.AddMessage(str(spesimen_tte).replace("'", '"'))
-
 
         scratch_folder = arcpy.env.scratchFolder
         pdf_filename = f"{layout_name.replace(' ', '_')}.pdf"
         pdf_path = os.path.join(scratch_folder, pdf_filename)
-        original_sizes = {}
         elements = layout.listElements("TEXT_ELEMENT", "TTE_*")
 
         for el in elements:
@@ -818,10 +815,7 @@ class Upload_Layout_Ke_Sipenta(object):
             cim_new.graphic.text = new_text
             
             el.setDefinition(cim_new)
-            # original_sizes[el.name] = (el.elementWidth, el.elementHeight)
-            
-            # el.elementWidth = el.elementWidth * 0.85
-            # el.elementHeight = el.elementHeight * 0.85
+
         
         arcpy.AddMessage(f"Mengekspor layout '{layout_name}' ke format PDF...")
         layout.exportToPDF(pdf_path)
@@ -841,8 +835,7 @@ class Upload_Layout_Ke_Sipenta(object):
             cim_new.graphic.text = new_text
             
             el.setDefinition(cim_new)
-            # if el.name in original_sizes:
-            #     el.elementWidth, el.elementHeight = original_sizes[el.name]
+
         kode = no_berkas[:2]
         kode_param = kode + '-' + param_peta
 
@@ -886,7 +879,6 @@ class Upload_Layout_Ke_Sipenta(object):
                 files = {'file': (pdf_filename, f, 'application/pdf')}
                 response = requests.post(url, headers=headers, data=payload_data, files=files) 
 
-            # Cek status code
             if response.status_code == 200:
                 res_json = response.json()
                 if res_json.get("success"):
@@ -917,9 +909,6 @@ class Upload_Layout_Ke_Sipenta(object):
             arcpy.AddError(f"Gagal menghubungi server API: {str(e)}")
         except Exception as e:
             arcpy.AddError(f"Terjadi kesalahan sistem: {str(e)}")
-        # finally:
-        #     aprx = arcpy.mp.ArcGISProject("CURRENT")
-        #     layout = aprx.listLayouts(layout_name)[0]
         return
 
     def check_tte_box(self, layout_name):
@@ -959,8 +948,8 @@ class Upload_Layout_Ke_Sipenta(object):
                     "id_spesimen": id_spesimen,
                     "urutan": urutan,
                     "position": {
-                        "x": round(x_scaled, 2) - 4,
-                        "y": round(y_scaled, 2) - 1,
+                        "x": round(x_scaled, 2),
+                        "y": round(y_scaled, 2),
                         "width": round(width_scaled, 2),
                         "height": round(height_scaled, 2) 
                     }

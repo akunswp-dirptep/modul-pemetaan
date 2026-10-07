@@ -617,11 +617,9 @@ class Upload_Layout_Ke_Sipenta(object):
         self.label = "Upload Hasil Layout ke Sipenta"
         self.description = "Eksport layout dari ArcGIS Pro ke PDF dan otomatis kirim ke SIPENTA."
         self.canRunInBackground = False
-        # Simpan state berkas sebelumnya agar parameter tidak selalu ter-reset
         self.previous_berkas = None
 
     def getParameterInfo(self):
-        # Dropdown list Layout dari Project Aktif
         berkas_list = get_all_berkas_id()
         berkas_show = []
         if berkas_list is not None:
@@ -702,6 +700,12 @@ class Upload_Layout_Ke_Sipenta(object):
             berkas.enabled = False
             param_peta.enabled = False
             penjelasan.enabled = True
+            penjelasan.value = (
+            "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+            "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+            "Kementerian ATR/BPN.\n"
+            f"Tahun: {datetime.datetime.now().year}\n"
+        )
             return 
         else:
             penjelasan.value = (
@@ -767,7 +771,29 @@ class Upload_Layout_Ke_Sipenta(object):
 
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         layout = aprx.listLayouts(layout_name)[0]
+        nama_layout_template_item = "Template_Item"
+        pagx_file_path = r"C:\PenilaianTanah\template\zona nilai tanah\Layout Standardisasi\6. Template Sistem\Template_Item.pagx"
+        template_layouts = aprx.listLayouts(nama_layout_template_item)
+        if not template_layouts:
+            try:
+                aprx.importDocument(pagx_file_path)
+                arcpy.AddMessage(f"Layout '{nama_layout_template_item}' otomatis diimpor dari file .pagx.")
+                template_layouts = aprx.listLayouts(nama_layout_template_item)
+            except Exception as e:
+                arcpy.AddError(f"{e}")
+                return
+            
+        template_lyt = template_layouts[0]
+        tte_template_items = template_lyt.listElements("TEXT_ELEMENT", "Template_TTE")
+        blank_template_items = template_lyt.listElements("TEXT_ELEMENT", "Blank_TTE")
+        if not tte_template_items:
+            arcpy.AddError('Template TTE Tidak ditemukan')
+            raise arcpy.ExecuteError
+        arcpy.AddMessage(len(blank_template_items))
+        tte_template_item = tte_template_items[0]
+        blank_template_item = blank_template_items[0]
 
+        cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
         spesimen_tte = self.check_tte_box(layout_name)
         arcpy.AddMessage(str(spesimen_tte).replace("'", '"'))
 
@@ -775,12 +801,48 @@ class Upload_Layout_Ke_Sipenta(object):
         scratch_folder = arcpy.env.scratchFolder
         pdf_filename = f"{layout_name.replace(' ', '_')}.pdf"
         pdf_path = os.path.join(scratch_folder, pdf_filename)
+        original_sizes = {}
+        elements = layout.listElements("TEXT_ELEMENT", "TTE_*")
 
+        for el in elements:
+            cim_new = el.getDefinition(cim_version)
+            cim_template = blank_template_item.getDefinition(cim_version)
+            
+            new_shape = cim_new.graphic.shape
+            new_text = cim_new.graphic.text
+            
 
+            cim_new.graphic = cim_template.graphic
+            
+            cim_new.graphic.shape = new_shape
+            cim_new.graphic.text = new_text
+            
+            el.setDefinition(cim_new)
+            # original_sizes[el.name] = (el.elementWidth, el.elementHeight)
+            
+            # el.elementWidth = el.elementWidth * 0.85
+            # el.elementHeight = el.elementHeight * 0.85
+        
         arcpy.AddMessage(f"Mengekspor layout '{layout_name}' ke format PDF...")
         layout.exportToPDF(pdf_path)
         arcpy.AddMessage(f"Export berhasil: {pdf_path}")
+        elements_to_restore = layout.listElements("TEXT_ELEMENT", "TTE_*")
+        for el in elements_to_restore:
+            cim_new = el.getDefinition(cim_version)
+            cim_template = tte_template_item.getDefinition(cim_version)
+            
+            new_shape = cim_new.graphic.shape
+            new_text = cim_new.graphic.text
+            
 
+            cim_new.graphic = cim_template.graphic
+            
+            cim_new.graphic.shape = new_shape
+            cim_new.graphic.text = new_text
+            
+            el.setDefinition(cim_new)
+            # if el.name in original_sizes:
+            #     el.elementWidth, el.elementHeight = original_sizes[el.name]
         kode = no_berkas[:2]
         kode_param = kode + '-' + param_peta
 
@@ -800,7 +862,9 @@ class Upload_Layout_Ke_Sipenta(object):
         }
 
         param_upload = mapping_param[kode_param]
-
+        if not param_upload:
+            arcpy.AddError(f"Mapping parameter untuk {kode_param} tidak ditemukan.")
+            return
         test_url = "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/upload/layout"
         prod_url = "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/upload/layout"
         url = prod_url if use_production else test_url
@@ -820,21 +884,42 @@ class Upload_Layout_Ke_Sipenta(object):
         try:
             with open(pdf_path, 'rb') as f:
                 files = {'file': (pdf_filename, f, 'application/pdf')}
-                
                 response = requests.post(url, headers=headers, data=payload_data, files=files) 
 
+            # Cek status code
             if response.status_code == 200:
                 res_json = response.json()
                 if res_json.get("success"):
                     arcpy.AddMessage(f"SUKSES: {res_json.get('message', 'File berhasil diunggah!')}")
                 else:
                     arcpy.AddError(f"GAGAL DARI SERVER: {response.text}")
+
+            elif response.status_code == 403:
+                try:
+                    error_json = response.json()
+                    message = error_json.get("message", "")
+                except ValueError:
+                    message = ""
+                    
+                if "expired" in message.lower():
+                    clear_user_data() 
+                    arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
+                elif "Berkas tidak bisa di upload pada tahapan ini" in message:
+                    arcpy.AddError("Data tidak dapat diupload karena posisi berkas di SIPENTA sudah bergeser atau tidak berada pada tahap tempat data seharusnya diunggah.")
+                else:
+                    error_message = message if message else "Periksa hak akses atau token."
+                    arcpy.AddError(f"Akses ditolak (403). Pesan: {error_message}")
+
             else:
                 arcpy.AddError(f"HTTP ERROR {response.status_code}: {response.text}")
                 
+        except requests.exceptions.RequestException as e:
+            arcpy.AddError(f"Gagal menghubungi server API: {str(e)}")
         except Exception as e:
-            arcpy.AddError(f"Terjadi kesalahan saat menghubungi API: {str(e)}")
-
+            arcpy.AddError(f"Terjadi kesalahan sistem: {str(e)}")
+        # finally:
+        #     aprx = arcpy.mp.ArcGISProject("CURRENT")
+        #     layout = aprx.listLayouts(layout_name)[0]
         return
 
     def check_tte_box(self, layout_name):
@@ -844,54 +929,50 @@ class Upload_Layout_Ke_Sipenta(object):
         spesimen_list = []
         urutan = 1
 
-        # 1. Dapatkan ukuran layout ArcGIS saat ini
         layout_width = layout.pageWidth
         layout_height = layout.pageHeight
         
-        # 2. Tentukan ukuran A0 dalam milimeter
-        # Cek apakah layout berbentuk Landscape atau Portrait
         if layout_width > layout_height:
-            # Landscape A0: 1189 x 841 mm
-            a0_width_mm = 1189.0
-            a0_height_mm = 841.0
+            a0_width_pt = 3370.39
+            a0_height_pt = 2383.94
         else:
-            # Portrait A0: 841 x 1189 mm
-            a0_width_mm = 841.0
-            a0_height_mm = 1189.0
+            a0_width_pt = 2383.94
+            a0_height_pt = 3370.39
 
-        # 3. Buat rasio skala dari layout asal ke A0
-        # Ini akan otomatis mengkonversi satuan (misal cm ke mm) dan memperbesar/memperkecil posisi
-        scale_x = a0_width_mm / layout_width
-        scale_y = a0_height_mm / layout_height
+        scale_x = a0_width_pt / layout_width
+        scale_y = a0_height_pt / layout_height
 
         elements = layout.listElements("TEXT_ELEMENT", "TTE_*")
         for el in elements:
             try:
                 id_spesimen = int(el.name.split("_")[1])
                 
-                # 4. Kalikan posisi dan ukuran elemen dengan rasio skala
+                # 1. Catat koordinat dan ukuran aslinya terlebih dahulu agar spesimen_list tidak berubah
                 x_scaled = el.elementPositionX * scale_x
                 y_scaled = el.elementPositionY * scale_y
                 width_scaled = el.elementWidth * scale_x
                 height_scaled = el.elementHeight * scale_y
                 
+                y_scaled = a0_height_pt - y_scaled - height_scaled + height_scaled
+                
                 spesimen = {
                     "id_spesimen": id_spesimen,
                     "urutan": urutan,
                     "position": {
-                        "x": round(x_scaled, 2),
-                        "y": round(y_scaled, 2),
+                        "x": round(x_scaled, 2) - 4,
+                        "y": round(y_scaled, 2) - 1,
                         "width": round(width_scaled, 2),
-                        "height": round(height_scaled, 2)
+                        "height": round(height_scaled, 2) 
                     }
                 }
                 spesimen_list.append(spesimen)
                 urutan += 1
+
             except (IndexError, ValueError):
                 continue
 
         return spesimen_list
-
+    
 class Tambah_Kotak_TTE(object):
     
     def __init__(self):
@@ -994,7 +1075,6 @@ class Tambah_Kotak_TTE(object):
         return
     
     def updateMessages(self, parameters):
-        # Jika nilai parameter layout adalah pesan kosong, cegah tool berjalan
         if parameters[0].valueAsText == 'Tidak ada Layout yang dapat dipilih':
             parameters[0].setErrorMessage("Harap buat layout terlebih dahulu di dalam project ini.")
         return
@@ -1021,7 +1101,6 @@ class Tambah_Kotak_TTE(object):
                             unique_ttd[nama] = f
                     
                     if unique_ttd:
-                        # Ubah dari dictionary kembali ke list untuk di-looping
                         list_ttd = list(unique_ttd.values())
                     else:
                         arcpy.AddError('Tidak ditemukan spesimen tandatangan untuk berkas yang dipilih')
@@ -1040,7 +1119,7 @@ class Tambah_Kotak_TTE(object):
         return
     
     def call_tte_api(self, token, nomor_berkas, use_production=True):
-        # URL untuk testing dan produksi
+
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/spesimen?no_berkas={nomor_berkas}"
         prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/spesimen?no_berkas={nomor_berkas}"
     
@@ -1070,17 +1149,14 @@ class Tambah_Kotak_TTE(object):
             except Exception:
                 message = ""
 
-            # Handle khusus token expired
             if response.status_code == 403 and "expired" in message.lower():
                 clear_user_data()
                 raise Exception("Token Anda kadaluarsa, silakan login ulang.")
             
-            # [PERBAIKAN BUG] Jangan pakai sys.exit(0) di ArcGIS Pro, gunakan raise arcpy.ExecuteError
             if response.status_code == 404 and message:
                 arcpy.AddError(message)
                 raise arcpy.ExecuteError
 
-            # Handle forbidden biasa
             elif response.status_code == 403:
                 raise Exception("Akses ditolak (403). Periksa hak akses atau token.")
             else:

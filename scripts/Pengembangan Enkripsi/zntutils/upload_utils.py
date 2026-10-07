@@ -89,7 +89,6 @@ def upload_shapefile_to_sipenta(nomor_berkas, token, param, in_feature, shapefil
             if "expired" in message.lower():
                 clear_user_data() 
                 arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
-            # Menangkap error tahapan spesifik dengan kalimat yang diparafrase
             elif "Berkas tidak bisa di upload pada tahapan ini" in message:
                 arcpy.AddError("Data tidak dapat diupload karena posisi berkas di SIPENTA sudah bergeser atau tidak berada pada tahap tempat data seharusnya diunggah.")
             else:

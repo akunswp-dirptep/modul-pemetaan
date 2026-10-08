@@ -1613,9 +1613,9 @@ class Cek_Zona_Awal(object):
             # Field untuk mendeteksi dua zona yang saling bertabrakan
             arcpy.management.AddField(out_overlap, "UID_Zona_1", "LONG")
             arcpy.management.AddField(out_overlap, "UID_Zona_2", "LONG")
-            arcpy.management.AddField(out_overlap, "Luas_Tindih", "DOUBLE")
+            arcpy.management.AddField(out_overlap, "Ls_Tindih", "DOUBLE")
 
-            with arcpy.da.InsertCursor(out_overlap, ["SHAPE@", "UID_Zona_1", "UID_Zona_2", "Luas_Tindih"]) as icur:
+            with arcpy.da.InsertCursor(out_overlap, ["SHAPE@", "UID_Zona_1", "UID_Zona_2", "Ls_Tindih"]) as icur:
                 for tindih_data in koleksi_tindih:
                     icur.insertRow(tindih_data)
         arcpy.management.Delete(mem_persil)

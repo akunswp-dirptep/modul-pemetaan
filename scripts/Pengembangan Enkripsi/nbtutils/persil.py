@@ -42,11 +42,9 @@ def is_persil_layer_comply(show_path_message = True):
     
     # Memeriksa jumlah Persil yang ditemukan
     if len(layer_persil) == 0:
-        # Tidak ditemukan Persil sama sekali
         arcpy.AddError('ERROR: File Persil tidak ditemukan dalam peta aktif.')
         sys.exit()
     elif len(layer_persil) > 1:
-        # Ditemukan lebih dari satu Persil
         arcpy.AddError(f'ERROR: Ditemukan {len(layer_persil)} Persil pada project. Hanya boleh ada satu Persil.')
         sys.exit()
     else:
@@ -58,22 +56,33 @@ def is_persil_layer_comply(show_path_message = True):
             arcpy.AddError('ERROR: Persil ditemukan tetapi sumber data tidak valid atau tidak exist.')
             sys.exit()
         
-        # Mendapatkan path lengkap ke Persil
         try:
-            # Untuk feature layer, kita bisa mendapatkan katalog path
+            
             if hasattr(persil, 'dataSource'):
                 layer_path = persil.dataSource
                 if show_path_message:
                     arcpy.AddMessage(f'Sukses: Persil ditemukan dan valid. \nPath: {layer_path}')
                 return layer_path
             else:
-                # Untuk layer types lainnya
                 arcpy.AddWarning('Peringatan: Tidak dapat menentukan path lengkap Persil, tetapi layer valid.')
                 return str(persil)
                 
         except Exception as e:
             arcpy.AddError(f'ERROR: Tidak dapat mengakses path Persil. Detail: {str(e)}')
             sys.exit()
+
+def check_if_there_selected_field(feature_layer = "Persil_Layer"):
+
+    # Nama layer yang akan diperiksa
+    layer_name = feature_layer
+
+    # Hitung jumlah fitur yang sedang terseleksi menggunakan FIDSet
+    selected_features = len(arcpy.Describe(layer_name).FIDSet)
+
+    # Jika masih ada fitur terseleksi, tampilkan pesan error dan hentikan program
+    if selected_features > 0:
+        arcpy.AddError(f"ERROR: Fitur Editing masih menyala pada {layer_name}. Matikan terlebih dahulu sebelum melanjutkan proses.")
+        sys.exit(1)
 
 def get_config_values():
 

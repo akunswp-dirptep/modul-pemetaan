@@ -48,7 +48,6 @@
 				<group id="pembaruan_nbt" caption="Pembaruan Nilai Bidang Tanah">
 					<menu refID="persiapan_data_pembaruan_nbt" size="Medium"/>
 					<menu refID="pengolahan_data_dasar_pembaruan_nbt" size="Medium" />
-					<menu refID="identifikasi_perubahan_atribut_pembaruan_nbt" size="Medium" />
 					<menu refID="analisis_survey_perubahan" size="Medium" />
 					<menu refID="pengolahan_titik_sampel_pembaruan_nbt" size="Medium" />
 					<menu refID="pengolahan_pembaruan_nbt" size="Medium" />
@@ -384,32 +383,37 @@
 
 				</menu>
 				
-				<menu id="pengolahan_data_dasar_pembaruan_nbt" caption="Pengolahan Geometri" extendedCaption="Pengolahan Geometri" keytip="TA"         
+				<menu id="pengolahan_data_dasar_pembaruan_nbt" caption="Pengolahan Data Awal" extendedCaption="Pengolahan Geometri" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\ubahgeometri.png"
 					smallImage="C:\PenilaianTanah\icons\ubahgeometri.png">
 					<menu refID="pengolahan_data_dasar_persil_pembaruan_nbt" />
 					<menu refID="pengolahan_jaringan_jalan_pembaruan_nbt" />
+					<menu refID="identifikasi_perubahan_atribut_pembaruan_nbt" size="Medium" />
 				</menu>
 
-				<menu id="identifikasi_perubahan_atribut_pembaruan_nbt" caption="Pengolahan Atribut" extendedCaption="Pengolahan Atribut" keytip="TA"         
-					largeImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png"
-					smallImage="C:\PenilaianTanah\icons\Identifikasi Perubahan.png">
+				<menu id="identifikasi_perubahan_atribut_pembaruan_nbt" caption="Atribut Persil" extendedCaption="Atribut Persil" keytip="TA">
+					<menu refID="persiapan_pengolahan_atribut_persil" />
+					<menu refID="pengolahan_WADMKC_WADMKD" />
 					<menu refID='analisis_persil_dan_jalan_pembaruan_nbt' />
 					<menu refID="pengolahan_zonasi_pembaruan_nbt" />
 				</menu>
 
-				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Data Persil">
+				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Geometri Persil">
 					<button refID="ButtonIdentifikasiPerubahanPersil" size="Medium"/>
 					<button refID="ButtonTampilkanSimbologiPersil" size="Medium"/>
 					<button refID="ButtonMemasukkanDataKePersilLayer" size="Medium"/>
 				</menu>
+				
+				<menu id="pengolahan_WADMKC_WADMKD" caption="WADMKC dan WADMKD">
+					<button refID="ButtonPengisianWADMKDdanWADMKCOtomatis" size="Medium"/>
+					<button refID="ButtonPengisianWADMKDdanWADMKCManual" size="Medium"/>
+				</menu>
 				<!--  -->
 				<!--  -->
 				
-				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Jaringan Jalan">
+				<menu id="pengolahan_jaringan_jalan_pembaruan_nbt" caption="Atribut Jaringan Jalan">
 					<button refID="ButtonSetAtributJaringanJalan" size="Medium"/>
 					<button refID="ButtonValidasiTopologiJaringanJalan" size="Medium"/>
-					<button refID="ButtonUpdateSimbologiLebarJalan" size="Medium"/>
 					<button refID="ButtonDeteksiOutlierJaringanJalan" size="Medium"/>
 					<button refID="ButtonTampilkanSimbologiKelasJalan" size="Medium"/>
 					
@@ -432,13 +436,16 @@
 					<button refID="ButtonSesuaikanAtributLebarJalan" size="Medium"/>				
 				</menu>
 
+				<menu id='persiapan_pengolahan_atribut_persil' caption="Persiapan Pengolahan">
+					<button refID='ButtonBuatNertworkDataset' size="Medium" />
+				</menu>
 				<menu id="analisis_persil_dan_jalan_pembaruan_nbt" caption="Analisis Persil Dengan Jalan">
 					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
 					<button refID="ButtonAnalisisBentukPersil" size="Medium"/>
 					<button refID="ButtonEditBentukPersil" size="Medium"/>
 					<button refID="ButtonMenentukanPerubahanMengelompok" size="Medium"/>
 					<button refID="ButtonResetPersilCluster" size="Medium"/>
-					<button refID='ButtonBuatNertworkDataset' size="Medium" />
+					
 					<button refID="ButtonUpdateKelasDanLebarJalanPersil" size="Medium"/>
 					<button refID='ButtonTampilkanSimbologi' size="Medium" />
 					<button refID="ButtonSetLebarJalanPersil" size="Medium"/>
@@ -2386,6 +2393,21 @@
 					</args>
 					<tooltip heading="Sesuaikan Status Perubahan Persil">Menu untuk mengubah status perubahan persil menjadi tetap atau update.</tooltip>
 				</button>
+
+				<button id="ButtonPengisianWADMKDdanWADMKCOtomatis" caption="Pengisian Otomatis" smallImage="C:\PenilaianTanah\icons\pengisianotomatis.png" largeImage="C:\PenilaianTanah\icons\pengisianotomatis.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Pengisian_WADMKC_WADMKD_Otomatis" name="Pengisian Otomatis" xmlns=""/>
+					</args>
+					<tooltip heading="Pengisian Otomatis">Menu untuk mengisi WADMKC dan WADMKD secara Otomatis.</tooltip>
+				</button>
+
+				<button id="ButtonPengisianWADMKDdanWADMKCManual" caption="Pengisian Manual" smallImage="C:\PenilaianTanah\icons\pengisianmanual.png" largeImage="C:\PenilaianTanah\icons\pengisianmanual.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Pengisian_WADMKC_WADMKD_Manual" name="Pengisian Manual" xmlns=""/>
+					</args>
+					<tooltip heading="Pengisian Manual">Menu untuk mengisi WADMKC dan WADMKD secara Manual.</tooltip>
+				</button>
+
 				<button id="ButtonMenentukanPerubahanMengelompok" caption="Menentukan Perubahan Mengelompok" smallImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" largeImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Menentukan_Perubahan_Mengelompok" name="Menentukan Perubahan Mengelompok" xmlns=""/>
@@ -2485,7 +2507,7 @@
 					<tooltip heading="Set Outlier Lebar Jalan">Menu untuk set outlier lebar jalan.</tooltip>
 				</button>
 
-				<button id="ButtonTampilkanSimbologiKelasJalan" caption="Tampilkan Simbologi Kelas Jalan" smallImage="C:\PenilaianTanah\icons\kelasjalan.png" largeImage="C:\PenilaianTanah\icons\kelasjalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonTampilkanSimbologiKelasJalan" caption="Tampilkan Simbologi Kelas Jalan" smallImage="C:\PenilaianTanah\icons\kelasjalanbaru.png" largeImage="C:\PenilaianTanah\icons\kelasjalanbaru.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanJaringanJalan.pyt\Tampilkan_Simbologi_Kelas_Jalan" name="Tampilkan Simbologi Kelas Jalan" xmlns=""/>
 					</args>

@@ -8,7 +8,7 @@ from collections import Counter
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
 
-# Tambahkan parent directory ke sys.path
+
 script_dir = os.path.dirname(__file__)
 parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:

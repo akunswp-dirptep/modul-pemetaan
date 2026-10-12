@@ -100,7 +100,7 @@ class Sesuaikan_Kelas_dan_Lebar_Jalan(object):
             return
 
         sampel_fields = [f.name.lower() for f in arcpy.ListFields(nama_fl_jarjal)]
-        required_fields = ["kls_jln", "lb_jln", "s_kls_jln"]
+        required_fields = ["kls_jln", "lb_jln", "s_klsjln"]
         
         missing_fields = [f for f in required_fields if f.lower() not in sampel_fields]
 
@@ -108,7 +108,7 @@ class Sesuaikan_Kelas_dan_Lebar_Jalan(object):
             messages.addErrorMessage("Field berikut tidak ditemukan: {} ==".format(", ".join(missing_fields)))
             raise arcpy.ExecuteError
 
-        fields_to_update = ["kls_jln", "lb_jln", "s_kls_jln"]
+        fields_to_update = ["kls_jln", "lb_jln", "s_klsjln"]
         jumlah_update = 0
 
         try:
@@ -355,8 +355,8 @@ class Deteksi_Outlier_Jaringan_Jalan(object):
         no_sim_path = os.path.join(appdata, "NoSimbologiJalan.lyr")
 
         field_names = [field.name for field in arcpy.ListFields(jaringanjalan_path)]
-        if "s_kls_jln" not in field_names or "lb_jln" not in field_names:
-            messages.addWarningMessage("== PERINGATAN: Field 's_kls_jln' atau 'lb_jln' tidak ditemukan! Proses dihentikan. ==")
+        if "s_klsjln" not in field_names or "lb_jln" not in field_names:
+            messages.addWarningMessage("== PERINGATAN: Field 's_klsjln' atau 'lb_jln' tidak ditemukan! Proses dihentikan. ==")
             return
 
         def delete_if_exists(item):
@@ -391,7 +391,7 @@ class Deteksi_Outlier_Jaringan_Jalan(object):
             arcpy.management.MakeFeatureLayer(
                 jaringanjalan_path, 
                 temp_lyr, 
-                f"s_kls_jln = {i}"
+                f"s_klsjln = {i}"
             )
 
             row_count = int(arcpy.management.GetCount(temp_lyr)[0])
@@ -446,8 +446,8 @@ class Deteksi_Outlier_Jaringan_Jalan(object):
 class Tampilkan_Simbologi_Kelas_Jalan(object):
 
     def __init__(self):
-        self.label = "Update Simbologi Kelas Jalan"
-        self.description = "Menambahkan field kelas jalan, mengisi nilai default untuk data yang kosong, dan menerapkan simbologi."
+        self.label = "Tampilkan Simbologi Kelas Jalan"
+        self.description = "Menerapkan simbologi."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -499,9 +499,9 @@ class Tampilkan_Simbologi_Kelas_Jalan(object):
             messages.addMessage("--> Menambahkan field 'kls_jln'")
             arcpy.management.AddField(jaringanjalan_path, "kls_jln", "TEXT")
 
-        if "s_kls_jln" not in field_names:
-            messages.addMessage("--> Menambahkan field 's_kls_jln'")
-            arcpy.management.AddField(jaringanjalan_path, "s_kls_jln", "SHORT")
+        if "s_klsjln" not in field_names:
+            messages.addMessage("--> Menambahkan field 's_klsjln'")
+            arcpy.management.AddField(jaringanjalan_path, "s_klsjln", "SHORT")
 
         # 3. Update Kolom yang Kosong (NULL)
         messages.addMessage("== Update kelas jalan kosong ==")
@@ -516,7 +516,7 @@ class Tampilkan_Simbologi_Kelas_Jalan(object):
         if row_count > 0:
             messages.addMessage(f"--> Mengupdate {row_count} record menjadi kelas 'Lokal'...")
             arcpy.management.CalculateField(temp_layer, "kls_jln", '"Lokal"', "PYTHON3")
-            arcpy.management.CalculateField(temp_layer, "s_kls_jln", "1", "PYTHON3")
+            arcpy.management.CalculateField(temp_layer, "s_klsjln", "1", "PYTHON3")
         else:
             messages.addMessage("--> Tidak ada record bernilai NULL. Update dilewati.")
 

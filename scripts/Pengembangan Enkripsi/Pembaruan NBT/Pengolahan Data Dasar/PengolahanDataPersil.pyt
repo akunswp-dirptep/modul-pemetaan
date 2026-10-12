@@ -790,11 +790,18 @@ class Reset_Perubahan_Mengelompok(object):
 class Simpan_Perubahan_Ke_Persil_Layer(object):
     def __init__(self):
         self.label = "Simpan Perubahan Ke Persil Layer"
-        self.description = "Menyisihkan bidang lama dan memasukkan bidang baru berdasarkan UID."
+        self.description = "Menyisihkan bidang lama dan memasukkan bidang baru beserta atribut dari Persil Baru."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
         
+        # Parameter input membaca kolom dari Persil Baru
+        f_id = arcpy.Parameter(displayName="Field ID (dari Persil Baru)", name="f_id", datatype="GPString", parameterType="Required", direction="Input")
+        f_nib = arcpy.Parameter(displayName="Field NIB (dari Persil Baru)", name="f_nib", datatype="GPString", parameterType="Required", direction="Input")
+        f_tipehak = arcpy.Parameter(displayName="Field TIPEHAK (dari Persil Baru)", name="f_tipehak", datatype="GPString", parameterType="Required", direction="Input")
+        f_kec = arcpy.Parameter(displayName="Field KECAMATAN (dari Persil Baru)", name="f_kec", datatype="GPString", parameterType="Required", direction="Input")
+        f_kel = arcpy.Parameter(displayName="Field KELURAHAN (dari Persil Baru)", name="f_kel", datatype="GPString", parameterType="Required", direction="Input")
+
         output_persil = arcpy.Parameter(
             displayName="Output Persil Layer",
             name="output_persil",
@@ -811,12 +818,39 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
             direction="Output"
         )
 
-        return [output_persil, output_sisih]
+        return [f_id, f_nib, f_tipehak, f_kec, f_kel, output_persil, output_sisih]
 
     def isLicensed(self):
         return True
 
     def updateParameters(self, parameters):
+        try:
+            configs = persil.get_config_values()
+            dataset_path = configs["project_config"]["dataset_path"]
+            peta_baru_path = os.path.join(dataset_path, "Persil_Baru") # Ubah target baca field ke Persil Baru
+            
+            if arcpy.Exists(peta_baru_path):
+                fields = [f.name for f in arcpy.ListFields(peta_baru_path)]
+                upper_fields = [f.upper() for f in fields]
+                
+                for i in range(5):
+                    parameters[i].filter.list = fields
+
+                # Set Default Value otomatis jika nama field cocok
+                def set_default(param, candidates):
+                    if not param.value:
+                        for cand in candidates:
+                            if cand.upper() in upper_fields:
+                                param.value = fields[upper_fields.index(cand.upper())]
+                                break
+
+                set_default(parameters[0], ["IDPERSIL", "ID"])
+                set_default(parameters[1], ["NIB"])
+                set_default(parameters[2], ["TIPEHAK"])
+                set_default(parameters[3], ["WADMKC", "KECAMATAN"])
+                set_default(parameters[4], ["WADMKD", "KELURAHAN"])
+        except Exception:
+            pass
         return
 
     def updateMessages(self, parameters):
@@ -843,28 +877,40 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
     def execute(self, parameters, messages):
         messages.addMessage("== Proses Simpan Perubahan Dimulai ==")
 
+        f_id = parameters[0].valueAsText
+        f_nib = parameters[1].valueAsText
+        f_tipehak = parameters[2].valueAsText
+        f_kecamatan = parameters[3].valueAsText
+        f_kelurahan = parameters[4].valueAsText
+
         configs = persil.get_config_values()
         dataset_path = configs["project_config"]["dataset_path"]
 
-        # 1. DEFINISI PATH LAYER
         peta_baru_path = os.path.join(dataset_path, "Persil_Baru")
         indikator_path = os.path.join(dataset_path, "Indikator_Perubahan_Persil")
         peta_lama_path = os.path.join(dataset_path, "Persil_Layer")
         persil_disisihkan_path = os.path.join(dataset_path, "Persil_Disisihkan")
 
-        # Cek keberadaan file wajib
         required_fc = [peta_baru_path, indikator_path, peta_lama_path]
         for fc in required_fc:
             if not arcpy.Exists(fc):
                 messages.addErrorMessage(f"Feature class {os.path.basename(fc)} tidak ditemukan!")
                 raise arcpy.ExecuteError
+                
+        # 1. AMBIL DEFAULT VALUE WADMPR, WADMKK, THNNILAI DARI PERSIL LAMA
+        def_wadmapr, def_wadmkk, def_thnnilai = None, None, None
+        try:
+            with arcpy.da.SearchCursor(peta_lama_path, ["WADMPR", "WADMKK", "THNNILAI"]) as sc:
+                for row in sc:
+                    def_wadmapr, def_wadmkk, def_thnnilai = row
+                    break
+        except Exception:
+            messages.addWarningMessage("Peringatan: Gagal mendapatkan nilai default WADMPR/WADMKK/THNNILAI.")
 
-        # 2. BACA TABEL INDIKATOR UNTUK MENGUMPULKAN UID
-        messages.addMessage("Membaca daftar UID dari Indikator Perubahan...")
+        # 2. KUMPULKAN UID DARI INDIKATOR
         uid_lama_to_remove = set()
         uid_baru_to_add = set()
 
-        # Pastikan field UID ada di Indikator
         ind_fields = [f.name.upper() for f in arcpy.ListFields(indikator_path)]
         if "UID_LAMA" not in ind_fields or "UID_BARU" not in ind_fields:
              messages.addErrorMessage("Field UID_Lama atau UID_Baru tidak ditemukan di layer Indikator.")
@@ -872,122 +918,109 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
 
         with arcpy.da.SearchCursor(indikator_path, ["UID_Lama", "UID_Baru"]) as cursor:
             for row in cursor:
-                if row[0]: # Jika ada UID_Lama, berarti bidang ini berubah/hilang
-                    uid_lama_to_remove.add(row[0])
-                if row[1]: # Jika ada UID_Baru, berarti ini bidang tambahan/update
-                    uid_baru_to_add.add(row[1])
+                if row[0]: uid_lama_to_remove.add(row[0])
+                if row[1]: uid_baru_to_add.add(row[1])
 
         if not uid_lama_to_remove and not uid_baru_to_add:
             messages.addMessage("Tidak ada perubahan yang perlu disimpan (Indikator kosong).")
             return
 
-        # 3. SIAPKAN LAYER PERSIL_DISISIHKAN
-        messages.addMessage("Menyiapkan layer Persil_Disisihkan...")
+        # 3. SIAPKAN PERSIL DISISIHKAN DAN KOLOM STATUS LAMA
         if not arcpy.Exists(persil_disisihkan_path):
-            # Jika belum ada, buat layer kosong dengan schema/struktur yang sama persis dengan Persil_Layer
             arcpy.management.CreateFeatureclass(
-                dataset_path, 
-                "Persil_Disisihkan", 
-                geometry_type="POLYGON", 
-                template=peta_lama_path,
+                dataset_path, "Persil_Disisihkan", "POLYGON", template=peta_lama_path,
                 spatial_reference=arcpy.Describe(peta_lama_path).spatialReference
             )
 
-        # 4. SIAPKAN KOLOM STATUS PADA PERSIL LAMA
-        messages.addMessage("Menyiapkan kolom status_per pada Persil_Layer...")
-        self.add_field_if_not_exists(peta_lama_path, "status_per", "TEXT", field_length=50, field_alias="Status Perubahan")
-        
-        # Set semua yang ada di Persil Lama menjadi "tetap" terlebih dahulu
-        with arcpy.da.UpdateCursor(peta_lama_path, ["status_per"]) as cursor:
-            for row in cursor:
-                if row[0] != "update": # Jangan ubah yang mungkin sudah pernah di-update sebelumnya
-                    row[0] = "tetap"
-                    cursor.updateRow(row)
-
-
-        # 5. PROSES PENYISIHAN (HAPUS DARI PERSIL LAMA -> PINDAH KE DISISIHKAN)
+        # 4. PENYISIHAN (PERSIL LAMA -> DISISIHKAN)
         messages.addMessage(f"Mengeksekusi penyisihan {len(uid_lama_to_remove)} bidang lama...")
-        
         temp_lyr_lama = "temp_lyr_lama"
         arcpy.management.MakeFeatureLayer(peta_lama_path, temp_lyr_lama)
 
         bidang_berhasil_disisihkan = 0
         for uid in uid_lama_to_remove:
-            # Seleksi bidang di Persil Lama berdasarkan UID
             arcpy.management.SelectLayerByAttribute(temp_lyr_lama, "NEW_SELECTION", f"UID_Lama = '{uid}'")
-            
             count = int(arcpy.management.GetCount(temp_lyr_lama)[0])
             if count > 0:
-                # 1. Copy (Append) ke layer Persil_Disisihkan
                 arcpy.management.Append(temp_lyr_lama, persil_disisihkan_path, "NO_TEST")
-                
-                # 2. Hapus (DeleteRows) dari Persil_Layer
                 arcpy.management.DeleteRows(temp_lyr_lama)
                 bidang_berhasil_disisihkan += count
-            else:
-                messages.addWarningMessage(f"Warning: UID_Lama '{uid}' tidak ditemukan di Persil_Layer. Dilewati.")
-        
         arcpy.management.SelectLayerByAttribute(temp_lyr_lama, "CLEAR_SELECTION")
 
+        # 5. MAPPING ATRIBUT PERSIL BARU KE NAMA KOLOM STANDAR
+        messages.addMessage("Menyelaraskan nama kolom pada Persil Baru...")
+        
+        self.add_field_if_not_exists(peta_baru_path, "IDPERSIL", "TEXT", 50)
+        self.add_field_if_not_exists(peta_baru_path, "NIB", "TEXT", 50)
+        self.add_field_if_not_exists(peta_baru_path, "TIPEHAK", "TEXT", 50)
+        self.add_field_if_not_exists(peta_baru_path, "WADMKC", "TEXT", 50)
+        self.add_field_if_not_exists(peta_baru_path, "WADMKD", "TEXT", 50)
+        self.add_field_if_not_exists(peta_baru_path, "WADMPR", "TEXT", 50)
+        self.add_field_if_not_exists(peta_baru_path, "WADMKK", "TEXT", 50)
+        self.add_field_if_not_exists(peta_baru_path, "THNNILAI", "SHORT")
+        self.add_field_if_not_exists(peta_baru_path, "perubahan", "TEXT", 50, "Status Perubahan")
 
-        # 6. PROSES PENAMBAHAN (COPY DARI PERSIL BARU -> MASUK KE PERSIL LAMA)
+        # Transfer nilai hanya jika nama field tujuan dan asal berbeda (agar tidak error)
+        mapping_field = {
+            "IDPERSIL": f_id,
+            "NIB": f_nib,
+            "TIPEHAK": f_tipehak,
+            "WADMKC": f_kecamatan,
+            "WADMKD": f_kelurahan
+        }
+
+        for target_field, source_field in mapping_field.items():
+            if target_field.upper() != source_field.upper():
+                arcpy.management.CalculateField(peta_baru_path, target_field, f"!{source_field}!", "PYTHON3")
+
+        # Set Global Value untuk Persil Baru
+        with arcpy.da.UpdateCursor(peta_baru_path, ["WADMPR", "WADMKK", "THNNILAI"]) as uc:
+            for row in uc:
+                row[0] = def_wadmapr
+                row[1] = def_wadmkk
+                row[2] = def_thnnilai
+                uc.updateRow(row)
+
+        # 6. PENAMBAHAN (PERSIL BARU -> PERSIL LAMA)
         messages.addMessage(f"Mengeksekusi penambahan {len(uid_baru_to_add)} bidang baru...")
-        
-        self.add_field_if_not_exists(peta_baru_path, "perubahan", "TEXT", field_length=50, field_alias="Status Perubahan")
-        
         temp_lyr_baru = "temp_lyr_baru"
         arcpy.management.MakeFeatureLayer(peta_baru_path, temp_lyr_baru)
 
         bidang_berhasil_ditambah = 0
         for uid in uid_baru_to_add:
-            # Seleksi bidang di Persil Baru berdasarkan UID
             arcpy.management.SelectLayerByAttribute(temp_lyr_baru, "NEW_SELECTION", f"UID_Baru = '{uid}'")
-            
             count = int(arcpy.management.GetCount(temp_lyr_baru)[0])
             if count > 0:
                 arcpy.management.CalculateField(temp_lyr_baru, "perubahan", "'menyebar'", "PYTHON3")
-                
-                # Copy (Append) ke layer Persil_Layer
                 arcpy.management.Append(temp_lyr_baru, peta_lama_path, "NO_TEST")
                 bidang_berhasil_ditambah += count
-            else:
-                messages.addWarningMessage(f"Warning: UID_Baru '{uid}' tidak ditemukan di Persil_Baru. Dilewati.")
-                
         arcpy.management.SelectLayerByAttribute(temp_lyr_baru, "CLEAR_SELECTION")
 
-
+        # 7. CLEANING
         messages.addMessage("Merapikan ulang nomor IDBIDANG pada Persil_Layer...")
         self.add_field_if_not_exists(peta_lama_path, "IDBIDANG", "LONG")
-        
         with arcpy.da.UpdateCursor(peta_lama_path, ["OBJECTID", "IDBIDANG"], sql_clause=(None, "ORDER BY OBJECTID")) as cursor:
             for nomor, row in enumerate(cursor, start=1):
                 row[1] = nomor
                 cursor.updateRow(row)
 
-        messages.addMessage("Menghapus field UID sementara dari Persil_Layer...")
-        
-
         fields_to_delete = ["UID_Lama", "UID_Baru"]
         existing_fields = [f.name.upper() for f in arcpy.ListFields(peta_lama_path)]
-        
         for field in fields_to_delete:
             if field.upper() in existing_fields:
-                try:
-                    arcpy.management.DeleteField(peta_lama_path, field)
-                except Exception as e:
-                    messages.addWarningMessage(f"Warning: Gagal menghapus field {field}. Kemungkinan sedang terkunci (locked). Error: {str(e)}")
-
+                try: arcpy.management.DeleteField(peta_lama_path, field)
+                except Exception: pass
 
         self.delete_if_exists(temp_lyr_lama)
         self.delete_if_exists(temp_lyr_baru)
 
-        arcpy.SetParameter(0, "Persil_Layer")
-        arcpy.SetParameter(1, "Persil_Disisihkan")
+        arcpy.SetParameter(5, "Persil_Layer")
+        arcpy.SetParameter(6, "Persil_Disisihkan")
 
         messages.addMessage(f"Statistik: {bidang_berhasil_disisihkan} disisihkan, {bidang_berhasil_ditambah} di-update.")
         messages.addMessage("== Proses Simpan Perubahan Selesai ==")
         return
-
+    
 class Update_Luas_Tanah(object):
 
     def __init__(self):

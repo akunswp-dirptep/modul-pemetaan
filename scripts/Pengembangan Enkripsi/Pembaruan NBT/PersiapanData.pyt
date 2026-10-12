@@ -559,10 +559,6 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 row[9] = rev_maps["S_ZONASI"].get(row[8])
                 cursor.updateRow(row)
 
-        if "ls_asal" not in [f.name.lower() for f in arcpy.ListFields(dest_temp_path)]:
-            arcpy.management.AddField(dest_temp_path, "ls_asal", "DOUBLE")
-        arcpy.management.CalculateField(dest_temp_path, "ls_asal", "!shape.area!", "PYTHON3")
-
         ordered_fields = [
             "IDPERSIL", "NIB", "IDBIDANG", "perubahan", "kelompok_perubahan",
             "WADMPR", "WADMKK", "WADMKC", "WADMKD", "TIPEHAK",

@@ -933,8 +933,7 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
         # 6. PROSES PENAMBAHAN (COPY DARI PERSIL BARU -> MASUK KE PERSIL LAMA)
         messages.addMessage(f"Mengeksekusi penambahan {len(uid_baru_to_add)} bidang baru...")
         
-        # Pastikan kolom status_per ada di Persil Baru agar saat di-Append nilainya ikut masuk
-        self.add_field_if_not_exists(peta_baru_path, "status_per", "TEXT", field_length=50, field_alias="Status Perubahan")
+        self.add_field_if_not_exists(peta_baru_path, "perubahan", "TEXT", field_length=50, field_alias="Status Perubahan")
         
         temp_lyr_baru = "temp_lyr_baru"
         arcpy.management.MakeFeatureLayer(peta_baru_path, temp_lyr_baru)
@@ -946,8 +945,7 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
             
             count = int(arcpy.management.GetCount(temp_lyr_baru)[0])
             if count > 0:
-                # Set status_per menjadi 'update' sebelum digabungkan
-                arcpy.management.CalculateField(temp_lyr_baru, "status_per", "'update'", "PYTHON3")
+                arcpy.management.CalculateField(temp_lyr_baru, "perubahan", "'menyebar'", "PYTHON3")
                 
                 # Copy (Append) ke layer Persil_Layer
                 arcpy.management.Append(temp_lyr_baru, peta_lama_path, "NO_TEST")

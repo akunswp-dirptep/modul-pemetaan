@@ -12,6 +12,7 @@ PROJECT_CONFIG_FILE_NAME = "penilaian_tanah_config.bin"
 LAYER_SISI_JALAN = "Sisi_Jalan"
 LAYER_JARINGAN_JALAN = "Jaringan_Jalan"
 LAYER_TITIK_TENGAH_JARINGAN_JALAN = "Titik_Tengah_Jaringan_Jalan"
+FD_TEMPLATE_JARINGAN_JALAN = "spatial_analysis_template_ds"
 
 
 # =====================================================

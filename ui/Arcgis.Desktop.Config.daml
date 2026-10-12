@@ -393,7 +393,9 @@
 
 				<menu id="identifikasi_perubahan_atribut_pembaruan_nbt" caption="Atribut Persil" extendedCaption="Atribut Persil" keytip="TA">
 					<menu refID="persiapan_pengolahan_atribut_persil" />
+					<menu refID='perubahan_mengelompok' />
 					<menu refID="pengolahan_WADMKC_WADMKD" />
+					<menu refID="bentuk_persil"/>
 					<menu refID='analisis_persil_dan_jalan_pembaruan_nbt' />
 					<menu refID="pengolahan_zonasi_pembaruan_nbt" />
 				</menu>
@@ -431,7 +433,6 @@
 				</menu>
 
 				<menu id="sesuaikan_atribut_jaringan_jalan" caption="Sesuaikan Atribut Jaringan Jalan">
-					
 					<button refID="ButtonSesuaikanAtributKelasJalan" size="Medium"/>		
 					<button refID="ButtonSesuaikanAtributLebarJalan" size="Medium"/>				
 				</menu>
@@ -439,11 +440,20 @@
 				<menu id='persiapan_pengolahan_atribut_persil' caption="Persiapan Pengolahan">
 					<button refID='ButtonBuatNertworkDataset' size="Medium" />
 				</menu>
-				<menu id="analisis_persil_dan_jalan_pembaruan_nbt" caption="Analisis Persil Dengan Jalan">
-					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
+				
+				<menu id='perubahan_mengelompok' caption="Perubahan Mengelompok">
+					<button refID="ButtonMenentukanPerubahanMengelompok" size="Medium"/>
+				</menu>
+
+				<menu id='bentuk_persil' caption="Bentuk Persil">
 					<button refID="ButtonAnalisisBentukPersil" size="Medium"/>
 					<button refID="ButtonEditBentukPersil" size="Medium"/>
-					<button refID="ButtonMenentukanPerubahanMengelompok" size="Medium"/>
+				</menu>
+
+				<menu id="analisis_persil_dan_jalan_pembaruan_nbt" caption="Analisis Persil Dengan Jalan">
+					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
+
+					
 					<button refID="ButtonResetPersilCluster" size="Medium"/>
 					
 					<button refID="ButtonUpdateKelasDanLebarJalanPersil" size="Medium"/>
@@ -2408,11 +2418,11 @@
 					<tooltip heading="Pengisian Manual">Menu untuk mengisi WADMKC dan WADMKD secara Manual.</tooltip>
 				</button>
 
-				<button id="ButtonMenentukanPerubahanMengelompok" caption="Menentukan Perubahan Mengelompok" smallImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" largeImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonMenentukanPerubahanMengelompok" caption="Penentuan Manual" smallImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" largeImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Menentukan_Perubahan_Mengelompok" name="Menentukan Perubahan Mengelompok" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Menentukan_Perubahan_Mengelompok" name="Penentuan Manual" xmlns=""/>
 					</args>
-					<tooltip heading="Menentukan Perubahan Mengelompok">Menu untuk mengelompokkan persil perubahan kelompok-kelompok perubahan.</tooltip>
+					<tooltip heading="Penentuan Manual">Menu untuk mengelompokkan persil perubahan kelompok-kelompok perubahan.</tooltip>
 				</button>
 
 				<button id="ButtonResetPersilCluster" caption="Reset Perubahan Mengelompok" smallImage="C:\PenilaianTanah\icons\undo.png" largeImage="C:\PenilaianTanah\icons\undo.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
@@ -2436,11 +2446,11 @@
 					<tooltip heading="Update Luas Tanah">Menu untuk menghitung ulang luas tanah pada peta akhir.</tooltip>
 				</button>
 
-				<button id="ButtonAnalisisBentukPersil" caption="Analisis Bentuk Persil" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonAnalisisBentukPersil" caption="Pengisian Otomatis" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Analisis_Bentuk_Persil" name="Analisis Bentuk Persil" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Pengisian_Bentuk_Persil_Otomatis" name="Pengisian Otomatis" xmlns=""/>
 					</args>
-					<tooltip heading="Analisis Bentuk Persil">Menu untuk menganalisis bentuk geometris persil perubahan.</tooltip>
+					<tooltip heading="Pengisian Otomatis">Menu untuk menganalisis bentuk geometris persil perubahan.</tooltip>
 				</button>
 
 				<button id="ButtonEditBentukPersil" caption="Edit Bentuk Persil" smallImage="C:\PenilaianTanah\icons\good1.png" largeImage="C:\PenilaianTanah\icons\good1.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
@@ -2517,7 +2527,7 @@
 			<!-- Analisis Persil dan Jaringan Jalan-->
 				<button id="ButtonBuatNertworkDataset" caption="Buat Network Dataset" smallImage="C:\PenilaianTanah\icons\network.png" largeImage="C:\PenilaianTanah\icons\network.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\AnalisisPersilDenganJaringanJalan.pyt\Build_Network_Dataset_Jaringan_Jalan" name="Buat Network Dataset" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Build_Network_Dataset_Jaringan_Jalan" name="Buat Network Dataset" xmlns=""/>
 					</args>
 					<tooltip heading="Buat Network Dataset">Menu untuk membuat Network Dataset berdasarkan jaringan jalan </tooltip>
 				</button>

@@ -394,6 +394,7 @@
 				<menu id="identifikasi_perubahan_atribut_pembaruan_nbt" caption="Atribut Persil" extendedCaption="Atribut Persil" keytip="TA">
 					<menu refID="persiapan_pengolahan_atribut_persil" />
 					<menu refID='perubahan_mengelompok' />
+					<menu refID="perhitungan_luas_bidang" />
 					<menu refID="pengolahan_WADMKC_WADMKD" />
 					<menu refID="bentuk_persil"/>
 					<menu refID='analisis_persil_dan_jalan_pembaruan_nbt' />
@@ -444,14 +445,16 @@
 				<menu id='perubahan_mengelompok' caption="Perubahan Mengelompok">
 					<button refID="ButtonMenentukanPerubahanMengelompok" size="Medium"/>
 				</menu>
-
+				<menu id='perhitungan_luas_bidang' caption="Luas Bidang">
+					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
+				</menu>
 				<menu id='bentuk_persil' caption="Bentuk Persil">
 					<button refID="ButtonAnalisisBentukPersil" size="Medium"/>
 					<button refID="ButtonEditBentukPersil" size="Medium"/>
 				</menu>
 
 				<menu id="analisis_persil_dan_jalan_pembaruan_nbt" caption="Analisis Persil Dengan Jalan">
-					<button refID="ButtonUpdateLuasTanah" size="Medium"/>
+					
 
 					
 					<button refID="ButtonResetPersilCluster" size="Medium"/>
@@ -2418,7 +2421,7 @@
 					<tooltip heading="Pengisian Manual">Menu untuk mengisi WADMKC dan WADMKD secara Manual.</tooltip>
 				</button>
 
-				<button id="ButtonMenentukanPerubahanMengelompok" caption="Penentuan Manual" smallImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" largeImage="C:\PenilaianTanah\icons\perubahan_mengelompok.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonMenentukanPerubahanMengelompok" caption="Penentuan Manual" smallImage="C:\PenilaianTanah\icons\pengisianmanual.png" largeImage="C:\PenilaianTanah\icons\pengisianmanual.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Menentukan_Perubahan_Mengelompok" name="Penentuan Manual" xmlns=""/>
 					</args>
@@ -2439,25 +2442,25 @@
 					<tooltip heading="Simpan Perubahan Ke Persil Layer">Menu untuk menyimpan perubahan ke peta persil layer.</tooltip>
 				</button>
 
-				<button id="ButtonUpdateLuasTanah" caption="Update Luas Tanah" smallImage="C:\PenilaianTanah\icons\area.png" largeImage="C:\PenilaianTanah\icons\area.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUpdateLuasTanah" caption="Menghitung Luas Bidang" smallImage="C:\PenilaianTanah\icons\area.png" largeImage="C:\PenilaianTanah\icons\area.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Update_Luas_Tanah" name="Update Luas Tanah" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Menghitung_Luas_Bidang" name="Menghitung Luas Bidang" xmlns=""/>
 					</args>
-					<tooltip heading="Update Luas Tanah">Menu untuk menghitung ulang luas tanah pada peta akhir.</tooltip>
+					<tooltip heading="Menghitung Luas Bidang">Menu untuk menghitung ulang luas bidang pada Persil_Layer</tooltip>
 				</button>
 
-				<button id="ButtonAnalisisBentukPersil" caption="Pengisian Otomatis" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonAnalisisBentukPersil" caption="Pengisian Otomatis" smallImage="C:\PenilaianTanah\icons\pengisianotomatis.png" largeImage="C:\PenilaianTanah\icons\pengisianotomatis.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Pengisian_Bentuk_Persil_Otomatis" name="Pengisian Otomatis" xmlns=""/>
 					</args>
 					<tooltip heading="Pengisian Otomatis">Menu untuk menganalisis bentuk geometris persil perubahan.</tooltip>
 				</button>
 
-				<button id="ButtonEditBentukPersil" caption="Edit Bentuk Persil" smallImage="C:\PenilaianTanah\icons\good1.png" largeImage="C:\PenilaianTanah\icons\good1.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonEditBentukPersil" caption="Pengisian Manual" smallImage="C:\PenilaianTanah\icons\pengisianmanual.png" largeImage="C:\PenilaianTanah\icons\pengisianmanual.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanDataPersil.pyt\Edit_Bentuk_Persil" name="Edit Bentuk Persil" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Pengisian_Bentuk_Persil_Manual" name="Pengisian Manual" xmlns=""/>
 					</args>
-					<tooltip heading="Edit Bentuk Persil">Menu untuk mengubah bentuk persil secara manual.</tooltip>
+					<tooltip heading="Pengisian Manual">Menu untuk mengubah bentuk persil secara manual.</tooltip>
 				</button>
 
 				<button id="ButtonSimpanBentukPersil" caption="Simpan Bentuk Persil" smallImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" largeImage="C:\PenilaianTanah\icons\IdentifikasiPrubahanPersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

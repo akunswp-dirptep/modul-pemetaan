@@ -18,7 +18,9 @@ class Toolbox:
         # List of tool classes associated with this toolbox
         self.tools = [Build_Network_Dataset_Jaringan_Jalan,
                       Menentukan_Perubahan_Mengelompok,
+                      Menghitung_Luas_Bidang,
                       Pengisian_Bentuk_Persil_Otomatis,
+                      Pengisian_Bentuk_Persil_Manual,
                       Pengisian_WADMKC_WADMKD_Otomatis,
                       Pengisian_WADMKC_WADMKD_Manual
                       ]
@@ -365,7 +367,79 @@ class Menentukan_Perubahan_Mengelompok(object):
         messages.addMessage("== Proses selesai ==")
         return
 
+class Menghitung_Luas_Bidang(object):
 
+    def __init__(self):
+        self.label = "Perhitungan Luas Bidang"
+        self.description = ""
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        output_layer = arcpy.Parameter(
+            displayName="Output Peta Akhir",
+            name="output_peta_akhir",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        return [output_layer]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def delete_if_exists(self, path):
+        if arcpy.Exists(path):
+            try:
+                arcpy.management.Delete(path)
+            except Exception:
+                pass
+
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+        fields = [field.name.lower() for field in arcpy.ListFields(feature_class)]
+        
+        if field_name.lower() not in fields:
+            arcpy.management.AddField(
+                in_table=feature_class,
+                field_name=field_name,
+                field_type=field_type
+            )
+
+    def execute(self, parameters, messages):
+        arcpy.env.overwriteOutput = True
+
+        messages.addMessage("== Proses dimulai ==")
+
+        configs = persil.get_config_values()
+        dataset_path = configs["project_config"]["dataset_path"]
+        
+        peta_persil_name = "Persil_Layer"
+        peta_persil_path = os.path.join(dataset_path, peta_persil_name)
+
+        self.add_field_if_not_exists(peta_persil_path, "LUASM2", "DOUBLE")
+
+        messages.addMessage("== Hitung luas tanah ==")
+        arcpy.management.CalculateField(
+            in_table=peta_persil_path,
+            field="LUASM2",
+            expression="!shape.area@SQUAREMETERS!",
+            expression_type="PYTHON3"
+        )
+
+        self.delete_if_exists(peta_persil_name)
+
+        arcpy.management.MakeFeatureLayer(peta_persil_path, peta_persil_name)
+        parameters[0].value = peta_persil_name
+
+        messages.addMessage("== Proses selesai ==")
+        
+        return
+    
 class Pengisian_Bentuk_Persil_Otomatis(object):
 
     def __init__(self):
@@ -670,7 +744,109 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
         else: atrans = azimuth
 
         return azimuth, atrans
-      
+
+class Pengisian_Bentuk_Persil_Manual(object):
+
+    def __init__(self):
+        self.label = "Pengisian Bentuk Persil Manual"
+        self.description = ""
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        param_bentuk = arcpy.Parameter(
+            displayName="Bentuk Persil",
+            name="bentuk",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+
+        param_bentuk.filter.list = [
+            "Segi Tiga",
+            "Segi Banyak Tidak Beraturan",
+            "Segi Empat Tidak Beraturan",
+            "Segi Empat Beraturan"
+        ]
+
+        output_layer = arcpy.Parameter(
+            displayName="Output Persil",
+            name="output_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [param_bentuk, output_layer]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def get_skor_bentuk(self, bentuk):
+        mapping = {
+            "Segi Banyak Tidak Beraturan": 2,
+            "Segi Tiga": 1,
+            "Segi Empat Tidak Beraturan": 3,
+            "Segi Empat Beraturan": 4
+        }
+        return mapping.get(bentuk, 1)
+
+    def delete_if_exists(self, path):
+        if arcpy.Exists(path):
+            try:
+                arcpy.management.Delete(path)
+            except Exception:
+                pass
+
+    def execute(self, parameters, messages):
+        arcpy.env.overwriteOutput = True
+
+        messages.addMessage("== Proses dimulai ==")
+
+        bentuk = parameters[0].valueAsText
+        configs = persil.get_config_values()
+        skor_bentuk = self.get_skor_bentuk(bentuk)
+        
+        persil_update = "Persil_layer"
+
+        fields = [field.name.lower() for field in arcpy.ListFields(persil_update)]
+        required_fields = ["BENTUK", "S_BENTUK"]
+        missing_fields = [field for field in required_fields if field.lower() not in fields]
+
+        if missing_fields:
+            messages.addErrorMessage(f"Field berikut tidak ditemukan: {', '.join(missing_fields)}")
+            raise arcpy.ExecuteError
+
+        selected_count = len(arcpy.Describe(persil_update).FIDSet)
+        if selected_count <= 0:
+            messages.addWarningMessage("Tidak ada fitur yang dipilih")
+            return
+
+        updated_count = 0
+        with arcpy.da.UpdateCursor(persil_update, required_fields) as rows:
+            for row in rows:
+                row[0] = bentuk
+                row[1] = float(skor_bentuk)
+                rows.updateRow(row)
+                updated_count += 1
+
+        messages.addMessage(f"{updated_count} fitur berhasil diupdate")
+
+        persil_path = os.path.join(configs['project_config']['dataset_path'], 'Persil_Layer')
+        sim_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Bentuk_Persil.lyrx"
+        
+        arcpy.management.MakeFeatureLayer(persil_path, "Persil_Layer")
+        arcpy.management.ApplySymbologyFromLayer("Persil_Layer", sim_path)
+
+        arcpy.SetParameter(1, "Persil_Layer")
+
+        return
+          
 class Pengisian_WADMKC_WADMKD_Otomatis(object):
     def __init__(self):
         self.label = "Isi WADMKC & WADMKD Secara Otomatis"

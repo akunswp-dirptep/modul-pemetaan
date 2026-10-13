@@ -20,7 +20,8 @@ class Toolbox:
                       Menentukan_Perubahan_Mengelompok,
                       Pengisian_Bentuk_Persil_Otomatis,
                       Pengisian_WADMKC_WADMKD_Otomatis,
-                      Pengisian_WADMKC_WADMKD_Manual]
+                      Pengisian_WADMKC_WADMKD_Manual
+                      ]
 
 
 
@@ -364,11 +365,12 @@ class Menentukan_Perubahan_Mengelompok(object):
         messages.addMessage("== Proses selesai ==")
         return
 
+
 class Pengisian_Bentuk_Persil_Otomatis(object):
 
     def __init__(self):
         self.label = "Pengisian Bentuk Persil Otomatis"
-        self.description = "Alat untuk menganalisis dan menentukan bentuk persil berdasarkan geometri sudut dan sisinya."
+        self.description = "Alat analisis bentuk persil dengan Generalisasi (menggabungkan garis terputus akibat vertex tetangga)."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -390,6 +392,44 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
         )
         null_only.value = True
 
+        min_length = arcpy.Parameter(
+            displayName="Toleransi Panjang Sisi Minimum (Meter)",
+            name="min_length",
+            datatype="GPDouble",
+            parameterType="Required",
+            direction="Input"
+        )
+        min_length.value = 1.0
+
+        # --- MODIFIKASI: Parameter Toleransi Generalisasi ---
+        toleransi_lurus = arcpy.Parameter(
+            displayName="Toleransi Kelurusan Sisi / Generalize (Meter)",
+            name="toleransi_lurus",
+            datatype="GPDouble",
+            parameterType="Required",
+            direction="Input"
+        )
+        # Angka 0.1 meter (10 cm) cukup untuk mendeteksi garis lurus 
+        # namun tidak merusak sudut asli bidang tanah
+        toleransi_lurus.value = 0.1 
+
+        batas_sisi = arcpy.Parameter(
+            displayName="Batas Jumlah Sisi untuk Segi Banyak",
+            name="batas_sisi",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input"
+        )
+        batas_sisi.value = 5 
+
+        out_lines = arcpy.Parameter(
+            displayName="Simpan Garis Tepi Ke (Opsional)",
+            name="out_lines",
+            datatype="DEFeatureClass",
+            parameterType="Optional",
+            direction="Output"
+        )
+
         output_layer = arcpy.Parameter(
             displayName="Output Persil Update",
             name="output_persil",
@@ -398,7 +438,8 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
             direction="Output"
         )
 
-        return [update_only, null_only, output_layer]
+        # Mengembalikan 7 parameter
+        return [update_only, null_only, min_length, toleransi_lurus, batas_sisi, out_lines, output_layer]
 
     def isLicensed(self):
         return True
@@ -412,17 +453,20 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
     def execute(self, parameters, messages):
         update_only = parameters[0].value
         null_only = parameters[1].value
+        min_length_threshold = parameters[2].value
+        toleransi_lurus_val = parameters[3].value     # Mengambil parameter Generalize
+        batas_sisi_banyak = parameters[4].value
+        out_lines_path = parameters[5].valueAsText
 
         try:
             configs = persil.get_config_values()
             dataset_path = configs['project_config']['dataset_path']
         except Exception as e:
-            messages.addWarningMessage(f"Modul konfigurasi gagal (menggunakan workspace aktif). Error: {str(e)}")
+            messages.addWarningMessage(f"Modul konfigurasi gagal. Error: {str(e)}")
             dataset_path = arcpy.env.workspace
 
         input_fc = os.path.join(dataset_path, 'Persil_Layer')
 
-        # Standar ArcGIS Pro disarankan menggunakan 'memory'
         temp_line = r"memory\temp_line"
         temp_split = r"memory\temp_split"
         temp_dissolve = r"memory\temp_dissolve"
@@ -442,20 +486,25 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
             conditions.append("(BENTUK IS NULL OR BENTUK = '' OR BENTUK = ' ')")
         where_clause = " AND ".join(conditions) if conditions else None
         
-        messages.addMessage(f"== Filter: {where_clause if where_clause else 'Semua Data'} ==")
-
         arcpy.management.MakeFeatureLayer(input_fc, input_layer, where_clause)
-
         count = int(arcpy.management.GetCount(input_layer)[0])
+        
         if count == 0:
-            messages.addMessage("== Tidak ada bidang yang memenuhi kriteria untuk dianalisis. Proses dihentikan. ==")
+            messages.addMessage("== Tidak ada bidang yang memenuhi kriteria. ==")
             return
 
-        messages.addMessage(f"== Ditemukan {count} bidang. Menyalin polygon... ==")
         arcpy.management.CopyFeatures(input_layer, temp_polygon)
 
         messages.addMessage("== Konversi Polygon to Line ==")
         arcpy.management.PolygonToLine(temp_polygon, temp_line, "IGNORE_NEIGHBORS")
+        
+        # --- MODIFIKASI UTAMA: Proses Generalisasi sebelum di-Split ---
+        if toleransi_lurus_val and toleransi_lurus_val > 0:
+            messages.addMessage(f"== Melakukan Generalisasi (Menghapus vertex sebidang dengan toleransi {toleransi_lurus_val}m) ==")
+            arcpy.edit.Generalize(temp_line, f"{toleransi_lurus_val} Meters")
+        # --------------------------------------------------------------
+
+        # Sekarang saat SplitLine dijalankan, garis tidak akan terputus di persimpangan
         arcpy.management.SplitLine(temp_line, temp_split)
 
         field_definitions = [
@@ -470,8 +519,8 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
 
         arcpy.management.CalculateField(temp_split, "LebarSisi", "!SHAPE.length!", "PYTHON3")
 
-        messages.addMessage("== Menghitung Azimuth ==")
-        with arcpy.da.UpdateCursor(temp_split, ["SHAPE@", "XStart", "XEnd", "YStart", "YEnd", "Azimuth", "ATrans"]) as rows:
+        messages.addMessage(f"== Menghitung Azimuth & ATrans ==")
+        with arcpy.da.UpdateCursor(temp_split, ["SHAPE@", "XStart", "XEnd", "YStart", "YEnd", "Azimuth", "ATrans", "LebarSisi"]) as rows:
             for row in rows:
                 geometry = row[0]
                 if not geometry: 
@@ -481,6 +530,8 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
                 y_start = geometry.firstPoint.Y
                 x_end = geometry.lastPoint.X
                 y_end = geometry.lastPoint.Y
+                
+                lebar_sisi = row[7]
 
                 azimuth, atrans = self.calculate_azimuth(x_start, y_start, x_end, y_end)
 
@@ -488,73 +539,83 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
                 row[2] = x_end
                 row[3] = y_start
                 row[4] = y_end
-                row[5] = azimuth
-                row[6] = atrans
+                
+                if lebar_sisi >= min_length_threshold:
+                    row[5] = azimuth
+                    row[6] = atrans
+                else:
+                    row[5] = None
+                    row[6] = None
+
                 rows.updateRow(row)
 
         split_fields = [f.name.upper() for f in arcpy.ListFields(temp_split)]
         if "IDBIDANG" not in split_fields:
-            messages.addErrorMessage("Field IDBIDANG tidak ditemukan. Pastikan layer asal memiliki IDBIDANG.")
+            messages.addErrorMessage("Field IDBIDANG tidak ditemukan.")
             raise arcpy.ExecuteError
 
-        messages.addMessage("== Proses Dissolve & Hitung Range ATrans ==")
-        arcpy.management.Dissolve(temp_split, temp_dissolve, ['IDBIDANG'], [["ATrans", "RANGE"]], "MULTI_PART", "DISSOLVE_LINES")
+        if out_lines_path:
+            messages.addMessage(f"== Menyimpan Feature Class Garis Tepi ==")
+            try:
+                arcpy.management.CopyFeatures(temp_split, out_lines_path)
+            except Exception as e:
+                messages.addWarningMessage(f"Gagal menyimpan garis tepi: {str(e)}")
 
-        self.add_field_if_not_exists(temp_polygon, "BENTUK", "TEXT")
+        messages.addMessage("== Proses Dissolve & Hitung Range ATrans ==")
+        arcpy.management.Dissolve(
+            temp_split, 
+            temp_dissolve, 
+            ['IDBIDANG'], 
+            [["ATrans", "RANGE"], ["ATrans", "COUNT"]], 
+            "MULTI_PART", 
+            "DISSOLVE_LINES"
+        )
+
+        self.add_field_if_not_exists(temp_polygon, "BENTUK", "TEXT", 100)
         self.add_field_if_not_exists(temp_polygon, "S_BENTUK", "DOUBLE")
 
-        # Cek secara case-insensitive agar lebih aman
         polygon_fields_lower = [f.name.lower() for f in arcpy.ListFields(temp_polygon)]
-        if "range_atrans" in polygon_fields_lower:
-            # Ambil nama asli berdasarkan case yang ada di list field
-            actual_field_name = arcpy.ListFields(temp_polygon, "Range_ATrans")[0].name
-            arcpy.management.DeleteField(temp_polygon, actual_field_name)
+        for f_name in ["range_atrans", "count_atrans"]:
+            if f_name in polygon_fields_lower:
+                actual_field_name = arcpy.ListFields(temp_polygon, f_name)[0].name
+                arcpy.management.DeleteField(temp_polygon, actual_field_name)
 
-        arcpy.management.JoinField(temp_polygon, 'IDBIDANG', temp_dissolve, 'IDBIDANG', ["Range_ATrans"])
+        arcpy.management.JoinField(temp_polygon, 'IDBIDANG', temp_dissolve, 'IDBIDANG', ["RANGE_ATrans", "COUNT_ATrans"])
 
-        messages.addMessage("== Klasifikasi Bentuk Persil ==")
-        with arcpy.da.UpdateCursor(temp_polygon, ["Range_ATrans", "BENTUK", "S_BENTUK"]) as rows:
+        messages.addMessage(f"== Klasifikasi Bentuk ==")
+        with arcpy.da.UpdateCursor(temp_polygon, ["RANGE_ATrans", "COUNT_ATrans", "BENTUK", "S_BENTUK"]) as rows:
             for row in rows:
-                nilai = row[0]
-                if nilai is None:
+                rentang = row[0]
+                jml_sisi_valid = row[1]
+                
+                if rentang is None or jml_sisi_valid is None or jml_sisi_valid == 0:
                     continue
 
-                if nilai < 16.3:
-                    row[1] = "Segi Empat Beraturan"
-                    row[2] = 4
-                elif 16.3 <= nilai <= 58:
-                    row[1] = "Segi Empat Tidak Beraturan"
-                    row[2] = 3
+                if jml_sisi_valid == 3:
+                    row[2] = "Segi Tiga"
+                    row[3] = 1
+                elif jml_sisi_valid >= batas_sisi_banyak:
+                    row[2] = "Segi Banyak Tidak Beraturan"
+                    row[3] = 2
                 else:
-                    row[1] = "Segi Banyak Tidak Beraturan"
-                    row[2] = 2
+                    if rentang < 16.3:
+                        row[2] = "Segi Empat Beraturan"
+                        row[3] = 4
+                    elif 16.3 <= rentang <= 58:
+                        row[2] = "Segi Empat Tidak Beraturan"
+                        row[3] = 3
+                    else:
+                        row[2] = "Segi Banyak Tidak Beraturan"
+                        row[3] = 2
+                        
                 rows.updateRow(row)
 
-        # Tambahkan klasifikasi Segi Tiga berdasarkan jumlah titik sudut
-        arcpy.management.AddGeometryAttributes(temp_polygon, "POINT_COUNT")
-        
-        with arcpy.da.UpdateCursor(temp_polygon, ["BENTUK", "S_BENTUK", "PNT_COUNT"]) as rows:
-            for row in rows:
-                # Titik pembentuk segi tiga di ArcGIS adalah 4 (termasuk titik awal untuk menutup polygon)
-                if row[2] and int(row[2]) == 4: 
-                    row[0] = "Segi Tiga"
-                    row[1] = 1
-                    rows.updateRow(row)
-
-        polygon_fields_lower = [f.name.lower() for f in arcpy.ListFields(temp_polygon)]
-        if "pnt_count" in polygon_fields_lower:
-            actual_pnt_field = arcpy.ListFields(temp_polygon, "PNT_COUNT")[0].name
-            arcpy.management.DeleteField(temp_polygon, actual_pnt_field)
-
-        # Mapping hasil untuk ditulis kembali ke Feature Class asal
         hasil_bentuk = {}
         with arcpy.da.SearchCursor(temp_polygon, ["IDBIDANG", "BENTUK", "S_BENTUK"]) as rows:
             for row in rows:
                 hasil_bentuk[row[0]] = (row[1], row[2])
 
         messages.addMessage("== Menyimpan hasil ke database persil ==")
-        
-        # Update dengan where clause (jauh lebih cepat karena fitur yang di-loop lebih sedikit)
         with arcpy.da.UpdateCursor(input_fc, ["IDBIDANG", "BENTUK", "S_BENTUK"], where_clause) as rows:
             for row in rows:
                 id_bidang = row[0]
@@ -564,7 +625,6 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
                     row[2] = skor
                     rows.updateRow(row)
 
-        # Membersihkan file sementara di memory
         for item in cleanup_items:
             self.delete_if_exists(item)
 
@@ -574,48 +634,43 @@ class Pengisian_Bentuk_Persil_Otomatis(object):
         try:
             arcpy.management.MakeFeatureLayer(input_fc, "Persil_Layer")
             arcpy.management.ApplySymbologyFromLayer("Persil_Layer", sim_path)
-        except Exception as e:
-            messages.addWarningMessage(f"Simbologi gagal dimuat. Pastikan file .lyrx ada di direktori yang tepat.")
+        except Exception:
+            messages.addWarningMessage(f"Simbologi gagal dimuat.")
 
-        arcpy.SetParameter(2, "Persil_Layer")
-
+        # Parameter output bergeser ke indeks 6
+        arcpy.SetParameter(6, "Persil_Layer")
         messages.addMessage("== Proses selesai ==")
         return
 
     def delete_if_exists(self, path):
         if arcpy.Exists(path):
-            try:
-                arcpy.management.Delete(path)
-            except Exception:
-                pass
+            try: arcpy.management.Delete(path)
+            except Exception: pass
 
-    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+    def add_field_if_not_exists(self, feature_class, field_name, field_type, length=None):
         field_names = [field.name.lower() for field in arcpy.ListFields(feature_class)]
         if field_name.lower() not in field_names:
-            arcpy.management.AddField(feature_class, field_name, field_type)
+            if length and field_type.upper() == "TEXT":
+                arcpy.management.AddField(feature_class, field_name, field_type, field_length=length)
+            else:
+                arcpy.management.AddField(feature_class, field_name, field_type)
 
     def calculate_azimuth(self, x_start, y_start, x_end, y_end):
         delta_y = y_end - y_start
         delta_x = x_end - x_start
 
         if delta_y == 0:
-            if delta_x >= 0:
-                azimuth = 90
-            else:
-                azimuth = -90
+            if delta_x >= 0: azimuth = 90
+            else: azimuth = -90
         else:
-            # Fungsi ini yang memicu bug jika 'import math' tidak ditambahkan
             azimuth = math.atan(delta_x / delta_y) * (180 / math.pi)
 
-        if azimuth < -45:
-            atrans = azimuth + 180
-        elif -45 <= azimuth <= 45:
-            atrans = azimuth + 90
-        else:
-            atrans = azimuth
+        if azimuth < -45: atrans = azimuth + 180
+        elif -45 <= azimuth <= 45: atrans = azimuth + 90
+        else: atrans = azimuth
 
         return azimuth, atrans
-    
+      
 class Pengisian_WADMKC_WADMKD_Otomatis(object):
     def __init__(self):
         self.label = "Isi WADMKC & WADMKD Secara Otomatis"
@@ -879,3 +934,5 @@ class Pengisian_WADMKC_WADMKD_Manual(object):
 
         messages.addMessage(f"Selesai! Berhasil meng-update {updated_count} bidang pada Persil_Layer")
         return
+
+

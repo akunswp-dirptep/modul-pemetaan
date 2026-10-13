@@ -32,7 +32,8 @@ class Toolbox:
         self.tools = [Buat_Workspace,
                       Edit_Workspace,
                       Import_Workspace,
-                      Unduh_Workspace]
+                      Unduh_Workspace,
+                      Cek_Zona_Awal]
 
 
 class Buat_Workspace(object):
@@ -60,7 +61,7 @@ class Buat_Workspace(object):
             
         skala = arcpy.Parameter(
             displayName="Skala",
-            name="skala", # [DIUBAH] Sebelumnya tertulis "kab_kota"
+            name="skala",
             datatype="GPString",
             parameterType="Required",
             direction="Input")
@@ -1239,3 +1240,386 @@ class Unduh_Workspace(object):
         except Exception as e:
             arcpy.AddError(f"Error saat memproses file zip: {e}")
             return False, None
+
+class Cek_Zona_Awal(object):
+    def __init__(self):
+        self.label = "Cek Aturan Zona Berdasarkan Persil"
+        self.description = "Validasi: 1) Tidak memotong persil, 2) Tidak boleh 1 persil, 3) Luas minimum sesuai skala, 4) Zona tidak boleh tumpang tindih."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        layer_zona = arcpy.Parameter(
+            displayName="Layer Zona Awal",
+            name="in_zona",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+        layer_zona.filter.list = ["Polygon"]
+
+        layer_persil = arcpy.Parameter(
+            displayName="Layer Persil (Bidang Tanah)",
+            name="in_persil",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+        layer_persil.filter.list = ["Polygon"]
+
+        skala = arcpy.Parameter(
+            displayName="Skala",
+            name="skala",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        skala.filter.type = "ValueList"
+        skala.filter.list = ["1:2.500", "1:5.000", "1:10.000", "1:25.000"]
+
+        layer_output_hasil = arcpy.Parameter(
+            displayName="Output Hasil Pengecekan",
+            name="out_zona",
+            datatype="DEFeatureClass",
+            parameterType="Required",
+            direction="Output")
+
+
+        layer_peropotongan_persil_dan_zona = arcpy.Parameter(
+            displayName="Output Area Potong Persil dan Zona",
+            name="out_potong",
+            datatype="DEFeatureClass",
+            parameterType="Optional",
+            direction="Output")
+        layer_peropotongan_persil_dan_zona.category = "Simpan Layer Opsional"
+        layer_peropotongan_persil_dan_zona.symbology = r"C:\PenilaianTanah\ui\symbology\Pengecekan_Awal_Persil_Potong.lyrx"
+
+        layer_tumpang_tindih = arcpy.Parameter(
+            displayName="Output Area Tumpang Tindih antar Zona",
+            name="out_overlap",
+            datatype="DEFeatureClass",
+            parameterType="Optional",
+            direction="Output")
+
+        layer_tumpang_tindih.category = "Simpan Layer Opsional"
+        layer_tumpang_tindih.symbology = r"C:\PenilaianTanah\ui\symbology\Pengecekan_Zona_Awal_Tumpang_Tindih_Zona.lyrx"
+        toleransi_luas_minimum = arcpy.Parameter(
+            displayName="Toleransi Luas Potongan Minimum (m2)",
+            name="min_area_potong",
+            datatype="GPDouble",
+            parameterType="Optional",
+            direction="Input")
+        toleransi_luas_minimum.value = 0.1 
+        toleransi_luas_minimum.category = "Batas Toleransi"
+
+        toleransi_tutupan_persil = arcpy.Parameter(
+            displayName="Toleransi Persentase Tutupan Persil (%)",
+            name="tolerance_full",
+            datatype="GPDouble",
+            parameterType="Optional",
+            direction="Input")
+        toleransi_tutupan_persil.value = 99.5 
+        toleransi_tutupan_persil.category = "Batas Toleransi"
+
+        penjelasan_detail_tambahan = arcpy.Parameter(
+            displayName="Info Detail Tambahan",
+            name="penjelasan_detailtambahan",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+
+        penjelasan_detail_tambahan.value = (
+            "Penjelasan Parameter Toleransi:\n"
+            " - Toleransi Luas Potongan (m2): Batas minimum\n"
+            "   area irisan agar suatu persil dinyatakan\n"
+            "   terpotong oleh batas zona. Irisan yang lebih\n"
+            "   kecil dari nilai ini akan diabaikan dan dianggap\n" 
+            "   sebagai sliver (ketidaktepatan digitasi tepi).\n"
+            " - Toleransi Tutupan Persil (%): Persentase minimum\n" 
+            "   luas persil yang harus masuk ke dalam zona agar\n" 
+            "   persil tersebut dianggap utuh (tidak terpotong) oleh zona."
+        )
+        penjelasan_detail_tambahan.category = "Batas Toleransi"
+
+        penjelasan_err= arcpy.Parameter(
+            displayName="Info Variabel Validasi",
+            name="penjelasan_err",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+
+        penjelasan_err.value = (
+            "Keterangan Output Flag Error (Ya/Tidak):\n"
+            " - Err_Luas: Zona memiliki luas di bawah standar minimum skala.\n"
+            " - Err_Potong: Batas zona memotong bidang persil.\n"
+            " - Err_1Prsl: Zona hanya mencakup 1 bidang persil utuh.\n"
+            " - Err_Tindih: Poligon zona saling tumpang tindih (overlap)."
+        )
+
+        return [layer_zona,
+                layer_persil, 
+                skala, 
+                layer_output_hasil, 
+                layer_peropotongan_persil_dan_zona, 
+                layer_tumpang_tindih, 
+                toleransi_luas_minimum, 
+                toleransi_tutupan_persil, 
+                penjelasan_detail_tambahan,
+                penjelasan_err]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+
+        in_zona = parameters[0].valueAsText
+        in_persil = parameters[1].valueAsText
+        skala = parameters[2].value
+        out_zona = parameters[3].valueAsText
+        out_potong = parameters[4].valueAsText if parameters[4].valueAsText else None
+        out_overlap = parameters[5].valueAsText if parameters[5].valueAsText else None
+        min_area_input = parameters[6].value
+        tolerance_input = parameters[7].value
+
+        messages.addMessage("--> Memeriksa Sistem Koordinat Layer...")
+        sr_zona = arcpy.Describe(in_zona).spatialReference
+        sr_persil = arcpy.Describe(in_persil).spatialReference
+
+        nama_sr_zona = sr_zona.name.upper() if sr_zona.name else ""
+        nama_sr_persil = sr_persil.name.upper() if sr_persil.name else ""
+
+        is_zona_tm3 = "TM3" in nama_sr_zona or "TM-3" in nama_sr_zona
+        is_persil_tm3 = "TM3" in nama_sr_persil or "TM-3" in nama_sr_persil
+
+        if not is_zona_tm3:
+            arcpy.AddError(f"ERROR: Sistem koordinat Layer Zona bukan TM-3. (Sistem saat ini: {sr_zona.name}). Proses dihentikan.")
+            return
+
+        if not is_persil_tm3:
+            arcpy.AddError(f"ERROR: Sistem koordinat Layer Persil bukan TM-3. (Sistem saat ini: {sr_persil.name}). Proses dihentikan.")
+            return
+            
+        messages.addMessage("Sistem koordinat valid (TM-3). Melanjutkan proses...")
+
+        if skala == "1:25.000":
+            luas_minimal = 15625.0
+        elif skala == "1:10.000":
+            luas_minimal = 2500.0
+        elif skala == "1:5.000":
+            luas_minimal = 625.0
+        elif skala == "1:2.500":
+            luas_minimal = 156.25
+            
+        messages.addMessage(f"--> Target Skala: {skala} | Luas minimal: {luas_minimal} m2")
+
+        arcpy.env.outputCoordinateSystem = arcpy.Describe(in_zona).spatialReference
+
+        # --- 2. Persiapkan Output & Custom ID Zona ---
+        messages.addMessage("--> Membuat output layer dan Custom ID Zona...")
+        arcpy.management.CopyFeatures(in_zona, out_zona)
+
+        fields_to_add = [
+            ["Err_Luas", "TEXT", 10], ["Err_Potong", "TEXT", 10], 
+            ["Err_1Prsl", "TEXT", 10], ["Err_Tindih", "TEXT", 10], 
+            ["Luas_M2", "DOUBLE", None], ["Jml_Prsl", "LONG", None], 
+            ["UID_Zona", "LONG", None] 
+        ]
+        for fld in fields_to_add:
+            arcpy.management.AddField(out_zona, fld[0], fld[1], field_length=fld[2])
+
+        oid_field = arcpy.Describe(out_zona).OIDFieldName
+        arcpy.management.CalculateField(out_zona, "UID_Zona", f"!{oid_field}!", "PYTHON3")
+
+        zona_status = {}
+        with arcpy.da.SearchCursor(out_zona, ["OID@", "UID_Zona", "SHAPE@AREA"]) as cursor:
+            for row in cursor:
+                oid = row[0]
+                uid_zona = row[1]
+                area = row[2]
+                zona_status[uid_zona] = {
+                    "oid_asli": oid,
+                    "err_luas": "Ya" if area < luas_minimal else "Tidak",
+                    "luas": area,
+                }
+
+        # --- 3. Cek Tumpang Tindih (Overlap) pada Zona ---
+        messages.addMessage("--> Mengecek zona yang tumpang tindih (Overlap)...")
+        mem_zona_copy = os.path.join('memory', "temp_zona_copy")
+        if arcpy.Exists(mem_zona_copy):
+            arcpy.management.Delete(mem_zona_copy)
+            
+        arcpy.management.CopyFeatures(out_zona, mem_zona_copy)
+        arcpy.management.AddField(mem_zona_copy, "UID_Zona_C", "LONG")
+        arcpy.management.CalculateField(mem_zona_copy, "UID_Zona_C", "!UID_Zona!", "PYTHON3")
+
+        mem_overlap = os.path.join('memory', "intersect_zona_overlap")
+        if arcpy.Exists(mem_overlap):
+            arcpy.management.Delete(mem_overlap)
+
+        arcpy.analysis.PairwiseIntersect([out_zona, mem_zona_copy], mem_overlap)
+        
+        zona_tindih_flag = {uid: False for uid in zona_status.keys()}
+        
+        koleksi_tindih = []
+        processed_pairs = set()
+        
+        with arcpy.da.SearchCursor(mem_overlap, ["UID_Zona", "UID_Zona_C", "SHAPE@AREA", "SHAPE@"]) as cursor:
+            for row in cursor:
+                uid1 = row[0]
+                uid2 = row[1]
+                area_overlap = row[2]
+                shape_geom = row[3]
+                
+                if uid1 != uid2 and area_overlap > 0.1:
+                    zona_tindih_flag[uid1] = True
+                    zona_tindih_flag[uid2] = True
+                    
+                    if out_overlap:
+                        pair = tuple(sorted((uid1, uid2)))
+                        if pair not in processed_pairs:
+                            koleksi_tindih.append((shape_geom, pair[0], pair[1], area_overlap))
+                            processed_pairs.add(pair)
+
+        arcpy.management.Delete(mem_zona_copy)
+        arcpy.management.Delete(mem_overlap)
+
+        # --- 4. Persiapkan Custom ID Persil ---
+        messages.addMessage("--> Mempersiapkan layer Persil & Custom ID...")
+        mem_persil = os.path.join('memory', "temp_in_persil")
+        if arcpy.Exists(mem_persil):
+            arcpy.management.Delete(mem_persil)
+        
+        arcpy.management.CopyFeatures(in_persil, mem_persil)
+        arcpy.management.AddField(mem_persil, "UID_Persil", "LONG")
+        oid_persil = arcpy.Describe(mem_persil).OIDFieldName
+        arcpy.management.CalculateField(mem_persil, "UID_Persil", f"!{oid_persil}!", "PYTHON3")
+
+        persil_area_dict = {}
+        with arcpy.da.SearchCursor(mem_persil, ['UID_Persil', 'SHAPE@AREA']) as cursor:
+            for row in cursor:
+                persil_area_dict[row[0]] = row[1]
+
+        # --- 5. Intersect Zona dan Persil ---
+        messages.addMessage("--> Menjalankan perpotongan (Pairwise Intersect) Zona & Persil...")
+        memory_intersect = os.path.join('memory', "intersect_zona_persil")
+        if arcpy.Exists(memory_intersect):
+            arcpy.management.Delete(memory_intersect)
+
+        arcpy.analysis.PairwiseIntersect([out_zona, mem_persil], memory_intersect)
+
+        messages.addMessage("--> Mengevaluasi Aturan Potongan & Jumlah Persil...")
+        
+        # Menggunakan nilai dari input parameter, ubah persen ke desimal
+        TOLERANCE_FULL = (tolerance_input / 100.0) if tolerance_input else 0.995 
+        MIN_AREA_POTONG = min_area_input if min_area_input is not None else 0.1  
+
+        zona_persil_count = {uid: 0 for uid in zona_status.keys()}
+        zona_potong_flag = {uid: False for uid in zona_status.keys()}
+        zona_max_coverage = {uid: 0 for uid in zona_status.keys()} 
+        
+        koleksi_potongan = []
+
+        with arcpy.da.SearchCursor(memory_intersect, ["UID_Zona", "UID_Persil", 'SHAPE@AREA', 'SHAPE@']) as cursor:
+            for row in cursor:
+                z_uid = row[0]
+                p_uid = row[1]
+                int_area = row[2]
+                shape_geom = row[3] 
+
+                if p_uid not in persil_area_dict or z_uid not in zona_status:
+                    continue
+                
+                p_area = persil_area_dict[p_uid]
+                if p_area == 0:
+                    continue
+
+                z_area = zona_status[z_uid]["luas"]
+                rasio_tutupan_zona = int_area / z_area if z_area > 0 else 0
+                
+                if rasio_tutupan_zona > zona_max_coverage[z_uid]:
+                    zona_max_coverage[z_uid] = rasio_tutupan_zona
+
+                rasio_irisan = int_area / p_area
+
+                if rasio_irisan >= TOLERANCE_FULL:
+                    zona_persil_count[z_uid] += 1
+                elif int_area > MIN_AREA_POTONG:
+                    zona_potong_flag[z_uid] = True
+                    zona_persil_count[z_uid] += 1
+                    
+                    if out_potong:
+                        koleksi_potongan.append((shape_geom, z_uid))
+
+        messages.addMessage("--> Menyimpan hasil ke Attribute Table Utama...")
+
+        with arcpy.da.UpdateCursor(
+            out_zona,
+            ["UID_Zona", "Err_Luas", "Err_Potong", "Err_1Prsl", "Err_Tindih", "Luas_M2", "Jml_Prsl"]
+        ) as cursor:
+            for row in cursor:
+                uid = row[0]
+                
+                if uid in zona_status:
+                    row[1] = zona_status[uid]["err_luas"]
+                    row[2] = "Ya" if zona_potong_flag.get(uid, False) else "Tidak"
+                    
+                    jml = zona_persil_count.get(uid, 0)
+                    max_cov = zona_max_coverage.get(uid, 0) 
+                    
+                    row[3] = "Ya" if (jml == 1 and max_cov >= 0.95) else "Tidak"
+                    row[4] = "Ya" if zona_tindih_flag.get(uid, False) else "Tidak" 
+                    row[5] = zona_status[uid]["luas"]
+                    row[6] = jml
+
+                cursor.updateRow(row)
+
+        # --- 7. Pembuatan Layer Area Potong Berbeda ---
+        if out_potong and len(koleksi_potongan) > 0:
+            messages.addMessage(f"--> Mengekspor {len(koleksi_potongan)} area perpotongan ke layer terpisah...")
+            
+            out_ws = os.path.dirname(out_potong)
+            out_nm = os.path.basename(out_potong)
+            
+            arcpy.management.CreateFeatureclass(
+                out_path=out_ws, 
+                out_name=out_nm, 
+                geometry_type="POLYGON", 
+                spatial_reference=arcpy.env.outputCoordinateSystem
+            )
+            
+            arcpy.management.AddField(out_potong, "UID_Zona", "LONG")
+
+            with arcpy.da.InsertCursor(out_potong, ["SHAPE@", "UID_Zona"]) as icur:
+                for potong_data in koleksi_potongan:
+                    icur.insertRow(potong_data)
+
+        if out_overlap and len(koleksi_tindih) > 0:
+            messages.addMessage(f"--> Mengekspor {len(koleksi_tindih)} area zona tumpang tindih ke layer terpisah...")
+            
+            out_ws_ov = os.path.dirname(out_overlap)
+            out_nm_ov = os.path.basename(out_overlap)
+            
+            arcpy.management.CreateFeatureclass(
+                out_path=out_ws_ov, 
+                out_name=out_nm_ov, 
+                geometry_type="POLYGON", 
+                spatial_reference=arcpy.env.outputCoordinateSystem
+            )
+            
+            # Field untuk mendeteksi dua zona yang saling bertabrakan
+            arcpy.management.AddField(out_overlap, "UID_Zona_1", "LONG")
+            arcpy.management.AddField(out_overlap, "UID_Zona_2", "LONG")
+            arcpy.management.AddField(out_overlap, "Ls_Tindih", "DOUBLE")
+
+            with arcpy.da.InsertCursor(out_overlap, ["SHAPE@", "UID_Zona_1", "UID_Zona_2", "Ls_Tindih"]) as icur:
+                for tindih_data in koleksi_tindih:
+                    icur.insertRow(tindih_data)
+        arcpy.management.Delete(mem_persil)
+        arcpy.management.Delete(memory_intersect)
+
+        messages.addMessage("Proses Selesai. Silakan periksa Layer Output.")
+        return

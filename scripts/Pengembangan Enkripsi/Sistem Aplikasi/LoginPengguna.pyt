@@ -107,7 +107,7 @@ class Login_Pemeta_Nilai_Tanah:
         pilihan_jenis_kegiatan.enabled = False
 
         daftar_berkas = arcpy.Parameter(   
-            displayName="Daftar Berkas",
+            displayName="Daftar Berkas <Hanya Lihat>",
             name="daftar_berkas",
             datatype="GPString",
             parameterType="Optional",
@@ -124,7 +124,8 @@ class Login_Pemeta_Nilai_Tanah:
                     "Informasi akun:\n\n"
                     f"Nama: {user_data['nama_pengguna']}\n"
                     f"Instansi: {user_data['instansi']}\n\n"
-
+                    f"Lihat berkas yang dapat di akses pada\n"
+                    f"Dropdown dibawah.\n"
                     f"Jalankan Tool kembali untuk Logout\n\n"
 
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
@@ -177,6 +178,8 @@ class Login_Pemeta_Nilai_Tanah:
                     f"Nama: {user_data['nama_pengguna']}\n"
                     f"Instansi: {user_data['instansi']}\n\n"
 
+                    f"Lihat berkas yang dapat di akses pada\n"
+                    f"Dropdown dibawah.\n"
                     f"Jalankan Tool kembali untuk Logout\n\n"
 
                     "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
@@ -201,43 +204,49 @@ class Login_Pemeta_Nilai_Tanah:
             pilihan_login.enabled = True
             automatic_reload.enabled = False
             server.enabled = True
-            penjelasan.value = (
-                "Silahkan Login untuk dapat mengakses Fitur\n"
-                "lengkap Plugin Penilaian Tanah. Pilih jenis\n"
-                "Pemeta Nilai Tanah pada kolom dibawah.\n\n"
 
-                "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-                "Kementerian ATR/BPN\n"
-                "Tahun: {}".format(datetime.now().year) 
-            )
+            jenis_login = pilihan_login.valueAsText 
 
-            if pilihan_login.value == "Pemeta Pihak Ketiga":
-                input_nik.enabled = True
-                input_password.enabled = True
-                
-                
-                penjelasan.value = (
-                    "Anda akan login sebagai Pemeta Pihak Ketiga.\n"
-                    "Silakan masukkan NIK dan Password yang terdaftar\n"
-                    "di Sipenta.\n\n"
-                    "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-                    "Kementerian ATR/BPN\n"
-                    "Tahun: {}".format(datetime.now().year))
-                
+            if jenis_login == "Pemeta Pihak Ketiga":
 
+                if not input_nik.enabled:
+                    input_nik.enabled = True
+                    input_password.enabled = True
+                    penjelasan.value = (
+                        "Anda akan login sebagai Pemeta Pihak Ketiga.\n"
+                        "Silakan masukkan NIK dan Password yang terdaftar\n"
+                        "di Sipenta.\n\n"
+                        "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                        "Kementerian ATR/BPN\n"
+                        f"Tahun: {datetime.now().year}"
+                    )
 
-            elif pilihan_login.value == "Pemeta ASN ATR/BPN (SSO)":
-                input_nik.enabled = False
-                input_password.enabled = False
-                penjelasan.value = (
-                    "Anda akan login sebagai Pemeta ASN ATR/BPN (SSO).\n"
-                    "Silakan gunakan akun SSO Anda untuk login.\n\n"
-                    "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
-                    "Kementerian ATR/BPN\n"
-                    "Tahun: {}".format(datetime.now().year))
+            elif jenis_login == "Pemeta ASN ATR/BPN (SSO)":
 
-
-
+                if input_nik.enabled:
+                    input_nik.enabled = False
+                    input_password.enabled = False
+                    penjelasan.value = (
+                        "Anda akan login sebagai Pemeta ASN ATR/BPN (SSO).\n"
+                        "Silakan gunakan akun SSO Anda untuk login.\n\n"
+                        "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                        "Kementerian ATR/BPN\n"
+                        f"Tahun: {datetime.now().year}"
+                    )
+            
+            else:
+                pesan_default = "Silahkan Login untuk dapat mengakses Fitur"
+                if penjelasan.value is None or pesan_default not in penjelasan.value:
+                    input_nik.enabled = False
+                    input_password.enabled = False
+                    penjelasan.value = (
+                        f"{pesan_default}\n"
+                        "lengkap Plugin Penilaian Tanah. Pilih jenis\n"
+                        "Pemeta Nilai Tanah pada kolom dibawah.\n\n"
+                        "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+                        "Kementerian ATR/BPN\n"
+                        f"Tahun: {datetime.now().year}"
+                    )
         return
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
@@ -300,7 +309,6 @@ class Login_Pemeta_Nilai_Tanah:
 
     def is_required_update(self):
         def fetch(url, retries=3):
-        # Mengurangi retries menjadi 3 agar tidak menunggu terlalu lama jika internet mati
             for i in range(retries):
                 try:
                     r = requests.get(
@@ -326,7 +334,6 @@ class Login_Pemeta_Nilai_Tanah:
         try:
             metadata = decrypt_message(generate_key(), metadata_path)
             
-            # Ekstrak data menggunakan key yang sesuai di JSON
             CURRENT_VERSION = metadata.get("nomor_versi")
             NOMOR_BUILD = metadata.get("nomor_build")
             VERSION_ID = metadata.get("id_versi")
@@ -370,16 +377,13 @@ class Login_Pemeta_Nilai_Tanah:
         dict: Data response dari API dalam format dictionary
         """
         
-        # URL untuk testing dan produksi
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/login/3/pemeta"
         prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/login/3/pemeta"
     
-        # url = prod_url if use_production else test_url
+
         url = prod_url if use_production else test_url
 
         try:
-            # Mengambil data dari API
-
             payload = {
                 "nik": nik,
                 "password": password

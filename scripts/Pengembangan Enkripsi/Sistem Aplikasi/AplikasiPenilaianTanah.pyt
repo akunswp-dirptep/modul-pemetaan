@@ -41,13 +41,13 @@ def current_year():
         return None
 
 def fetch(url, retries=3):
-    # Mengurangi retries menjadi 3 agar tidak menunggu terlalu lama jika internet mati
+
     for i in range(retries):
         try:
             r = requests.get(
                 url,
                 headers={"User-Agent": "Mozilla/5.0"},
-                timeout=5 # Menurunkan timeout agar lebih responsif
+                timeout=5 
             )
             r.raise_for_status()
             return r

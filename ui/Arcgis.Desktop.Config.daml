@@ -3,16 +3,15 @@
 	<QAT>esri_core_newProjectButton;esri_core_openProjectButton;esri_core_saveProjectButton;esri_core_undoSplitButton;esri_core_redoSplitButton;</QAT>
 	<modules>	
 		<insertModule id="Custom">
-			<!-- DAML DI TEMPAT LAIN -->
 			<tabs>
 				<tab id="PentabitMenu" caption="Nilai Bidang Tanah">
-
 					<group refID="pembaruan_nbt"/>
 
 				</tab>
 				<tab id="ZNTMenu" caption="Zona Nilai Tanah">
 					<group refID="group_pembuatan_znt"/>
 					<group refID="group_pembaruan_znt"/>
+					<group refID="group_tool_umum_znt"/>
 				</tab>
 				<tab id='SistemAplikasi' caption='Penilaian Tanah'>
 					<group refID='sistem_aplikasi'/>
@@ -81,8 +80,6 @@
 					<menu refID="menu_pengolahan_titik_sampel_znt" size="large"/>
 					<menu refID="menu_pengolahan_data_znt" size="large"/>
 					<menu refID="menu_layout_dan_upload_znt" size="large"/>
-					<menu refID="menu_backup_dan_ekspor_hasil_znt" size="large"/>
-					<toolPalette refID="ToolPalette13" size="large"/>
 				</group>
 				
 				<group id="group_pembaruan_znt" caption="Pembaruan Zona Nilai Tanah">
@@ -92,12 +89,12 @@
 					<menu refID="menu_pengolahan_titik_zona_pembaruan_znt" size="large"/>
 					<menu refID="menu_pengolahan_data_pembaruan_znt" size="large"/>
 					<menu refID="menu_pengolahan_layout_dan_upload_pembaruan_znt" size="large"/>
-					<menu refID="menu_backup_dan_export_hasil_pembaruan_znt" size="large"/>
-					<toolPalette refID="ToolPalette13" size="large"/>
 				</group>
 				
-				<group id="backup_gdb_znt" caption="Backup Data ZNT">
-					<button refID="ButtonBackupDataZNT" size="large"/>
+				<group id="group_tool_umum_znt" caption="Tool Umum ZNT">
+					<menu refID="kontrol_kualitas_znt" size="large"/>
+					<menu refID="menu_backup_dan_ekspor_hasil_znt" size="large"/>
+					<toolPalette refID="ToolPalette13" size="large"/>
 				</group>	
 			<!-- OGIS Internal Tools -->
 				
@@ -108,7 +105,7 @@
 					<menu refID="menu_penggabungan_znt" size="large"/>
 				</group>
 			<!-- Sistem Aplikasi -->
-				<group id="sistem_aplikasi" caption="Penilaian Tanah">
+				<group id="sistem_aplikasi" caption="Sistem Aplikasi">
 					<button refID="ButtonLoginPemeta" size="large"/>
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
@@ -744,7 +741,6 @@
 					<tooltip heading="Backup dan Ekspor Hasil Pengolahan">Backup dan Ekspor Hasil Perhitungan Pembuatan Zona Nilai Tanah.</tooltip>
 					<button refID="ButtonEksporWorkspace" />
 					<button refID="ButtonSimpanWorkspacekeSipenta" />
-					<!-- <button refID="ButtonEksporZona"/> -->
 				</menu>
 
 
@@ -753,7 +749,12 @@
 				<menu id="layout_peta" caption="Layout Peta" >
 					<button refID="esri_layouts_importPAGX" caption="Import Template Layout" extendedCaption="Import Template Layout"/>
 					<button refID="ButtonUploadHasilLayout"/>
+				</menu>
 
+				<menu id="kontrol_kualitas_znt" caption="Kontrol Kualitas ZNT" extendedCaption="Kontrol Kualitas znt" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\editzonasipembaruannbt.png"
+					smallImage="C:\PenilaianTanah\icons\editzonasipembaruannbt.png" >
+					<button refID="ButtonCekZonaAwal"/>
 				</menu>
 
 				<menu id="menu_persiapan_workspace" caption="Persiapan Workspace">
@@ -843,14 +844,6 @@
 					<button refID="layout_peta"/>
 				</menu>
 				
-				<menu id="menu_backup_dan_export_hasil_pembaruan_znt" caption="Backup dan Ekspor Hasil" extendedCaption="Backup dan Ekspor Hasil" keytip="TA"         
-					largeImage="C:\PenilaianTanah\icons\uploads.png"
-					smallImage="C:\PenilaianTanah\icons\uploads.png">
-					<tooltip heading="Backup dan Ekspor Hasil Pengolahan">Backup dan Ekspor Hasil Pengolahan Peta Pembaruan Zona Nilai Tanah.</tooltip>
-					<button refID="ButtonEksporWorkspace" />
-					<button refID="ButtonSimpanWorkspacekeSipenta" />
-					<!-- <button refID="ButtonEksporZona"/> -->
-				</menu>
 
 				<!-- Menu - Menu Helper -->
 				<menu id="menu_persiapan_workspace_pembaruan_znt" caption="Persiapan Workspace">
@@ -1780,6 +1773,8 @@
 					</args>
 					<tooltip heading="Unduh Workspace">Menu untuk memngunduh workspace.</tooltip>
 				</button>
+
+
 				
 				<button id="ButtonMasukkanDataDasar" caption="Masukkan Data Dasar" smallImage="C:\PenilaianTanah\icons\location.png" largeImage="C:\PenilaianTanah\icons\location.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
@@ -2056,6 +2051,12 @@
 		
 		<!-- Digunakan keduanya (Pembaruan dan Pembuatan ZNT)-->
 				<!-- Menu Persiapan Data -->
+				<button id="ButtonCekZonaAwal" caption="Cek Zona Awal" smallImage="C:\PenilaianTanah\icons\ubahgeometri.png" largeImage="C:\PenilaianTanah\icons\ubahgeometri.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\Workspace.pyt\Cek_Zona_Awal" name="Cek Zona Awal" xmlns=""/>
+					</args>
+					<tooltip heading="Cek Zona Awal">Menu untuk memngecek zona awal.</tooltip>
+				</button>
 				<button id="ButtonTambahkanCitra"
 						caption="Basemap Lokal"
 						smallImage="C:\PenilaianTanah\icons\layer.png"

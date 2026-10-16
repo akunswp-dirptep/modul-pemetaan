@@ -273,14 +273,24 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
 
         with open(config_paths['path_json'], 'w+') as f:
             json.dump(api_data["data"]["geojson"], f, ensure_ascii=False)
-            
+# Bagian Titik Sampel
         if int(api_data["data"]["jumlah_data"]) > 0:
+            # Simpan ke in_memory terlebih dahulu
             self.json_to_feature_class(
                 json_data=config_paths['path_json'], 
-                ds_path=config_paths['dataset_path'], 
-                file_name="Titik_Sampel", 
+                ds_path="in_memory", 
+                file_name="Titik_Sampel_Sementara", 
                 lokasi=config_paths['lokasi'], 
                 tahun=tahun)
+            
+            # Salin dari sementara ke layer utama
+            arcpy.management.CopyFeatures(
+                in_features=config_paths['path_titik_sampel_sementara'],
+                out_feature_class=config_paths['path_titik_sampel']
+            )
+            
+            # Bersihkan file sementara
+            arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
             arcpy.management.Delete(config_paths['path_json'])
         else: 
             arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan.")
@@ -294,14 +304,23 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         if arcpy.Exists(feature_class_path):
             arcpy.management.Delete(feature_class_path)
 
+        # Bagian Titik Sampel Individual
         if int(api_data["data"]["jumlah_data_individual"]) > 0:
             self.json_to_feature_class(
                 json_data=config_paths['path_individual_json'], 
-                ds_path=config_paths['dataset_path'], 
-                file_name="Titik_Sampel_Individual", 
+                ds_path="in_memory", 
+                file_name="Titik_Sampel_Sementara", 
                 lokasi=config_paths['lokasi'], 
                 tahun=tahun)
             
+            # Salin dari sementara ke layer utama
+            arcpy.management.CopyFeatures(
+                in_features=config_paths['path_titik_sampel_sementara'],
+                out_feature_class=config_paths['path_titik_sampel_individual']
+            )
+            
+            # Bersihkan file sementara
+            arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
             arcpy.management.Delete(config_paths['path_individual_json'])
 
         else:
@@ -365,16 +384,23 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 json.dump(api_data["data"]["geojson"], f, ensure_ascii=False)
                 
             if int(api_data["data"]["jumlah_data"]) > 0:
-
+                # Simpan ke in_memory terlebih dahulu
                 self.json_to_feature_class(
                     json_data=config_paths['path_json'], 
-                    ds_path=config_paths['dataset_path'], 
-                    file_name="Titik_Sampel", 
+                    ds_path="in_memory", 
+                    file_name="Titik_Sampel_Sementara", 
                     lokasi=config_paths['lokasi'], 
                     tahun=tahun)
                 
+                # Salin dari sementara ke layer utama
+                arcpy.management.CopyFeatures(
+                    in_features=config_paths['path_titik_sampel_sementara'],
+                    out_feature_class=config_paths['path_titik_sampel']
+                )
+                
+                # Bersihkan file sementara
+                arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
                 arcpy.management.Delete(config_paths['path_json'])
-
 
             else: 
                 arcpy.AddWarning("Tidak ada data Titik_Sampel ditemukan.")
@@ -423,15 +449,22 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 json.dump(api_data["data"]["geojson_individual"], f, ensure_ascii=False)
 
             if int(api_data["data"]["jumlah_data_individual"]) > 0:
-
-                # Konversi JSON ke Feature Class
+                # Simpan ke in_memory terlebih dahulu
                 self.json_to_feature_class(
                     json_data=config_paths['path_individual_json'], 
-                    ds_path=config_paths['dataset_path'], 
-                    file_name="Titik_Sampel_Individual", 
+                    ds_path="in_memory", 
+                    file_name="Titik_Sampel_Sementara", 
                     lokasi=config_paths['lokasi'], 
                     tahun=tahun)
                 
+                # Salin dari sementara ke layer utama
+                arcpy.management.CopyFeatures(
+                    in_features=config_paths['path_titik_sampel_sementara'],
+                    out_feature_class=config_paths['path_titik_sampel_individual']
+                )
+                
+                # Bersihkan file sementara
+                arcpy.management.Delete(config_paths['path_titik_sampel_sementara'])
                 arcpy.management.Delete(config_paths['path_individual_json'])
 
             else:

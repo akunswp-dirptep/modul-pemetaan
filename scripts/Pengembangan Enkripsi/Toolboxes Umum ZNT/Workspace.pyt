@@ -1417,7 +1417,7 @@ class Cek_Zona_Awal(object):
 
         arcpy.env.outputCoordinateSystem = arcpy.Describe(in_zona).spatialReference
 
-        # --- 2. Persiapkan Output & Custom ID Zona ---
+
         messages.addMessage("--> Membuat output layer dan Custom ID Zona...")
         arcpy.management.CopyFeatures(in_zona, out_zona)
 

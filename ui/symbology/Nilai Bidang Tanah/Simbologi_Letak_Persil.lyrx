@@ -35,7 +35,7 @@
       "featureElevationExpression" : "0",
       "featureTable" : {
         "type" : "CIMFeatureTable",
-        "displayField" : "IDPERSIL",
+        "displayField" : "IDKKP",
         "editable" : true,
         "fieldDescriptions" : [
           {
@@ -61,8 +61,8 @@
           },
           {
             "type" : "CIMFieldDescription",
-            "alias" : "IDPERSIL",
-            "fieldName" : "IDPERSIL",
+            "alias" : "IDKKP",
+            "fieldName" : "IDKKP",
             "visible" : true,
             "searchMode" : "Exact"
           },
@@ -564,7 +564,7 @@
         {
           "type" : "CIMLabelClass",
           "expressionTitle" : "Custom",
-          "expression" : "$feature.IDPERSIL",
+          "expression" : "$feature.IDKKP",
           "expressionEngine" : "Arcade",
           "featuresToLabel" : "AllVisibleFeatures",
           "maplexLabelPlacementProperties" : {

@@ -485,10 +485,10 @@
 
 
 				<menu id="pengolahan_zonasi_pembaruan_nbt" caption="Zonasi">
-					<button refID="ButtonGenerateKonfigurasiZonasi" size="Medium"/>
-					<button refID="ButtonDeklarasiZonasiUpdate" size="Medium"/>
-					<button refID="ButtonEditZonasiUpdate" size="Medium"/>
 					<button refID="ButtonSeleksiZonasiTerisolasi" size="Medium" />
+					<button refID="ButtonEditZonasiUpdate" size="Medium"/>
+					<button refID="ButtonPengisianZonasiOtomatis" size="Medium"/>
+					
 				</menu>
 				<menu id="analisis_survey_perubahan" caption="Analisis Survey Perubahan" extendedCaption="Analisis Survey Perubahan" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\survei_perubahan.png"
@@ -2687,11 +2687,18 @@
 					<tooltip heading="Deklarasi Zonasi Update">Menu untuk deklarasi zonasi update.</tooltip>
 				</button>
 
-				<button id="ButtonEditZonasiUpdate" caption="Edit Informasi Zonasi Pada Persil" smallImage="C:\PenilaianTanah\icons\editzonasipembaruannbt.png" largeImage="C:\PenilaianTanah\icons\editzonasipembaruannbt.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonEditZonasiUpdate" caption="Pengisian Manual" smallImage="C:\PenilaianTanah\icons\pengisianmanual.png" largeImage="C:\PenilaianTanah\icons\pengisianmanual.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\Pengolahan Data Dasar\PengolahanZonasi.pyt\Edit_Zonasi_Update" name="Edit Informasi Zonasi Pada Persil" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Pengisian_Zonasi_Manual" name="Pengisian Manual" xmlns=""/>
 					</args>
-					<tooltip heading="Edit Informasi Zonasi Pada Persil">Menu untuk edit informasi zonasi pada persil.</tooltip>
+					<tooltip heading="Pengisian Manual">Menu untuk edit informasi zonasi pada persil.</tooltip>
+				</button>
+
+				<button id="ButtonPengisianZonasiOtomatis" caption="Pengisian Otomatis" smallImage="C:\PenilaianTanah\icons\pengisianotomatis.png" largeImage="C:\PenilaianTanah\icons\pengisianotomatis.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\Pengisian_Zonasi_Otomatis" name="Pengisian Otomatis" xmlns=""/>
+					</args>
+					<tooltip heading="Pengisian Otomatis">Menu untuk edit informasi zonasi pada persil.</tooltip>
 				</button>
 
 				<button id="ButtonSeleksiZonasiTerisolasi" caption="Seleksi Zona Terisolasi" smallImage="C:\PenilaianTanah\icons\zonaterisolasi.png" largeImage="C:\PenilaianTanah\icons\zonaterisolasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

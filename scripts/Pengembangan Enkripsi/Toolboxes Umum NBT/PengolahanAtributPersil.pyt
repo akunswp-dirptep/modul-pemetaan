@@ -29,6 +29,8 @@ class Toolbox:
                       Pengisian_Letak_Manual,
                       Pengisian_Lebar_Depan_Otomatis,
                       Pengisian_Jarak_Ke_Jalan_Utama_Otomatis,
+                      Pengisian_Zonasi_Manual,
+                      Pengisian_Zonasi_Otomatis,
                       FilterPersilJalan
                       ]
 
@@ -857,7 +859,7 @@ class Pengisian_Bentuk_Persil_Manual(object):
 class Pengisian_WADMKC_WADMKD_Otomatis(object):
     def __init__(self):
         self.label = "Isi WADMKC & WADMKD Secara Otomatis"
-        self.description = "Mengisi atribut WADMKC dan WADMKD yang Null berdasarkan 3 bidang terdekat, mengupdate status_per, dan perubahan."
+        self.description = "Mengisi atribut WADMKC dan WADMKD yang Null berdasarkan 3 bidang terdekat, dan perubahan."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
@@ -915,10 +917,9 @@ class Pengisian_WADMKC_WADMKD_Otomatis(object):
             messages.addErrorMessage(f"Field berikut tidak ditemukan pada layer: {', '.join(missing_fields)}")
             raise arcpy.ExecuteError
 
-        has_status = "STATUS_PER" in existing_fields or "STATUS_PERUBAHAN" in existing_fields
         has_perubahan = "PERUBAHAN" in existing_fields
         
-        status_field_name = existing_fields.get("STATUS_PER", existing_fields.get("STATUS_PERUBAHAN", ""))
+
         perubahan_field_name = existing_fields.get("PERUBAHAN", "")
 
         target_fields = ["WADMKC", "WADMKD"]
@@ -986,7 +987,6 @@ class Pengisian_WADMKC_WADMKD_Otomatis(object):
             
             # Menyusun field yang akan diupdate secara dinamis
             update_fields = ["OID@", target_field]
-            if has_status: update_fields.append(status_field_name)
             if has_perubahan: update_fields.append(perubahan_field_name)
             
             updated_count = 0
@@ -1001,8 +1001,6 @@ class Pengisian_WADMKC_WADMKD_Otomatis(object):
                             most_common_val = Counter(val_list).most_common(1)[0][0]
                             row[1] = most_common_val
                             
-                            if has_status:
-                                row[update_fields.index(status_field_name)] = "update"
                             if has_perubahan:
                                 row[update_fields.index(perubahan_field_name)] = "menyebar"
                                 
@@ -1088,13 +1086,10 @@ class Pengisian_WADMKC_WADMKD_Manual(object):
                 return
             update_fields.append("WADMKD")
 
-        has_status = "STATUS_PER" in existing_fields or "STATUS_PERUBAHAN" in existing_fields
         has_perubahan = "PERUBAHAN" in existing_fields
         
-        status_field_name = existing_fields.get("STATUS_PER", existing_fields.get("STATUS_PERUBAHAN", ""))
         perubahan_field_name = existing_fields.get("PERUBAHAN", "")
 
-        if has_status: update_fields.append(status_field_name)
         if has_perubahan: update_fields.append(perubahan_field_name)
 
         updated_count = 0
@@ -1107,8 +1102,6 @@ class Pengisian_WADMKC_WADMKD_Manual(object):
                 if wadmkd_val:
                     row[update_fields.index("WADMKD")] = wadmkd_val
                 
-                if has_status:
-                    row[update_fields.index(status_field_name)] = "update"
                 if has_perubahan:
                     row[update_fields.index(perubahan_field_name)] = "menyebar"
                     
@@ -2062,9 +2055,9 @@ class Pengisian_Lebar_Depan_Otomatis(object):
 
         # Seleksi berdasarkan parameter
         if hanya_update:
-            messages.addMessage("== Seleksi status_per='update' ==")
+            messages.addMessage("== Seleksi Persil Perubahan ==")
             arcpy.management.SelectLayerByAttribute(
-                persil_layer, "NEW_SELECTION", "UPPER(status_per) = 'UPDATE'"
+                persil_layer, "NEW_SELECTION", "UPPER(PERUBAHAN) IS NOT NULL"
             )
         
         if hanya_kosong:
@@ -2357,7 +2350,7 @@ class Pengisian_Jarak_Ke_Jalan_Utama_Otomatis(object):
         where_clauses = []
         
         if hanya_update:
-            where_clauses.append("UPPER(status_per) = 'UPDATE'")
+            where_clauses.append("UPPER(perubahan) IS NOT NULL")
         
         if hanya_yang_null and target_fields:
             # Contoh hasil: (JKKOLS IS NULL OR JKKOLS = 0 OR JKKOLP IS NULL OR JKKOLP = 0 ...)
@@ -2550,7 +2543,214 @@ class Pengisian_Jarak_Ke_Jalan_Utama_Otomatis(object):
         parameters[4].value = output_name
         messages.addMessage("== Proses selesai dengan sukses ==")
         return
-                   
+
+
+class Pengisian_Zonasi_Manual(object):
+
+    def __init__(self):
+        self.label = "Pengisian Zonasi Manual"
+        self.description = "Update zonasi pada layer persil berdasarkan data eksisting atau input baru."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        # 0. Dropdown Zonasi Eksisting
+        pilih_zona = arcpy.Parameter(
+            displayName="Pilih Zonasi",
+            name="pilih_zona",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+
+        # 1. Checkbox Tambah Zonasi Baru
+        tambah_zonasi_lain = arcpy.Parameter(
+            displayName="Tambahkan Zonasi Lain",
+            name="tambah_zonasi_lain",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input"
+        )
+        tambah_zonasi_lain.value = False
+
+        # 2. Input Nama Zonasi Baru
+        nama_zonasi_baru = arcpy.Parameter(
+            displayName="Nama Zonasi Baru",
+            name="nama_zonasi_baru",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        nama_zonasi_baru.enabled = False # Default mati sebelum dicentang
+
+        # 3. Input Skor Zonasi Baru (Integer)
+        skor_zonasi_baru = arcpy.Parameter(
+            displayName="Skor Zonasi Baru",
+            name="skor_zonasi_baru",
+            datatype="GPLong",
+            parameterType="Optional",
+            direction="Input"
+        )
+        skor_zonasi_baru.enabled = False # Default mati sebelum dicentang
+
+        # 4. Checkbox Simpan Perubahan
+        simpan_sebagai_perubahan = arcpy.Parameter(
+            displayName="Simpan Sebagai Perubahan",
+            name="simpan_sebagai_perubahan",
+            datatype="GPBoolean",
+            parameterType="Required",
+            direction="Input"
+        )
+        simpan_sebagai_perubahan.value = True
+
+        # 5. Output Derived Layer
+        output_data = arcpy.Parameter(
+            name="persil_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [
+            pilih_zona, 
+            tambah_zonasi_lain, 
+            nama_zonasi_baru, 
+            skor_zonasi_baru, 
+            simpan_sebagai_perubahan, 
+            output_data
+        ]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        # Mengisi Dropdown berdasarkan kolom ZONASI langsung dari Feature Class fisik
+        if not parameters[0].altered:
+            try:
+                # 1. Panggil konfigurasi untuk mendapatkan path asli dataset
+                configs = persil.get_config_values()
+                dataset_path = configs["project_config"]["dataset_path"]
+                
+                # 2. Gabungkan path dataset dengan nama feature class
+                persil_fc_path = os.path.join(dataset_path, "Persil_Layer")
+
+                # 3. Cek eksistensi menggunakan path fisik, bukan nama layer
+                if arcpy.Exists(persil_fc_path):
+                    with arcpy.da.SearchCursor(persil_fc_path, ["ZONASI"]) as cursor:
+                        # Ambil nilai unik dan abaikan Null/None
+                        zonasi_list = sorted(list(set([row[0] for row in cursor if row[0]])))
+                    parameters[0].filter.list = zonasi_list
+            except Exception:
+                pass
+
+        # Logika centang: Buka parameter baru dan matikan dropdown jika dicentang
+        if parameters[1].value: 
+            parameters[2].enabled = True
+            parameters[3].enabled = True
+            parameters[0].enabled = False
+        else:
+            parameters[2].enabled = False
+            parameters[3].enabled = False
+            parameters[0].enabled = True
+            
+        return
+
+
+    def updateMessages(self, parameters):
+        return
+
+    def add_field_if_not_exists(self, feature_class, field_name, field_type):
+        field_names = [field.name for field in arcpy.ListFields(feature_class)]
+        if field_name not in field_names:
+            arcpy.management.AddField(feature_class, field_name, field_type)
+
+    def execute(self, parameters, messages):
+        messages.addMessage("== Proses dimulai ==")
+
+        pilih_zona = parameters[0].valueAsText
+        tambah_zonasi_lain = parameters[1].value
+        nama_zonasi_baru = parameters[2].valueAsText
+        skor_zonasi_baru = parameters[3].value
+        simpan_sebagai_data_baru = parameters[4].value
+        if tambah_zonasi_lain:
+            if not nama_zonasi_baru:
+                messages.addErrorMessage("== Nama zonasi baru wajib diisi ==")
+                raise arcpy.ExecuteError
+            if skor_zonasi_baru is None:
+                messages.addErrorMessage("== Skor zonasi baru wajib diisi ==")
+                raise arcpy.ExecuteError
+        else:
+            if not pilih_zona:
+                messages.addErrorMessage("== Silakan pilih zonasi dari daftar ==")
+                raise arcpy.ExecuteError
+        configs = persil.get_config_values()
+        dataset_path = configs["project_config"]["dataset_path"]
+        
+        persil_edit = "Persil_Layer"
+        persil_edit_path = os.path.join(dataset_path, persil_edit)
+
+        # ---------------------------------------------------------
+        # Menentukan Nilai Zonasi & Skor yang akan diupdate
+        # ---------------------------------------------------------
+        if tambah_zonasi_lain:
+            zonasi_final = nama_zonasi_baru
+            s_zonasi_final = skor_zonasi_baru
+            min_lb_jln_final = 1.5 # Default fallback
+        else:
+            zonasi_final = pilih_zona
+            s_zonasi_final = 0
+            min_lb_jln_final = 1.5
+            
+            with arcpy.da.SearchCursor(persil_edit, ["ZONASI", "S_ZONASI", "min_lb_jln"]) as cursor:
+                for row in cursor:
+                    if row[0] == zonasi_final:
+                        s_zonasi_final = row[1] if row[1] is not None else 0
+                        min_lb_jln_final = row[2] if row[2] is not None else 1.5
+                        break
+
+        # Pastikan field min_lb_jln ada
+        self.add_field_if_not_exists(persil_edit_path, "min_lb_jln", "DOUBLE")
+
+        # Pengecekan field wajib
+        required_fields = ["ZONASI", "S_ZONASI", "min_lb_jln", "perubahan"]
+        persil_fields = [f.name for f in arcpy.ListFields(persil_edit_path)]
+        missing_fields = [f for f in required_fields if f not in persil_fields]
+
+        if missing_fields:
+            messages.addErrorMessage(f"== Field berikut tidak ditemukan: {', '.join(missing_fields)} ==")
+            raise arcpy.ExecuteError
+
+        # Cek apakah ada fitur yang di-select
+        ada_seleksi = len(arcpy.Describe(persil_edit).FIDSet)
+        if ada_seleksi == 0:
+            messages.addWarningMessage("== Tidak ada persil yang dipilih. Silakan seleksi persil terlebih dahulu. ==")
+            return
+
+        messages.addMessage(f"== Mengupdate zonasi menjadi: {zonasi_final} (Skor: {s_zonasi_final}) ==")
+
+        # Update data persil
+        with arcpy.da.UpdateCursor(persil_edit, ["ZONASI", "S_ZONASI", "min_lb_jln", "perubahan"]) as rows:
+            for row in rows:
+                row[0] = zonasi_final
+                row[1] = s_zonasi_final
+                row[2] = min_lb_jln_final
+
+                if simpan_sebagai_data_baru:
+                    row[3] = "menyebar"
+                
+                rows.updateRow(row)
+
+        messages.addMessage("== Proses update atribut selesai ==")
+
+        simbology_path = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Simbologi_Zonasi_Persil_Layer.lyrx"
+        try:
+            arcpy.management.MakeFeatureLayer(persil_edit_path, "Persil_Layer")
+            arcpy.management.ApplySymbologyFromLayer("Persil_Layer", simbology_path)
+        except Exception as e:
+            messages.addWarningMessage(f"== Gagal mengaplikasikan simbologi: {e} ==")
+
+        arcpy.SetParameter(5, "Persil_Layer")
+        return
+                     
 class FilterPersilJalan(object):
     def __init__(self):
         self.label = "Filter Persil Jaringan Jalan"
@@ -2661,4 +2861,133 @@ class FilterPersilJalan(object):
             arcpy.management.DeleteField(out_jalan, temp_field)
 
         arcpy.AddMessage("Proses selesai.")
+        return
+
+class Pengisian_Zonasi_Otomatis(object):
+
+    def __init__(self):
+        self.label = "Pengisian Zonasi Otomatis"
+        self.description = "Mengisi zonasi Null berdasarkan 3 bidang terdekat, mengupdate S_ZONASI, dan perubahan."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        
+        
+        output_data = arcpy.Parameter(
+            name="output_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [output_data]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        messages.addMessage("== Memulai proses otomatisasi zonasi ==")
+        config = persil.get_config_values()
+        ds_path = config['project_config']['dataset_path']
+
+
+        input_layer = os.path.join(ds_path, 'Persil_layer')
+
+        # 1. Pengecekan Field yang Dibutuhkan
+        required_fields = ["ZONASI", "S_ZONASI", "perubahan"]
+        existing_fields = [f.name for f in arcpy.ListFields(input_layer)]
+        missing_fields = [f for f in required_fields if f not in existing_fields]
+
+        if missing_fields:
+            messages.addErrorMessage(f"== Field berikut tidak ditemukan pada layer: {', '.join(missing_fields)} ==")
+            raise arcpy.ExecuteError
+
+        # 2. Kumpulkan Data Bidang Valid & Bangun Kamus Skor Dinamis
+        valid_features = []
+        zonasi_score_dict = {} # Dictionary untuk menyimpan pasangan Zonasi & Skornya
+        
+        where_valid = "ZONASI IS NOT NULL AND ZONASI <> '' AND ZONASI <> ' '"
+        
+        messages.addMessage("== Membaca referensi zonasi dan skor dari layer... ==")
+        
+        # Tambahkan S_ZONASI ke dalam SearchCursor
+        with arcpy.da.SearchCursor(input_layer, ["SHAPE@", "ZONASI", "S_ZONASI"], where_valid) as cursor:
+            for row in cursor:
+                geom = row[0]
+                zonasi = row[1]
+                skor = row[2] if row[2] is not None else 0
+                
+                valid_features.append((geom, zonasi))
+                
+                # Membangun dictionary dinamis dari data yang ada di layer
+                if zonasi not in zonasi_score_dict:
+                    zonasi_score_dict[zonasi] = skor
+                else:
+                    # Jika zonasi sudah ada, cek apakah skornya sama
+                    if zonasi_score_dict[zonasi] != skor:
+                        messages.addErrorMessage(
+                            f"== Proses Dihentikan: Terdapat inkonsistensi skor pada zonasi '{zonasi}'. "
+                            f"Ditemukan skor {zonasi_score_dict[zonasi]} dan {skor} di dalam layer. "
+                            f"Harap perbaiki dan seragamkan skor pada atribut layer terlebih dahulu. =="
+                        )
+                        return
+                
+        if not valid_features:
+            messages.addErrorMessage("== Tidak ada satupun bidang dengan zonasi yang valid untuk dijadikan referensi ==")
+            raise arcpy.ExecuteError
+
+        # 3. Proses Bidang yang ZONASI-nya Null/Kosong
+        where_null = "ZONASI IS NULL OR ZONASI = '' OR ZONASI = ' '"
+        update_fields = ["SHAPE@", "ZONASI", "S_ZONASI", "perubahan"]
+        
+        updated_count = 0
+        messages.addMessage("== Memproses bidang dengan Zonasi Null... ==")
+        
+        with arcpy.da.UpdateCursor(input_layer, update_fields, where_null) as cursor:
+            for row in cursor:
+                null_geom = row[0]
+                
+                # Lewati jika geometrinya bermasalah
+                if null_geom is None:
+                    continue
+
+                # Hitung jarak dari bidang null ini ke semua bidang valid
+                distances = []
+                for valid_geom, v_zonasi in valid_features:
+                    # distanceTo menghitung jarak terpendek antar geometri
+                    dist = null_geom.distanceTo(valid_geom)
+                    distances.append((dist, v_zonasi))
+
+                # Urutkan berdasarkan jarak terdekat dan ambil 3 teratas
+                distances.sort(key=lambda x: x[0])
+                top_3 = distances[:3]
+                
+                # Ambil daftar ZONASI dari 3 bidang terdekat tersebut
+                top_3_zonasi = [item[1] for item in top_3]
+
+                if top_3_zonasi:
+                    # Gunakan collections.Counter untuk mencari ZONASI yang paling banyak muncul (Mayoritas)
+                    most_common_zonasi = Counter(top_3_zonasi).most_common(1)[0][0]
+                    
+                    # Dapatkan S_ZONASI langsung dari kamus dinamis yang kita buat dari layer
+                    s_zonasi_value = zonasi_score_dict.get(most_common_zonasi, 0)
+
+                    # Update Row (Index disesuaikan dengan update_fields)
+                    row[1] = most_common_zonasi        # ZONASI
+                    row[2] = s_zonasi_value            # S_ZONASI
+                    row[3] = "menyebar"                
+                    
+                    cursor.updateRow(row)
+                    updated_count += 1
+
+        messages.addMessage(f"== Proses selesai. Berhasil memperbarui {updated_count} bidang ==")
+        
+        # Set parameter output agar memicu refresh di map
+        arcpy.SetParameter(1, input_layer)
         return

@@ -745,7 +745,7 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
                                 param.value = fields[upper_fields.index(cand.upper())]
                                 break
 
-                set_default(parameters[0], ["IDPERSIL", "ID"])
+                set_default(parameters[0], ["IDKKP", "ID"])
                 set_default(parameters[1], ["NIB"])
                 set_default(parameters[2], ["TIPEHAK"])
                 set_default(parameters[3], ["WADMKC", "KECAMATAN"])
@@ -851,7 +851,7 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
         # 5. MAPPING ATRIBUT PERSIL BARU KE NAMA KOLOM STANDAR
         messages.addMessage("Menyelaraskan nama kolom pada Persil Baru...")
         
-        self.add_field_if_not_exists(peta_baru_path, "IDPERSIL", "TEXT", 50)
+        self.add_field_if_not_exists(peta_baru_path, "IDKKP", "TEXT", 50)
         self.add_field_if_not_exists(peta_baru_path, "NIB", "TEXT", 50)
         self.add_field_if_not_exists(peta_baru_path, "TIPEHAK", "TEXT", 50)
         self.add_field_if_not_exists(peta_baru_path, "WADMKC", "TEXT", 50)
@@ -863,7 +863,7 @@ class Simpan_Perubahan_Ke_Persil_Layer(object):
 
         # Transfer nilai hanya jika nama field tujuan dan asal berbeda (agar tidak error)
         mapping_field = {
-            "IDPERSIL": f_id,
+            "IDKKP": f_id,
             "NIB": f_nib,
             "TIPEHAK": f_tipehak,
             "WADMKC": f_kecamatan,

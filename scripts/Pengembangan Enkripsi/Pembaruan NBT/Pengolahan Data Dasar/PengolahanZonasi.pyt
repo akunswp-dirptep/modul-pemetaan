@@ -926,6 +926,7 @@ class Edit_Zonasi_Update(object):
         return
 
 class Auto_Zonasi_Update(object):
+
     def __init__(self):
         self.label = "Auto Isi Zonasi Berdasarkan Tetangga"
         self.description = "Mengisi zonasi Null berdasarkan 3 bidang terdekat, mengupdate S_ZONASI, STATUS_PERUBAHAN, dan perubahan."
@@ -941,15 +942,6 @@ class Auto_Zonasi_Update(object):
             direction="Input"
         )
         
-        config_file = arcpy.Parameter(
-            displayName="File Konfigurasi Zonasi (JSON)",
-            name="config_file",
-            datatype="DEFile",
-            parameterType="Optional",
-            direction="Input"
-        )
-        config_file.filter.list = ["json"]
-
         output_data = arcpy.Parameter(
             name="output_layer",
             datatype="GPFeatureLayer",
@@ -958,174 +950,7 @@ class Auto_Zonasi_Update(object):
         )
         output_data.parameterDependencies = [input_layer.name]
 
-        return [input_layer, config_file, output_data]
-
-    def isLicensed(self):
-        return True
-
-    def updateParameters(self, parameters):
-        return
-
-    def updateMessages(self, parameters):
-        return
-
-    def execute(self, parameters, messages):
-        messages.addMessage("== Memulai proses otomatisasi zonasi ==")
-
-        input_layer = parameters[0].valueAsText
-        config_path = parameters[1].valueAsText if parameters[1].value else None
-
-        # 1. Load Konfigurasi JSON
-        zonasi_json = {}
-        if config_path and os.path.exists(config_path):
-            with open(config_path, "r", encoding="utf-8") as f:
-                zonasi_json = json.load(f)
-            messages.addMessage("== Berhasil memuat file JSON konfigurasi ==")
-        else:
-            try:
-                configs = persil.get_config_values()
-                default_config_path = os.path.join(configs["project_config"]["ws_path"], "zonasiupdate.json")
-                if os.path.exists(default_config_path):
-                    with open(default_config_path, "r", encoding="utf-8") as f:
-                        zonasi_json = json.load(f)
-                    messages.addMessage("== Menggunakan file JSON dari module persil ==")
-            except:
-                messages.addWarningMessage("== Peringatan: Konfigurasi JSON tidak ditemukan. Nilai S_ZONASI diset default (0) ==")
-
-        # 2. Pengecekan Field yang Dibutuhkan
-        required_fields = ["ZONASI", "S_ZONASI", "STATUS_PERUBAHAN", "perubahan"]
-        existing_fields = [f.name for f in arcpy.ListFields(input_layer)]
-        missing_fields = [f for f in required_fields if f not in existing_fields]
-
-        if missing_fields:
-            messages.addErrorMessage(f"== Field berikut tidak ditemukan pada layer: {', '.join(missing_fields)} ==")
-            raise arcpy.ExecuteError
-
-        # --- OPTIMASI: MENGGUNAKAN SPATIAL INDEXING DARI ARCPY ---
-        
-        valid_layer = "memory_valid_layer"
-        null_layer = "memory_null_layer"
-        
-        where_valid = "ZONASI IS NOT NULL AND ZONASI <> '' AND ZONASI <> ' '"
-        where_null = "ZONASI IS NULL OR ZONASI = '' OR ZONASI = ' '"
-        
-        # Pisahkan menjadi dua layer virtual di memori untuk mempercepat komputasi
-        arcpy.management.MakeFeatureLayer(input_layer, valid_layer, where_valid)
-        arcpy.management.MakeFeatureLayer(input_layer, null_layer, where_null)
-        
-        count_valid = int(arcpy.management.GetCount(valid_layer)[0])
-        count_null = int(arcpy.management.GetCount(null_layer)[0])
-        
-        if count_valid == 0:
-            messages.addErrorMessage("== Tidak ada satupun bidang dengan zonasi valid untuk referensi ==")
-            raise arcpy.ExecuteError
-            
-        if count_null == 0:
-            messages.addMessage("== Tidak ada bidang yang ZONASI-nya kosong. Proses selesai. ==")
-            return
-            
-        messages.addMessage(f"== Ditemukan {count_null} bidang kosong dan {count_valid} bidang referensi ==")
-        messages.addMessage("== Mengkalkulasi 3 tetangga terdekat (Generate Near Table)... ==")
-        
-        # 3. Generate Near Table (Proses Geoprocessing yang dioptimalkan untuk performa)
-        near_table = r"memory\near_table_result"
-        if arcpy.Exists(near_table):
-            arcpy.management.Delete(near_table)
-            
-        arcpy.analysis.GenerateNearTable(
-            in_features=null_layer, 
-            near_features=valid_layer, 
-            out_table=near_table, 
-            closest="ALL", 
-            closest_count=3, 
-            method="PLANAR"
-        )
-        
-        # 4. Ambil nilai ZONASI dari layer valid (referensi) berdasarkan OID
-        valid_zonasi_dict = {}
-        with arcpy.da.SearchCursor(valid_layer, ["OID@", "ZONASI"]) as sc:
-            for row in sc:
-                valid_zonasi_dict[row[0]] = row[1]
-                
-        # 5. Baca Near Table untuk mendapatkan 3 referensi OID tetangga dari tiap bidang kosong
-        null_neighbors = {}
-        with arcpy.da.SearchCursor(near_table, ["IN_FID", "NEAR_FID"]) as sc:
-            for row in sc:
-                in_fid = row[0]   # OID bidang kosong
-                near_fid = row[1] # OID bidang tetangga yang valid
-                
-                zonasi_val = valid_zonasi_dict.get(near_fid)
-                if zonasi_val is not None:
-                    if in_fid not in null_neighbors:
-                        null_neighbors[in_fid] = []
-                    null_neighbors[in_fid].append(zonasi_val)
-                    
-        # 6. Update layer bidang kosong dengan voting mayoritas (Counter)
-        messages.addMessage("== Memperbarui bidang yang kosong... ==")
-        update_fields = ["OID@", "ZONASI", "S_ZONASI", "STATUS_PERUBAHAN", "perubahan"]
-        updated_count = 0
-        
-        with arcpy.da.UpdateCursor(null_layer, update_fields) as uc:
-            for row in uc:
-                oid = row[0] # Identifikasi baris Null dengan IN_FID
-                if oid in null_neighbors:
-                    zonasi_list = null_neighbors[oid]
-                    
-                    if zonasi_list:
-                        # Cari ZONASI yang paling banyak muncul (Mayoritas dari 3 tetangga)
-                        most_common_zonasi = Counter(zonasi_list).most_common(1)[0][0]
-                        s_zonasi_value = zonasi_json.get(most_common_zonasi, {}).get("s_zonasi", 0)
-                        
-                        row[1] = most_common_zonasi
-                        row[2] = s_zonasi_value
-                        row[3] = "update"
-                        row[4] = "menyebar"
-                        
-                        uc.updateRow(row)
-                        updated_count += 1
-                        
-        messages.addMessage(f"== Proses selesai. Berhasil memperbarui {updated_count} bidang. ==")
-        
-        # Bersihkan memori layer sementara agar RAM tidak penuh
-        arcpy.management.Delete(valid_layer)
-        arcpy.management.Delete(null_layer)
-        arcpy.management.Delete(near_table)
-        
-        arcpy.SetParameter(2, input_layer)
-        return
-    def __init__(self):
-        self.label = "Auto Isi Zonasi Berdasarkan Tetangga"
-        self.description = "Mengisi zonasi Null berdasarkan 3 bidang terdekat, mengupdate S_ZONASI, STATUS_PERUBAHAN, dan perubahan."
-        self.canRunInBackground = False
-
-    def getParameterInfo(self):
-        
-        input_layer = arcpy.Parameter(
-            displayName="Layer Persil",
-            name="input_layer",
-            datatype="GPFeatureLayer",
-            parameterType="Required",
-            direction="Input"
-        )
-        
-        config_file = arcpy.Parameter(
-            displayName="File Konfigurasi Zonasi (JSON)",
-            name="config_file",
-            datatype="DEFile",
-            parameterType="Optional",
-            direction="Input"
-        )
-        config_file.filter.list = ["json"]
-
-        output_data = arcpy.Parameter(
-            name="output_layer",
-            datatype="GPFeatureLayer",
-            parameterType="Derived",
-            direction="Output"
-        )
-        output_data.parameterDependencies = [input_layer.name]
-
-        return [input_layer, config_file, output_data]
+        return [input_layer, output_data]
 
     def isLicensed(self):
         return True
@@ -1184,7 +1009,7 @@ class Auto_Zonasi_Update(object):
 
         # 4. Proses Bidang yang ZONASI-nya Null/Kosong
         where_null = "ZONASI IS NULL OR ZONASI = '' OR ZONASI = ' '"
-        update_fields = ["SHAPE@", "ZONASI", "S_ZONASI", "status_per", "perubahan"]
+        update_fields = ["SHAPE@", "ZONASI", "S_ZONASI", "perubahan"]
         
         updated_count = 0
         messages.addMessage("== Memproses bidang dengan Zonasi Null... ==")
@@ -1221,7 +1046,6 @@ class Auto_Zonasi_Update(object):
                     # Update Row
                     row[1] = most_common_zonasi         # ZONASI
                     row[2] = s_zonasi_value             # S_ZONASI
-                    row[3] = "update"                   # STATUS_PERUBAHAN
                     row[4] = "menyebar"                 # perubahan
                     
                     cursor.updateRow(row)
@@ -1229,7 +1053,6 @@ class Auto_Zonasi_Update(object):
 
         messages.addMessage(f"== Proses selesai. Berhasil memperbarui {updated_count} bidang ==")
         
-        # Outputkan layer agar terefleksi di peta Pro
         arcpy.SetParameter(2, input_layer)
         return
 

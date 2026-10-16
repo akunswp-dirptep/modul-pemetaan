@@ -352,7 +352,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
         ["Jarak Kolektor Sekunder", "JKKOLS", ["JKKOLS", "JK_KOLS"]],
         ["Nilai Bidang Tanah", "NILAIBD", ["PREDICTED", "NILAIBD"]],
         ["NIB", "NIB", ["NIB"]],
-        ["ID", "IDPERSIL", ["ID", "IDPERSIL"]]
+        ["ID", "IDKKP", ["ID", "IDKKP"]]
     ]
 
     AUTO_CREATE_FIELDS = [
@@ -464,14 +464,41 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 arcpy.management.AlterField(dest_temp_path, existing_fields_upper[old_upper], new_field, new_field)
                 existing_fields_upper[new_upper] = new_field # Update tracker
 
-        protected_fields = {"FID", "OBJECTID", "SHAPE", "WADMKD", "WADMKC", "TIPEHAK", "LBRDPN", "LUASM2", "S_ZONASI", "S_BENTUK", "S_LETAK", "S_ELEVASI", "LBRJLN", "S_KLSJLN", "JKATRP", "JKATRS", "JKKOLP", "JKKOLS", "NILAIBD", "NIB", "IDBIDANG", "IDPERSIL"}
+        arcpy.management.AddField(dest_temp_path, "NILAIBD_LAMA", "DOUBLE", field_alias="NILAIBD LAMA")
+        if "NILAIBD" in existing_fields_upper.values():
+            arcpy.management.CalculateField(dest_temp_path, "NILAIBD_LAMA", "!NILAIBD!", "PYTHON3")
+            arcpy.management.CalculateField(dest_temp_path, "NILAIBD", "None", "PYTHON3")
+
+        # TAMBAHAN: Konversi semua field skoring (S_) menjadi Long (Integer) jika belum
+        skoring_fields = [f.name for f in arcpy.ListFields(dest_temp_path) if f.name.upper().startswith("S_")]
+        for sf in skoring_fields:
+            f_obj = arcpy.ListFields(dest_temp_path, sf)[0]
+            if f_obj.type.upper() not in ['INTEGER', 'SMALLINTEGER']:
+                temp_sf = sf + "_TMP"
+                arcpy.management.AddField(dest_temp_path, temp_sf, "LONG")
+                expression = f"int(!{sf}!) if !{sf}! is not None else None"
+                arcpy.management.CalculateField(dest_temp_path, temp_sf, expression, "PYTHON3")
+                arcpy.management.DeleteField(dest_temp_path, sf)
+                arcpy.management.AddField(dest_temp_path, sf, "LONG", field_alias=f_obj.aliasName or sf)
+                arcpy.management.CalculateField(dest_temp_path, sf, f"!{temp_sf}!", "PYTHON3")
+                arcpy.management.DeleteField(dest_temp_path, temp_sf)
+
+        # UPDATE: Tambahkan NILAIBD_LAMA ke protected_fields
+        protected_fields = {"FID", "OBJECTID", "SHAPE", "WADMKD", "WADMKC", "TIPEHAK", "LBRDPN", "LUASM2", "S_ZONASI", "S_BENTUK", "S_LETAK", "S_ELEVASI", "LBRJLN", "S_KLSJLN", "JKATRP", "JKATRS", "JKKOLP", "JKKOLS", "NILAIBD", "NILAIBD_LAMA", "NIB", "IDBIDANG", "IDKKP"}
         for f in [field_perubahan, field_id_perubahan, field_kelompok_perubahan]:
             if f: protected_fields.add(f.upper())
             
+        # TAMBAHAN: Definisi field sistem default geodatabase yang harus dilindungi secara eksplisit
+        system_shape_fields = {"SHAPE", "SHAPE_LENGTH", "SHAPE_AREA"}
+            
+        # PERBAIKAN: Ganti aturan ("SHAPE" not in f.name.upper()) menjadi proteksi spesifik
         fields_to_delete = [
             f.name for f in arcpy.ListFields(dest_temp_path) 
-            if f.type not in ["Geometry", "OID"] and f.name.upper() not in protected_fields and "SHAPE" not in f.name.upper()
+            if f.type not in ["Geometry", "OID"] 
+            and f.name.upper() not in protected_fields 
+            and f.name.upper() not in system_shape_fields
         ]
+        
         if fields_to_delete:
             try: arcpy.management.DeleteField(dest_temp_path, fields_to_delete)
             except Exception as e: arcpy.AddWarning(str(e))
@@ -522,7 +549,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                     cursor.updateRow(row)
                     
         if field_id_perubahan:
-            with arcpy.da.UpdateCursor(dest_temp_path, [field_id_perubahan, "IDPERSIL"]) as cursor:
+            with arcpy.da.UpdateCursor(dest_temp_path, [field_id_perubahan, "IDKKP"]) as cursor:
                 for row in cursor:
                     row[1] = str(row[0]) if row[0] is not None else None
                     cursor.updateRow(row)
@@ -559,14 +586,15 @@ class Masukkan_Data_NBT_Sebelumnya(object):
                 row[9] = rev_maps["S_ZONASI"].get(row[8])
                 cursor.updateRow(row)
 
+        # UPDATE: Tambahkan NILAIBD_LAMA ke ordered_fields
         ordered_fields = [
-            "IDPERSIL", "NIB", "IDBIDANG", "perubahan", "kelompok_perubahan",
+            "IDKKP", "NIB", "IDBIDANG", "perubahan", "kelompok_perubahan",
             "WADMPR", "WADMKK", "WADMKC", "WADMKD", "TIPEHAK",
             "LUASM2", "LBRDPN", "ZONASI", "KLSTRZ", "S_ZONASI",
             "KLSJLN", "S_KLSJLN", "LETAK", "S_LETAK", "BENTUK", "S_BENTUK", 
             "ELEVASI", "S_ELEVASI", "LBRJLN", "JKATRP", "JKATRS", "JKKOLP", 
             "JKKOLS", "JKCBD", "JKKES", "JKPDDKN", "JKTRANSP", "JKPMRNTH",
-            "BANJIR", "LONGSOR", "NILAIBD", "THNNILAI"
+            "BANJIR", "LONGSOR", "NILAIBD", "NILAIBD_LAMA", "THNNILAI"
         ]
 
         self.reorder_fields(dest_temp_path, persil_layer, ordered_fields)
@@ -578,7 +606,7 @@ class Masukkan_Data_NBT_Sebelumnya(object):
 
         arcpy.SetParameter(6, persil_layer)
         return
-
+    
     def validate_skoring(self, layer_path, field_name, skor_dict, field_label):
         if not field_name: return []
         errors = []

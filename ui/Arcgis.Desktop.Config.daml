@@ -2709,11 +2709,11 @@
 				</button>
 
 			<!-- Analisis Survey Lingkungan dan Fasilitas -->
-				<button id="ButtonAmbilLBTDariSipenta" caption="Ambil LBT Dari Sipenta" smallImage="C:\PenilaianTanah\icons\maps.png" largeImage="C:\PenilaianTanah\icons\maps.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonAmbilLBTDariSipenta" caption="Tampilkan Titik Survey PL dan BT" smallImage="C:\PenilaianTanah\icons\maps.png" largeImage="C:\PenilaianTanah\icons\maps.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Ambil_LBT_Dari_Sipenta" name="Ambil LBT Dari Sipenta" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Ambil_LBT_Dari_Sipenta" name="Tampilkan Titik Survey PL dan BT" xmlns=""/>
 					</args>
-					<tooltip heading="Ambil LBT Dari Sipenta">
+					<tooltip heading="Tampilkan Titik Survey PL dan BT">
 						Menu untuk mengambil layer LBT berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
 					</tooltip>
 				</button>

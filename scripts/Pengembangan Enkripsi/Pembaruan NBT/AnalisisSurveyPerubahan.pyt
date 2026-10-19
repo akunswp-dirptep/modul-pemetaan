@@ -35,20 +35,21 @@ class Toolbox:
 class Ambil_LBT_Dari_Sipenta(object):
 
     def __init__(self):
-        self.label = "Ambil LBT Dari Sipenta"
+        self.label = "Tampilkan Survey PL & BT"
         self.description = "Mengambil layer LBT dari SIPENTA"
         self.canRunInBackground = False
 
     def getParameterInfo(self):
         berkas_list = get_all_berkas_id()
         berkas_show = []
-
         if berkas_list is not None:
+            can_show = 0
             for berkas in berkas_list:
-                if berkas[1] is True and ('03/' in berkas[0] or '04/' in berkas[0]):
-                    berkas_show.append(f"{berkas[0]}")
-
-        if len(berkas_show) == 0:
+                berkas_show.append(f"{berkas[0]}")
+                can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
             berkas_show = ['Tidak ada berkas yang dapat dipilih']
 
         berkas = arcpy.Parameter(
@@ -61,8 +62,11 @@ class Ambil_LBT_Dari_Sipenta(object):
         berkas.filter.type = "ValueList"
         berkas.filter.list = berkas_show
 
-        if len(berkas_show) > 0:
-            berkas.value = berkas_show[0]
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            berkas.value = preferred_berkas if preferred_berkas else berkas_show[0]
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
 
         output_fasilitas = arcpy.Parameter(
             name="LBT_Fasilitas",
@@ -111,8 +115,6 @@ class Ambil_LBT_Dari_Sipenta(object):
         return True
 
     def updateParameters(self, parameters):
-        # Opsional: Bisa ditambahkan logika mengunci input jika belum login
-        # seperti pada class Upload_Peta_Rencana_Lokasi_Kegiatan_AOI
         berkas = parameters[0]
         penjelasan = parameters[5]
 

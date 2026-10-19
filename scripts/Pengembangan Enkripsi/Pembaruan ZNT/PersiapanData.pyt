@@ -431,8 +431,8 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         penjelasan_jeniszona.value = (
             "Ketentuan untuk field jenis zona:\n"
             " - Berisi kategori zona dengan kode:\n"
-            "   - 1 ? Non-Pertanian\n"
-            "   - 2 ? Pertanian\n"
+            "   - 1  Non-Pertanian\n"
+            "   - 2  Pertanian\n"
             " - Tidak boleh berisi <null>\n"
             " - Tidak boleh berisi nilai selain 1 atau 2"
         )

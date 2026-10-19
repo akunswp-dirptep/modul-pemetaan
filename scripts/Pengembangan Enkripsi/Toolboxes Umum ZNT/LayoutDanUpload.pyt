@@ -1213,7 +1213,7 @@ class Tambah_Kotak_TTE(object):
 
         cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
         x_initial, y_initial = 90 + count, 2 + count
-        width, height = 9.0, 3.0
+        width, height = 7.5, 2.5
         arr = arcpy.Array([
             arcpy.Point(x_initial, y_initial),
             arcpy.Point(x_initial, y_initial + height),

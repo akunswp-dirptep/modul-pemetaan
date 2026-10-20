@@ -6,12 +6,11 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
 
-from zntutils.constant import PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY
+from zntutils.constant import PREFERRED_SERVER_KEY, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY, PROJECT_CONFIG_FILE_NAME
 from zntutils import zona_layer as zonalayer
 from zntutils import sample_point as samplepoint
-from zntutils.system_utils import get_user_data, get_all_berkas_id, setup_user_data , clear_user_data
+from zntutils.system_utils import get_user_data, get_all_berkas_id, setup_user_data , clear_user_data, get_all_config
 from zntutils import document
-
 
 
 class Toolbox:
@@ -1101,12 +1100,121 @@ class Tambah_Kotak_TTE(object):
             arcpy.AddError(f'Terdapat kendala: {str(e)}')
             raise arcpy.ExecuteError
 
+        # Hapus kotak TTE yang lama
         self.hapus_elemen_tte(layout_name)
-        for count, data_tte in enumerate(list_ttd):
-            self.create_tte_text_box(data_tte, count, layout_name)
+        
+        # Ambil Layout aktif
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        lyt = aprx.listLayouts(layout_name)[0]
+        
+        # Cari elemen teks "TTD 1" dan "TTD 2" di layout
+        ttd1_els = lyt.listElements("TEXT_ELEMENT", "TTD 1")
+        ttd2_els = lyt.listElements("TEXT_ELEMENT", "TTD 2")
+        
+        ttd1_el = ttd1_els[0] if ttd1_els else None
+        ttd2_el = ttd2_els[0] if ttd2_els else None
+
+        for data_tte in list_ttd:
+            role = str(data_tte.get('sebagai', '')).lower()
+            jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
+            nama = data_tte.get('nama', 'Tanpa Nama')
+            nip = data_tte.get('nip', '0')
             
+            # Jika rolenya mengandung kata 'pemebuat' dan kotak TTD 1 ditemukan
+            if 'pembuat' in role and ttd1_el:
+                teks_ttd1 = f"UNTUK PEMBUATANNYA,\n{jabatan.upper()}\n\n\n\n\n\n\n{nama}\nNIP. {nip}"
+                ttd1_el.text = teks_ttd1
+                
+                # Buat kotak TTE tepat di posisi TTD 1
+                self.create_tte_text_box_at_position(data_tte, ttd1_el, layout_name)
+                
+            # Jika rolenya mengandung kata 'pemanfaat' dan kotak TTD 2 ditemukan
+            elif 'pemanfaat' in role and ttd2_el:
+                kab_kota = self.get_kab_kota()
+                teks_ttd2 = f"{kab_kota},\nUNTUK PEMANFAATANNYA,\n{jabatan.upper()}\n\n\n\n\n\n\n{nama}\nNIP. {nip}"
+                ttd2_el.text = teks_ttd2
+                
+                # Buat kotak TTE tepat di posisi TTD 2
+                self.create_tte_text_box_at_position(data_tte, ttd2_el, layout_name)
+            else:
+                arcpy.AddWarning(f"Role '{role}' tidak cocok dengan 'pembuat' atau 'pemanfaat', atau elemen teks TTD 1/TTD 2 tidak ditemukan di layout[cite: 1].")
+                
         return
-    
+
+    def create_tte_text_box_at_position(self, data_tte, target_text_el, layout_name):
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        lyt = aprx.listLayouts(layout_name)[0]
+        nama_layout_template_item = "Template_Item"
+        pagx_file_path = r"C:\PenilaianTanah\template\zona nilai tanah\Layout Standardisasi\6. Template Sistem\Template_Item.pagx"
+        
+        template_layouts = aprx.listLayouts(nama_layout_template_item)
+        if not template_layouts:
+            try:
+                aprx.importDocument(pagx_file_path)
+                arcpy.AddMessage(f"Layout '{nama_layout_template_item}' otomatis diimpor dari file .pagx.")
+                template_layouts = aprx.listLayouts(nama_layout_template_item)
+            except Exception as e:
+                arcpy.AddError(f"{e}")
+                raise arcpy.ExecuteError
+                
+        template_lyt = template_layouts[0]
+        tte_template_items = template_lyt.listElements("TEXT_ELEMENT", "Template_TTE")
+        if not tte_template_items:
+            arcpy.AddError('Template TTE Tidak ditemukan')
+            raise arcpy.ExecuteError
+
+        tte_template_item = tte_template_items[0]
+        cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
+
+        # Menentukan posisi berdasarkan elemen teks TTD
+        width, height = 7.5, 2.5
+        x_base = target_text_el.elementPositionX
+        y_base = target_text_el.elementPositionY
+        
+        # Menyejajarkan posisi X dengan teks TTD
+        x_initial = x_base - 3.75
+        y_initial = y_base + 1.0 
+
+        arr = arcpy.Array([
+            arcpy.Point(x_initial, y_initial),
+            arcpy.Point(x_initial, y_initial + height),
+            arcpy.Point(x_initial + width, y_initial + height),
+            arcpy.Point(x_initial + width, y_initial),
+            arcpy.Point(x_initial, y_initial),
+        ])
+        polygon_geom = arcpy.Polygon(arr)
+        
+        id_spesimen = data_tte.get('id_spesimen', '0')
+        nama = data_tte.get('nama', 'Tanpa Nama')
+        jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
+        
+        element_name = f"TTE_{id_spesimen}"
+        display_text = f"[Ditandatangani secara elektronik]\n\n{jabatan}\n"
+        
+        try:
+            new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)
+            
+            cim_new = new_text_el.getDefinition(cim_version)
+            cim_template = tte_template_item.getDefinition(cim_version)
+            
+            new_shape = cim_new.graphic.shape
+            new_text = cim_new.graphic.text
+            
+            cim_new.graphic = cim_template.graphic
+            cim_new.graphic.shape = new_shape
+            cim_new.graphic.text = new_text
+            
+            new_text_el.setDefinition(cim_new)
+            arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan pada posisinya.")
+            
+        except AttributeError as e:
+            arcpy.AddError(f"Detail Error : {str(e)}")
+            raise arcpy.ExecuteError
+            
+        except Exception as e:
+            arcpy.AddError(f"Terjadi kesalahan saat membuat kotak: {str(e)}")
+            raise arcpy.ExecuteError
+            
     def call_tte_api(self, token, nomor_berkas, use_production=True):
 
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/spesimen?no_berkas={nomor_berkas}"
@@ -1189,71 +1297,47 @@ class Tambah_Kotak_TTE(object):
                     
         return jumlah_dihapus
 
-    def create_tte_text_box(self, data_tte, count, layout_name):
+    def get_kab_kota(self):
         aprx = arcpy.mp.ArcGISProject("CURRENT")
-        lyt = aprx.listLayouts(layout_name)[0]
-        nama_layout_template_item = "Template_Item"
-        pagx_file_path = r"C:\PenilaianTanah\template\zona nilai tanah\Layout Standardisasi\6. Template Sistem\Template_Item.pagx"
-        template_layouts = aprx.listLayouts(nama_layout_template_item)
-        if not template_layouts:
+        active_map = aprx.activeMap
+        
+        zona_layers = []
+        for layer in active_map.listLayers():
+            if layer.name == 'Zona_Layer':
+                zona_layers.append(layer)
+        
+        if len(zona_layers) == 0:
+            arcpy.AddMessage('Tidak ditemukan Kab/Kota valid')
+            return 'KAB/KOTA'
+        elif len(zona_layers) > 1:
+            arcpy.AddMessage('Tidak ditemukan Kab/Kota valid')
+            return 'KAB/KOTA'
+        else:
+            zona_layer = zona_layers[0]
+            if not arcpy.Exists(zona_layer):
+                arcpy.AddMessage('Tidak ditemukan Kab/Kota valid')
+                return 'KAB/KOTA'
+            
             try:
-                aprx.importDocument(pagx_file_path)
-                arcpy.AddMessage(f"Layout '{nama_layout_template_item}' otomatis diimpor dari file .pagx.")
-                template_layouts = aprx.listLayouts(nama_layout_template_item)
+                if hasattr(zona_layer, 'dataSource'):
+                    layer_path = zona_layer.dataSource
+                    ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(layer_path)))  
+                    new_config_path = os.path.join(ws_dir, PROJECT_CONFIG_FILE_NAME)  
+                    configs = None
+                    if arcpy.Exists(new_config_path):
+                        configs = get_all_config(new_config_path)  
+
+                    # Validasi path GDB
+                    if configs['ws_path'] != ws_dir:
+                        arcpy.AddMessage('Tidak ditemukan Kab/Kota valid')
+                        return 'KAB/KOTA'
+
+                    kota =  configs.get('WADMKK')
+                    return kota
+                else:
+                    arcpy.AddMessage('Tidak ditemukan Kab/Kota valid')
+                    return 'KAB/KOTA'
+                    
             except Exception as e:
-                arcpy.AddError(f"{e}")
-                raise arcpy.ExecuteError
-        template_lyt = template_layouts[0]
-        tte_template_items = template_lyt.listElements("TEXT_ELEMENT", "Template_TTE")
-        if not tte_template_items:
-            arcpy.AddError('Template TTE Tidak ditemukan')
-            raise arcpy.ExecuteError
-
-        tte_template_item = tte_template_items[0]
-
-        cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
-        x_initial, y_initial = 90 + count, 2 + count
-        width, height = 7.5, 2.5
-        arr = arcpy.Array([
-            arcpy.Point(x_initial, y_initial),
-            arcpy.Point(x_initial, y_initial + height),
-            arcpy.Point(x_initial + width, y_initial + height),
-            arcpy.Point(x_initial + width, y_initial),
-            arcpy.Point(x_initial, y_initial),
-
-        ])
-        polygon_geom = arcpy.Polygon(arr)
-        id_spesimen = data_tte.get('id_spesimen', '0')
-        nama = data_tte.get('nama', 'Tanpa Nama')
-        jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
-        nip = data_tte.get('nip', '0')
-        
-        element_name = f"TTE_{id_spesimen}"
-        display_text = f"[ Akan ditandatangani secara elektronik oleh ]\n\n{jabatan}\n{nama}\n"
-        
-        try:
-            new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)
-            
-            cim_new = new_text_el.getDefinition(cim_version)
-            cim_template = tte_template_item.getDefinition(cim_version)
-            
-            new_shape = cim_new.graphic.shape
-            new_text = cim_new.graphic.text
-            
-
-            cim_new.graphic = cim_template.graphic
-            
-            cim_new.graphic.shape = new_shape
-            cim_new.graphic.text = new_text
-            
-            new_text_el.setDefinition(cim_new)
-            
-            arcpy.AddMessage(f"Berhasil! Kotak TTE untuk {nama} ditambahkan mengambil gaya dari template.")
-        
-        except AttributeError as e:
-            arcpy.AddError(f"Detail Error : {str(e)}")
-            raise arcpy.ExecuteError
-            
-        except Exception as e:
-            arcpy.AddError(f"Terjadi kesalahan saat membuat kotak: {str(e)}")
-            raise arcpy.ExecuteError
+                arcpy.AddMessage('Tidak ditemukan Kab/Kota valid')
+                return 'KAB/KOTA'

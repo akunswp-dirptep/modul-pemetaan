@@ -1389,7 +1389,7 @@ class Hitung_Harga_Menyebar(object):
         kandidat_layer = "kandidat_layer_temp"
         near_table = "memory\\bulk_near_table" 
 
-        # Syarat pembanding di layer Near Table tetap "perubahan IS NULL", karena kita tidak mau
+        # Syarat pembanding di layer Near Tabdependent_oidsle tetap "perubahan IS NULL", karena kita tidak mau
         # mencari pembanding yang datanya sudah diedit/berstatus 'individual'
         self.delete_if_exists(kandidat_layer)
         arcpy.management.MakeFeatureLayer(persil_edit_path, kandidat_layer, "perubahan IS NULL AND NILAIBD_LAMA IS NOT NULL AND NILAIBD_LAMA > 0")

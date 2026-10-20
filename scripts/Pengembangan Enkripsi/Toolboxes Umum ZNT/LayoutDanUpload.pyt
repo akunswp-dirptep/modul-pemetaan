@@ -934,6 +934,7 @@ class Upload_Layout_Ke_Sipenta(object):
         for el in elements:
             try:
                 id_spesimen = int(el.name.split("_")[1])
+                role = el.name.split("_")[2]
                 
                 # 1. Catat koordinat dan ukuran aslinya terlebih dahulu agar spesimen_list tidak berubah
                 x_scaled = el.elementPositionX * scale_x
@@ -945,7 +946,7 @@ class Upload_Layout_Ke_Sipenta(object):
                 
                 spesimen = {
                     "id_spesimen": id_spesimen,
-                    "urutan": urutan,
+                    "urutan": 1 if role == 'pembuat' else 2,
                     "position": {
                         "x": round(x_scaled, 2),
                         "y": round(y_scaled, 2),
@@ -1187,8 +1188,9 @@ class Tambah_Kotak_TTE(object):
         id_spesimen = data_tte.get('id_spesimen', '0')
         nama = data_tte.get('nama', 'Tanpa Nama')
         jabatan = data_tte.get('jabatan', 'Tanpa Jabatan')
+        role = str(data_tte.get('sebagai', '')).lower()
         
-        element_name = f"TTE_{id_spesimen}"
+        element_name = f"TTE_{id_spesimen}_{role}"
         display_text = f"[Ditandatangani secara elektronik]\n\n{jabatan}\n"
         
         try:

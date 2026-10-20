@@ -1123,7 +1123,7 @@ class Tambah_Kotak_TTE(object):
             
             # Jika rolenya mengandung kata 'pemebuat' dan kotak TTD 1 ditemukan
             if 'pembuat' in role and ttd1_el:
-                teks_ttd1 = f"UNTUK PEMBUATANNYA,\n{jabatan.upper()}\n\n\n\n\n\n\n{nama}\nNIP. {nip}"
+                teks_ttd1 = f"UNTUK PEMBUATANNYA,\n{jabatan.upper()}\n\n\n\n\n\n\n{nama}\nNIP {nip}"
                 ttd1_el.text = teks_ttd1
                 
                 # Buat kotak TTE tepat di posisi TTD 1
@@ -1168,7 +1168,7 @@ class Tambah_Kotak_TTE(object):
         cim_version = 'V3' if aprx.documentVersion.startswith('3') else 'V2'
 
         # Menentukan posisi berdasarkan elemen teks TTD
-        width, height = 7.5, 2.5
+        width, height = 6.9, 2.3
         x_base = target_text_el.elementPositionX
         y_base = target_text_el.elementPositionY
         
@@ -1191,7 +1191,7 @@ class Tambah_Kotak_TTE(object):
         role = str(data_tte.get('sebagai', '')).lower()
         
         element_name = f"TTE_{id_spesimen}_{role}"
-        display_text = f"[Ditandatangani secara elektronik]\n\n{jabatan}\n"
+        display_text = f"[Placeholder TTE]\n\n{jabatan}\n"
         
         try:
             new_text_el = aprx.createTextElement(lyt, polygon_geom, 'POLYGON', display_text, name=element_name)

@@ -493,13 +493,29 @@
 				<menu id="analisis_survey_perubahan" caption="Analisis Survey Perubahan" extendedCaption="Analisis Survey Perubahan" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\survei_perubahan.png"
 					smallImage="C:\PenilaianTanah\icons\survei_perubahan.png">
-					<button refID="ButtonAmbilLBTDariSipenta" size="Medium" />
-					<button refID="ButtonCekKesesuaianZonasi" size="Medium" />
-					<button refID="ButtonSetujuiFasilitas" size="Medium" />
-					<button refID="ButtonHitungJarakFasilitas" size="Medium"/>
-					<button refID="ButtonHitungRisiko" size="Medium"/>
+					<menu refID="ambil_titik_survey_lb_dan_bt" />
+					<menu refID="analisis_fasilitas" />
+					<menu refID="analisis_risiko" />
+					<menu refID="analisis_zonasi" />
+					<menu refID="analisis_jalan" />
 					<button refID="ButtonUploadBasisData" size="Medium" />
 
+				</menu>
+				<menu id="ambil_titik_survey_lb_dan_bt" caption="Tampilkan Titik Survey Perubahan">
+					<button refID="ButtonAmbilSurveyPerubahan" size="Medium" />
+					<button refID="ButtonTampilkanHasilSurvey" size="Medium" />
+				</menu>
+				<menu id="analisis_fasilitas" caption="Analisis Fasilitas">
+					<button refID="ButtonSetujuiFasilitas" size="Medium" />
+					<button refID="ButtonHitungJarakFasilitas" size="Medium"/>
+				</menu>
+				<menu id="analisis_risiko" caption="Analisis Risiko">
+				<button refID="ButtonHitungRisiko" size="Medium"/>
+				</menu>
+				<menu id="analisis_zonasi" caption="Analisis Zonasi">
+					<button refID="ButtonCekKesesuaianZonasi" size="Medium" />
+				</menu>
+				<menu id="analisis_jalan" caption="Analisis Jalan">
 				</menu>
 				<menu id="pengolahan_titik_sampel_pembaruan_nbt" caption="Pengolahan Titik Sampel" extendedCaption="Pengolahan Titik Sampel" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\sample.png"
@@ -2709,12 +2725,21 @@
 				</button>
 
 			<!-- Analisis Survey Lingkungan dan Fasilitas -->
-				<button id="ButtonAmbilLBTDariSipenta" caption="Tampilkan Titik Survey PL dan BT" smallImage="C:\PenilaianTanah\icons\maps.png" largeImage="C:\PenilaianTanah\icons\maps.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonAmbilSurveyPerubahan" caption="Ambil Titik Survey Perubahan dari Sipenta" smallImage="C:\PenilaianTanah\icons\maps.png" largeImage="C:\PenilaianTanah\icons\maps.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Ambil_LBT_Dari_Sipenta" name="Tampilkan Titik Survey PL dan BT" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Ambil_Survey_Perubahan" name="Ambil Titik Survey Perubahan" xmlns=""/>
 					</args>
-					<tooltip heading="Tampilkan Titik Survey PL dan BT">
-						Menu untuk mengambil layer LBT berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
+					<tooltip heading="Ambil Titik Survey Perubahan">
+						Menu untuk mengambil layer survey perubahan berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
+					</tooltip>
+				</button>
+
+				<button id="ButtonTampilkanHasilSurvey" caption="Tampilkan Titik Survey Perubahan" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Tampilkan_Dataset_Survey" name="Tampilkan Titik Survey Perubahan" xmlns=""/>
+					</args>
+					<tooltip heading="Tampilkan Titik Survey Perubahan">
+						Menu untuk menampilkan layer survey perubahan berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
 					</tooltip>
 				</button>
 

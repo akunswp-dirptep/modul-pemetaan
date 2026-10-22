@@ -1,4 +1,4 @@
-import arcpy
+﻿import arcpy
 import requests, os, time, sys, json
 from datetime import datetime
 import urllib.parse
@@ -173,11 +173,11 @@ class Catatan_Aplikasi:
                     for chunk in response.iter_content(chunk_size=8192):
                         file.write(chunk)
                 
-                arcpy.AddMessage(f"\n✅ PENGUNDUHAN BERHASIL!")
+                arcpy.AddMessage(f"\n? PENGUNDUHAN BERHASIL!")
                 arcpy.AddMessage(f"File pembaruan telah disimpan di: {download_path}")
                 
             except Exception as e:
-                arcpy.AddError(f"❌ Gagal mengunduh file: {str(e)}")
+                arcpy.AddError(f"? Gagal mengunduh file: {str(e)}")
 
         elif hasil["status"] == "up_to_date":
             arcpy.AddMessage(

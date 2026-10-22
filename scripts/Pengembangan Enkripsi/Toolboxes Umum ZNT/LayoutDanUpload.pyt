@@ -1,4 +1,4 @@
-import arcpy, requests, json, sys, os, datetime
+﻿import arcpy, requests, json, sys, os, datetime
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled" 
 script_dir = os.path.dirname(__file__)

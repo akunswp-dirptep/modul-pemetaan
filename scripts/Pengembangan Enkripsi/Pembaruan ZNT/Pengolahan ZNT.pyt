@@ -1,4 +1,4 @@
-import os, arcpy, json, sys, datetime, gc, time
+﻿import os, arcpy, json, sys, datetime, gc, time
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -179,7 +179,7 @@ class Hitung_Indeks_Nilai_Tanah:
             )
             sys.exit(1)
 
-        arcpy.AddMessage("✅ Validasi klaster OK")
+        arcpy.AddMessage("? Validasi klaster OK")
 
         # ===============================
         # FIELD TITIK_ZONA
@@ -405,7 +405,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
         zona_layer = get_layer_by_name("Zona_Layer")
 
         if not titik_sampel or not zona_layer:
-            arcpy.AddError("❌ Layer 'Titik_Sampel' dan 'Zona_Layer' harus ada.")
+            arcpy.AddError("? Layer 'Titik_Sampel' dan 'Zona_Layer' harus ada.")
             sys.exit(1)
 
         count = int(arcpy.management.GetCount(titik_sampel)[0])
@@ -417,7 +417,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
         dissolved_output = "in_memory/dissolved_stats"
 
         arcpy.analysis.Identity(titik_sampel, zona_layer, identity_output)
-        arcpy.AddMessage("✅ Identity selesai")
+        arcpy.AddMessage("? Identity selesai")
 
         zone_id_field = f"FID_{zona_layer.name}"
 
@@ -451,7 +451,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             arcpy.AddError(f"Proses dihentikan. Zona berikut < 3 titik: {', '.join(zona_invalid)}")
             sys.exit(1)
 
-        arcpy.AddMessage("✅ Validasi OK")
+        arcpy.AddMessage("? Validasi OK")
 
         # Melakukan Join data hasil dissolve ke zona_layer
         arcpy.management.JoinField(
@@ -517,7 +517,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             f"None if !COUNT_Nilai! is not None else !{cluster_field}!", 
             "PYTHON3"
         )
-        arcpy.AddMessage("✅ Nilai Cluster dikosongkan (Null) untuk zona outlier.")
+        arcpy.AddMessage("? Nilai Cluster dikosongkan (Null) untuk zona outlier.")
         # ==============================================================================================
 
         # Membersihkan field hasil join statistik
@@ -547,7 +547,7 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
         safe_delete(identity_output)
         safe_delete(dissolved_output)
         
-        arcpy.AddMessage("✅ Proses selesai.")
+        arcpy.AddMessage("? Proses selesai.")
 
     def postExecute(self, parameters):
         """This method takes place after outputs are processed and added to the display."""
@@ -676,7 +676,7 @@ class Hitung_Nilai_ZNT_Pembaruan:
 
 
         if not zona_layer:
-            arcpy.AddError("❌ Layer yang diperlukan tidak ditemukan di peta. Pastikan layer 'Zona_Layer' ada.")
+            arcpy.AddError("? Layer yang diperlukan tidak ditemukan di peta. Pastikan layer 'Zona_Layer' ada.")
             sys.exit(1)
 
         def ensure_fields_exist(layer, required_fields):
@@ -709,7 +709,7 @@ class Hitung_Nilai_ZNT_Pembaruan:
                         row[1] = None
                 cursor.updateRow(row)
 
-        arcpy.AddMessage("✅ Data Nilai zona berhasil dihitung untuk zona dengan cluster valid.")
+        arcpy.AddMessage("? Data Nilai zona berhasil dihitung untuk zona dengan cluster valid.")
 
         if "NILBULAT" not in [f.name for f in arcpy.ListFields(zona_layer)]:
             arcpy.management.AddField(zona_layer, "NILBULAT", "TEXT", field_length=50)

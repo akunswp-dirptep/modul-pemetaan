@@ -36,7 +36,7 @@ class Toolbox:
 class Ambil_Survey_Perubahan(object):
 
     def __init__(self):
-        self.label = "Ambil Survey Perubahan"
+        self.label = "Ambil Survey Pendahuluan"
         self.description = "Tampilkan Survey Perubahan dari SIPENTA"
         self.canRunInBackground = False
 

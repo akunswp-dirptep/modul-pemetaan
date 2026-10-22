@@ -490,7 +490,7 @@
 					<button refID="ButtonPengisianZonasiOtomatis" size="Medium"/>
 					
 				</menu>
-				<menu id="analisis_survey_perubahan" caption="Analisis Survey Perubahan" extendedCaption="Analisis Survey Perubahan" keytip="TA"         
+				<menu id="analisis_survey_perubahan" caption="Analisis Survey Pendahuluan" extendedCaption="Analisis Survey Pendahuluan" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\survei_perubahan.png"
 					smallImage="C:\PenilaianTanah\icons\survei_perubahan.png">
 					<menu refID="ambil_titik_survey_lb_dan_bt" />
@@ -501,8 +501,8 @@
 					<button refID="ButtonUploadBasisData" size="Medium" />
 
 				</menu>
-				<menu id="ambil_titik_survey_lb_dan_bt" caption="Tampilkan Titik Survey Perubahan">
-					<button refID="ButtonAmbilSurveyPerubahan" size="Medium" />
+				<menu id="ambil_titik_survey_lb_dan_bt" caption="Tampilkan Titik Survey Pendahuluan">
+					<button refID="ButtonAmbilSurveyPendahuluan" size="Medium" />
 					<button refID="ButtonTampilkanHasilSurvey" size="Medium" />
 				</menu>
 				<menu id="analisis_fasilitas" caption="Analisis Fasilitas">
@@ -2725,25 +2725,25 @@
 				</button>
 
 			<!-- Analisis Survey Lingkungan dan Fasilitas -->
-				<button id="ButtonAmbilSurveyPerubahan" caption="Ambil Titik Survey Perubahan dari Sipenta" smallImage="C:\PenilaianTanah\icons\maps.png" largeImage="C:\PenilaianTanah\icons\maps.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonAmbilSurveyPendahuluan" caption="Ambil Titik Survey Pendahuluan dari Sipenta" smallImage="C:\PenilaianTanah\icons\maps.png" largeImage="C:\PenilaianTanah\icons\maps.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Ambil_Survey_Perubahan" name="Ambil Titik Survey Perubahan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Ambil_Survey_Perubahan" name="Ambil Titik Survey Pendahuluan" xmlns=""/>
 					</args>
-					<tooltip heading="Ambil Titik Survey Perubahan">
+					<tooltip heading="Ambil Titik Survey Pendahuluan">
 						Menu untuk mengambil layer survey perubahan berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
 					</tooltip>
 				</button>
 
-				<button id="ButtonTampilkanHasilSurvey" caption="Tampilkan Titik Survey Perubahan" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonTampilkanHasilSurvey" caption="Tampilkan Titik Survey Pendahuluan" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Tampilkan_Dataset_Survey" name="Tampilkan Titik Survey Perubahan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Tampilkan_Dataset_Survey" name="Tampilkan Titik Survey Pendahuluan" xmlns=""/>
 					</args>
-					<tooltip heading="Tampilkan Titik Survey Perubahan">
+					<tooltip heading="Tampilkan Titik Survey Pendahuluan">
 						Menu untuk menampilkan layer survey perubahan berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
 					</tooltip>
 				</button>
 
-				<button id="ButtonCekKesesuaianZonasi" caption="Periksa Kesesuaian Zonasi" smallImage="C:\PenilaianTanah\icons\cekzone.png" largeImage="C:\PenilaianTanah\icons\cekzone.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonCekKesesuaianZonasi" caption="Periksa Kesesuaian Zonasi" smallImage="C:\PenilaianTanah\icons\cekzone.png" largeImage="C:\PenilaianTanah\icons\csekzone.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Periksa_Kesesuaian_Zonasi" name="Periksa Kesesuaian Zonasi" xmlns=""/>
 					</args>

@@ -550,19 +550,7 @@ class Setujui_Sampel_Fasilitas(object):
 
     def getParameterInfo(self):
         """Define the tool parameters."""
-        
-        # 1. Parameter Input: Layer LBT Fasilitas
-        input_lbt = arcpy.Parameter(
-            displayName="Layer Input (LBT_Fasilitas)",
-            name="input_lbt",
-            datatype="GPFeatureLayer",
-            parameterType="Required",
-            direction="Input"
-        )
-        # Filter agar tool hanya menerima layer berjenis Point
-        input_lbt.filter.list = ["Point"]
 
-        # 2. Parameter Target: Dropdown Layer Fasilitas
         target_fasilitas = arcpy.Parameter(
             displayName="Pilih Layer Fasilitas Tujuan",
             name="target_fasilitas",
@@ -572,7 +560,7 @@ class Setujui_Sampel_Fasilitas(object):
         )
         target_fasilitas.filter.type = "ValueList"
 
-        return [input_lbt, target_fasilitas]
+        return [target_fasilitas]
 
     def isLicensed(self):
         """Set whether the tool is licensed to execute."""
@@ -582,14 +570,11 @@ class Setujui_Sampel_Fasilitas(object):
         """Modify the values and properties of parameters before internal validation."""
 
         target_fasilitas = parameters[1]
-                # Mengisi dropdown secara dinamis dari dataset_fasilitas
         try:
             # Mengambil path dari konfigurasi (sesuaikan jika cara pemanggilannya berbeda)
             self.config_dan_paths = persil.get_config_values()
             ds_path = self.config_dan_paths["project_config"]['gdb_path']
             fasilitas_workspace = os.path.join(ds_path, 'fasilitas')
-            
-            # Set workspace dan ambil list semua layer berjenis Point
             arcpy.env.workspace = fasilitas_workspace
             fc_list = arcpy.ListFeatureClasses(feature_type="Point")
             
@@ -607,7 +592,7 @@ class Setujui_Sampel_Fasilitas(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        input_lbt = parameters[0].valueAsText
+        input_lbt = 'Survey_Fasilitas'
         target_name = parameters[1].valueAsText
 
         # Construct ulang path karena getParameterInfo dieksekusi di fase awal UI
@@ -620,25 +605,18 @@ class Setujui_Sampel_Fasilitas(object):
             return
 
         jumlah_titik = 0
-
-        # Membaca input dan memasukkan ke output (Hanya Geometri)
-        # Token "SHAPE@" merepresentasikan bentuk titik itu sendiri
         with arcpy.da.SearchCursor(input_lbt, ["SHAPE@"]) as search_cursor:
             with arcpy.da.InsertCursor(target_path, ["SHAPE@"]) as insert_cursor:
                 for row in search_cursor:
                     geometry = row[0]
                     if geometry is not None:
-                        # Insert geometri ke layer tujuan, atribut lain otomatis kosong/null
                         insert_cursor.insertRow([geometry])
                         jumlah_titik += 1
 
         arcpy.AddMessage("Berhasil mendistribusikan {} titik ke layer {}.".format(jumlah_titik, target_name))
         return
 
-    def postExecute(self, parameters):
-        """This method takes place after outputs are processed and added to the display."""
-        return
-    
+
 class Konversi_JSON_LBT(object):
     # HAPUS JIKA TOOLS SUDAH BERFUNGSI
     # Tools ini dibuat sebagai alternatif sementara jika pemanggilan sampel bermasalah
@@ -1228,7 +1206,7 @@ class Hitung_Jarak_Fasilitas(object):
 
     def getParameterInfo(self):
         simpan_temp = arcpy.Parameter(
-            displayName="Simpan ke Temporary Layer",
+            displayName="Simpan ke Layer Sementara",
             name="simpan_temp",
             datatype="GPBoolean",
             parameterType="Optional",
@@ -1237,7 +1215,7 @@ class Hitung_Jarak_Fasilitas(object):
         simpan_temp.value = False
 
         hanya_update = arcpy.Parameter(
-            displayName="Sinkronisasi Data Persil Terbaru",
+            displayName="Hanya Persil Perubahan",
             name="hanya_update",
             datatype="GPBoolean",
             parameterType="Optional",
@@ -1245,9 +1223,8 @@ class Hitung_Jarak_Fasilitas(object):
         )
         hanya_update.value = True
         
-        # --- PENAMBAHAN PARAMETER BARU ---
         hanya_null_nol = arcpy.Parameter(
-            displayName="Hanya Hitung Jarak Null atau 0",
+            displayName="Hanya Nilai Jarak Fasilitas Masih Null/Kosong",
             name="hanya_null_nol",
             datatype="GPBoolean",
             parameterType="Optional",
@@ -1264,9 +1241,10 @@ class Hitung_Jarak_Fasilitas(object):
         )
 
         return [
-            simpan_temp,
+            
             hanya_update,
-            hanya_null_nol,  # Disisipkan di sini
+            hanya_null_nol,
+            simpan_temp, 
             output_persil
         ]
 

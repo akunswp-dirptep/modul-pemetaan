@@ -506,8 +506,10 @@
 					<button refID="ButtonTampilkanHasilSurvey" size="Medium" />
 				</menu>
 				<menu id="analisis_fasilitas" caption="Analisis Fasilitas">
+					<button refID="ButtonMenampilkanFasilitas" size="Medium"/>
 					<button refID="ButtonSetujuiFasilitas" size="Medium" />
 					<button refID="ButtonHitungJarakFasilitas" size="Medium"/>
+					
 				</menu>
 				<menu id="analisis_risiko" caption="Analisis Risiko">
 				<button refID="ButtonHitungRisiko" size="Medium"/>
@@ -2727,7 +2729,7 @@
 			<!-- Analisis Survey Lingkungan dan Fasilitas -->
 				<button id="ButtonAmbilSurveyPendahuluan" caption="Ambil Titik Survey Pendahuluan dari Sipenta" smallImage="C:\PenilaianTanah\icons\maps.png" largeImage="C:\PenilaianTanah\icons\maps.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Ambil_Survey_Perubahan" name="Ambil Titik Survey Pendahuluan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Ambil_Survey_Pendahuluan_Dari_Sipenta" name="Ambil Titik Survey Pendahuluan" xmlns=""/>
 					</args>
 					<tooltip heading="Ambil Titik Survey Pendahuluan">
 						Menu untuk mengambil layer survey perubahan berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
@@ -2736,7 +2738,7 @@
 
 				<button id="ButtonTampilkanHasilSurvey" caption="Tampilkan Titik Survey Pendahuluan" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Tampilkan_Dataset_Survey" name="Tampilkan Titik Survey Pendahuluan" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Tampilkan_Dataset_Survey" name="Tampilkan Titik Survey Pendahuluan" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Titik Survey Pendahuluan">
 						Menu untuk menampilkan layer survey perubahan berupa fasilitas, jalan, zona, dan resiko dari SIPENTA.
@@ -2754,17 +2756,24 @@
 
 				<button id="ButtonSetujuiFasilitas" caption="Setujui Sampel Fasilitas" smallImage="C:\PenilaianTanah\icons\selection.png" largeImage="C:\PenilaianTanah\icons\selection.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Setujui_Sampel_Fasilitas" name="Setujui Sampel Fasilitas" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Setujui_Sampel_Fasilitas" name="Setujui Sampel Fasilitas" xmlns=""/>
 					</args>
 					<tooltip heading="Setujui Sampel Fasilitas">
 						Tool untuk menyetujui sampel fasilitas kedalam layer-layer fasilitas pada workspace
 					</tooltip>
 				</button>
 
+				<button id="ButtonMenampilkanFasilitas" caption="Tampilkan Dataset Fasilitas" smallImage="C:\PenilaianTanah\icons\fasil.png" largeImage="C:\PenilaianTanah\icons\fasil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Tampilkan_Fasilitas" name="Tampilkan Dataset Fasilitas" xmlns=""/>
+					</args>
+					<tooltip heading="Tampilkan Dataset Fasilitas">Menu untuk menampilkan dataset fasilitas dari persil.</tooltip>
+				</button>
+
 
 				<button id="ButtonHitungJarakFasilitas" caption="Hitung Jarak Fasilitas" smallImage="C:\PenilaianTanah\icons\jkfasil.png" largeImage="C:\PenilaianTanah\icons\jkfasil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Hitung_Jarak_Fasilitas" name="Hitung Jarak Fasilitas" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Hitung_Jarak_Fasilitas" name="Hitung Jarak Fasilitas" xmlns=""/>
 					</args>
 					<tooltip heading="Hitung Jarak Fasilitas">Menu untuk menghitung jarak fasilitas dari persil.</tooltip>
 				</button>

@@ -267,7 +267,6 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
             arcpy.management.CopyFeatures(lyr_kelas, out_fc)
             arcpy.management.Delete(lyr_kelas)
 
-        # 9. OUTPUT & VISUALISASI MAP (Dengan penanganan exception)
         arcpy.na.MakeNetworkDatasetLayer(nd_path, "JaringanJalan_ND")
 
         try:
@@ -277,7 +276,6 @@ class Build_Network_Dataset_Jaringan_Jalan(object):
                 current_map.addDataFromPath(template_fc_jarjal)
                 current_map.addDataFromPath(junction_nd_path)
         except Exception:
-            # Mengabaikan error ini jika tool di-run dari background (di luar ArcGIS Pro window)
             messages.addMessage("Info: Layer output tidak ditambahkan ke map karena berjalan di luar sesi Map aktif.")
 
         parameters[0].value = nd_path

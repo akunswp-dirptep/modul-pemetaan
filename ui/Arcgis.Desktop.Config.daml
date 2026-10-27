@@ -403,6 +403,7 @@
 
 				<menu id="pengolahan_data_dasar_persil_pembaruan_nbt" caption="Geometri Persil">
 					<button refID="ButtonPisahkanPersilJalanReldanSungai" size="Medium"/>
+					<button refID="ButtonTransferPersil" size="Medium"/>
 					<button refID="ButtonIdentifikasiPerubahanPersil" size="Medium"/>
 					<button refID="ButtonTampilkanSimbologiPersil" size="Medium"/>
 					<button refID="ButtonMemasukkanDataKePersilLayer" size="Medium"/>
@@ -2555,6 +2556,13 @@
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\FilterPersilJalan" name="Pisahkan Persil Jalan, Rel dan Sungai" xmlns=""/>
 					</args>
 					<tooltip heading="Pisahkan Persil Jalan, Rel dan Sungai">Menu untuk memisahkan jalan, rel dan sungai.</tooltip>
+				</button>
+
+				<button id="ButtonTransferPersil" caption="Transfer Persil" smallImage="C:\PenilaianTanah\icons\saranpembanding.png" largeImage="C:\PenilaianTanah\icons\saranpembanding.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\PengolahanAtributPersil.pyt\KembalikanPersilJalan" name="Transfer Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Transfer Persil">Menu untuk mengembalikan persil.</tooltip>
 				</button>
 
 				<button id="ButtonSesuaikanAtributKelasJalan" caption="Sesuaikan Kelas Jalan" smallImage="C:\PenilaianTanah\icons\kelas_jalan.png" largeImage="C:\PenilaianTanah\icons\kelas_jalan.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

@@ -32,7 +32,8 @@ class Toolbox:
                       Pengisian_Jarak_Ke_Jalan_Utama_Otomatis,
                       Pengisian_Zonasi_Manual,
                       Pengisian_Zonasi_Otomatis,
-                      FilterPersilJalan
+                      FilterPersilJalan,
+                      KembalikanPersilJalan
                       ]
 
 
@@ -2899,6 +2900,68 @@ class FilterPersilJalan(object):
         arcpy.AddMessage("Proses selesai.")
         return
 
+class KembalikanPersilJalan(object):
+    def __init__(self):
+        self.label = "Transfer Persil"
+        self.description = "Memindahkan persil jalan (semua atau yang diseleksi) kembali ke persil utama, dan menghapusnya dari layer jalan tanpa membuat file baru."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        # 0. Parameter Input Persil Utama (Target)
+        in_persil_utama = arcpy.Parameter(
+            displayName="Data Persil Target",
+            name="in_persil_utama",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+        in_persil_utama.filter.list = ["Polygon"]
+
+        # 1. Parameter Input Persil Jalan (Sumber yang akan dipindah)
+        in_persil_jalan = arcpy.Parameter(
+            displayName="Data Persil yang dipindah",
+            name="in_persil_jalan",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+        in_persil_jalan.filter.list = ["Polygon"]
+
+        return [in_persil_utama, in_persil_jalan]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        in_persil_utama = parameters[0].valueAsText
+        in_persil_jalan = parameters[1].valueAsText
+
+        # Hitung jumlah persil jalan yang terpilih / ada
+        match_count = int(arcpy.management.GetCount(in_persil_jalan).getOutput(0))
+        
+        if match_count > 0:
+            # 1. Pindahkan (Append) persil jalan ke persil utama
+            arcpy.AddMessage(f"Memindahkan {match_count} geometri dari persil jalan ke persil utama...")
+            arcpy.management.Append(
+                inputs=in_persil_jalan, 
+                target=in_persil_utama, 
+                schema_type="NO_TEST"
+            )
+            
+            # 2. Hapus geometri tersebut dari data persil jalan
+            arcpy.AddMessage("Menghapus geometri yang sudah dipindah dari data persil jalan...")
+            arcpy.management.DeleteFeatures(in_persil_jalan)
+            
+            arcpy.AddMessage("Proses pemindahan selesai.")
+        else:
+            arcpy.AddMessage("Tidak ada persil jalan yang diproses (layer kosong atau tidak ada seleksi).")
+
+        return
+      
 class Pengisian_Zonasi_Otomatis(object):
 
     def __init__(self):

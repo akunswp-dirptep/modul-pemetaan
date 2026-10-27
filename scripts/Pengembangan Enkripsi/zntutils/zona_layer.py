@@ -870,6 +870,89 @@ def delete_topology_file():
         arcpy.management.Delete(topology_path)
         arcpy.AddMessage("Berhasil: Topologi Zona_Layer telah dihapus.")
 
+def validasi_sinkronisasi_histzone(config_dan_paths):
+    """
+    Memvalidasi apakah nilai HISTZONE sinkron dengan NOZN, JNSZN, dan PENGGUNAAN.
+    Sesuai dengan logika Kodifikasi Zona, JNSZN 1 = 'N' (Non-Pertanian) dan JNSZN 2 = 'P' (Pertanian).
+    HISTZONE harus memuat unsur NOZN dan diakhiri dengan kode JNSZN yang sesuai.
+    """
+    dataset_path = config_dan_paths.get('dataset_path', '')
+    zl_path = os.path.join(dataset_path, "Zona_Layer")
+    
+    if not arcpy.Exists(zl_path):
+        return ["Zona_Layer tidak ditemukan untuk divalidasi."]
+
+    # Pastikan semua field yang dibutuhkan ada
+    existing_fields = [f.name.upper() for f in arcpy.ListFields(zl_path)]
+    required_fields = ["NOZN", "JNSZN", "PENGGUNAAN", "HISTZONE"]
+    missing_fields = [f for f in required_fields if f not in existing_fields]
+    
+    if missing_fields:
+        return [f"Gagal memvalidasi: Field {', '.join(missing_fields)} belum tersedia di Zona_Layer."]
+
+    mismatches = []
+    
+    try:
+        with arcpy.da.SearchCursor(zl_path, ["OBJECTID", "NOZN", "JNSZN", "PENGGUNAAN", "HISTZONE"]) as cursor:
+            for oid, nozn, jnszn, penggunaan, histzone in cursor:
+                # Lewati jika nilai esensial kosong
+                if nozn is None or jnszn is None or histzone is None:
+                    mismatches.append(f"OBJECTID {oid}: Terdapat nilai Null pada NOZN, JNSZN, atau HISTZONE.")
+                    continue
+                
+                # Menentukan kode akhiran yang diharapkan berdasarkan JNSZN
+                expected_suffix = 'N' if jnszn == 1 else 'P' if jnszn == 2 else ''
+                nozn_str = str(nozn)
+                histzone_str = str(histzone)
+                
+                is_valid = True
+                alasan = []
+
+                # Validasi 1: HISTZONE harus diakhiri dengan expected_suffix ('N' atau 'P')
+                if expected_suffix and not histzone_str.endswith(expected_suffix):
+                    is_valid = False
+                    alasan.append(f"Akhiran HISTZONE ('{histzone_str}') tidak sesuai dengan JNSZN {jnszn} (seharusnya '{expected_suffix}')")
+                
+                # Validasi 2: HISTZONE harus memuat NOZN
+                if nozn_str not in histzone_str:
+                    is_valid = False
+                    alasan.append(f"HISTZONE ('{histzone_str}') tidak memuat NOZN ({nozn_str})")
+                
+                # Menambahkan ke daftar tidak sinkron jika ada error
+                if not is_valid:
+                    mismatches.append(f"- OBJECTID {oid} (NOZN {nozn}): {', '.join(alasan)}.")
+
+    except Exception as e:
+        return [f"Gagal mengeksekusi validasi sinkronisasi HISTZONE: {str(e)}"]
+
+    return mismatches
+
+def hitung_ulang_luas_m2(config_dan_paths, field_name="Luas_M2"):
+    """
+    Menghitung ulang luas masing-masing zona dalam satuan meter persegi 
+    dan menyimpannya ke dalam field yang ditentukan. Field akan dibuat 
+    otomatis jika belum ada.
+    """
+    dataset_path = config_dan_paths.get('dataset_path', '')
+    zl_path = os.path.join(dataset_path, "Zona_Layer")
+    
+    if not arcpy.Exists(zl_path):
+        return "Error: Zona_Layer tidak ditemukan."
+
+    try:
+        in_table_fields = [f.name.upper() for f in arcpy.ListFields(zl_path)]
+        
+        # Tambahkan field jika belum ada
+        if field_name.upper() not in in_table_fields:
+            arcpy.management.AddField(zl_path, field_name, "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED")
+        
+        # Kalkulasi ulang luas menggunakan unit meter persegi
+        arcpy.management.CalculateField(zl_path, field_name, 'round(!Shape.Area@meter!)', "PYTHON3")
+        return f"Sukses: Field {field_name} berhasil dihitung ulang."
+        
+    except Exception as e:
+        return f"Gagal menghitung ulang luas zona: {str(e)}"
+    
 def reorder_fields(fc_path, target_fields):
     """Fungsi khusus untuk menyusun ulang urutan field pada Feature Class."""
     arcpy.AddMessage("Menyusun ulang urutan field...")

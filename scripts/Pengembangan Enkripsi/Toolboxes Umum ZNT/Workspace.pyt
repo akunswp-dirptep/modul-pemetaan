@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+﻿from datetime import datetime, timezone
 import sys, requests
 import uuid
 import arcpy, os, json, zipfile
@@ -400,7 +400,7 @@ class Edit_Workspace(object):
                 config_data["ws_path"] = ws_folder
                 config_data["gdb_path"] = os.path.join(ws_folder, "ZoneNilaiTanah.gdb")
                 config_data["dataset_path"] = os.path.join(ws_folder, "ZoneNilaiTanah.gdb", "znt_ds")
-                arcpy.AddMessage("✅ Path Workspace, GDB, dan Dataset telah disesuaikan dengan folder ini.")
+                arcpy.AddMessage("? Path Workspace, GDB, dan Dataset telah disesuaikan dengan folder ini.")
 
                 # Update Folder Connections di UI ArcGIS Pro
                 aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -412,22 +412,22 @@ class Edit_Workspace(object):
                         'isHomeFolder': False
                     })
                     aprx.updateFolderConnections(folder_connections, validate=True)
-                    arcpy.AddMessage(f"📂 Folder {ws_folder} berhasil ditambahkan ke Folder Connections.")
+                    arcpy.AddMessage(f"? Folder {ws_folder} berhasil ditambahkan ke Folder Connections.")
                 else:
-                    arcpy.AddMessage("ℹ️ Folder ini sudah terhubung di Catalog ArcGIS Pro.")
+                    arcpy.AddMessage("?? Folder ini sudah terhubung di Catalog ArcGIS Pro.")
 
                 # Tambahkan Zona_Layer ke Peta (BARU)
                 zona_layer_path = os.path.join(config_data["dataset_path"], "Zona_Layer")
                 if arcpy.Exists(zona_layer_path):
                     arcpy.SetParameter(6, zona_layer_path) # Set parameter output pada indeks ke-6
-                    arcpy.AddMessage("🗺️ Layer Zona_Layer berhasil dimuat ke dalam peta.")
+                    arcpy.AddMessage("?? Layer Zona_Layer berhasil dimuat ke dalam peta.")
                 else:
-                    arcpy.AddWarning(f"⚠️ Zona_Layer tidak ditemukan di: {zona_layer_path}")
+                    arcpy.AddWarning(f"?? Zona_Layer tidak ditemukan di: {zona_layer_path}")
 
             # 5. Tulis kembali konfigurasi ke lokasi folder
             setup_project_config(config_data, config_path)
             
-            arcpy.AddMessage("✅ Konfigurasi workspace berhasil disimpan!")
+            arcpy.AddMessage("? Konfigurasi workspace berhasil disimpan!")
             arcpy.AddMessage(f"  -> Skala: {skala_int}")
             arcpy.AddMessage(f"  -> Lokasi: {WADMKK}, {WADMPR}")
 

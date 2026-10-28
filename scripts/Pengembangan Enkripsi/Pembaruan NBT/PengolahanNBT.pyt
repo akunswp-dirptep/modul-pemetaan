@@ -1,4 +1,4 @@
-import os, arcpy, json, sys, datetime, gc, time
+﻿import os, arcpy, json, sys, datetime, gc, time
 
 # Tambahkan parent directory ke sys.path
 script_dir = os.path.dirname(__file__)
@@ -322,7 +322,7 @@ class Hitung_Indeks_Rata_Rata(object):
         else:
 
             messages.addMessage(
-                "✅ Validasi cluster OK"
+                "? Validasi cluster OK"
             )
 
         # =================================================
@@ -1001,7 +1001,7 @@ class Hitung_Nilai_Prediksi(object):
                     )
 
         messages.addMessage(
-            "✅ Nilai NBT berhasil dihitung"
+            "? Nilai NBT berhasil dihitung"
         )
 
         # =================================================

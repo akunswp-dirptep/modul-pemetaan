@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import arcpy, os, math
 import statistics
 
@@ -2205,11 +2205,11 @@ class Simpan_Sebagai_Perubahan_Menyebar(object):
                     count += 1
             
             # Tampilkan pesan sukses di geoprocessing window
-            messages.addMessage(f"✅ Selesai! Berhasil memperbarui {count} fitur.")
+            messages.addMessage(f"? Selesai! Berhasil memperbarui {count} fitur.")
             
         except Exception as e:
             # Tampilkan pesan error jika ada field yang tidak ditemukan atau tipe data salah
-            messages.addErrorMessage(f"❌ Terjadi kesalahan: {str(e)}")
+            messages.addErrorMessage(f"? Terjadi kesalahan: {str(e)}")
             messages.addErrorMessage("Pastikan Feature Layer memiliki field: perubahan, status_per, NILAIBD_LAMA, data_pembanding, dan kelompok_perubahan dengan tipe data yang sesuai.")
             
         return

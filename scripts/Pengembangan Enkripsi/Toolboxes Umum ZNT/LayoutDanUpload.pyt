@@ -1,4 +1,4 @@
-import arcpy, requests, json, sys, os, datetime
+﻿import arcpy, requests, json, sys, os, datetime
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled" 
 script_dir = os.path.dirname(__file__)
@@ -1343,3 +1343,4 @@ class Tambah_Kotak_TTE(object):
             except Exception as e:
                 arcpy.AddMessage('Tidak ditemukan Kab/Kota valid')
                 return 'KAB/KOTA'
+

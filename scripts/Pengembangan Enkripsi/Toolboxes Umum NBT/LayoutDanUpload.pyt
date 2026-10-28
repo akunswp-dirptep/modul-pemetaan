@@ -1,4 +1,4 @@
-import arcpy, os, sys, requests, json, datetime
+﻿import arcpy, os, sys, requests, json, datetime
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"

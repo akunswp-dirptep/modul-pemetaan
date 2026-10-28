@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 import json
 import sys
 import arcpy, os, requests, zipfile, csv

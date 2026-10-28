@@ -1,4 +1,4 @@
-import arcpy
+﻿import arcpy
 import os, json, requests, sys, math, re
 from datetime import datetime
 script_dir = os.path.dirname(__file__)

@@ -15,7 +15,7 @@ def current_year():
     except Exception:
         return None
  
-# Cryptography Functions
+
 def generate_key():
     password = 'bpnri-jakarta'
     salt = b'Sisinga@2-Jakarta'  

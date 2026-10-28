@@ -10,6 +10,7 @@ Versi: 6.12.1
 1. Mengenkripsi Semua Toolbox Dan Librarynya
 
 [PENAMBAHAN FITUR]
+1. Penambahan Fitur TTE
 2. Menambahkan Validasi HISTZONE
 
 

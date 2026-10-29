@@ -2,7 +2,20 @@ unins000.dat
 unins000.exe
 app-metadata.json
 __pycache__/
+
+
 *.pyc
+
+# Pengecualian: JANGAN abaikan file .pyc spesifik ini
+!__init__.pyc
+!constant.pyc
+!document.pyc
+!sample_point.pyc
+!system_utils.pyc
+!upload_utils.pyc
+!zona_layer.pyc
+!persil.pyc
+
 *.pyt.xml
 qc-code/
 

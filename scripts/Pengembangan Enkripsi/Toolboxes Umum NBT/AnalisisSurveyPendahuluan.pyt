@@ -28,7 +28,8 @@ class Toolbox:
                       Tampilkan_Dataset_Survey,
                       Tampilkan_Fasilitas,
                       Setujui_Sampel_Fasilitas,
-                      Hitung_Jarak_Fasilitas]
+                      Hitung_Jarak_Fasilitas,
+                      Periksa_Kesesuaian_Zonasi]
 
 
 class Ambil_Survey_Pendahuluan_Dari_Sipenta(object):
@@ -482,8 +483,6 @@ class Tampilkan_Fasilitas(object):
 
         arcpy.AddMessage("== Proses selesai ==")
         return
-    
-
 
 class Setujui_Sampel_Fasilitas(object):
     def __init__(self):
@@ -1020,4 +1019,162 @@ class Hitung_Jarak_Fasilitas(object):
 
         parameters[3].value = output_name
         arcpy.AddMessage("== Proses selesai ==")
+        return
+
+
+class Periksa_Kesesuaian_Zonasi(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Periksa Kesesuaian Zonasi"
+        self.description = "Tool ini digunakan untuk memeriksa kesesuaian zonasi antara Persil Layer dan Titik Survey Pendahuluan Zonasi."
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        penjelasan = arcpy.Parameter(
+            displayName="Apa yang dilakukan tool ini?",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+        
+        penjelasan.value =(
+            "Tool ini digunakan untuk memeriksa kesesuaian jenis zona\n"
+            "antara Persil Layer dan Titik Survey Pendahuluan Zonasi.\n"
+            "\n"
+            "Direktorat Penilaian Tanah & Ekonomi Pertanahan\n"
+            "Kementerian ATR/BPN\n"
+            "Tahun: {}".format(datetime.now().year))
+        
+        output_zl = arcpy.Parameter(
+            name="output_pl",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [penjelasan, output_zl]
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        self.config_dan_paths = persil.get_config_values()
+        ds_path = self.config_dan_paths["project_config"]['dataset_path']
+
+        ts_path = os.path.join(ds_path, "Survey_Zonasi")
+        zl_path = os.path.join(ds_path, "Persil_Layer")
+
+        identity_layers = []
+
+        # Identity Titik Sampel
+        arcpy.analysis.Identity(ts_path, zl_path, "identity_ts")
+        identity_layers.append("identity_ts")
+
+        # Dictionary penyimpanan
+        listbidang = {}
+        listtitiklbt = {}
+        mapping_zonasi = {
+            "Kawasan Industri": "Industri",
+            "Perdagangan dan Jasa": "Perdagangan dan Jasa",
+            "Permukiman Mewah": "Permukiman Mewah",
+            "Permukiman Sedang": "Permukiman Menengah",
+            "Permukiman Sederhana": "Permukiman Sederhana",
+            "Pertanian / Perkebunan": "Pertanian"
+        }
+
+        for identity_fc in identity_layers:
+            with arcpy.da.SearchCursor(
+                identity_fc,
+                ["IDBIDANG", "ZONASI", "nama_penggunaan"]
+            ) as cursor:
+
+                for idbidang, zonasi_persil, hasil_lbt in cursor:
+                    if idbidang is None:
+                        continue
+
+                    # Menyimpan zonasi asli dari persil layer
+                    if idbidang not in listbidang:
+                        listbidang[idbidang] = set()
+                    if zonasi_persil:
+                        listbidang[idbidang].add(zonasi_persil)
+
+                    # Menyimpan zonasi dari lbt yang sudah disetarakan
+                    if idbidang not in listtitiklbt:
+                        listtitiklbt[idbidang] = set()
+
+                    if hasil_lbt is not None:
+                        # Gunakan .get() untuk mencari di mapping. 
+                        # Jika tidak ada (misal: "Lainnya"), ubah jadi "Sempadan dan Lindung"
+                        zonasi_setara = mapping_zonasi.get(hasil_lbt, "Sempadan dan Lindung")
+                        listtitiklbt[idbidang].add(zonasi_setara)
+
+        # Hapus field lama jika ada
+        field_names = [f.name for f in arcpy.ListFields(zl_path)]
+
+        if "JENISSAMPEL" in field_names:
+            arcpy.management.DeleteField(zl_path, "JENISSAMPEL")
+
+        if "BEDA_ZONA" in field_names:
+            arcpy.management.DeleteField(zl_path, "BEDA_ZONA")
+
+        # Tambah field baru
+        arcpy.management.AddField(zl_path, "JENISSAMPEL", "TEXT")
+        arcpy.management.AddField(zl_path, "BEDA_ZONA", "TEXT")
+
+        # Cek kunci (key) primary field (menyesuaikan antara NOZN atau IDBIDANG)
+        key_field = "NOZN" if "NOZN" in field_names else "IDBIDANG"
+
+        # Update hasil pemeriksaan
+        with arcpy.da.UpdateCursor(
+            zl_path,
+            [key_field, "BEDA_ZONA", "JENISSAMPEL"]
+        ) as cursor:
+
+            for row in cursor:
+                id_polygon = row[0]
+
+                # Ambil data dari dictionary yang sudah dikumpulkan
+                zl_type = set(listbidang.get(id_polygon, []))
+                titiksampel = set(listtitiklbt.get(id_polygon, []))
+
+                # Perbandingan
+                if zl_type == titiksampel:
+                    row[1] = "Zona Sama"
+                else:
+                    row[1] = "Zona Beda"
+
+                # Pengisian sampel
+                if titiksampel:
+                    row[2] = ", ".join(map(str, sorted(titiksampel)))
+                else:
+                    row[2] = "Tidak ada Jenis Zona Titik Sampel"
+
+                cursor.updateRow(row)
+
+        # Tampilkan layer hasil
+        arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
+
+        # PENTING: Variabel sim_path belum didefinisikan sebelumnya, Anda perlu mendefinisikan lokasi symbology-nya 
+        # contoh: sim_path = os.path.join(ds_path, "style_zonasi.lyrx")
+        # arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+
+        arcpy.SetParameter(1, "Persil_Layer")
+
+        # Cleanup temporary identity
+        for fc in identity_layers:
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)
+
+        return
+
+    def postExecute(self, parameters):
+        """This method takes place after outputs are processed and added to the display."""
         return

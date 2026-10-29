@@ -513,7 +513,9 @@
 					
 				</menu>
 				<menu id="analisis_risiko" caption="Analisis Risiko">
-				<button refID="ButtonHitungRisiko" size="Medium"/>
+					<button refID="ButtonTampilkanDataRisiko" size="Medium"/>
+					<button refID="ButtonSetujuiDataRisiko" size="Medium" />
+					<button refID="ButtonHitungRisiko" size="Medium"/>
 				</menu>
 				<menu id="analisis_zonasi" caption="Analisis Zonasi">
 					<button refID="ButtonCekKesesuaianZonasi" size="Medium" />
@@ -2760,6 +2762,20 @@
 					<tooltip heading="Periksa Kesesuaian Zonasi">
 						Tool untuk memeriksa kesesuaian zonasi antara data sampel zonasi dengan nilai zonasi pada Persil Layer
 					</tooltip>
+				</button>
+
+				<button id="ButtonTampilkanDataRisiko" caption="Tampilkan Data Risiko" smallImage="C:\PenilaianTanah\icons\risiko.png" largeImage="C:\PenilaianTanah\icons\risiko.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Masukkan_Data_Risiko" name="Tampilkan Data Risiko" xmlns=""/>
+					</args>
+					<tooltip heading="Tampilkan Data Risiko">Menu untuk memasukkan data risiko yang diperlukan dalam proses Pembaruan NBT.</tooltip>
+				</button>
+
+				<button id="ButtonSetujuiDataRisiko" caption="Setujui Data Risiko" smallImage="C:\PenilaianTanah\icons\selection.png" largeImage="C:\PenilaianTanah\icons\selection.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Masukkan_Data_Risiko" name="Setujui Data Risiko" xmlns=""/>
+					</args>
+					<tooltip heading="Setujui Data Risiko">Menu untuk memasukkan data risiko yang diperlukan dalam proses Pembaruan NBT.</tooltip>
 				</button>
 
 				<button id="ButtonSetujuiFasilitas" caption="Setujui Sampel Fasilitas" smallImage="C:\PenilaianTanah\icons\selection.png" largeImage="C:\PenilaianTanah\icons\selection.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">

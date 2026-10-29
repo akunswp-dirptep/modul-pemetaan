@@ -85,3 +85,5 @@ Type: files; Name: "{autodesktop}\Penilaian Tanah*.lnk"
 
 [UninstallDelete]    
 Type: files; Name: "{%USERPROFILE}\AppData\Local\ESRI\Arcgis.Desktop.Config.daml"
+Type: filesandordirs; Name: "{app}\*"
+Type: dirifempty; Name: "{app}"

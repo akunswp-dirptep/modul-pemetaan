@@ -1562,3 +1562,4 @@ class Masukkan_Data_Risiko(object):
         messages.addMessage("Proses selesai")
 
         return
+

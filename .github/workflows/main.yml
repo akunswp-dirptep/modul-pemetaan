@@ -33,8 +33,8 @@ jobs:
         tag_name: v6-${{ github.run_number }}-${{ github.run_id }}
         
         # Judul Halaman Rilis yang akan tampil di GitHub
-        name: "Penilaian Tanah V6.12 (Build #${{ github.run_number }})"
-        
+
+        name: "Penilaian Tanah V6.14-Tester"        
         # Catatan rilis atau deskripsi singkat
         body: |
           Automated release oleh GitHub Actions.

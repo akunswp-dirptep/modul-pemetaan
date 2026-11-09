@@ -18,7 +18,7 @@ from zntutils.upload_utils import upload_shapefile_to_sipenta, upload_feature_la
 from zntutils.system_utils import get_user_data, get_all_berkas_id, setup_user_data
 from zntutils.zona_layer import get_config_values, validate_zona_layer_before_upload, check_if_there_selected_field
 from zntutils import zona_layer as zonalayer
-#Helper Functions
+
 def is_internal():
     try:
         return bool(get_credentials(credential_type="OperatorGISInternal", use_for_tools_validity=True))

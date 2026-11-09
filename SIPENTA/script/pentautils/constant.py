@@ -1,1 +1,0 @@
-GIS_OPERATOR_ONLY = True

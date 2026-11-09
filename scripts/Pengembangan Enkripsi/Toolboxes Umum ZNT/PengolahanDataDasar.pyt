@@ -420,6 +420,20 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
         token = user_data.get(AUTH_KEY, None)
         configs = zonalayer.get_config_values()
 
+        
+        hasil_validasi_histzone = zonalayer.validasi_sinkronisasi_histzone(config_dan_paths=configs)
+        if len(hasil_validasi_histzone) > 0:
+            pesan_error = "\n".join(hasil_validasi_histzone)
+            arcpy.AddError(f"Validasi HISTZONE gagal:\n{pesan_error}")
+            return
+        
+        hasil_hitung_luas = zonalayer.hitung_ulang_luas_m2(config_dan_paths=configs)
+        if hasil_hitung_luas.startswith("Error") or hasil_hitung_luas.startswith("Gagal"):
+            arcpy.AddError(hasil_hitung_luas)
+            return
+        else:
+            arcpy.AddMessage(hasil_hitung_luas)
+
         luas_zona_tidak_memenuhi_minimum = zonalayer.validate_luas_minimal_zona(config_dan_paths=configs)
         if luas_zona_tidak_memenuhi_minimum == "Skala Kosong":
             arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi luas zona minimum dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
@@ -565,6 +579,20 @@ class Upload_Peta_Zona_Awal_Nilai_Tanah_Pembaruan_ZNT(object):
         use_production = True if server == "Produksi" or server == None else False
         token = user_data.get(AUTH_KEY, None)
         configs = zonalayer.get_config_values()
+
+        
+        hasil_validasi_histzone = zonalayer.validasi_sinkronisasi_histzone(config_dan_paths=configs)
+        if len(hasil_validasi_histzone) > 0:
+            pesan_error = "\n".join(hasil_validasi_histzone)
+            arcpy.AddError(f"Validasi HISTZONE gagal:\n{pesan_error}")
+            return
+        
+        hasil_hitung_luas = zonalayer.hitung_ulang_luas_m2(config_dan_paths=configs)
+        if hasil_hitung_luas.startswith("Error") or hasil_hitung_luas.startswith("Gagal"):
+            arcpy.AddError(hasil_hitung_luas)
+            return
+        else:
+            arcpy.AddMessage(hasil_hitung_luas)
 
         luas_zona_tidak_memenuhi_minimum = zonalayer.validate_luas_minimal_zona(config_dan_paths=configs)
         if luas_zona_tidak_memenuhi_minimum == "Skala Kosong":

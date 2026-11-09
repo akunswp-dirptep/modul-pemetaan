@@ -386,7 +386,6 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
                 arcpy.AddError(f"Terdapat Zona yang memiliki Titik Zona dan Titik Sampel Sekaligus: {sorted(terdapat_dua_jenis_titik_dalam_satu_zona)}")
             return   
         
-        
         validasi_geometri_dan_atribut = zonalayer.validate_zona_layer_before_upload(zl_path)
         if validasi_geometri_dan_atribut:
             arcpy.AddError(validasi_geometri_dan_atribut)
@@ -409,9 +408,34 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             sys.exit(1)
 
         count = int(arcpy.management.GetCount(titik_sampel)[0])
+        
+        # === PERUBAHAN PADA KONDISI JIKA TITIK SAMPEL KOSONG ===
         if count == 0:
-            arcpy.AddWarning("Tidak ditemukan titik sampel")
+            arcpy.AddWarning("Tidak ditemukan titik sampel. Mengosongkan atribut nilai zona...")
+            
+            field_map = {
+                "NILAIZN": "DOUBLE",
+                "JMLSMPL": "LONG",
+                "JMLNILAI": "DOUBLE",
+                "NILMIN": "DOUBLE",
+                "NILMAKS": "DOUBLE",
+                "SMPBAKU": "DOUBLE",
+                "SMPBKREL": "DOUBLE",
+                "NILBULAT": "TEXT"
+            }
+            
+            existing_fields_zl = [f.name for f in arcpy.ListFields(zona_layer)]
+            
+            for field, ftype in field_map.items():
+                # Tambah field jika belum ada agar CalculateField tidak error
+                if field not in existing_fields_zl:
+                    arcpy.management.AddField(zona_layer, field, ftype)
+                # Null-kan isinya
+                arcpy.management.CalculateField(zona_layer, field, "None", "PYTHON3")
+                
+            arcpy.AddMessage("? Nilai NILMIN, NILMAKS, JMLNILAI, SMPBKREL, SMPBAKU, dsb. berhasil di-Null-kan.")
             return
+        # =======================================================
 
         identity_output = "in_memory/identity_result"
         dissolved_output = "in_memory/dissolved_stats"
@@ -490,15 +514,16 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             cluster_field = existing_fields[existing_fields_lower.index(cluster_field.lower())]
 
         arcpy.AddMessage("Menghitung nilai atribut...")
-
-        # Kalkulasi atribut
-        arcpy.management.CalculateField(zona_layer, "JMLNILAI", "round(!SUM_Nilai!) if !SUM_Nilai! is not None else None", "PYTHON3")
-        arcpy.management.CalculateField(zona_layer, "NILAIZN", "round(!MEAN_Nilai!) if !MEAN_Nilai! is not None else None", "PYTHON3")
-        arcpy.management.CalculateField(zona_layer, "NILMIN", "!MIN_Nilai!", "PYTHON3")
-        arcpy.management.CalculateField(zona_layer, "NILMAKS", "!MAX_Nilai!", "PYTHON3")
-        arcpy.management.CalculateField(zona_layer, "SMPBAKU", "!STD_Nilai!", "PYTHON3")
-        arcpy.management.CalculateField(zona_layer, "JMLSMPL", "!COUNT_Nilai!", "PYTHON3")
-        arcpy.management.CalculateField(zona_layer, "SMPBKREL", "(!SMPBAKU! / !NILAIZN!) * 100 if !NILAIZN! else None", "PYTHON3")
+        
+        arcpy.management.CalculateField(zona_layer, "JMLNILAI", "round(!SUM_Nilai!) if !COUNT_Nilai! is not None else None", "PYTHON3")
+        arcpy.management.CalculateField(zona_layer, "NILAIZN", "round(!MEAN_Nilai!) if !COUNT_Nilai! is not None else None", "PYTHON3")
+        arcpy.management.CalculateField(zona_layer, "NILMIN", "!MIN_Nilai! if !COUNT_Nilai! is not None else None", "PYTHON3")
+        arcpy.management.CalculateField(zona_layer, "NILMAKS", "!MAX_Nilai! if !COUNT_Nilai! is not None else None", "PYTHON3")
+        arcpy.management.CalculateField(zona_layer, "SMPBAKU", "!STD_Nilai! if !COUNT_Nilai! is not None else None", "PYTHON3")
+        arcpy.management.CalculateField(zona_layer, "JMLSMPL", "!COUNT_Nilai! if !COUNT_Nilai! is not None else None", "PYTHON3")
+        
+        # Kalkulasi SMPBKREL dijaga agar tidak terjadi division by zero 
+        arcpy.management.CalculateField(zona_layer, "SMPBKREL", "(!SMPBAKU! / !NILAIZN!) * 100 if (!NILAIZN! and !COUNT_Nilai! is not None) else None", "PYTHON3")
 
         # Perbaikan indentasi pada code_block python
         code_block = f"""def format_rp(value):
@@ -507,10 +532,9 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
         return "Rp. " + format(int(bulat), ",").replace(",", ".")
     return "Rp. 0"
 """
-        arcpy.management.CalculateField(zona_layer, "NILBULAT", "format_rp(!NILAIZN!)", "PYTHON3", code_block)
+        arcpy.management.CalculateField(zona_layer, "NILBULAT", "format_rp(!NILAIZN!) if !COUNT_Nilai! is not None else None", "PYTHON3", code_block)
 
-        # === TAMBAHAN KODE: Set field cluster menjadi Null (None) untuk zona yang dihitung nilainya ===
-        # Logika: Jika field COUNT_Nilai (hasil join) ada isinya, berarti zona tersebut ikut dihitung, maka cluster = None
+        # Set field cluster menjadi Null (None) untuk zona yang dihitung nilainya
         arcpy.management.CalculateField(
             zona_layer, 
             cluster_field, 
@@ -518,7 +542,6 @@ class Hitung_Nilai_ZNT_Pencilan_Atau_Outlier:
             "PYTHON3"
         )
         arcpy.AddMessage("? Nilai Cluster dikosongkan (Null) untuk zona outlier.")
-        # ==============================================================================================
 
         # Membersihkan field hasil join statistik
         stat_keywords = ["sum_nilai", "mean_nilai", "min_nilai", "max_nilai", "std_nilai", "count_nilai", "range_nilai"]

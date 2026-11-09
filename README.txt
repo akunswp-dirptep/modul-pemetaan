@@ -1,16 +1,20 @@
+[UNTUK INTERNAL]
 Direktorat Penilaian Tanah dan Ekonomi Pertanahan
 Kementerian ATR/BPN
 
 PENILAIAN TANAH (SIPENTA) - CATATAN RILIS
-Versi: 6.10
+Versi: 6.13
 ==================================================
 
+[PENYESUAIAN SISTEM]
+1. Mengenkripsi Semua Toolbox Dan Librarynya
+
 [PENAMBAHAN FITUR]
-1. Penambahan Menu Baru [Tool Umum ZNT]
-2. Penambahan Fitur [Pengecekan Zona Awal]
+1. Penambahan Fitur TTE
+2. Menambahkan Validasi HISTZONE
 
 [PENYESUAIAN FITUR]
-1. Menyesuaikan Tampilan Pesan Pada Fitur Login Pengguna
+1. Menyesuaikan Pengisian atribut untuk zona outlier pada pembaruan ZNT
+2. Menyesuaikan Pembuatan Field JNSZN pada tools pembuatan ZNT
 
-[PERBAIKAN BUG]
-1. Memperbaiki Bug NOZN dan JNSZN
+

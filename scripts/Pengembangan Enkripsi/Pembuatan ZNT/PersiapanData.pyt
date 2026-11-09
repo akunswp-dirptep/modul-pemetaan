@@ -510,54 +510,45 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
 
         return [input_fl, output_zl]
 
-
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
         return True
 
     def updateParameters(self, parameters):
         """Modify the values and properties of parameters before internal
-        validation is performed.  This method is called whenever a parameter
-        has been changed."""
+        validation is performed."""
         return
         
     def updateMessages(self, parameters):
         """Modify the messages created by internal validation for each tool
-        parameter.  This method is called after internal validation."""
+        parameter."""
         return   
 
     def execute(self, parameters, messages):
-        """
-        Fungsi ini digunakan untuk mempersiapkan data dasar yang akan digunakan dalam analisis zona nilai tanah.
-
-        Kondisi yang harus terpenuhi:
-        1. Data dasar yang diinputkan haruslah sebuah feature layer yang valid dan dapat diakses.
-        2. Setelah data dasar diinputkan, sistem harus dapat membuat sebuah feature class baru dengan nama "Zona_Layer" di dalam geodatabase yang sudah ditentukan pada config.
-        3. Feature Class ini hanya akan berisi field-field yang diperlukan untuk analisis zona nilai tanah, yaitu NOZN, PENGGUNAAN, SMPBKREL, SMPBAKU, NILAIZN, JMLSMPL, NILMIN, NILMAKS, WADMKK, WADMPR, THNNILAI, dan cluster.
-        4. Jika sudah ada field JNSZN maka field tersebut akan dipertahankan, jika belum ada maka akan ditambahkan dengan nilai default 1 (Non-Pertanian).
-        5. Field WADMKK, WADMPR, dan THNNILAI akan diisi sesuai dengan nilai yang ada pada config.
-        6. Field cluster akan diisi dengan nilai default 1 untuk semua record.
-        """
         arcpy.env.overwriteOutput = True
         input_fl = parameters[0].valueAsText
 
         config_dan_paths = get_config_values()
-        # Mendapatkan daftar field OID dan semua field dari feature class input
-        id = [f.name for f in arcpy.ListFields (input_fl, field_type="OID")]
-        fields = [f.name for f in arcpy.ListFields(input_fl)]
-        if 'OBJECTID' not in id and 'OBJECTID' in fields:
-            arcpy.management.DeleteField(input_fl, "OBJECTID")
+        
+        # PERBAIKAN 1: Ekspor ke layer temporary TERLEBIH DAHULU sebelum memodifikasi apapun
         arcpy.conversion.FeatureClassToFeatureClass(input_fl, config_dan_paths['dataset_path'], 'Zona_Layer_Temp')
         zl_temp_path = os.path.join(config_dan_paths['dataset_path'], 'Zona_Layer_Temp')
 
+        # Cek dan hapus OBJECTID dummy jika terbawa ke layer temporary (Bukan layer input)
+        id_fields = [f.name for f in arcpy.ListFields(zl_temp_path, field_type="OID")]
+        all_temp_fields = [f.name for f in arcpy.ListFields(zl_temp_path)]
+        if 'OBJECTID' not in id_fields and 'OBJECTID' in all_temp_fields:
+            arcpy.management.DeleteField(zl_temp_path, "OBJECTID")
+
         in_table_fields = [f.name for f in arcpy.ListFields(zl_temp_path)]
-        required_fields = ["NOZN", "PENGGUNAAN", "SMPBKREL", "SMPBAKU", "NILAIZN", "JMLSMPL", "NILMIN", "NILMAKS", "WADMKK", "WADMPR", "THNNILAI", "HISTZONE", "cluster","NILBULAT"]
+        required_fields = ["NOZN", "PENGGUNAAN", "SMPBKREL", "SMPBAKU", "NILAIZN", "JMLSMPL", "NILMIN", "NILMAKS", "WADMKK", "WADMPR", "THNNILAI", "HISTZONE", "cluster", "NILBULAT"]
 
         fields_to_delete = [f for f in required_fields if f in in_table_fields]
 
         if fields_to_delete:
             arcpy.management.DeleteField(zl_temp_path, fields_to_delete)
 
+        # Penambahan Field Baru
         arcpy.management.AddField(zl_temp_path, "NOZN", "LONG")  # Nomor Zona
         arcpy.management.AddField(zl_temp_path, "PENGGUNAAN", "TEXT")  # Jenis Penggunaan Lahan
         arcpy.management.AddField(zl_temp_path, "SMPBKREL", "DOUBLE")  # Sample Relative Value
@@ -572,44 +563,53 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         arcpy.management.AddField(zl_temp_path, "cluster", "TEXT", field_alias="KLASTER")  # Cluster Zona
         arcpy.management.AddField(zl_temp_path, 'SKALA', "TEXT")
 
-        arcpy.AddMessage(config_dan_paths['skala'])
-        if config_dan_paths['skala']:
+        if config_dan_paths.get('skala'):
             nilai_skala = f"{int(config_dan_paths['skala']):,}".replace(',', '.')
             str_skala = f"1 : {nilai_skala}"
-            
             arcpy.management.CalculateField(zl_temp_path, "SKALA", f"'{str_skala}'", "PYTHON3")
 
         arcpy.management.CalculateField(zl_temp_path, "NOZN", "!OBJECTID!", "PYTHON3")
 
-        arcpy.management.CalculateField(zl_temp_path, "WADMKK", "'"+str(config_dan_paths['kota'])+"'", "PYTHON3")
-        arcpy.management.CalculateField(zl_temp_path, "WADMPR", "'"+str(config_dan_paths['provinsi'])+"'", "PYTHON3")
+        # PERBAIKAN 2: Menggunakan format string yang lebih aman dengan double quote ("{}")
+        kota_val = str(config_dan_paths.get('kota', ''))
+        prov_val = str(config_dan_paths.get('provinsi', ''))
+        arcpy.management.CalculateField(zl_temp_path, "WADMKK", '"{}"'.format(kota_val), "PYTHON3")
+        arcpy.management.CalculateField(zl_temp_path, "WADMPR", '"{}"'.format(prov_val), "PYTHON3")
+        
         arcpy.management.CalculateField(zl_temp_path, "THNNILAI", config_dan_paths['tahun'], "PYTHON3")
         arcpy.management.CalculateField(zl_temp_path, "cluster", "1", "PYTHON3")
-        
-        # Tambah field JNSZN jika belum ada
-        if 'JNSZN' not in in_table_fields:
-            arcpy.management.AddField(zl_temp_path, "JNSZN", "SHORT")
-            arcpy.management.CalculateField(zl_temp_path, "JNSZN", "1", "PYTHON3")
 
-        # Tambah field PENGGUNAAN jika belum ada
+        # Penanganan tipe data JNSZN
+        existing_fields = {f.name: f.type for f in arcpy.ListFields(zl_temp_path)}
+        if 'JNSZN' in existing_fields:
+            if existing_fields['JNSZN'] == 'Double':
+                arcpy.management.AddField(zl_temp_path, "JNSZN_TEMP", "SHORT")
+                arcpy.management.CalculateField(zl_temp_path, "JNSZN_TEMP", "!JNSZN!", "PYTHON3")
+                arcpy.management.DeleteField(zl_temp_path, "JNSZN")
+                arcpy.management.AddField(zl_temp_path, "JNSZN", "SHORT")
+                arcpy.management.CalculateField(zl_temp_path, "JNSZN", "int(!JNSZN_TEMP!)", "PYTHON3")
+                arcpy.management.DeleteField(zl_temp_path, "JNSZN_TEMP")
+        else:
+            arcpy.management.AddField(zl_temp_path, "JNSZN", "SHORT")
+            arcpy.management.CalculateField(zl_temp_path, 'JNSZN', "1", "PYTHON3")
+
+        # Pastikan field PENGGUNAAN ada sebelum kursor berjalan
+        in_table_fields = [f.name for f in arcpy.ListFields(zl_temp_path)]
         if 'PENGGUNAAN' not in in_table_fields:
             arcpy.management.AddField(zl_temp_path, "PENGGUNAAN", "TEXT")
 
-        # Update nilai
+        # Update nilai berdasarkan JNSZN
         with arcpy.da.UpdateCursor(zl_temp_path, ["JNSZN", "PENGGUNAAN"]) as rows:
             for row in rows:
                 if row[0] == 1:
                     row[1] = "Non-Pertanian"
                 elif row[0] == 2:
                     row[1] = "Pertanian"
-
                 rows.updateRow(row)
+        
+        # PERBAIKAN 3: Penghapusan 'del row' dan 'del rows' dihilangkan 
+        # karena otomatis ditangani oleh blok "with" context manager.
 
-        # Bersihkan cursor
-        del row
-        del rows
-
-                # --- Hapus field yang tidak diinginkan ---
         all_fields = [f.name for f in arcpy.ListFields(zl_temp_path)]
         
         # Dapatkan nama field geometri dan ObjectID
@@ -617,41 +617,24 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         shape_field_name = desc.shapeFieldName
         oid_field_name = desc.OIDFieldName
 
-        desired_fields =[
-            "NOZN",
-            "SKALA",
-            "NILAIZN",
-            "JNSZN",
-            "PENGGUNAAN",
-            "NILBULAT",
-            "HISTZONE",
-            "SMPBKREL",
-            "SMPBAKU",
-            "JMLSMPL",
-            "NILMIN",
-            "NILMAKS",
-            "WADMKK",
-            "WADMPR",
-            "THNNILAI",
-            "cluster",
-            shape_field_name,
-            oid_field_name
+        desired_fields = [
+            "NOZN", "SKALA", "NILAIZN", "JNSZN", "PENGGUNAAN", "NILBULAT", "HISTZONE",
+            "SMPBKREL", "SMPBAKU", "JMLSMPL", "NILMIN", "NILMAKS", "WADMKK", "WADMPR",
+            "THNNILAI", "cluster", shape_field_name, oid_field_name
         ]
-        # Tambahkan field yang diperlukan sistem (seperti Shape_Length, Shape_Area) ke daftar yang dipertahankan
+        
+        # Tambahkan field yang diperlukan sistem
         for field in desc.fields:
             if not field.editable:
                 if field.name not in desired_fields:
                     desired_fields.append(field.name)
 
         fields_to_delete = [f for f in all_fields if f not in desired_fields]
-
         if fields_to_delete:
             arcpy.management.DeleteField(zl_temp_path, fields_to_delete)
 
-        # --- Tambahkan field baru yang belum ada di deklarasi awal ---
+        # Fungsi pembantu untuk menambah field
         in_table_fields = [f.name for f in arcpy.ListFields(zl_temp_path)]
-        
-        # Fungsi pembantu untuk menambah field jika belum ada
         def add_field_if_not_exists(fc, name, tipe, alias=None):
             if name not in in_table_fields:
                 arcpy.management.AddField(fc, name, tipe, field_alias=alias)
@@ -664,17 +647,14 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         add_field_if_not_exists(zl_temp_path, "Luas_M2", "DOUBLE", alias="LUASM2")
 
         # --- Atur Urutan Field dengan FieldMappings ---
-        # Catatan: THNNILAI merepresentasikan TAHUN
         urutan_field = [
             "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
-            "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+            "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
             "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
             "NILAIZN", "NILBULAT", "Luas_M2"
         ]
 
         field_mappings = arcpy.FieldMappings()
-
-        # Masukkan field ke mapping sesuai urutan list
         for field_name in urutan_field:
             if field_name in [f.name for f in arcpy.ListFields(zl_temp_path)]:
                 fm = arcpy.FieldMap()
@@ -686,25 +666,26 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
             config_dan_paths['dataset_path'],
             'Zona_Layer',
             field_mapping=field_mappings
-
         )
         arcpy.management.Delete(zl_temp_path)  # Hapus layer sementara      
 
-        dataset_path = config_dan_paths['dataset_path']  # Path dataset utama
+        dataset_path = config_dan_paths['dataset_path']
         symbology_folder = config_dan_paths['symbology_folder']
-        zl_path = os.path.join(dataset_path, "Zona_Layer")
-
         zl_path = os.path.join(dataset_path, "Zona_Layer")
         sim_path = os.path.join(symbology_folder, "Simbologi_Jenis_Penggunaan_Dengan_Transparansi.lyrx")
         
-        # Membuat feature layer untuk data Zona_Layer
+        # Membuat feature layer
         arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
-        arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+        
+        # PERBAIKAN 4: Cek eksistensi file simbologi sebelum ApplySymbology
+        if os.path.exists(sim_path):
+            arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+        else:
+            arcpy.AddWarning(f"Simbologi tidak ditemukan di: {sim_path}. Layer dilanjutkan tanpa simbologi kustom.")
         
         arcpy.SetParameter(1, "Zona_Layer") 
         
         return
- 
 class Upload_Delineasi_Zona_Awal_Nilai_Tanah_Pembuatan_ZNT(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""

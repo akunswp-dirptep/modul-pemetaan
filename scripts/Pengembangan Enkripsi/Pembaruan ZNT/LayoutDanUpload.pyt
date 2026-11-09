@@ -518,6 +518,19 @@ class Upload_Peta_Zona_Nilai_Tanah_Pembaruan(object):
         elif smpbkrel_tidak_memenuhi_syarat != "Skala Kosong" and smpbkrel_tidak_memenuhi_syarat is not None:
             arcpy.AddError(f"{smpbkrel_tidak_memenuhi_syarat}")
             return
+        
+        hasil_validasi_histzone = zonalayer.validasi_sinkronisasi_histzone(config_dan_paths=configs)
+        if len(hasil_validasi_histzone) > 0:
+            pesan_error = "\n".join(hasil_validasi_histzone)
+            arcpy.AddError(f"Validasi HISTZONE gagal:\n{pesan_error}")
+            return
+        
+        hasil_hitung_luas = zonalayer.hitung_ulang_luas_m2(config_dan_paths=configs)
+        if hasil_hitung_luas.startswith("Error") or hasil_hitung_luas.startswith("Gagal"):
+            arcpy.AddError(hasil_hitung_luas)
+            return
+        else:
+            arcpy.AddMessage(hasil_hitung_luas)
 
         luas_zona_tidak_memenuhi_minimum = zonalayer.validate_luas_minimal_zona(config_dan_paths=configs)
         if luas_zona_tidak_memenuhi_minimum == "Skala Kosong":

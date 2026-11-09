@@ -1,7 +1,8 @@
 import os
 import math
 import arcpy
-
+from zntutils.system_utils import get_user_data
+from zntutils.constant import CREDENTIAL_KEY
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
 
@@ -172,8 +173,10 @@ class Penggabungan_ZNT_Manual(object):
             znt_kedua, nomorzone_znt_kedua, nilai_znt_kedua, tahun_znt_kedua, bulandibuat_znt_kedua,
             znt_spatial_reference, znt_nozone_reference, znt_shp_output
         ]
+
         
-        self.operatorGIS = True
+        credential = get_user_data(CREDENTIAL_KEY)
+        self.operatorGIS = (credential.get('instansi_id') == '980FECFC746D8C80E0400B0A9214065D')
         if self.operatorGIS:
             return params
         else:
@@ -237,7 +240,8 @@ class Penggabungan_ZNT_Manual(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        self.operatorGIS = True
+        credential = get_user_data(CREDENTIAL_KEY)
+        self.operatorGIS = (credential.get('instansi_id') == '980FECFC746D8C80E0400B0A9214065D')
         if not self.operatorGIS:
             arcpy.AddError("Anda tidak memiliki akses untuk menjalankan tools ini.")
             return

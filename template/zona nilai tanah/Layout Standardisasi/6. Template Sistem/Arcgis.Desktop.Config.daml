@@ -106,7 +106,6 @@
 				<group id="group_integrasi_znt" caption="Integrasi ZNT">
 					<button refID="ButtonUnduhZNT"/>
 					<button refID="ButtonPenggabunganZNTManual"/>
-					<button refID="ButtonPemberianKelasNilai"/>
 					<button refID="ButtonUnggahZNT"/>
 				</group>
 

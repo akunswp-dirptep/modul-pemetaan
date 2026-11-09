@@ -407,6 +407,15 @@ class Login_Pemeta_Nilai_Tanah:
                         PREFERRED_BERKAS_ID: None
                     }
                     renew_multiple_user_data(renew_data)
+                    if data['user']['kantor_id'] == '980FECFC746D8C80E0400B0A9214065D':
+                        source_file = r"C:\PenilaianTanah\template\zona nilai tanah\Layout Standardisasi\6. Template Sistem\Arcgis.Desktop.Config.daml"
+                        user_profile = os.environ.get("USERPROFILE")
+                        destination_dir = os.path.join(user_profile, "AppData", "Local", "ESRI")
+                        try:
+                            shutil.copy2(source_file, destination_dir)
+                            arcpy.AddMessage("Buka ulang ArcGIS Pro untuk menampilkan Layout Terbaru")
+                        except Exception as e:
+                            arcpy.AddMessage(f"Terjadi kesalahan: {e}") 
                     
                 else:
                     arcpy.AddError(f"Login gagal: {data.get('message', 'Tidak ada pesan error yang diberikan')}")
@@ -433,6 +442,16 @@ class Login_Pemeta_Nilai_Tanah:
             raise arcpy.ExecuteError
 
     def logout_pemeta_nilai_tanah(self):
+        user_data = get_user_data(CREDENTIAL_KEY)
+        if user_data['instansi_id'] == '980FECFC746D8C80E0400B0A9214065D':
+            source_file = r"C:\PenilaianTanah\ui\Arcgis.Desktop.Config.daml"
+            user_profile = os.environ.get("USERPROFILE")
+            destination_dir = os.path.join(user_profile, "AppData", "Local", "ESRI")
+    
+        try:
+            shutil.copy2(source_file, destination_dir)
+        except Exception as e:
+            arcpy.AddMessage(f"Terjadi kesalahan: {e}")
         clear_user_data()      
 
     def login_sso(self, server):
@@ -475,6 +494,17 @@ class Login_Pemeta_Nilai_Tanah:
                         PREFERRED_BERKAS_ID: None
                     }
             renew_multiple_user_data(renew_data)
+            if data['user']['kantor_id'] == '980FECFC746D8C80E0400B0A9214065D':
+                source_file = r"C:\PenilaianTanah\template\zona nilai tanah\Layout Standardisasi\6. Template Sistem\Arcgis.Desktop.Config.daml"
+                user_profile = os.environ.get("USERPROFILE")
+                destination_dir = os.path.join(user_profile, "AppData", "Local", "ESRI")
+                
+                
+                try:
+                    shutil.copy2(source_file, destination_dir)
+                    arcpy.AddMessage("Buka ulang ArcGIS Pro untuk menampilkan Layout Terbaru.")
+                except Exception as e:
+                    arcpy.AddMessage(f"Terjadi kesalahan: {e}")
             
 
         except Exception as e:

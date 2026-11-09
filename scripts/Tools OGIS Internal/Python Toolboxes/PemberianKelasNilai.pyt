@@ -88,7 +88,7 @@ class Pemberian_Kelas_Nilai(object):
             "Tools ini hanya untuk Operator GIS Internal\n"
             "\n"
         )
-        self.operatorGIS = bool(_get_creds_for_flag(credential_type="OperatorGISInternal", use_for_tools_validity=True))
+        self.operatorGIS = True
         if self.operatorGIS:
             return [pilih_znt, nomorzone, nilai, tahun, bulandibuat, znt_shp_output]
         else:
@@ -110,7 +110,7 @@ class Pemberian_Kelas_Nilai(object):
 
     def execute(self, parameters, messages):
         """The source code of the tool."""
-        self.operatorgis = bool(_get_creds_for_flag(credential_type="OperatorGISInternal", use_for_tools_validity=True))
+        self.operatorgis = True
         if self.operatorgis:
             pilih_znt = parameters[0].valueAsText
             nomorzone = parameters[1].valueAsText

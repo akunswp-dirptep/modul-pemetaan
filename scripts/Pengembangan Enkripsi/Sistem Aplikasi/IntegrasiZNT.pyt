@@ -283,7 +283,7 @@ class Penggabungan_ZNT_Manual(object):
             self.penggabungan_geometri_dan_atribut(znt_kedua, self.mapping_fields_znt_kedua)
             self.penggabungan_geometri_dan_atribut(self.znt_pertama, self.mapping_fields)
         
-        self.penentuan_kelas_dan_range()
+        # self.penentuan_kelas_dan_range()
         self.penyimpanan_hasil()
         self.validasi_topologi_dan_tampilkan_ke_map()
 

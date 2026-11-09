@@ -20,9 +20,11 @@ __pycache__/
 *.pyt.xml
 qc-code/
 
-# Abaikan semua isi di dalam folder config dan temp
+# Abaikan semua isi di dalam folder berikut
 config/*
 temp/*
+SIPENTA/*
+Pentabit2/*
 
 # Pengecualian: JANGAN abaikan file .gitkeep
 !config/.gitkeep

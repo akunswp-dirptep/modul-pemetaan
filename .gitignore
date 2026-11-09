@@ -26,6 +26,7 @@ temp/*
 SIPENTA/*
 Pentabit2/*
 
+
 # Pengecualian: JANGAN abaikan file .gitkeep
 !config/.gitkeep
 !temp/.gitkeep

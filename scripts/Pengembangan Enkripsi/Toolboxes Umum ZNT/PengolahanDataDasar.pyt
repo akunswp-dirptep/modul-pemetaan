@@ -258,21 +258,14 @@ class Kodifikasi_Zona:
                     for row in rows:
                         if row[0] is None or str(row[0]).strip() == "" or str(row[0]).lower() == "none":
                             row[2] = row[1]  
-                            
-                       
                         else:
                             nilai_lama = str(row[0])
-                            if len(nilai_lama) < 3:
-                                if nilai_lama == row[1]:
-                                    row[2] = row[1]   # Gunakan nilai baru
-                                else:  # Jika berbeda
-                                    row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
-                            
+                            nilai_baru = str(row[1]) 
+                                
+                            if nilai_lama == nilai_baru or nilai_lama.endswith(nilai_baru):
+                                row[2] = nilai_lama 
                             else:
-                                if nilai_lama == row[1]:
-                                    row[2] = nilai_lama
-                                else:  
-                                    row[2] = nilai_lama + row[1]
+                                row[2] = nilai_lama + nilai_baru
                         
                         rows.updateRow(row)
                 del rows, row

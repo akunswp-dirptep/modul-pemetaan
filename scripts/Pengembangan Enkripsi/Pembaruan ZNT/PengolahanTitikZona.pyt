@@ -1128,19 +1128,17 @@ class Penyesuaian_Nomor_Zona_Pembaruan:
                 with arcpy.da.Editor(workspace) as edit:
                     with arcpy.da.UpdateCursor(zl_path, ["temp1", "temp", "temp3"]) as rows:
                         for row in rows:
-                            # Jika nilai lama pendek (<3 karakter)
-                            if len(row[0]) < 3:
-                                if row[0] == row[1]:  # Jika nilai lama sama dengan baru
-                                    row[2] = row[1]   # Gunakan nilai baru
-                                elif row[0] != row[1]:  # Jika berbeda
-                                    row[2] = row[0] + row[1]  # Gabungkan lama + baru
-                            
-                            # Jika nilai lama panjang (=3 karakter)
+
+                            if row[0] is None or str(row[0]).strip() == "" or str(row[0]).lower() == "none":
+                                row[2] = row[1]  
                             else:
-                                if row[0][-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
-                                    row[2] = row[0]  # Pertahankan nilai lama
-                                elif row[0][-2:] != row[1][-2:]:  # Jika 2 karakter akhir berbeda
-                                    row[2] = row[0] + row[1]  # Gabungkan lama + baru
+                                nilai_lama = str(row[0])
+                                nilai_baru = str(row[1]) 
+                                
+                                if nilai_lama == nilai_baru or nilai_lama.endswith(nilai_baru):
+                                    row[2] = nilai_lama 
+                                else:
+                                    row[2] = nilai_lama + nilai_baru  
                             
                             rows.updateRow(row)
                     del rows, row

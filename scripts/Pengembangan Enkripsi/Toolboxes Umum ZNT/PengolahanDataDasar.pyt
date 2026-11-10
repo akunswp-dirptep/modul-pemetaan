@@ -256,27 +256,23 @@ class Kodifikasi_Zona:
             with arcpy.da.Editor(workspace) as edit:
                 with arcpy.da.UpdateCursor(zl_path, ["temp1", "temp", "temp3"]) as rows:
                     for row in rows:
-                        # 1. Cek jika nilai lama (temp1) Null, Kosong, atau hanya spasi
                         if row[0] is None or str(row[0]).strip() == "" or str(row[0]).lower() == "none":
-                            row[2] = row[1]  # Langsung gunakan nilai zona baru
+                            row[2] = row[1]  
                             
-                        # 2. Jika nilai lama sudah ada isinya
+                       
                         else:
                             nilai_lama = str(row[0])
-                            
-                            # Jika nilai lama pendek (<3 karakter)
                             if len(nilai_lama) < 3:
-                                if nilai_lama == row[1]:  # Jika nilai lama sama dengan baru
+                                if nilai_lama == row[1]:
                                     row[2] = row[1]   # Gunakan nilai baru
                                 else:  # Jika berbeda
                                     row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
                             
-                            # Jika nilai lama panjang (>=3 karakter)
                             else:
-                                if nilai_lama[-2:] == row[1][-2:]:  # Jika 2 karakter akhir sama
-                                    row[2] = nilai_lama  # Pertahankan nilai lama
-                                else:  # Jika 2 karakter akhir berbeda
-                                    row[2] = nilai_lama + row[1]  # Gabungkan lama + baru
+                                if nilai_lama == row[1]:
+                                    row[2] = nilai_lama
+                                else:  
+                                    row[2] = nilai_lama + row[1]
                         
                         rows.updateRow(row)
                 del rows, row

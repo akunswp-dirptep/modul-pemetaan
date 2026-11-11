@@ -132,8 +132,6 @@ def setup_user_data(key:str, value:str):
             
             data = {key: value}
         
-
-        # Simpan kembali ke file
         encrypt_message(json.dumps(data), generate_key(), config_path)
         
         return True
@@ -368,6 +366,4 @@ def decrypt_internal_daml_bin():
     except Exception as e:
         arcpy.AddError(f"Gagal mendekripsi file konfigurasi: {str(e)}")
         return False
-if __name__ == '__main__':
-    # setup_internal_daml_bin()
-    decrypt_internal_daml_bin()
+    

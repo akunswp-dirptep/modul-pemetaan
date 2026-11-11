@@ -1,1 +1,1 @@
-__all__ = ['constant', 'secure']
+__all__ = ['constant', 'secure', 'logger']

@@ -1,1 +1,1 @@
-__all__ = ['constant', 'secure', 'logger']
+__all__ = ['constant', 'secure', 'loggerlib']

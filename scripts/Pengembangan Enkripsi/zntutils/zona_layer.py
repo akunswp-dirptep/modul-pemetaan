@@ -274,10 +274,10 @@ def get_config_values():
     Returns:
         dict: Dictionary berisi semua path dan parameter konfigurasi
     """
-    zl_path = is_zona_layer_comply(show_path_message=False)  # Validasi compliance layer zona
-    ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path)))  # Navigasi ke root workspace
-    config_path = os.path.join(ws_dir, "config.json")  # Path ke file config
-    new_config_path = os.path.join(ws_dir, PROJECT_CONFIG_FILE_NAME)  # Path ke file config baru (bin)
+    zl_path = is_zona_layer_comply(show_path_message=False)  
+    ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path))) 
+    config_path = os.path.join(ws_dir, "config.json")
+    new_config_path = os.path.join(ws_dir, PROJECT_CONFIG_FILE_NAME) 
     configs = None
     if arcpy.Exists(config_path):
          with open(config_path, 'r') as f:
@@ -285,8 +285,11 @@ def get_config_values():
     elif arcpy.Exists(new_config_path):
         configs = get_all_config(new_config_path)  
 
-    # Validasi path GDB
-    if configs['ws_path'] != ws_dir:
+    if configs is None:
+        arcpy.AddError(f"Gagal membaca file config bisa terjadi karena Zona_Layer berupa SHP bukan Feature Class\nAtau file config tidak ditemukan")
+        sys.exit(1)
+
+    elif configs['ws_path'] != ws_dir:
         arcpy.AddError(f"Alamat Workspace tidak valid, folder kemungkinan dipindahkan dari tempat awal \n Silahkan perbaiki Alamat dengan memperbaharui Alamat folder workspace di Tools Edit Workspace")
         sys.exit(1)
     appdata = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
@@ -306,7 +309,8 @@ def get_config_values():
         "appdata": appdata,
         "symbology_folder": symbology_folder,
         "temp_folder": temp_folder,
-        "ws_dir": ws_dir
+        "ws_dir": ws_dir,
+        "config_file_path": new_config_path,
         }
 
     return config_dan_paths

@@ -1,6 +1,4 @@
-﻿# -*- coding: utf-8 -*-
-
-import arcpy, os, sys
+﻿import arcpy, os, sys
 
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled"
@@ -10,7 +8,9 @@ parent_dir = os.path.dirname(script_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
     
-from zntutils.zona_layer import get_config_values, delete_bad_file
+from zntutils.zona_layer import get_config_values, delete_bad_file, is_zona_layer_comply
+from apputils.loggerlib import ToolLogger
+from zntutils.constant import PROJECT_CONFIG_FILE_NAME
 
 class Toolbox:
     def __init__(self):
@@ -161,6 +161,8 @@ class Tambah_Citra_Online(object):
 
     def execute(self, parameters, messages):
 
+        logger = ToolLogger('Tambah Basemap Online')
+        logger.info('Mencoba Memasukkan Map')
         
         pilihan_sumber = parameters[0].valueAsText
         zl = "Zona_Layer"
@@ -186,7 +188,13 @@ class Tambah_Citra_Online(object):
                 break
         
         if layer_ditemukan:
+            zl_path = is_zona_layer_comply(show_path_message=False) 
+            ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(zl_path))) 
+            new_config_path = os.path.join(ws_dir, PROJECT_CONFIG_FILE_NAME)
+            if not arcpy.Exists(new_config_path):
+                return
             config_dan_paths = get_config_values()
+            logger.info('Menambahkan Simbologi ke Zona Layer', config_dan_paths['config_file_path'])
             simbology_path = os.path.join(
                 config_dan_paths['symbology_folder'],
                 "Simbologi_Jenis_Zona.lyrx"

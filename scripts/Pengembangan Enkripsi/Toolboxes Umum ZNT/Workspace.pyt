@@ -205,13 +205,9 @@ class Buat_Workspace(object):
 
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         folder_connections = aprx.folderConnections
-
-        # Path folder yang ingin ditambahkan
         new_folder = ws_path
 
-        # Cek apakah folder sudah ada
         if not any(fc['connectionString'] == new_folder for fc in folder_connections):            
-            # Tambahkan folder baru ke list
             folder_connections.append({
                 'connectionString': new_folder,
                 'isHomeFolder': False

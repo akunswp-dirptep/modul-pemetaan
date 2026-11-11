@@ -109,7 +109,7 @@
 					<button refID="ButtonLoginPemeta" size="large"/>
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
-					<button refID="ButtonUploadRevisiKeSipenta" size="large" />
+					
 				</group>
 
 				<group id="portofolio" caption="Mock Up">
@@ -122,7 +122,7 @@
 					<button refID="ButtonLoginPemeta" size="large"/>
 					<button refID="ButtonCekPembaruanAplikasi" size="large"/>
 					<button refID="ButtonUnduhDataDariSipenta" size="large"/>
-					<button refID="ButtonUploadRevisiKeSipenta" size="large" />\
+					
 				</splitButton>
 			</splitButtons>
 			<palettes>
@@ -130,7 +130,7 @@
 					<button refID="ButtonLoginPemeta"/>
 					<button refID="ButtonCekPembaruanAplikasi"/>
 					<button refID="ButtonUnduhDataDariSipenta"/>
-					<button refID="ButtonUploadRevisiKeSipenta" />
+					
 				</buttonPalette>
 
 				<toolPalette id="ToolPalette13" caption="Editing" itemsInRow="2">

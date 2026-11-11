@@ -1,0 +1,1 @@
+xcopy "C:\PenilaianTanah\template\zona nilai tanah\Layout Standardisasi\6. Template Sistem\Arcgis.Desktop.Config.daml" "%userprofile%\AppData\Local\ESRI" /Y

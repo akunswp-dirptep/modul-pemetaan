@@ -577,7 +577,6 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         zona_layer_path = os.path.join(dataset_path, "Zona_Layer")
         zona_layer_temp_path = 'in_memory/Zona_Layer_Temp'
 
-        # Hapus topology dan layer zona jika sudah ada
         topo = os.path.join(dataset_path, "Zona_Layer_Topology")
         if arcpy.Exists(topo):
             arcpy.management.Delete(topo)
@@ -648,41 +647,29 @@ class Masukkan_Data_ZNT_Sebelumnya(object):
         arcpy.management.DeleteField(zona_layer_temp_path, nilai)  # Hapus field nilai asli jika berbeda
 
         existing_fields = {f.name: f.type for f in arcpy.ListFields(zona_layer_temp_path)}
+        tipe_nozn = existing_fields.get('NOZN', '').upper()
 
-        if 'NOZN' in existing_fields:
-
-            if existing_fields['NOZN'] == 'Double':
+        if nomorzone != 'NOZN':
+            
+            if 'NOZN' in existing_fields:
+                arcpy.management.DeleteField(zona_layer_temp_path, "NOZN")
                 
-
-                if nomorzone == 'NOZN':
-
-                    arcpy.management.AddField(zona_layer_temp_path, "NOZN_TEMP", "LONG")
-                    arcpy.management.CalculateField(zona_layer_temp_path, "NOZN_TEMP", "!NOZN!", "PYTHON3")
-                    
-
-                    arcpy.management.DeleteField(zona_layer_temp_path, "NOZN")
-                    
-                    arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
-                    arcpy.management.CalculateField(zona_layer_temp_path, "NOZN", "int(!NOZN_TEMP!)", "PYTHON3")
-                    
-                    arcpy.management.DeleteField(zona_layer_temp_path, "NOZN_TEMP")
-                    
-                else:
-                    # Jika NOZN bukan field sumber, aman untuk langsung dihapus dan dibuat ulang
-                    arcpy.management.DeleteField(zona_layer_temp_path, "NOZN")
-                    arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
-                    arcpy.management.CalculateField(zona_layer_temp_path, "NOZN", f"int(!{nomorzone}!)", "PYTHON3")
-                    
-            else:
-                if nomorzone != 'NOZN':
-                    arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
+            arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
+            arcpy.management.CalculateField(zona_layer_temp_path, "NOZN", f"int(!{nomorzone}!)", "PYTHON3")
+            arcpy.management.DeleteField(zona_layer_temp_path, nomorzone)
 
         else:
-            arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
-            arcpy.management.CalculateField(zona_layer_temp_path, 'NOZN', f"int(!{nomorzone}!)", "PYTHON3")
-
-        if nomorzone != "NOZN":
-            arcpy.management.DeleteField(zona_layer_temp_path, nomorzone)
+            
+            if tipe_nozn not in ['LONG', 'INTEGER', 'SMALLINTEGER']:
+                arcpy.management.AddField(zona_layer_temp_path, "NOZN_TEMP", "LONG")
+                arcpy.management.CalculateField(zona_layer_temp_path, "NOZN_TEMP", "int(float(!NOZN!))", "PYTHON3")
+                arcpy.management.DeleteField(zona_layer_temp_path, "NOZN")
+                arcpy.management.AddField(zona_layer_temp_path, "NOZN", "LONG")
+                arcpy.management.CalculateField(zona_layer_temp_path, "NOZN", "!NOZN_TEMP!", "PYTHON3")
+                
+                # Bersihkan field TEMP
+                arcpy.management.DeleteField(zona_layer_temp_path, "NOZN_TEMP")
+        
 
         arcpy.management.AddField(zona_layer_temp_path, 'SKALA', "TEXT")
 

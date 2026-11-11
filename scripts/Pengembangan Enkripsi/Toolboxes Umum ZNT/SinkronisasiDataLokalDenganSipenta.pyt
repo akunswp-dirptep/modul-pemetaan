@@ -337,8 +337,8 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
             headers = {
                     "Authorization": f"Bearer {token}"
                 }
-            response = requests.get(url, headers=headers, timeout=60)  
-            response.raise_for_status()  # Akan raise exception untuk HTTP error
+            response = requests.get(url, headers=headers, timeout=1200)  
+            response.raise_for_status() 
             
             data = response.json()
             
@@ -347,7 +347,6 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
             return data
         except requests.exceptions.HTTPError as e:
-        # Ambil response dari exception
             response = e.response
 
             try:
@@ -533,7 +532,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
         try:
             arcpy.AddMessage("Mengunggah data ke server SIPENTA...")
             
-            response = requests.post(url, json=json_data, headers=headers, timeout=60)
+            response = requests.post(url, json=json_data, headers=headers, timeout=1200)
 
 
             # ---- Penanganan untuk response code ----
@@ -712,7 +711,7 @@ class Sinkronisasi_Data_Lokal_Dengan_Sipenta(object):
 
         try:
             arcpy.AddMessage("Mengunggah data ke server SIPENTA...")
-            response = requests.post(url, json=json_data, headers=headers, timeout=60)
+            response = requests.post(url, json=json_data, headers=headers, timeout=1200)
 
 
             # ---- Penanganan untuk response code ----

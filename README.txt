@@ -1,4 +1,3 @@
-[UNTUK INTERNAL]
 Direktorat Penilaian Tanah dan Ekonomi Pertanahan
 Kementerian ATR/BPN
 

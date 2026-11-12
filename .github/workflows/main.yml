@@ -21,10 +21,10 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
 
-        repository: Akring-creator/update-version-repo
-        token: ${{ secrets.PAT_TOKEN }}
+        repository: akunswp-dirptep/Rilis-Penilaian-Tanah
+        token: ${{ secrets.PAT_SECRET }}
         tag_name: v6-${{ github.run_number }}-${{ github.run_id }}
-        name: "Penilaian Tanah V6.15-tester"
+        name: "Penilaian Tanah V6.15-Tester"
         body: |
           Automated release oleh GitHub Actions.
           Komit terakhir: ${{ github.sha }}

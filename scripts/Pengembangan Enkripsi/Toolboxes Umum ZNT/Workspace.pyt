@@ -14,6 +14,8 @@ if parent_dir not in sys.path:
 from zntutils.constant import NAMA_PROVINSI, KAB_KOTA, PROJECT_CONFIG_FILE_NAME, PREFERRED_BERKAS_ID, CREDENTIAL_KEY, AUTH_KEY, PREFERRED_SERVER_KEY, PROJECT_CONFIG_FILE_NAME, PREFERRED_BERKAS_ID
 from zntutils.system_utils import setup_project_config, get_all_config, get_login_status
 from zntutils.system_utils import get_user_data, setup_user_data, get_all_berkas_id, clear_user_data
+from apputils.loggerlib import ToolLogger
+from zntutils.constant import PROJECT_CONFIG_FILE_NAME
 
 def current_year():
     try:
@@ -124,6 +126,7 @@ class Buat_Workspace(object):
         """
         Fungsi ini digunakan untuk membuat sebuah workspace geodatabase baru untuk analisis zona nilai tanah.
         """
+        
         coord = parameters[0].valueAsText
         ws_path = parameters[1].valueAsText 
         skala_text = parameters[2].valueAsText  

@@ -52,12 +52,75 @@ class ToolLogger:
         """Pesan detail/sub-langkah"""
         arcpy.AddMessage(f"   -> {message}")
 
-    def warning(self, message):
+    def warning(self, message, project_config_path = None):
         """Peringatan non-fatal"""
+        json_app = get_all_config() 
+        
+        user_credential = json_app.get('user_credential', {})
+        user_name = user_credential.get('nama_pengguna', 'Unknown')
+
+        waktu = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        key = generate_key()
+        fernet = Fernet(key)
+        
+        # 2. CATAT LOG APLIKASI
+        log_teks_app = f'[WARNING][{waktu}][{self.tool_name}][{user_name}]-{message}'
+        encrypted_log_app = fernet.encrypt(log_teks_app.encode('utf-8'))
+
+        app_dir = os.path.dirname(self.app_log_path)
+        app_log_activity_path = os.path.join(app_dir, 'app_activity.bin')
+        with open(app_log_activity_path, 'ab') as f:
+            f.write(encrypted_log_app + b'\n')
+
+        if project_config_path:
+            json_project = get_all_config(project_config_path)
+            kab_kota = json_project.get('WADMKK', 'Unknown')
+            
+            log_teks_project = f'[WARNING][{waktu}][{self.tool_name}][{user_name}][{kab_kota}]-{message}'
+            encrypted_log_project = fernet.encrypt(log_teks_project.encode('utf-8'))
+            
+            project_dir = os.path.dirname(project_config_path)
+            project_log_path = os.path.join(project_dir, 'project_activity.bin')
+            
+            with open(project_log_path, 'ab') as f:
+                f.write(encrypted_log_project + b'\n')
+
         arcpy.AddWarning(f"[WARNING] {message}")
 
-    def error(self, message):
+    def error(self, message, project_config_path = None):
         """Pesan kesalahan"""
+        json_app = get_all_config() 
+        
+        user_credential = json_app.get('user_credential', {})
+        user_name = user_credential.get('nama_pengguna', 'Unknown')
+
+        waktu = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        key = generate_key()
+        fernet = Fernet(key)
+        
+        # 2. CATAT LOG APLIKASI
+        log_teks_app = f'[ERROR][{waktu}][{self.tool_name}][{user_name}]-{message}'
+        encrypted_log_app = fernet.encrypt(log_teks_app.encode('utf-8'))
+
+        app_dir = os.path.dirname(self.app_log_path)
+        app_log_activity_path = os.path.join(app_dir, 'app_activity.bin')
+        with open(app_log_activity_path, 'ab') as f:
+            f.write(encrypted_log_app + b'\n')
+
+        if project_config_path:
+            json_project = get_all_config(project_config_path)
+            kab_kota = json_project.get('WADMKK', 'Unknown')
+            
+            log_teks_project = f'[ERROR][{waktu}][{self.tool_name}][{user_name}][{kab_kota}]-{message}'
+            encrypted_log_project = fernet.encrypt(log_teks_project.encode('utf-8'))
+            
+            project_dir = os.path.dirname(project_config_path)
+            project_log_path = os.path.join(project_dir, 'project_activity.bin')
+            
+            with open(project_log_path, 'ab') as f:
+                f.write(encrypted_log_project + b'\n')
         arcpy.AddError(f"[ERROR] {message}")
 
     def kirim_log_ke_server(self, log_path=r"C:\PenilaianTanah\config\app_activity.bin"):

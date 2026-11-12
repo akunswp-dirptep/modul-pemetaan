@@ -162,8 +162,9 @@ class Ekspor_Workspace:
                         arcname = os.path.relpath(file_path, source_dir)
                         path_parts = arcname.split(os.sep)
                         
-                        # FILTER UTAMA: Lewati jika BUKAN ZoneNilaiTanah.gdb dan BUKAN penilaian_tanah_config.bin
-                        if 'ZoneNilaiTanah.gdb' not in path_parts and file != 'penilaian_tanah_config.bin' and 'project_activity.bin':
+                        allowed_files = ('penilaian_tanah_config.bin', 'project_activity.bin')
+            
+                        if 'ZoneNilaiTanah.gdb' not in path_parts and file not in allowed_files:
                             continue
                         
                         if any(file.endswith(ext) for ext in skip_extensions) or any(keyword in file for keyword in skip_keywords):
@@ -401,7 +402,13 @@ class Simpan_Workspace_Ke_Sipenta:
                 for root, dirs, files in os.walk(source_dir):
                     for file in files:
                         file_path = os.path.join(root, file)
-                        
+                        arcname = os.path.relpath(file_path, source_dir)
+                        path_parts = arcname.split(os.sep)
+                        allowed_files = ('penilaian_tanah_config.bin', 'project_activity.bin')
+            
+                        if 'ZoneNilaiTanah.gdb' not in path_parts and file not in allowed_files:
+                            continue
+
                         # Skip file lock ArcGIS
                         if any(file.endswith(ext) for ext in skip_extensions) or any(keyword in file for keyword in skip_keywords):
                             continue

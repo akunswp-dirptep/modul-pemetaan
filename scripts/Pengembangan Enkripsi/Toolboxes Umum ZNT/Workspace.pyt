@@ -147,13 +147,13 @@ class Buat_Workspace(object):
 
         # Koordinat harus TM-3
         if coord is None or 'DGN_1995_Indonesia_TM-3_Zone' not in coord.strip():
-            logger.error("Proyeksi Sistem Koordinat harus DGN_1995_Indonesia_TM-3")
+            arcpy.AddError("Proyeksi Sistem Koordinat harus DGN_1995_Indonesia_TM-3")
             return
         
         try:
             skala_int = int(skala_text.split(":")[1].replace(".", ""))
         except Exception as e:
-            logger.error(f"Format skala tidak valid: {skala_text}")
+            arcpy.AddError(f"Format skala tidak valid: {skala_text}")
             return
 
         # Membuat data konfigurasi dalam format dictionary
@@ -175,7 +175,7 @@ class Buat_Workspace(object):
         if arcpy.Exists(gdb_path):
             arcpy.management.Delete(gdb_path)
 
-        logger.info("Mempersiapkan Workspace")
+        # logger.info("Mempersiapkan Workspace")
         arcpy.management.CreateFileGDB(ws_path, gdbname)
         arcpy.management.CreateFeatureDataset(gdb_path, dataset_name, coord)
         ds_path = os.path.join(gdb_path, dataset_name)
@@ -203,7 +203,7 @@ class Buat_Workspace(object):
         for field in text_field:
             arcpy.management.AddField(layer_path, field, "TEXT", field_is_nullable="NULLABLE")
 
-        logger.info("Berhasil membuat Workspace", local_conf_path)
+        # logger.info("Berhasil membuat Workspace", local_conf_path)
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         folder_connections = aprx.folderConnections
         new_folder = ws_path
@@ -1611,7 +1611,7 @@ class Cek_Zona_Awal(object):
             with arcpy.da.InsertCursor(out_overlap, ["SHAPE@", "UID_Zona_1", "UID_Zona_2", "Ls_Tindih"]) as icur:
                 for tindih_data in koleksi_tindih:
                     icur.insertRow(tindih_data)
-                    
+
         if arcpy.Exists(mem_zona_copy):
             arcpy.management.Delete(mem_zona_copy)
         if arcpy.Exists(mem_overlap):

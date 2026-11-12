@@ -162,7 +162,7 @@ class Tambah_Citra_Online(object):
     def execute(self, parameters, messages):
 
         logger = ToolLogger('Tambah Basemap Online')
-        logger.info('Mencoba Memasukkan Map')
+        # logger.info('Mencoba Memasukkan Map')
         
         pilihan_sumber = parameters[0].valueAsText
         zl = "Zona_Layer"
@@ -194,7 +194,7 @@ class Tambah_Citra_Online(object):
             if not arcpy.Exists(new_config_path):
                 return
             config_dan_paths = get_config_values()
-            logger.info('Menambahkan Simbologi ke Zona Layer', config_dan_paths['config_file_path'])
+            # logger.info('Menambahkan Simbologi ke Zona Layer', config_dan_paths['config_file_path'])
             simbology_path = os.path.join(
                 config_dan_paths['symbology_folder'],
                 "Simbologi_Jenis_Zona.lyrx"

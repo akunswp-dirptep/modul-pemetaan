@@ -7,6 +7,7 @@ Versi: 6.15
 
 [PENYESUAIAN FITUR]
 1. Persiapan fitur Logging
+2. Penyesuaian Sesuaikan jenis zona lanjutan
 
 
 

@@ -16,6 +16,7 @@ __pycache__/
 !zona_layer.pyc
 !persil.pyc
 !secure.pyc
+!loggerlib.pyc
 
 *.pyt.xml
 qc-code/

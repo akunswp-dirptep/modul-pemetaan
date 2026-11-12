@@ -126,7 +126,7 @@ class Buat_Workspace(object):
         """
         Fungsi ini digunakan untuk membuat sebuah workspace geodatabase baru untuk analisis zona nilai tanah.
         """
-        
+        logger = ToolLogger('Buat Workspace')
         coord = parameters[0].valueAsText
         ws_path = parameters[1].valueAsText 
         skala_text = parameters[2].valueAsText  
@@ -147,18 +147,14 @@ class Buat_Workspace(object):
 
         # Koordinat harus TM-3
         if coord is None or 'DGN_1995_Indonesia_TM-3_Zone' not in coord.strip():
-            arcpy.AddError("Proyeksi Sistem Koordinat harus DGN_1995_Indonesia_TM-3")
-            sys.exit(1)
+            logger.error("Proyeksi Sistem Koordinat harus DGN_1995_Indonesia_TM-3")
+            return
         
-        # =====================================================================
-        # Logika: "1:5.000" -> split berdasarkan ":" mengambil bagian kedua ("5.000")
-        # -> hilangkan tanda "." ("5000") -> konversi ke integer (5000)
-        # =====================================================================
         try:
             skala_int = int(skala_text.split(":")[1].replace(".", ""))
         except Exception as e:
-            arcpy.AddError(f"Format skala tidak valid: {skala_text}")
-            sys.exit(1)
+            logger.error(f"Format skala tidak valid: {skala_text}")
+            return
 
         # Membuat data konfigurasi dalam format dictionary
         config_data = {
@@ -179,6 +175,7 @@ class Buat_Workspace(object):
         if arcpy.Exists(gdb_path):
             arcpy.management.Delete(gdb_path)
 
+        logger.info("Mempersiapkan Workspace")
         arcpy.management.CreateFileGDB(ws_path, gdbname)
         arcpy.management.CreateFeatureDataset(gdb_path, dataset_name, coord)
         ds_path = os.path.join(gdb_path, dataset_name)
@@ -206,6 +203,7 @@ class Buat_Workspace(object):
         for field in text_field:
             arcpy.management.AddField(layer_path, field, "TEXT", field_is_nullable="NULLABLE")
 
+        logger.info("Berhasil membuat Workspace", local_conf_path)
         aprx = arcpy.mp.ArcGISProject("CURRENT")
         folder_connections = aprx.folderConnections
         new_folder = ws_path
@@ -215,11 +213,9 @@ class Buat_Workspace(object):
                 'connectionString': new_folder,
                 'isHomeFolder': False
             })
-
-            # Update folder connections
             aprx.updateFolderConnections(folder_connections, validate=True)
         else:
-            arcpy.AddMessage("Workspace sudah terhubung di ArcGIS Pro")
+            logger.step('Workspace ArcGIS sudah ditambahkan.')
             
         arcpy.SetParameter(6, layer_path) 
         return
@@ -234,7 +230,7 @@ class Edit_Workspace(object):
         self.canRunInBackground = False
 
     def getParameterInfo(self):
-        # Parameter 0: Folder Workspace (Sumber)
+
         workspace_folder = arcpy.Parameter(
             displayName="Pilih Folder Workspace",
             name="workspace_folder",
@@ -1483,8 +1479,6 @@ class Cek_Zona_Awal(object):
                             koleksi_tindih.append((shape_geom, pair[0], pair[1], area_overlap))
                             processed_pairs.add(pair)
 
-        arcpy.management.Delete(mem_zona_copy)
-        arcpy.management.Delete(mem_overlap)
 
         # --- 4. Persiapkan Custom ID Persil ---
         messages.addMessage("--> Mempersiapkan layer Persil & Custom ID...")
@@ -1617,8 +1611,15 @@ class Cek_Zona_Awal(object):
             with arcpy.da.InsertCursor(out_overlap, ["SHAPE@", "UID_Zona_1", "UID_Zona_2", "Ls_Tindih"]) as icur:
                 for tindih_data in koleksi_tindih:
                     icur.insertRow(tindih_data)
-        arcpy.management.Delete(mem_persil)
-        arcpy.management.Delete(memory_intersect)
+                    
+        if arcpy.Exists(mem_zona_copy):
+            arcpy.management.Delete(mem_zona_copy)
+        if arcpy.Exists(mem_overlap):
+            arcpy.management.Delete(mem_overlap)
+        if arcpy.Exists(mem_persil):
+            arcpy.management.Delete(mem_persil)
+        if arcpy.Exists(memory_intersect):
+            arcpy.management.Delete(memory_intersect)
 
         messages.addMessage("Proses Selesai. Silakan periksa Layer Output.")
         return

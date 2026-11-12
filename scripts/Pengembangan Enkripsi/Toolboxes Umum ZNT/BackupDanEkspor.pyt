@@ -156,28 +156,20 @@ class Ekspor_Workspace:
             
             # Buat file ZIP
             with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                # Walk melalui semua file dan subdirektori
                 for root, dirs, files in os.walk(source_dir):
                     for file in files:
                         file_path = os.path.join(root, file)
-                        
-                        # Hitung path relatif di awal untuk keperluan filtering
                         arcname = os.path.relpath(file_path, source_dir)
-                        
-                        # Pecah path untuk mengecek apakah file berada di dalam folder ZoneNilaiTanah.gdb
                         path_parts = arcname.split(os.sep)
                         
                         # FILTER UTAMA: Lewati jika BUKAN ZoneNilaiTanah.gdb dan BUKAN penilaian_tanah_config.bin
-                        if 'ZoneNilaiTanah.gdb' not in path_parts and file != 'penilaian_tanah_config.bin':
+                        if 'ZoneNilaiTanah.gdb' not in path_parts and file != 'penilaian_tanah_config.bin' and 'project_activity.bin':
                             continue
                         
-                        # Skip file lock ArcGIS
                         if any(file.endswith(ext) for ext in skip_extensions) or any(keyword in file for keyword in skip_keywords):
                             continue
                         
-                        # Coba akses dan masukkan ke dalam ZIP
                         try:
-                            # Coba buka file untuk membaca (test jika file terkunci)
                             with open(file_path, 'rb') as test_file:
                                 pass
                                 

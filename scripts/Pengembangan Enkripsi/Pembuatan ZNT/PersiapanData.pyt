@@ -572,7 +572,6 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
         oid_field_name = desc.OIDFieldName
 
         if oid_field_name:
-            # Kalkulasi menggunakan nama field yang terdeteksi
             arcpy.management.CalculateField(zl_temp_path, "NOZN", f"!{oid_field_name}!", "PYTHON3")
         else:
             arcpy.AddWarning("Dataset ini tidak memiliki field OID bawaan.")

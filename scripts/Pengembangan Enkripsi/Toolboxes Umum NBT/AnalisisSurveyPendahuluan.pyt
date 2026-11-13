@@ -29,7 +29,11 @@ class Toolbox:
                       Tampilkan_Fasilitas,
                       Setujui_Sampel_Fasilitas,
                       Hitung_Jarak_Fasilitas,
-                      Periksa_Kesesuaian_Zonasi]
+                      Tampilkan_Risiko,
+                      Periksa_Kesesuaian_Zonasi,
+                      Setujui_Sampel_Risiko,
+                      Hitung_Skor_Risiko,
+                      Upload_Basis_Data]
 
 
 class Ambil_Survey_Pendahuluan_Dari_Sipenta(object):
@@ -1021,6 +1025,555 @@ class Hitung_Jarak_Fasilitas(object):
         arcpy.AddMessage("== Proses selesai ==")
         return
 
+class Tampilkan_Risiko(object):
+    def __init__(self):
+        self.label = "Tampilkan Risiko ke Map"
+        self.description = "Menampilkan layer risiko dari Geodatabase ke dalam Map aktif beserta simbologi standarnya."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        pilih_risiko = arcpy.Parameter(
+            displayName="Pilih Risiko yang Ingin Ditampilkan",
+            name="pilih_risiko",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+            multiValue=True
+        )
+
+        p_out_layers = arcpy.Parameter(
+            displayName="Output Layers",
+            name="out_layers",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output",
+            multiValue=True
+        )
+        return [pilih_risiko, p_out_layers]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        pilih_risiko = parameters[0]
+        
+        # Mengambil daftar risiko dari konfigurasi dataset untuk mengisi dropdown pilihan
+        if not pilih_risiko.hasBeenValidated:
+            try:
+                configs = persil.get_config_values()
+                risiko_workspace = configs["risiko_config"]["dataset_path"]
+                
+                if arcpy.Exists(risiko_workspace):
+                    arcpy.env.workspace = risiko_workspace
+                    # Berdasarkan input sebelumnya, fitur risiko biasanya berupa Polygon
+                    fc_list = arcpy.ListFeatureClasses(feature_type="Polygon") 
+                    
+                    if fc_list:
+                        pilih_risiko.filter.list = fc_list
+                    else:
+                        pilih_risiko.filter.list = ["Tidak ada data risiko ditemukan"]
+                else:
+                    pilih_risiko.filter.list = ["Dataset risiko tidak ditemukan"]
+            except Exception as e:
+                pilih_risiko.filter.list = ["Gagal memuat dataset"]
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        arcpy.AddMessage("== Memulai proses menampilkan risiko ==")
+        
+        risiko_terpilih = parameters[0].valueAsText.split(';')
+        risiko_terpilih = [r.strip("'") for r in risiko_terpilih]
+        
+        try:
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            active_map = aprx.activeMap
+            if active_map is None:
+                arcpy.AddError("Tidak ada Map yang terbuka/aktif. Silakan buka Map terlebih dahulu.")
+                return
+        except Exception:
+            arcpy.AddError("Tool ini hanya dapat dijalankan di dalam antarmuka ArcGIS Pro dengan Map yang terbuka.")
+            return
+
+        # Mengambil konfigurasi path
+        configs = persil.get_config_values()
+        risiko_workspace = configs["risiko_config"]["dataset_path"]
+        
+        # Mapping simbologi berdasarkan logika di Masukkan_Data_Risiko
+        symbology_mapping = {
+            'BANJIR': r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_BANJIR.lyrx",
+            'LONGSOR': r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_LONGSOR.lyrx",
+        }
+        default_symbology = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_LAINNYA.lyrx"
+        
+        output_layer_names = []
+        
+        for nama_risiko in risiko_terpilih:
+            fc_path = os.path.join(risiko_workspace, nama_risiko)
+            layer_name = f"Risiko_{nama_risiko}"
+            
+            if not arcpy.Exists(fc_path):
+                messages.addWarningMessage(f"Data {nama_risiko} tidak ditemukan di Geodatabase.")
+                continue
+
+            arcpy.AddMessage(f"Menambahkan {nama_risiko} ke map...")
+
+            # Membuat feature layer untuk dimuat ke map
+            arcpy.management.MakeFeatureLayer(fc_path, layer_name)
+            
+            # Memilih simbologi (menggunakan .upper() untuk mencocokkan key BANJIR/LONGSOR)
+            simbology_file = symbology_mapping.get(nama_risiko.upper(), default_symbology)
+
+            if os.path.exists(simbology_file):
+                try:
+                    arcpy.management.ApplySymbologyFromLayer(layer_name, simbology_file)
+                    arcpy.AddMessage(f"  -> Simbologi diterapkan untuk {layer_name}")
+                except Exception as e:
+                    messages.addWarningMessage(f"  -> Gagal menerapkan simbologi untuk {layer_name}: {str(e)}")
+            else:
+                messages.addWarningMessage(f"  -> File simbologi tidak ditemukan: {simbology_file}")
+                
+            output_layer_names.append(layer_name)
+
+        if output_layer_names:
+            parameters[1].value = output_layer_names
+            messages.addMessage(f"\nBerhasil memuat {len(output_layer_names)} layer.")
+        else:
+            messages.addWarningMessage("Tidak ada layer yang berhasil dimuat.")
+
+        arcpy.AddMessage("== Proses selesai ==")
+        return
+
+class Setujui_Sampel_Risiko(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Setujui Sampel Risiko"
+        self.description = "Membuat buffer dari titik Survey_Risiko yang dipilih, memasukkannya ke layer risiko (polygon) yang dipilih/baru, dan menghapus titik dari survey."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        """Define the tool parameters."""
+        
+        mode_input = arcpy.Parameter(
+            displayName="Mode Pemasukan Risiko",
+            name="mode_input",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        mode_input.filter.type = "ValueList"
+        mode_input.filter.list = ["Pilih Risiko Existing", "Buat Risiko Baru"]
+        mode_input.value = "Pilih Risiko Existing"
+
+        jarak_buffer = arcpy.Parameter(
+            displayName="Jarak Buffer (Contoh: 50 Meters)",
+            name="jarak_buffer",
+            datatype="GPLinearUnit",
+            parameterType="Required",
+            direction="Input"
+        )
+        jarak_buffer.value = "50 Meters"
+
+        target_risiko = arcpy.Parameter(
+            displayName="Pilih Layer Risiko Tujuan",
+            name="target_risiko",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        target_risiko.filter.type = "ValueList"
+        
+        nama_risiko_baru = arcpy.Parameter(
+            displayName="Nama Risiko Baru (Maks 10 Huruf)",
+            name="nama_risiko_baru",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+
+        p_out_layers = arcpy.Parameter(
+            displayName="Output Layers",
+            name="out_layers",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output",
+            multiValue=True
+        )
+
+        return [mode_input, jarak_buffer, target_risiko, nama_risiko_baru, p_out_layers]
+
+    def isLicensed(self):
+        """Set whether the tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal validation."""
+        mode_input = parameters[0].valueAsText
+        target_risiko = parameters[2]
+        nama_risiko_baru = parameters[3]
+        
+        # 1. Atur Enable/Disable Parameter Berdasarkan Mode
+        if mode_input == "Pilih Risiko Existing":
+            target_risiko.enabled = True
+            nama_risiko_baru.enabled = False
+        elif mode_input == "Buat Risiko Baru":
+            target_risiko.enabled = False
+            nama_risiko_baru.enabled = True
+
+        # 2. Update List untuk Risiko Existing
+        if not target_risiko.hasBeenValidated:
+            try:
+                configs = persil.get_config_values()
+                risiko_workspace = configs["risiko_config"]["dataset_path"]
+                
+                if arcpy.Exists(risiko_workspace):
+                    arcpy.env.workspace = risiko_workspace
+                    # Cari layer dengan geometri Polygon untuk Risiko
+                    fc_list = arcpy.ListFeatureClasses(feature_type="Polygon")
+                    
+                    if fc_list:
+                        target_risiko.filter.list = fc_list
+                    else:
+                        target_risiko.filter.list = ["Tidak ada layer Risiko ditemukan"]
+                else:
+                    target_risiko.filter.list = ["Workspace risiko tidak ditemukan"]
+                    
+            except Exception as e:
+                target_risiko.filter.list = ["Gagal memuat daftar layer Risiko"]
+                
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation."""
+        mode_input = parameters[0].valueAsText
+        
+        if mode_input == "Buat Risiko Baru":
+            nama_baru = parameters[3].valueAsText
+            if nama_baru:
+                # Validasi jumlah karakter maksimal 10 huruf dan tidak ada spasi (Sesuai aturan Data Risiko)
+                if len(nama_baru) > 10:
+                    parameters[3].setErrorMessage("Nama risiko maksimal 10 huruf.")
+                if " " in nama_baru:
+                    parameters[3].setErrorMessage("Nama risiko tidak boleh mengandung spasi.")
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        # Asumsi nama layer survey titik untuk risiko di Map adalah 'Survey_Risiko'
+        input_lbt = 'Survey_Risiko' 
+        
+        mode_input = parameters[0].valueAsText
+        jarak_buffer = parameters[1].valueAsText
+        target_risiko_exist = parameters[2].valueAsText
+        nama_risiko_baru = parameters[3].valueAsText
+
+        reload_symbology = []
+        
+        # 1. Validasi eksistensi layer input di map
+        if not arcpy.Exists(input_lbt):
+            arcpy.AddError(f"Layer input '{input_lbt}' tidak ditemukan pada map saat ini.")
+            return
+
+        # 2. Validasi apakah ada titik yang di-select
+        desc = arcpy.Describe(input_lbt)
+        if hasattr(desc, "FIDSet") and not desc.FIDSet:
+            arcpy.AddError(f"Tidak ada titik yang di-select pada layer '{input_lbt}'. Silakan select titik terlebih dahulu.")
+            return
+
+        # 3. Muat Konfigurasi
+        try:
+            configs = persil.get_config_values()
+            risiko_dataset = configs["risiko_config"]["dataset_path"]
+            persil_path = os.path.join(configs["project_config"]["dataset_path"], "Persil_Layer")
+            dataset_survey_risiko = os.path.join(configs["project_config"]["dataset_path"], "Survey_Risiko")
+            reload_symbology.append((input_lbt, dataset_survey_risiko))
+        except Exception as e:
+            arcpy.AddError(f"Gagal memuat konfigurasi path: {str(e)}")
+            return
+
+        # 4. Tentukan Target Name & Handle Buat Risiko Baru
+        if mode_input == "Buat Risiko Baru":
+            if not nama_risiko_baru:
+                arcpy.AddError("Nama risiko baru harus diisi.")
+                return
+                
+            target_name = nama_risiko_baru.upper()
+            target_path = os.path.join(risiko_dataset, target_name)
+            reload_symbology.append((f'Risiko_{target_name}', target_path))
+            
+            # Buat Feature Class Baru (POLYGON) jika belum ada
+            if not arcpy.Exists(target_path):
+                arcpy.AddMessage(f"Membuat Layer Risiko Baru: {target_name}")
+                sr = arcpy.Describe(input_lbt).spatialReference
+                arcpy.management.CreateFeatureclass(risiko_dataset, target_name, "POLYGON", spatial_reference=sr)
+                
+                # Menambahkan field di Persil_Layer & mendaftarkan di config
+                field_risiko = f"{target_name}"
+                existing_fields = [f.name.upper() for f in arcpy.ListFields(persil_path)]
+                
+                if field_risiko.upper() not in existing_fields:
+                    arcpy.AddMessage(f"Menambahkan field {field_risiko} ke Persil_Layer...")
+                    # Menggunakan SHORT sesuai standar Risiko sebelumnya
+                    arcpy.management.AddField(persil_path, field_risiko, "SHORT") 
+                
+                # Update Config mapping
+                if "risiko_config" in configs:
+                    mapping = configs["risiko_config"].get("mapping_risiko", {})
+                    mapping[field_risiko] = {
+                        "nama_risiko": target_name,
+                        "file_path": target_path
+                    }
+                    configs["risiko_config"]["mapping_risiko"] = mapping
+                    try:
+                        persil.set_config_values(configs)
+                    except Exception as e:
+                        arcpy.AddWarningMessage(f"Gagal menyimpan config risiko baru: {str(e)}")
+
+        else:
+            target_name = target_risiko_exist
+            target_path = os.path.join(risiko_dataset, target_name)
+            reload_symbology.append((f'Risiko_{target_name}', target_path))
+
+        # Validasi akhir path target
+        if not arcpy.Exists(target_path):
+            arcpy.AddError(f"Layer tujuan '{target_name}' tidak ditemukan di path: {target_path}")
+            return
+
+        # Pastikan layer target memiliki field 'keterangan'
+        target_fields = [f.name.lower() for f in arcpy.ListFields(target_path)]
+        if "keterangan" not in target_fields:
+            arcpy.AddMessage(f"Menambahkan field 'keterangan' pada layer {target_name}...")
+            arcpy.management.AddField(target_path, "keterangan", "TEXT", field_length=255)
+
+        # 5. Eksekusi Buffer, Pemindahan Geometri & Atribut, serta Penghapusan Titik Input
+        jumlah_polygon = 0
+        temp_buffer = r"memory\temp_buffer_risiko"
+        
+        try:
+            # Langkah 5a: Melakukan buffer pada titik yang teselect (Buffer otomatis memproses hanya fitur terpilih)
+            arcpy.AddMessage(f"Mengeksekusi proses Buffer dengan jarak {jarak_buffer}...")
+            arcpy.analysis.Buffer(in_features=input_lbt, out_feature_class=temp_buffer, buffer_distance_or_field=jarak_buffer)
+
+            # Asumsi: field dari survey_risiko yang ingin dipindah adalah 'nama_risiko'. Jika ada perbedaan, sesuaikan nama string ini
+            survey_attribute_field = "nama_risiko"
+            buffer_fields = [f.name.lower() for f in arcpy.ListFields(temp_buffer)]
+            
+            if survey_attribute_field.lower() in buffer_fields:
+                in_fields = ["SHAPE@", survey_attribute_field]
+            else:
+                # Jika field tidak ditemukan, gunakan hanya geometri
+                in_fields = ["SHAPE@"]
+                arcpy.AddWarningMessage(f"Field '{survey_attribute_field}' tidak ditemukan di {input_lbt}. Atribut keterangan akan dikosongkan.")
+
+            out_fields = ["SHAPE@", "keterangan"]
+            data_to_move = []
+            
+            # Langkah 5b: Baca hasil buffer dan simpan ke memori
+            with arcpy.da.SearchCursor(temp_buffer, in_fields) as search_cursor:
+                for row in search_cursor:
+                    geometry = row[0]
+                    # Jika field atribut ada, ambil nilainya, jika tidak biarkan None
+                    keterangan_val = row[1] if len(row) > 1 else None 
+                    if geometry is not None:
+                        data_to_move.append((geometry, keterangan_val))
+
+            # Langkah 5c: Eksekusi pemindahan dan penghapusan
+            if data_to_move:
+                # Insert data polygon buffer ke layer target
+                with arcpy.da.InsertCursor(target_path, out_fields) as insert_cursor:
+                    for geom, ket_val in data_to_move:
+                        insert_cursor.insertRow([geom, ket_val])
+                        jumlah_polygon += 1
+                
+                # Menghapus titik yang telah diproses dari layer input (menghapus yang terseleksi saja)
+                arcpy.management.DeleteFeatures(input_lbt)
+
+            arcpy.AddMessage(f"Berhasil membuat dan memindahkan {jumlah_polygon} polygon buffer ke layer {target_name} dan menghapus titik awalnya dari {input_lbt}.")
+            
+            # Bersihkan file temporari buffer
+            if arcpy.Exists(temp_buffer):
+                arcpy.management.Delete(temp_buffer)
+                
+        except Exception as e:
+            arcpy.AddError(f"Terjadi kesalahan saat mengeksekusi buffer dan mendistribusikan data: {str(e)}")
+            if arcpy.Exists(temp_buffer):
+                arcpy.management.Delete(temp_buffer)
+            return 
+            
+        # 6. Menangani Reload Symbology
+        layers_reload_symbology = []        
+        for data in reload_symbology:
+            layer_name = data[0]
+            path_file = data[1]
+            
+            if layer_name == "Survey_Risiko":
+                sym_file = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Survey_Risiko.lyrx"
+            else:
+                file_name = os.path.basename(path_file) 
+                # Simbologi disesuaikan untuk Risiko
+                symbology_mapping = {
+                    'BANJIR': r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_BANJIR.lyrx",
+                    'LONGSOR': r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_LONGSOR.lyrx",
+                }
+                default_symbology = r"C:\PenilaianTanah\ui\symbology\Nilai Bidang Tanah\Risiko_LAINNYA.lyrx"
+                sym_file = symbology_mapping.get(file_name.upper(), default_symbology)
+            
+            arcpy.AddMessage(f"Menambahkan {layer_name} ke map...")
+            arcpy.management.MakeFeatureLayer(path_file, layer_name)
+            
+            if os.path.exists(sym_file):
+                try:
+                    arcpy.management.ApplySymbologyFromLayer(layer_name, sym_file)
+                    arcpy.AddMessage(f"  -> Simbologi diterapkan untuk {layer_name}")
+                except Exception as e:
+                    messages.addWarningMessage(f"  -> Gagal menerapkan simbologi untuk {layer_name}: {str(e)}")
+            else:
+                messages.addWarningMessage(f"  -> File simbologi tidak ditemukan: {sym_file}")
+                
+            layers_reload_symbology.append(layer_name)
+
+        if layers_reload_symbology:
+            parameters[4].value = layers_reload_symbology
+            messages.addMessage(f"\nBerhasil memuat {len(layers_reload_symbology)} layer.")
+        else:
+            messages.addWarningMessage("Tidak ada layer yang berhasil dimuat.")
+            
+        return
+
+class Hitung_Skor_Risiko(object):
+    def __init__(self):
+        self.label = "Hitung Skor Risiko Persil (Overlap 50%)"
+        self.description = "Menghitung skor risiko berdasarkan overlay. Jika bidang persil tertutupi layer risiko >= 50%, field risiko akan diisi skor 1."
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        pilih_risiko = arcpy.Parameter(
+            displayName="Pilih Risiko yang Akan Dihitung",
+            name="pilih_risiko",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input",
+            multiValue=True
+        )
+        
+        output_layer = arcpy.Parameter(
+            name="output_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+
+        return [pilih_risiko, output_layer]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        pilih_risiko = parameters[0]
+        if not pilih_risiko.hasBeenValidated:
+            try:
+                configs = persil.get_config_values()
+                risiko_workspace = configs["risiko_config"]["dataset_path"]
+                
+                if arcpy.Exists(risiko_workspace):
+                    arcpy.env.workspace = risiko_workspace
+                    fc_list = arcpy.ListFeatureClasses(feature_type="Polygon")
+                    if fc_list:
+                        pilih_risiko.filter.list = fc_list
+                    else:
+                        pilih_risiko.filter.list = ["Tidak ada data risiko ditemukan"]
+            except Exception:
+                pilih_risiko.filter.list = ["Gagal memuat dataset"]
+        return
+
+    def updateMessages(self, parameters):
+        return
+
+    def execute(self, parameters, messages):
+        messages.addMessage("== Memulai Perhitungan Skor Risiko ==")
+        
+        risiko_terpilih = parameters[0].valueAsText.split(';')
+        risiko_terpilih = [r.strip("'") for r in risiko_terpilih]
+
+        # 1. Validasi Persil_Layer pada Map Aktif
+        persil_layer = 'Persil_Layer'
+        aprx = arcpy.mp.ArcGISProject("CURRENT")
+        peta_aktif = aprx.activeMap
+        
+        if peta_aktif is None:
+            arcpy.AddError('Tidak ditemukan peta aktif pada project ini.')
+            return
+
+        daftar_layer = peta_aktif.listLayers(persil_layer)
+        if len(daftar_layer) == 0:
+            arcpy.AddError(f'Layer {persil_layer} tidak ditemukan.')
+            return
+        elif len(daftar_layer) > 1:
+            arcpy.AddError(f'Ditemukan {len(daftar_layer)} Layer {persil_layer}. Hanya boleh ada 1 {persil_layer}.')
+            return
+            
+        layer_diinginkan = daftar_layer[0]
+        if layer_diinginkan.isBroken:
+            arcpy.AddError(f"Peringatan: Layer '{persil_layer}' ditemukan, tetapi sumber datanya terputus (broken).")
+            return
+
+        input_layer = layer_diinginkan
+        
+        # 2. Muat Konfigurasi Dataset Risiko
+        try:
+            configs = persil.get_config_values()
+            risiko_dataset = configs["risiko_config"]["dataset_path"]
+        except Exception as e:
+            arcpy.AddError(f"Gagal memuat konfigurasi path: {str(e)}")
+            return
+
+        # 3. Persiapan ID Sementara dan Mapping Luas Area Asli
+        temp_id_field = "TMP_RISK_ID"
+        existing_fields = [f.name.upper() for f in arcpy.ListFields(input_layer)]
+        
+        if temp_id_field not in existing_fields:
+            arcpy.management.AddField(input_layer, temp_id_field, "LONG")
+            
+        # Mengisi TMP_RISK_ID dengan OBJECTID agar referensinya tidak hilang saat intersect
+        arcpy.management.CalculateField(input_layer, temp_id_field, "!OBJECTID!", "PYTHON3")
+
+        persil_areas = {}
+        with arcpy.da.SearchCursor(input_layer, [temp_id_field, "SHAPE@AREA"]) as sc:
+            for row in sc:
+                persil_areas[row[0]] = row[1]
+
+        # 4. Eksekusi Perhitungan per Layer Risiko
+        for nama_risiko in risiko_terpilih:
+            messages.addMessage(f"\n--- Memproses Risiko: {nama_risiko} ---")
+            
+            risk_path = os.path.join(risiko_dataset, nama_risiko)
+            if not arcpy.Exists(risk_path):
+                messages.addWarningMessage(f"Dataset {nama_risiko} tidak ditemukan. Dilewati.")
+                continue
+                
+            # Pastikan field risiko ada di Persil_Layer, jika tidak, buatkan (Tipe: SHORT)
+            if nama_risiko.upper() not in existing_fields:
+                messages.addMessage(f"Field '{nama_risiko}' belum ada, membuat field baru...")
+                arcpy.management.AddField(input_layer, nama_risiko.upper(), "SHORT")
+                existing_fields.append(nama_risiko.upper())
+
+            intersect_out = r"memory\intersect_" + nama_risiko
+            if arcpy.Exists(intersect_out):
+                arcpy.management.Delete(intersect_out)
+                
+            # Melakukan Intersect ke memori (lebih cepat)
+            messages.addMessage("Melakukan overlay (Intersect)...")
+            arcpy.analysis.PairwiseIntersect([input_layer, risk_path], intersect_out)
+            
+            # Hitung jumlah akumulasi luas intersect per bidang Persil
+            intersect_areas = {}
+            with arcpy.da.SearchCursor(intersect_out, [temp_id_field, "SHAPE@AREA"]) as sc:
+                for row in sc:
+                    tmp_id = row[0]
+                    area = row[1]
+                    intersect_areas[tmp_id] = intersect_areas.get(tmp_id, 0) + area
 
 class Periksa_Kesesuaian_Zonasi(object):
     def __init__(self):
@@ -1177,4 +1730,126 @@ class Periksa_Kesesuaian_Zonasi(object):
 
     def postExecute(self, parameters):
         """This method takes place after outputs are processed and added to the display."""
+        return
+
+class Upload_Basis_Data(object):
+    def __init__(self):
+        self.label = "Upload Basis Data"
+        self.description = ""
+        self.canRunInBackground = False
+
+
+    def getParameterInfo(self):
+        berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
+        berkas_show = []
+        can_show = 0
+        if berkas_list is not None:
+            for berkas in berkas_list:
+                if berkas[1] is True:
+                    berkas_show.append(f"{berkas[0]}")
+                    can_show += 1
+            if can_show == 0:
+                berkas_show = ['Tidak ada berkas yang dapat dipilih']
+        else:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+
+        fl = arcpy.Parameter(
+            displayName="Persil Layer (Feature Layer)",
+            name="fl",
+            datatype="GPFeatureLayer",  
+            parameterType="Required",
+            direction="Input") 
+
+        berkas = arcpy.Parameter(
+            displayName="Berkas",
+            name="link",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input")
+               
+        berkas.filter.type = "ValueList"
+        berkas.filter.list = berkas_show
+        if berkas_list and can_show > 0:
+            preferred_berkas=get_user_data(PREFERRED_BERKAS_ID)
+            if preferred_berkas:
+                if '04/' in preferred_berkas:
+                    berkas.value = preferred_berkas
+                else:
+                    berkas.value = berkas_show[0]           
+        elif berkas_list and can_show == 0:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+        else:
+            berkas.value = 'Tidak ada berkas yang dapat dipilih'
+        
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="petunjuk",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input")
+
+        penjelasan.value = (
+                "Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+                "Direktorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+                "Kementerian ATR/BPN.\n"
+                "Tahun: {}\n".format(datetime.now().year))
+        params = [fl, berkas, penjelasan]
+        return params
+        
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+
+        return   
+    
+    def updateParameters(self, parameters):
+            """Modify the values and properties of parameters before internal
+            validation is performed.  This method is called whenever a parameter
+            has been changed."""
+
+            shapefile_path = parameters[0]
+            berkas = parameters[1]
+            penjelasan = parameters[2]
+
+            is_login = get_user_data(CREDENTIAL_KEY)
+
+            if is_login is None:
+                shapefile_path.enabled = False
+                berkas.enabled = False
+                penjelasan.enabled = True
+            else:
+                shapefile_path.enabled = True
+                berkas.enabled = True
+                penjelasan.enabled = False
+            
+            return
+   
+    def execute(self, parameters, messages):
+        user_data = get_user_data(CREDENTIAL_KEY)
+
+        berkas_list = get_all_berkas_id(process_type='Pembaruan NBT')
+
+        if berkas_list is None:
+            arcpy.AddWarning("Tidak ada berkas yang tersedia untuk dipilih. Pastikan Anda tidak salah memilih menu atau memiliki berkas yang valid untuk proses Pembaruan NBT.")
+            return
+        
+        fl_path = parameters[0].valueAsText
+        berkas_value = parameters[1].valueAsText
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server == "Produksi" or server == None else False
+        token = user_data.get(AUTH_KEY, None)
+
+        validate_document_type(
+            document_id=berkas_value,
+            target='Pembaruan NBT')
+        
+        upload_feature_layer_to_sipenta(
+            nomor_berkas=berkas_value,
+            token=token,
+            param="pembaruan_nbt_basis_data_penilaian_bidang_tanah",
+            in_feature="Persil_Layer",
+            feature_layer=fl_path,
+            use_production=use_production)
+
+        setup_user_data(PREFERRED_BERKAS_ID, berkas_value)
         return

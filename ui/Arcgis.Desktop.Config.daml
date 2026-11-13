@@ -2774,14 +2774,14 @@
 
 				<button id="ButtonTampilkanDataRisiko" caption="Tampilkan Data Risiko" smallImage="C:\PenilaianTanah\icons\risiko.png" largeImage="C:\PenilaianTanah\icons\risiko.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Masukkan_Data_Risiko" name="Tampilkan Data Risiko" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Tampilkan Data Risiko" name="Tampilkan Data Risiko" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Data Risiko">Menu untuk memasukkan data risiko yang diperlukan dalam proses Pembaruan NBT.</tooltip>
 				</button>
 
 				<button id="ButtonSetujuiDataRisiko" caption="Setujui Data Risiko" smallImage="C:\PenilaianTanah\icons\selection.png" largeImage="C:\PenilaianTanah\icons\selection.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\PersiapanData.pyt\Masukkan_Data_Risiko" name="Setujui Data Risiko" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Setujui_Sampel_Risiko" name="Setujui Data Risiko" xmlns=""/>
 					</args>
 					<tooltip heading="Setujui Data Risiko">Menu untuk memasukkan data risiko yang diperlukan dalam proses Pembaruan NBT.</tooltip>
 				</button>
@@ -2822,7 +2822,7 @@
 				>
 					<args>
 						<params
-							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Hitung_Resiko_Persil"
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Hitung_Skor_Risiko"
 							name="Hitung Risiko Persil"
 							xmlns=""
 						/>
@@ -2846,7 +2846,7 @@
 				>
 					<args>
 						<params
-							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembaruan NBT\AnalisisSurveyPerubahan.pyt\Upload_Basis_Data"
+							toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Upload_Basis_Data"
 							name="Upload Basis Data"
 							xmlns=""
 						/>

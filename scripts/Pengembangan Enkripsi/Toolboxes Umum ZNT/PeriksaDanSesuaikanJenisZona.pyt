@@ -344,14 +344,39 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
         jenis_zona.filter.type = "ValueList"
         jenis_zona.filter.list = ["Pertanian", "Non-Pertanian"]
 
+        # 1. Parameter Checkbox untuk menjalankan Periksa Jenis Zona
+        jalankan_periksa = arcpy.Parameter(
+            displayName="Jalankan Periksa Jenis Zona otomatis",
+            name="jalankan_periksa",
+            datatype="GPBoolean",
+            parameterType="Optional",
+            direction="Input")
+        jalankan_periksa.value = True  # Default dicentang (True)
+
         output_zl = arcpy.Parameter(
             name="output_zl",
             datatype="GPFeatureLayer",
             parameterType="Derived",
             direction="Output"
         )
+        
+        # 2. Output tambahan jika Periksa Jenis Zona dijalankan
+        output_ts = arcpy.Parameter(
+            name="output_ts",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
+        
+        output_tz = arcpy.Parameter(
+            name="output_tz",
+            datatype="GPFeatureLayer",
+            parameterType="Derived",
+            direction="Output"
+        )
 
-        return [jenis_zona, output_zl]
+        # Susunan urutan: 0=jenis_zona, 1=jalankan_periksa, 2=output_zl, 3=output_ts, 4=output_tz
+        return [jenis_zona, jalankan_periksa, output_zl, output_ts, output_tz]
 
     def isLicensed(self):
         """Set whether tool is licensed to execute."""
@@ -366,6 +391,7 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
     def execute(self, parameters, messages):
         """The source code of the tool."""
         jenis_zona = parameters[0].valueAsText
+        jalankan_periksa = parameters[1].value  # Nilainya True atau False
 
         config_dan_paths = get_config_values()
         workspace = config_dan_paths['gdb_path']
@@ -401,8 +427,7 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
 
         if ada_seleksi > 0:
             try:
-                with arcpy.da.Editor(workspace) as edit:
-
+                with arcpy.da.Editor(workspace):
                     with arcpy.da.UpdateCursor(zl, ["JNSZN", "JENISSAMPEL", "PENGGUNAAN"]) as cursor1:
                         for row in cursor1:
                             row[0] = JNSZN            # JNSZN
@@ -428,23 +453,45 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
                             cursor2.updateRow(row)
                             
             except Exception as e:
-                if 'Cannot acquire a lock' in str(e):
-                    arcpy.AddError('Tutup tabel atribut pada layer Zona_Layer sebelum menjalankan tool ini.')
-                    return
+                error_msg = str(e).lower()
+                # Ambil riwayat error asli (stack trace) dari Python
+                if getattr(e, '__cause__', None):
+                    error_msg += f" {str(e.__cause__).lower()}"
+                if getattr(e, '__context__', None):
+                    error_msg += f" {str(e.__context__).lower()}"
+                
+                # Cek apakah ada kata kunci lock di riwayat error
+                if 'lock' in error_msg or 'in use' in error_msg or 'exclusive' in error_msg:
+                    arcpy.AddError('ERROR: Layer "Zona_Layer" sedang terkunci (Lock).')
+                    arcpy.AddError('SOLUSI: Tutup tabel atribut, pastikan Anda tidak sedang dalam mode Editing aktif (Save Edits & matikan Edit), lalu coba jalankan kembali.')
                 else:
-                    arcpy.AddError(f"ERROR: Terjadi kesalahan saat mengupdate atribut jenis zona. {e}")
-                    return
+                    arcpy.AddError(f"ERROR GAGAL MENGUPDATE ATRIBUT: {e}")
+                return
 
             self.sinkronisasi_zoning(sampel, "Titik_Sampel_temp", workspace)
 
+        # 3. Logika Pemilihan Aksi Berdasarkan Checkbox
+        if jalankan_periksa:
+            arcpy.AddMessage("Menjalankan Periksa Jenis Zona secara otomatis...")
+            self._jalankan_periksa_jenis_zona(config_dan_paths, workspace)
+            
+            # Set Output Parameter sesuai eksekusi penuh
+            arcpy.SetParameter(2, "Zona_Layer")
+            if arcpy.Exists("Titik_Sampel"):
+                arcpy.SetParameter(3, "Titik_Sampel")
+            if arcpy.Exists("Titik_Zona"):
+                arcpy.SetParameter(4, "Titik_Zona")
+        else:
+            # Jika tidak dicentang, hanya setel Simbologi biasa
             sim_path = os.path.join(config_dan_paths['symbology_folder'], "Simbologi_Sesuaikan_Jenis_Zona.lyrx")
-                
-
             arcpy.management.MakeFeatureLayer(os.path.join(config_dan_paths['dataset_path'], "Zona_Layer"), "Zona_Layer")
+            
             if arcpy.Exists(sim_path):
                 arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
             
-            arcpy.SetParameter(1, "Zona_Layer")
+            # Set Output Parameter 
+            arcpy.SetParameter(2, "Zona_Layer")
+
         return
     
     def sinkronisasi_zoning(self, layer_path, temp_name, workspace):
@@ -474,14 +521,153 @@ class Sesuaikan_Jenis_Zona_Lanjutan(object):
             ["JNSZN"]
         )
 
-
-        with arcpy.da.Editor(workspace) as edit:
+        with arcpy.da.Editor(workspace):
             with arcpy.da.UpdateCursor(layer_path, ["JNSZN", "Zoning"]) as cursor:
                 for row in cursor:
-
                     if row[0] is not None and row[1] != row[0]:
                         row[1] = row[0]
                         cursor.updateRow(row)
 
         arcpy.management.DeleteField(layer_path, "JNSZN")
         arcpy.management.Delete(out_temp_fc) 
+
+    def _jalankan_periksa_jenis_zona(self, config_dan_paths, workspace):
+        """Helper method yang memuat logika utuh dari tool Periksa_Jenis_Zona"""
+        ts_path = os.path.join(config_dan_paths['dataset_path'], "Titik_Sampel")
+        tz_path = os.path.join(config_dan_paths['dataset_path'], "Titik_Zona")
+        zl_path = os.path.join(config_dan_paths['dataset_path'], "Zona_Layer")
+        
+        sim_path = os.path.join(config_dan_paths['symbology_folder'], "Simbologi_Periksa_Jenis_Zona.lyrx")
+        sim_ts_path = os.path.join(config_dan_paths['symbology_folder'], "Titik_Sampel.lyrx")
+        sim_tz_path = os.path.join(config_dan_paths['symbology_folder'], "Titik_Zona.lyrx") 
+
+        zl_topology_path = os.path.join(config_dan_paths['dataset_path'], "Zona_Layer_Topology")
+        if arcpy.Exists(zl_topology_path):
+            arcpy.management.Delete(zl_topology_path)
+
+        identity_layers = []
+
+        # Identity Titik Zona (jika ada)
+        if arcpy.Exists(tz_path):
+            arcpy.analysis.Identity(tz_path, zl_path, "identity_tz")
+            identity_layers.append("identity_tz")
+
+        # Identity Titik Sampel
+        if arcpy.Exists(ts_path):
+            arcpy.analysis.Identity(ts_path, zl_path, "identity_ts")
+            identity_layers.append("identity_ts")
+
+        # Dictionary penyimpanan
+        listzona = {}
+        listsampel = {}
+
+        for identity_fc in identity_layers:
+            with arcpy.da.SearchCursor(identity_fc, ["NOZN", "JNSZN", "Zoning"]) as cursor:
+                for nozona, jenis, zoning in cursor:
+                    if nozona is None or str(nozona).strip() == "":
+                        continue
+
+                    if nozona not in listzona:
+                        listzona[nozona] = set()
+                    if jenis is not None:
+                        listzona[nozona].add(jenis)
+
+                    if nozona not in listsampel:
+                        listsampel[nozona] = set()
+                    if zoning is not None:
+                        listsampel[nozona].add(zoning)
+
+        # Hapus field lama jika ada
+        field_names = [f.name for f in arcpy.ListFields(zl_path)]
+        if "JENISSAMPEL" in field_names:
+            arcpy.management.DeleteField(zl_path, "JENISSAMPEL")
+        if "BEDA_ZONA" in field_names:
+            arcpy.management.DeleteField(zl_path, "BEDA_ZONA")
+
+        # Tambah field baru
+        arcpy.management.AddField(zl_path, "JENISSAMPEL", "TEXT", field_alias="JENIS SAMPEL")
+        arcpy.management.AddField(zl_path, "BEDA_ZONA", "TEXT", field_alias="BEDA ZONA")
+
+        try:
+            with arcpy.da.Editor(workspace):
+                with arcpy.da.UpdateCursor(zl_path, ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]) as cursor:
+                    for row in cursor:
+                        nozona = row[0]
+                        zl_type = set(listzona.get(nozona, []))
+                        titiksampel = set(listsampel.get(nozona, []))
+
+                        if zl_type == titiksampel:
+                            row[1] = "Zona Sama"
+                        else:
+                            row[1] = "Zona Beda"
+
+                        if titiksampel:
+                            row[2] = ", ".join(map(str, sorted(titiksampel)))
+                        else:
+                            row[2] = "Tidak ada Jenis Zona Titik Sampel"
+
+                        cursor.updateRow(row)
+        except Exception as e:
+            # Error catch robust seperti pada Sesuaikan
+            error_msg = str(e).lower()
+            if getattr(e, '__cause__', None):
+                error_msg += f" {str(e.__cause__).lower()}"
+            if getattr(e, '__context__', None):
+                error_msg += f" {str(e.__context__).lower()}"
+            
+            if 'lock' in error_msg or 'in use' in error_msg or 'exclusive' in error_msg:
+                arcpy.AddError('ERROR: Layer "Zona_Layer" sedang terkunci saat menjalankan Periksa Jenis Zona.')
+                return
+            else:
+                arcpy.AddError(f"ERROR GAGAL MENGUPDATE ATRIBUT (Periksa): {e}")
+                return
+
+        # Proses reorder field
+        field_names_updated = [f.name for f in arcpy.ListFields(zl_path)]
+        if "NILAIZN_LAMA" in field_names_updated:
+            urutan_field_baru = [
+                "WADMPR", "WADMKK", "SKALA", "THNNILAI", "NOZN", "cluster", "JNSZN", 
+                "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+                "Keterangan", "NILAIZN_LAMA", "NILBULAT_LAMA", "NILMIN", "NILMAKS", 
+                "JMLNILAI", "SMPBKREL", "SMPBAKU", "NILAIZN", "NILBULAT", 
+                "indeks_nilai_tanah", "Luas_M2"
+            ]
+        else:
+            urutan_field_baru = [
+                "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
+                "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+                "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
+                "NILAIZN", "NILBULAT", "Luas_M2"
+            ]
+        
+        reorder_fields(zl_path, urutan_field_baru)
+
+        # Terapkan layer dan simbologi Titik Sampel & Zona
+        if arcpy.Exists(ts_path):
+            arcpy.management.MakeFeatureLayer(ts_path, "Titik_Sampel")
+            if arcpy.Exists(sim_ts_path):
+                arcpy.management.ApplySymbologyFromLayer("Titik_Sampel", sim_ts_path)
+            arcpy.management.SelectLayerByLocation("Titik_Sampel", "INTERSECT", zl_path, invert_spatial_relationship=True)
+            
+            count_ts = int(arcpy.management.GetCount("Titik_Sampel")[0])
+            if count_ts > 0:
+                arcpy.AddError(f"PERINGATAN: Terdapat {count_ts} Titik Sampel yang berada di LUAR Zona Layer. Lihat titik Terpilih di Peta!")
+
+        if arcpy.Exists(tz_path):
+            arcpy.management.MakeFeatureLayer(tz_path, "Titik_Zona")
+            if arcpy.Exists(sim_tz_path):
+                arcpy.management.ApplySymbologyFromLayer("Titik_Zona", sim_tz_path)
+            arcpy.management.SelectLayerByLocation("Titik_Zona", "INTERSECT", zl_path, invert_spatial_relationship=True)
+            
+            count_tz = int(arcpy.management.GetCount("Titik_Zona")[0])
+            if count_tz > 0:
+                arcpy.AddError(f"PERINGATAN: Terdapat {count_tz} Titik Zona yang berada di LUAR Zona Layer. Lihat titik Terpilih di Peta!")
+            
+        arcpy.management.MakeFeatureLayer(zl_path, "Zona_Layer")
+        if arcpy.Exists(sim_path):
+            arcpy.management.ApplySymbologyFromLayer("Zona_Layer", sim_path)
+            
+        # Cleanup temporary identity
+        for fc in identity_layers:
+            if arcpy.Exists(fc):
+                arcpy.management.Delete(fc)

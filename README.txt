@@ -1,15 +1,14 @@
-[UNTUK INTERNAL]
 Direktorat Penilaian Tanah dan Ekonomi Pertanahan
 Kementerian ATR/BPN
 
 PENILAIAN TANAH (SIPENTA) - CATATAN RILIS
-Versi: 6.14
+Versi: 6.15
 ==================================================
 
-[PENYESUAIAN SISTEM]
-1. Menambahkan UI Khusus OGIS
-
 [PENYESUAIAN FITUR]
-1. Penyesuaian Fitur HISTZONE
+1. Persiapan fitur Logging
+2. Penyesuaian Sesuaikan jenis zona lanjutan
+
+
 
 

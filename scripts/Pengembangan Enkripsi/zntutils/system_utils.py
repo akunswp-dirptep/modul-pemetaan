@@ -249,33 +249,25 @@ def setup_project_config(data_dict: dict, config_path):
     
     for key, value in data_dict.items():
         try:
-            # Cek apakah file ada
             if os.path.exists(config_path):
-                # File ada, baca isinya
                 try:
                     data = decrypt_message(generate_key(), config_path)                    
-                    # Validasi format JSON
                     if key not in data or not isinstance(data.get(key), str):
-                        # Format tidak sesuai, tambahkan atau perbarui data
                         data[key] = value
                     
                     if data[key] != value:
                         data[key] = value
                         
                 except json.JSONDecodeError:
-                    # File rusak/tidak valid, buat struktur baru
                     arcpy.AddWarning("File config.json rusak, membuat struktur baru...")
                     data = {key: value}
             else:
-                # File belum ada, buat struktur baru
-                # Pastikan direktori Menu ada
                 menu_dir = os.path.dirname(config_path)
                 if not os.path.exists(menu_dir):
                     os.makedirs(menu_dir)
                 
                 data = {key: value}
 
-            # Simpan kembali ke file
             encrypt_message(json.dumps(data), generate_key(), config_path)
             
         except Exception as e:

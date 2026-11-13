@@ -526,14 +526,8 @@
 					largeImage="C:\PenilaianTanah\icons\sample.png"
 					smallImage="C:\PenilaianTanah\icons\sample.png">
 
-					<button refID="ButtonMenarikTitikSampelNBTDariSipenta" />
-					<button refID="ButtonTampilkanSimbologiTitikSampelNBT" />
-					<button refID="ButtonPersiapkanDataPersilUntukPerhitungan" />
-					<button refID="ButtonHitungOtomatisPersilIndividual" />
-					<button refID='ButtonRekomendasiPersilPembanding' />
-					<button refID="ButtonPersiapanPersilIndividual" />
-					<button refID="ButtonPerhitunganPersilIndividual" />
-					<button refID="ButtonResetPersilIndividual" />
+					<button refID="menu_titik_sampel_nbt" />
+					<button refID='menu_penilaian_individual' />
 					<button refID='ButtonGenerateTitikIndeks' />
 					<button refID='ButtonDeteksiOutlierIndeks' />
 
@@ -907,6 +901,19 @@
 				<menu id="menu_titik_sampel_znt" caption="Tampilkan Titik Sampel">
 					<button refID="ButtonMenarikTitikSampelDariSipenta" />
 					<button refID="ButtonTampilkanSimbologiTitikSampel" />
+				</menu>
+
+				<menu id="menu_titik_sampel_nbt" caption="Tampilkan Titik Sampel">
+					<button refID="ButtonMenarikTitikSampelNBTDariSipenta" />
+					<button refID="ButtonTampilkanSimbologiTitikSampelNBT" />
+				</menu>
+
+				<menu id="menu_penilaian_individual" caption="Tampilkan Titik Sampel">
+					<button refID="ButtonPersiapkanDataPersilUntukPerhitungan" />
+					<button refID="ButtonHitungOtomatisPersilIndividual" />
+					<button refID='ButtonRekomendasiPersilPembanding' />
+					<button refID="ButtonPerhitunganPersilIndividual" />
+					<button refID="ButtonResetPersilIndividual" />
 				</menu>
 
 				<menu id="menu_titik_individual" caption="Pengolahan Titik Sampel Individual">
@@ -2774,7 +2781,7 @@
 
 				<button id="ButtonTampilkanDataRisiko" caption="Tampilkan Data Risiko" smallImage="C:\PenilaianTanah\icons\risiko.png" largeImage="C:\PenilaianTanah\icons\risiko.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Tampilkan Data Risiko" name="Tampilkan Data Risiko" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum NBT\AnalisisSurveyPendahuluan.pyt\Tampilkan_Risiko" name="Tampilkan Data Risiko" xmlns=""/>
 					</args>
 					<tooltip heading="Tampilkan Data Risiko">Menu untuk memasukkan data risiko yang diperlukan dalam proses Pembaruan NBT.</tooltip>
 				</button>

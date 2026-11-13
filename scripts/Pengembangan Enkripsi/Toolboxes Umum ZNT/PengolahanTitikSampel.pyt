@@ -1145,6 +1145,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
             api_data["data"]["jumlah_data_individual"] = len(filtered_features)
             
         return api_data
+
 class Tampilkan_Simbologi_Titik_Sampel(object):
     """Tool untuk menampilkan simbologi pada layer Titik Sampel"""
     def __init__(self):

@@ -1575,6 +1575,41 @@ class Hitung_Skor_Risiko(object):
                     area = row[1]
                     intersect_areas[tmp_id] = intersect_areas.get(tmp_id, 0) + area
 
+            # Cari bidang yang area intersect-nya >= 50%
+            oids_to_update = set()
+            for tmp_id, orig_area in persil_areas.items():
+                if tmp_id in intersect_areas and orig_area > 0:
+                    persentase = intersect_areas[tmp_id] / orig_area
+                    if persentase >= 0.5:
+                        oids_to_update.add(tmp_id)
+
+            messages.addMessage(f"Ditemukan {len(oids_to_update)} bidang yang tertutupi {nama_risiko} >= 50%.")
+            
+            # Update Nilai 1 di Field Risiko bersangkutan
+            updated_count = 0
+            with arcpy.da.UpdateCursor(input_layer, [temp_id_field, nama_risiko.upper()]) as uc:
+                for row in uc:
+                    if row[0] in oids_to_update:
+                        row[1] = 1  # Diubah dari 0 menjadi 1
+                        uc.updateRow(row)
+                        updated_count += 1
+                        
+            messages.addMessage(f"Berhasil memperbarui skor '1' untuk {updated_count} bidang.")
+            
+            # Bersihkan memori intersect
+            if arcpy.Exists(intersect_out):
+                arcpy.management.Delete(intersect_out)
+
+        # 5. Membersihkan Field ID Sementara
+        try:
+            arcpy.management.DeleteField(input_layer, temp_id_field)
+        except Exception:
+            pass
+
+        arcpy.SetParameter(1, input_layer)
+        messages.addMessage("\n== Proses Perhitungan Selesai ==")
+        return
+    
 class Periksa_Kesesuaian_Zonasi(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""

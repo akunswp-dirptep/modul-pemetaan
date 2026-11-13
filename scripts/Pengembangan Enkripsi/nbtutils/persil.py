@@ -99,10 +99,10 @@ def get_config_values():
     Returns:
         dict: Dictionary berisi semua path dan parameter konfigurasi
     """
-    persil_path = is_persil_layer_comply(show_path_message=False)  # Validasi compliance layer zona
-    ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(persil_path)))  # Navigasi ke root workspace
-    config_path = os.path.join(ws_dir, "config.json")  # Path ke file config
-    new_config_path = os.path.join(ws_dir, PROJECT_CONFIG_FILE_NAME)  # Path ke file config baru (bin)
+    persil_path = is_persil_layer_comply(show_path_message=False)
+    ws_dir = os.path.dirname(os.path.dirname(os.path.dirname(persil_path)))  
+    config_path = os.path.join(ws_dir, "config.json")  
+    new_config_path = os.path.join(ws_dir, PROJECT_CONFIG_FILE_NAME)  
     configs = None
     if arcpy.Exists(config_path):
          with open(config_path, 'r') as f:

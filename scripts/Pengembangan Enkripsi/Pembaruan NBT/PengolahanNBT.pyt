@@ -1112,7 +1112,8 @@ class Hitung_Harga_Menyebar(object):
             direction="Input",
         )
         pilih_zona.filter.type = "ValueList"
-        pilih_zona.filter.list = sorted(self.get_zonasi_config().keys())
+        zonasi_cfg, _ = self.get_zonasi_config()
+        pilih_zona.filter.list = sorted(zonasi_cfg.keys())
 
         edit_kelas_jalan = arcpy.Parameter(
             displayName="Edit Kelas Jalan",
@@ -1181,9 +1182,24 @@ class Hitung_Harga_Menyebar(object):
 
     def updateParameters(self, parameters):
         parameters[2].enabled = bool(parameters[1].value)
+
+        # Muat ulang daftar zonasi saat dialog tool dibuka atau jika list masih kosong
+        if not parameters[0].altered or not parameters[0].filter.list:
+            zonasi_cfg, _ = self.get_zonasi_config()
+            if zonasi_cfg:
+                parameters[0].filter.type = "ValueList"
+                parameters[0].filter.list = sorted(zonasi_cfg.keys())
+
         return
 
     def updateMessages(self, parameters):
+        if not parameters[0].filter.list:
+            _, err_msg = self.get_zonasi_config()
+            if err_msg:
+                parameters[0].setWarningMessage(f"Daftar zonasi kosong: {err_msg}")
+        else:
+            parameters[0].clearMessage()
+
         if parameters[1].value and not parameters[2].valueAsText:
             parameters[2].setErrorMessage(
                 "Pilih Kelas Jalan harus diisi jika Edit Kelas Jalan dicentang."
@@ -1216,29 +1232,27 @@ class Hitung_Harga_Menyebar(object):
             messages.addErrorMessage("== Jarak maksimal harus lebih besar dari 0 meter ==")
             raise arcpy.ExecuteError
 
-        configs = persil.get_config_values()
-        dataset_path = configs["project_config"]["dataset_path"]
         persil_edit = "Persil_Layer"
-        persil_edit_path = os.path.join(dataset_path, persil_edit)
-
-        if not arcpy.Exists(persil_edit_path):
-            messages.addErrorMessage(f"== Feature class tidak ditemukan: {persil_edit_path} ==")
-            raise arcpy.ExecuteError
-
         if not arcpy.Exists(persil_edit):
             messages.addErrorMessage(
                 "== Layer 'Persil_Layer' tidak ditemukan pada peta aktif =="
             )
             raise arcpy.ExecuteError
 
+        persil_edit_path, err_path = self._resolve_persil_path()
+        if not persil_edit_path:
+            messages.addErrorMessage(f"== {err_path} ==")
+            raise arcpy.ExecuteError
+
         # Ambil konfigurasi zonasi & skoring secara dinamis dari Persil_Layer
-        zonasi_config = self.get_zonasi_config(persil_edit_path)
+        zonasi_config, err_zonasi = self.get_zonasi_config(persil_edit_path)
         zonasi_config_upper = {k.upper(): v for k, v in zonasi_config.items()}
         zonasi_cfg = zonasi_config_upper.get(zonasi.upper())
 
         if zonasi_cfg is None:
+            detail = f" ({err_zonasi})" if err_zonasi else ""
             messages.addErrorMessage(
-                f"== Zonasi '{zonasi}' tidak ditemukan pada field ZONASI di Persil_Layer =="
+                f"== Zonasi '{zonasi}' tidak ditemukan pada field ZONASI di Persil_Layer{detail} =="
             )
             raise arcpy.ExecuteError
 
@@ -1255,10 +1269,13 @@ class Hitung_Harga_Menyebar(object):
                 messages.addErrorMessage("== Kelas Jalan belum dipilih ==")
                 raise arcpy.ExecuteError
             try:
+                configs = persil.get_config_values()
                 kelas_jalan_config = configs["jaringan_jalan_config"]["skoring"]["kelas_jalan"]
                 s_kls_jln = kelas_jalan_config.get(kls_jln, 0)
-            except KeyError:
-                messages.addErrorMessage("== Key konfigurasi kelas jalan tidak ditemukan ==")
+            except Exception as err:
+                messages.addErrorMessage(
+                    f"== Gagal membaca konfigurasi kelas jalan: {err} =="
+                )
                 raise arcpy.ExecuteError
 
         oid_field = arcpy.Describe(persil_edit_path).oidFieldName
@@ -1270,7 +1287,7 @@ class Hitung_Harga_Menyebar(object):
 
         required_fields = [
             oid_field, "ZONASI", "S_ZONASI", "min_lb_jln", "status_per",
-            "KLSJLN", "S_KLS_JLN", "NILAIBD_LAMA", "ls_tnh_i", "lb_dpn_i",
+            "KLSJLN", "S_KLSJLN", "NILAIBD_LAMA", "ls_tnh_i", "lb_dpn_i",
             "S_BENTUK", "S_LETAK", "IDBIDANG", "perubahan", "data_pembanding"
         ]
 
@@ -1299,9 +1316,8 @@ class Hitung_Harga_Menyebar(object):
 
         messages.addMessage("Membaca target fitur utama yang terseleksi...")
 
-        # 1A. Membaca Target Utama (berdasarkan seleksi aktif di peta)
         primary_fields = [
-            oid_field, "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG", "S_KLS_JLN"
+            oid_field, "ls_tnh_i", "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG", "S_KLSJLN"
         ]
         with arcpy.da.SearchCursor(persil_edit, primary_fields) as rows:
             for row in rows:
@@ -1327,9 +1343,8 @@ class Hitung_Harga_Menyebar(object):
         pembanding_dict = {}
         messages.addMessage("Memindai fitur terdampak (Dependen) dan menyusun referensi pembanding...")
 
-        # 1B. Membaca seluruh data untuk mencari fitur dependen & pembanding valid
         fields_kandidat = [
-            oid_field, "S_ZONASI", "S_KLS_JLN", "NILAIBD_LAMA", "ls_tnh_i",
+            oid_field, "S_ZONASI", "S_KLSJLN", "NILAIBD_LAMA", "ls_tnh_i",
             "lb_dpn_i", "S_BENTUK", "S_LETAK", "IDBIDANG", "data_pembanding", "perubahan"
         ]
         with arcpy.da.SearchCursor(persil_edit_path, fields_kandidat, "NILAIBD_LAMA > 0") as rows:
@@ -1533,7 +1548,7 @@ class Hitung_Harga_Menyebar(object):
             ]
 
             if is_edit_kls_jln:
-                update_fields.extend(["KLSJLN", "S_KLS_JLN"])
+                update_fields.extend(["KLSJLN", "S_KLSJLN"])
 
             final_oids_str = ",".join(map(str, all_target_oids))
             where_clause = f"{oid_field} IN ({final_oids_str})"
@@ -1542,7 +1557,6 @@ class Hitung_Harga_Menyebar(object):
                 for row in rows:
                     oid = row[0]
 
-                    # Zonasi dan kelas jalan hanya diubah untuk Target Utama
                     if oid in primary_oids:
                         row[1] = zonasi
                         row[2] = s_zonasi
@@ -1552,12 +1566,10 @@ class Hitung_Harga_Menyebar(object):
                             row[8] = kls_jln
                             row[9] = s_kls_jln
 
-                    # Status diubah untuk Target Utama maupun Dependen
                     if simpan_sebagai_data_baru:
                         row[4] = "update"
                         row[7] = "individual"
 
-                    # Nilai dan referensi pembanding diperbarui jika valid
                     if oid in dict_hasil_hitung:
                         row[5] = dict_hasil_hitung[oid]["nilai_akhir"]
                         row[6] = dict_hasil_hitung[oid]["data_pembanding"]
@@ -1600,24 +1612,55 @@ class Hitung_Harga_Menyebar(object):
             self.delete_if_exists(temp_kandidat_layer)
             self.delete_if_exists(near_table)
 
+    def _resolve_persil_path(self):
+        """Mencari path feature class Persil_Layer dari config maupun peta aktif."""
+        config_err = ""
+        try:
+            configs = persil.get_config_values()
+            dataset_path = configs.get("project_config", {}).get("dataset_path", "")
+            if dataset_path:
+                candidate = os.path.join(dataset_path, "Persil_Layer")
+                if arcpy.Exists(candidate):
+                    return candidate, None
+                config_err = f"Path '{candidate}' tidak ditemukan"
+            else:
+                config_err = "dataset_path kosong"
+        except Exception as err:
+            config_err = f"get_config_values() error: {err}"
+
+        try:
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            active_map = aprx.activeMap
+            if active_map:
+                layers = active_map.listLayers("Persil_Layer")
+                if layers and layers[0].supports("DATASOURCE"):
+                    ds = layers[0].dataSource
+                    if arcpy.Exists(ds):
+                        return ds, None
+        except Exception as err:
+            return None, f"{config_err}; fallback activeMap gagal: {err}"
+
+        return None, f"Persil_Layer tidak ditemukan ({config_err})"
+
     def get_zonasi_config(self, persil_path=None):
         """
         Membaca daftar zonasi beserta skoring (S_ZONASI dan min_lb_jln)
         secara dinamis dari Persil_Layer. Nilai NULL atau kosong diabaikan.
+        Mengembalikan tuple (dict_config, pesan_error_atau_None).
         """
         try:
             if persil_path is None:
-                configs = persil.get_config_values()
-                dataset_path = configs["project_config"]["dataset_path"]
-                persil_path = os.path.join(dataset_path, "Persil_Layer")
+                persil_path, err = self._resolve_persil_path()
+                if not persil_path:
+                    return {}, err
 
             if not arcpy.Exists(persil_path):
-                return {}
+                return {}, f"Feature class '{persil_path}' tidak ditemukan"
 
             field_map = {f.name.upper(): f.name for f in arcpy.ListFields(persil_path)}
             zonasi_field = field_map.get("ZONASI")
             if not zonasi_field:
-                return {}
+                return {}, "Field 'ZONASI' tidak ditemukan pada Persil_Layer"
 
             s_zonasi_field = field_map.get("S_ZONASI")
             min_lb_jln_field = field_map.get("MIN_LB_JLN")
@@ -1659,6 +1702,9 @@ class Hitung_Harga_Menyebar(object):
                     if idx_min_lb_jln is not None and row[idx_min_lb_jln] is not None:
                         raw_stats[key_upper]["min_lb_jln"][row[idx_min_lb_jln]] += 1
 
+            if not raw_stats:
+                return {}, "Semua nilai pada field 'ZONASI' masih NULL atau kosong"
+
             result = {}
             for stats in raw_stats.values():
                 s_zonasi_val = (
@@ -1676,9 +1722,9 @@ class Hitung_Harga_Menyebar(object):
                     "min_lb_jln": min_lb_jln_val,
                 }
 
-            return result
-        except Exception:
-            return {}
+            return result, None
+        except Exception as err:
+            return {}, f"Gagal membaca atribut ZONASI: {err}"
 
     def calculate_penyesuaian(self, objek, pembanding):
         ls_tnh = ((objek["ls_tnh_i"] or 0) - (pembanding["ls_tnh_i"] or 0)) * 0.5

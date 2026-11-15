@@ -5,7 +5,10 @@
 		<insertModule id="Custom">
 			<tabs>
 				<tab id="PentabitMenu" caption="Nilai Bidang Tanah">
-					<group refID="pembaruan_nbt"/>
+					<!-- <group refID="pembaruan_nbt"/> -->
+					<group refID="nbt_1" />
+					<group refID="pembuatan_nbt" />
+					
 
 				</tab>
 				<tab id="ZNTMenu" caption="Zona Nilai Tanah">
@@ -44,10 +47,17 @@
 					<button refID="ButtonUploadNilaiBidangTanahAnalisisPembaruanNBT" size="large"/>
 				</group>
 
+				<group id="pembuatan_nbt" caption="Pembuatan Nilai Bidang Tanah (Restorasi)">
+					<menu refID="persiapan_data_pembaruan_nbt" size="Medium"/>
+					<menu refID="pengolahan_data_dasar_pembaruan_nbt" size="Medium" />
+					<menu refID="analisis_survey_pendahuluan" size="Medium" />
+					<menu refID="pengolahan_titik_sampel_pembuatan_nbt" size="Medium" />
+				</group>
+
 				<group id="pembaruan_nbt" caption="Pembaruan Nilai Bidang Tanah">
 					<menu refID="persiapan_data_pembaruan_nbt" size="Medium"/>
 					<menu refID="pengolahan_data_dasar_pembaruan_nbt" size="Medium" />
-					<menu refID="analisis_survey_perubahan" size="Medium" />
+					<menu refID="analisis_survey_pendahuluan" size="Medium" />
 					<menu refID="pengolahan_titik_sampel_pembaruan_nbt" size="Medium" />
 					<menu refID="pengolahan_pembaruan_nbt" size="Medium" />
 					<menu refID="layout_dan_upload_pembaruan_nbt" size="Medium" />
@@ -491,7 +501,7 @@
 					<button refID="ButtonPengisianZonasiOtomatis" size="Medium"/>
 					
 				</menu>
-				<menu id="analisis_survey_perubahan" caption="Analisis Survey Pendahuluan" extendedCaption="Analisis Survey Pendahuluan" keytip="TA"         
+				<menu id="analisis_survey_pendahuluan" caption="Analisis Survey Pendahuluan" extendedCaption="Analisis Survey Pendahuluan" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\survei_perubahan.png"
 					smallImage="C:\PenilaianTanah\icons\survei_perubahan.png">
 					<menu refID="ambil_titik_survey_lb_dan_bt" />
@@ -521,6 +531,13 @@
 					<button refID="ButtonCekKesesuaianZonasi" size="Medium" />
 				</menu>
 				<menu id="analisis_jalan" caption="Analisis Jalan">
+				</menu>
+				<menu id="pengolahan_titik_sampel_pembuatan_nbt" caption="Pengolahan Titik Sampel" extendedCaption="Pengolahan Titik Sampel" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\sample.png"
+					smallImage="C:\PenilaianTanah\icons\sample.png">
+
+					<button refID="menu_titik_sampel_nbt" />
+
 				</menu>
 				<menu id="pengolahan_titik_sampel_pembaruan_nbt" caption="Pengolahan Titik Sampel" extendedCaption="Pengolahan Titik Sampel" keytip="TA"         
 					largeImage="C:\PenilaianTanah\icons\sample.png"

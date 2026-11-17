@@ -5,9 +5,8 @@
 		<insertModule id="Custom">
 			<tabs>
 				<tab id="PentabitMenu" caption="Nilai Bidang Tanah">
-					<!-- <group refID="pembaruan_nbt"/> -->
-					<group refID="nbt_1" />
 					<group refID="pembuatan_nbt" />
+					<group refID="pembaruan_nbt"/>
 					
 
 				</tab>
@@ -47,11 +46,12 @@
 					<button refID="ButtonUploadNilaiBidangTanahAnalisisPembaruanNBT" size="large"/>
 				</group>
 
-				<group id="pembuatan_nbt" caption="Pembuatan Nilai Bidang Tanah (Restorasi)">
+				<group id="pembuatan_nbt" caption="Pembuatan Nilai Bidang Tanah">
 					<menu refID="persiapan_data_pembaruan_nbt" size="Medium"/>
 					<menu refID="pengolahan_data_dasar_pembaruan_nbt" size="Medium" />
 					<menu refID="analisis_survey_pendahuluan" size="Medium" />
 					<menu refID="pengolahan_titik_sampel_pembuatan_nbt" size="Medium" />
+					<menu refID="pengolahan_persil_populasi_pembuatan_nbt" size="Medium" />
 				</group>
 
 				<group id="pembaruan_nbt" caption="Pembaruan Nilai Bidang Tanah">
@@ -538,6 +538,25 @@
 
 					<button refID="menu_titik_sampel_nbt" />
 					<button refID="ButtonTempelNilaiTanahKePersil"/>
+					<button refID="ButtonTransformasiVariabel" />
+					<button refID="ButtonOLSER" />
+					<button refID="ButtonPemodelanGWRSampel" />
+					<button refID="ButtonEvaluasiModelGWRMAPE" />
+					<button refID="ButtonSAKM" />
+
+				</menu>
+				<menu id="pengolahan_persil_populasi_pembuatan_nbt" caption="Pengolahan Persil Populasi" extendedCaption="Pengolahan Persil Populasi" keytip="TA"         
+					largeImage="C:\PenilaianTanah\icons\persilpopulasi.png"
+					smallImage="C:\PenilaianTanah\icons\persilpopulasi.png">
+
+					<button refID="ButtonPrediksiNilaiTanahGWRPopulasi" />
+					<button refID="ButtonBentukKlasterPersil" />
+					<button refID="ButtonHitungSimpanganBakuRelatif" />
+					<button refID="ButtonPemeriksaanKlasterBerdasarkanSMPBKREL" />
+					<button refID="ButtonPemeriksaanPrediksiEkstrimDalamKlaster" />
+					<button refID="ButtonMemilihOutlierDalamKlaster" />
+					<button refID="ButtonPeriksaOutlierDalamKlaster" />
+
 
 				</menu>
 				<menu id="pengolahan_titik_sampel_pembaruan_nbt" caption="Pengolahan Titik Sampel" extendedCaption="Pengolahan Titik Sampel" keytip="TA"         
@@ -2376,12 +2395,86 @@
 					<tooltip heading="Upload Revisi ke Sipenta">Tool untuk mengupload data revisi pemetaan berdasarkan nomor berkas</tooltip>
 				</button>
 		<!-- Button Pembuatan NBT (Restorasi) -->
-			<!-- Menu Pengolahan Statistika -->
-				<button id="ButtonTempelNilaiTanahKePersil" caption="Tempel Nilai Tanah Ke Persil" smallImage="C:\PenilaianTanah\icons\peta1.png" largeImage="C:\PenilaianTanah\icons\peta1.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+			<!-- Menu Pengolahan Titik Sampel-->
+				<button id="ButtonTempelNilaiTanahKePersil" caption="Tempel Nilai Tanah Ke Persil" smallImage="C:\PenilaianTanah\icons\tempelsampel.png" largeImage="C:\PenilaianTanah\icons\tempelsampel.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\AnalisisStatistika.pyt\Tempel_Nilai_Tanah_Ke_Persil" name="Tempel Nilai Tanah Ke Persil" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanTitikSampel.pyt\Tempel_Nilai_Tanah_Ke_Persil" name="Tempel Nilai Tanah Ke Persil" xmlns=""/>
 					</args>
 					<tooltip heading="Tempel Nilai Tanah Ke Persil">Menu untuk menempelkan nilai tanah sampel ke persil.</tooltip>
+				</button>
+
+				<button id="ButtonTransformasiVariabel" caption="Transformasi Variabel" smallImage="C:\PenilaianTanah\icons\peta1.png" largeImage="C:\PenilaianTanah\icons\peta1.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanTitikSampel.pyt\Transformasi_Variabel" name="Transformasi Variabel" xmlns=""/>
+					</args>
+					<tooltip heading="Transformasi Variabel">Menu untuk melakukan Transformasi pada Variabel di Persil untuk perhitungan.</tooltip>
+				</button>
+				<button id="ButtonOLSER" caption="Pemodelan Regresi OLS/ER" smallImage="C:\PenilaianTanah\icons\olser.png" largeImage="C:\PenilaianTanah\icons\olser.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanTitikSampel.pyt\Pemodelan_Regresi_OLS_Dan_Exploratory" name="Pemodelan Regresi OLS/ER" xmlns=""/>
+					</args>
+					<tooltip heading="Pemodelan Regresi OLS/ER">Menu untuk menghitung nilai OLS/ER.</tooltip>
+				</button>
+				<button id="ButtonPemodelanGWRSampel" caption="Pemodelan GWR Sampel" smallImage="C:\PenilaianTanah\icons\gwrsampel.png" largeImage="C:\PenilaianTanah\icons\gwrsampel.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanTitikSampel.pyt\Pemodelan_GWR_Sampel" name="Pemodelan GWR Sampel" xmlns=""/>
+					</args>
+					<tooltip heading="Pemodelan GWR Sampel">Menu untuk menghitung nilai GWR Sampel.</tooltip>
+				</button>
+				<button id="ButtonEvaluasiModelGWRMAPE" caption="Evaluasi Model GWR MAPE" smallImage="C:\PenilaianTanah\icons\mape.png" largeImage="C:\PenilaianTanah\icons\mape.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanTitikSampel.pyt\Evaluasi_Model_GWR_MAPE" name="Evaluasi Model GWR MAPE" xmlns=""/>
+					</args>
+					<tooltip heading="Evaluasi Model GWR MAPE">Menu untuk menganalisis GWR Sampel berdasarkan perhitungan MAPE.</tooltip>
+				</button>
+				<button id="ButtonSAKM" caption="Spasial Autokorelasi" smallImage="C:\PenilaianTanah\icons\sak.png" largeImage="C:\PenilaianTanah\icons\sak.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanTitikSampel.pyt\Spasial_Autokorelasi_Moran" name="Spasial Autokorelasi" xmlns=""/>
+					</args>
+					<tooltip heading="Spasial Autokorelasi">Menu untuk menganalisis GWR Sampel menggunakan Spasial Autokorelasi.</tooltip>
+				</button>
+			<!-- Menu Pengolahan Persil Populasi -->
+				<button id="ButtonPrediksiNilaiTanahGWRPopulasi" caption="Prediksi Nilai Tanah GWR Populasi" smallImage="C:\PenilaianTanah\icons\gwrpopulasi.png" largeImage="C:\PenilaianTanah\icons\gwrpopulasi.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanPersilPopulasi.pyt\Prediksi_Nilai_Tanah_GWR_Populasi" name="Prediksi Nilai Tanah GWR Populasi" xmlns=""/>
+					</args>
+					<tooltip heading="Prediksi Nilai Tanah GWR Populasi">Menu untuk memprediksi Nilai Tanah GWR Populasi.</tooltip>
+				</button>
+				<button id="ButtonBentukKlasterPersil" caption="Bentuk Klaster Persil" smallImage="C:\PenilaianTanah\icons\klasterpersil.png" largeImage="C:\PenilaianTanah\icons\klasterpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanPersilPopulasi.pyt\Klaster_Persil" name="Bentuk Klaster Persil" xmlns=""/>
+					</args>
+					<tooltip heading="Bentuk Klaster Persil">Menu untuk membuat klaster pada persil.</tooltip>
+				</button>
+				<button id="ButtonHitungSimpanganBakuRelatif" caption="Hitung Simpangan Baku Relatif" smallImage="C:\PenilaianTanah\icons\smbpkrel.png" largeImage="C:\PenilaianTanah\icons\smbpkrel.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanPersilPopulasi.pyt\Hitung_Koefisien_Variasi" name="Hitung Simpangan Baku Relatif" xmlns=""/>
+					</args>
+					<tooltip heading="Hitung Simpangan Baku Relatif">Menu untuk menghitung nilai Simpangan Baku Relatif.</tooltip>
+				</button>
+				<button id="ButtonPemeriksaanKlasterBerdasarkanSMPBKREL" caption="Periksa Klaster" smallImage="C:\PenilaianTanah\icons\asmpbkrel.png" largeImage="C:\PenilaianTanah\icons\asmpbkrel.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanPersilPopulasi.pyt\Periksa_Klaster_Berdasarkan_CoV" name="Periksa Klaster" xmlns=""/>
+					</args>
+					<tooltip heading="Periksa Klaster">Menu untuk memeriksa klaster berdasarkan Simpangan Baku Relatif.</tooltip>
+				</button>
+				<button id="ButtonPemeriksaanPrediksiEkstrimDalamKlaster" caption="Periksa Prediksi Ekstrim Dalam Klaster" smallImage="C:\PenilaianTanah\icons\xtrm.png" largeImage="C:\PenilaianTanah\icons\xtrm.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanPersilPopulasi.pyt\Periksa_Prediksi_Ekstrim_Dalam_Cluster" name="Periksa Prediksi Ekstrim Dalam Klaster" xmlns=""/>
+					</args>
+					<tooltip heading="Periksa Prediksi Ekstrim Dalam Klaster">Menu untuk memeriksa prediksi Ekstrem.</tooltip>
+				</button>
+				<button id="ButtonMemilihOutlierDalamKlaster" caption="Outlier Dalam Klaster" smallImage="C:\PenilaianTanah\icons\outdp.png" largeImage="C:\PenilaianTanah\icons\outdp.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanPersilPopulasi.pyt\Outlier_Dalam_Klaster" name="Outlier Dalam Klaster" xmlns=""/>
+					</args>
+					<tooltip heading="Outlier Dalam Klaster">Menu untuk memilih Outlier dalam klaster Persil.</tooltip>
+				</button>
+				<button id="ButtonPeriksaOutlierDalamKlaster" caption="Periksa Outlier Dalam Klaster" smallImage="C:\PenilaianTanah\icons\outdk.png" largeImage="C:\PenilaianTanah\icons\outdk.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Pembuatan NBT\PengolahanPersilPopulasi.pyt\Periksa_Outlier_Dalam_Klaster" name="Periksa Outlier Dalam Klaster" xmlns=""/>
+					</args>
+					<tooltip heading="Periksa Outlier Dalam Klaster">Menu untuk memeriksa outlier dalam klaster.</tooltip>
 				</button>
 		<!-- Button Pembaruan NBT (Restorasi) -->
 			<!-- Menu Persiapan Data -->

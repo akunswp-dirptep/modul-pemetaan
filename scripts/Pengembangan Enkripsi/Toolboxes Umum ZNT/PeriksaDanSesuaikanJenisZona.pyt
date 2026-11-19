@@ -42,7 +42,7 @@ class Periksa_Jenis_Zona(object):
             parameterType="Required",
             direction="Input")
         
-        penjelasan.value =(
+        penjelasan.value = (
             "Tool ini digunakan untuk memeriksa kesesuaian jenis zona\n"
             "antara Zona Layer dan Titik Sampel.\n"
             "\n"
@@ -114,6 +114,7 @@ class Periksa_Jenis_Zona(object):
         # Dictionary penyimpanan
         listzona = {}
         listsampel = {}
+        jumlah_sampel = {}
 
         for identity_fc in identity_layers:
             with arcpy.da.Editor(workspace) as edit:
@@ -135,22 +136,29 @@ class Periksa_Jenis_Zona(object):
                         if zoning is not None:
                             listsampel[nozona].add(zoning)
 
+                        # Hitung jumlah titik sampel per zona (hanya dari Titik_Sampel)
+                        if identity_fc == "identity_ts":
+                            jumlah_sampel[nozona] = jumlah_sampel.get(nozona, 0) + 1
+
         # Hapus field lama jika ada
         field_names = [f.name for f in arcpy.ListFields(zl_path)]
+        field_names_upper = [f.upper() for f in field_names]
 
-        if "JENISSAMPEL" in field_names:
+        if "JENISSAMPEL" in field_names_upper:
             arcpy.management.DeleteField(zl_path, "JENISSAMPEL")
-        if "BEDA_ZONA" in field_names:
+        if "BEDA_ZONA" in field_names_upper:
             arcpy.management.DeleteField(zl_path, "BEDA_ZONA")
 
         # Tambah field baru
         arcpy.management.AddField(zl_path, "JENISSAMPEL", "TEXT", field_alias="JENIS SAMPEL")
         arcpy.management.AddField(zl_path, "BEDA_ZONA", "TEXT", field_alias="BEDA ZONA")
+        if "JMLSMPL" not in field_names_upper:
+            arcpy.management.AddField(zl_path, "JMLSMPL", "LONG", field_alias="JUMLAH SAMPEL")
 
         with arcpy.da.Editor(workspace) as edit:
             with arcpy.da.UpdateCursor(
                 zl_path,
-                ["NOZN", "BEDA_ZONA", "JENISSAMPEL"]
+                ["NOZN", "BEDA_ZONA", "JENISSAMPEL", "JMLSMPL"]
             ) as cursor:
                 for row in cursor:
                     nozona = row[0]
@@ -167,26 +175,28 @@ class Periksa_Jenis_Zona(object):
                     else:
                         row[2] = "Tidak ada Jenis Zona Titik Sampel"
 
+                    # Isi jumlah sampel untuk zona tersebut (0 jika tidak ada sampel)
+                    row[3] = jumlah_sampel.get(nozona, 0)
+
                     cursor.updateRow(row)
 
         if "NILAIZN_LAMA" in field_names:
             urutan_field_baru = [
-            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "NOZN", "cluster", "JNSZN", 
-            "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
-            "Keterangan", "NILAIZN_LAMA", "NILBULAT_LAMA", "NILMIN", "NILMAKS", 
-            "JMLNILAI", "SMPBKREL", "SMPBAKU", "NILAIZN", "NILBULAT", 
-            "indeks_nilai_tanah", "Luas_M2"
-        ]
+                "WADMPR", "WADMKK", "SKALA", "THNNILAI", "NOZN", "cluster", "JNSZN", 
+                "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+                "Keterangan", "NILAIZN_LAMA", "NILBULAT_LAMA", "NILMIN", "NILMAKS", 
+                "JMLNILAI", "SMPBKREL", "SMPBAKU", "NILAIZN", "NILBULAT", 
+                "indeks_nilai_tanah", "Luas_M2"
+            ]
         else:
             urutan_field_baru = [
-            "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
-            "PENGGUNAAN", "HISTZONE","JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
-            "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
-            "NILAIZN", "NILBULAT", "Luas_M2"
-        ]
+                "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN", 
+                "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA", 
+                "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU", 
+                "NILAIZN", "NILBULAT", "Luas_M2"
+            ]
         
         reorder_fields(zl_path, urutan_field_baru)
-        
 
         if arcpy.Exists(ts_path):
             arcpy.management.MakeFeatureLayer(ts_path, "Titik_Sampel")
@@ -196,7 +206,28 @@ class Periksa_Jenis_Zona(object):
             
             count_ts = int(arcpy.management.GetCount("Titik_Sampel")[0])
             if count_ts > 0:
-                arcpy.AddError(f"PERINGATAN: Terdapat {count_ts} Titik Sampel yang berada di LUAR Zona Layer. Lihat titik Terpilih di Peta!")
+                ts_fields = {f.name.lower(): f.name for f in arcpy.ListFields(ts_path)}
+                sampel_field = (
+                    ts_fields.get("no_sampel")
+                    or ts_fields.get("nomor_entry")
+                    or "OID@"
+                )
+
+                nomor_sampel_luar = []
+                with arcpy.da.SearchCursor("Titik_Sampel", [sampel_field, "OID@"]) as s_cursor:
+                    for no_sampel, oid in s_cursor:
+                        if no_sampel is not None and str(no_sampel).strip() != "":
+                            nomor_sampel_luar.append(str(no_sampel).strip())
+                        else:
+                            nomor_sampel_luar.append(f"OID-{oid}")
+
+                nomor_sampel_luar.sort(key=lambda x: (0, int(x)) if x.isdigit() else (1, x))
+                daftar_nomor_str = ", ".join(nomor_sampel_luar)
+
+                arcpy.AddWarning(
+                    f"PERINGATAN: Terdapat {count_ts} Titik Sampel di LUAR Zona Layer "
+                    f"(Nomor Titik Sampel: {daftar_nomor_str}). Lihat titik terpilih di Peta!"
+                )
             
             arcpy.SetParameter(2, "Titik_Sampel")
 
@@ -227,7 +258,7 @@ class Periksa_Jenis_Zona(object):
 
     def postExecute(self, parameters):
         return
-
+    
 class Sesuaikan_Jenis_Zona(object):
     def __init__(self):
         """Define the tool (tool name is the name of the class)."""

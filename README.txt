@@ -2,12 +2,14 @@ Direktorat Penilaian Tanah dan Ekonomi Pertanahan
 Kementerian ATR/BPN
 
 PENILAIAN TANAH (SIPENTA) - CATATAN RILIS
-Versi: 6.15.1
+Versi: 6.16
 ==================================================
 
-[PERBAIKAN BUG]
-1. Penyesuaian agar Tools dapat membaca OID Field pada saat memasukkan data dasar untuk pembuatan ZNT
+[PENYESUAIAN FITUR]
+1. Menyesuaikan Fitur Periksa Jenis Zona, sehingga menghitung JMLSMPL dan Memberikan Warning apabila ada titik sampel di luar zona
 
+[PERBAIKAN BUG]
+1. Menyesuaikan dropdown waktu di Unduh Workspace
 
 
 

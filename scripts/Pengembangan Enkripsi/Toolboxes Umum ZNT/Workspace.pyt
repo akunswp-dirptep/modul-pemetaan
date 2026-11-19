@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timezone
+﻿from datetime import datetime, timezone, timedelta
 import sys, requests
 import uuid
 import arcpy, os, json, zipfile
@@ -761,8 +761,9 @@ class Unduh_Workspace(object):
         self.label = "Unduh Workspace"
         self.description = "Tool untuk mengunduh workspace ZNT dari Sipenta."
         
-        # Digunakan untuk caching sederhana agar tidak perlu memanggil API berulang-kali di UI
+        # Digunakan untuk caching sederhana agar tidak perlu memanggil API / mereset UI berulang-kali
         self._cached_nomor_berkas = None
+        self._cached_created_by = None
         self._cached_api_data = None
 
     def getParameterInfo(self):
@@ -887,6 +888,7 @@ class Unduh_Workspace(object):
                 created_by.filter.list = []
                 pilihan_waktu.filter.list = []
                 self._cached_nomor_berkas = None
+                self._cached_created_by = None
                 self._cached_api_data = None
                 return
 
@@ -895,15 +897,15 @@ class Unduh_Workspace(object):
             use_production = True if server in ["Produksi", None] else False
             token = user_data.get(AUTH_KEY, None)
             
+            # 2. Ambil data API hanya jika nomor_berkas berubah
             if nomor_berkas_val != self._cached_nomor_berkas:
-                
-                # Reset dropdown dependent jika ini bukan inisialisasi awal
                 if self._cached_nomor_berkas is not None:
                     created_by.value = None
                     pilihan_waktu.value = None
                 
+                self._cached_created_by = None
+                
                 try:
-                    # Memanggil API dengan nomor_berkas_val
                     response_data = self.call_sipenta_api(token, nomor_berkas_val, use_production)
                     
                     if response_data and response_data.get("success"):
@@ -911,12 +913,11 @@ class Unduh_Workspace(object):
                     else:
                         self._cached_api_data = []
                 except Exception:
-                    # Silent fail di updateParameters agar UI tidak error
                     self._cached_api_data = [] 
                 
-                # Perbarui cache dengan nomor berkas yang baru ditarik
                 self._cached_nomor_berkas = nomor_berkas_val
 
+            # 3. Populate dropdown created_by dan pilihan_waktu
             if self._cached_api_data:
                 unique_creators = list(set(
                     [item['created_by'] for item in self._cached_api_data if item.get('created_by')]
@@ -925,22 +926,40 @@ class Unduh_Workspace(object):
                 
                 selected_creator = created_by.valueAsText
                 if selected_creator:
-                    timestamps_local = []
-                    for item in self._cached_api_data:
-                        if item.get('created_by') == selected_creator:
-                            # Konversi waktu JSON (UTC) ke Lokal sebelum dimasukkan ke dropdown
-                            local_time = self.utc_to_local_string(item.get('created_at'))
-                            timestamps_local.append(local_time)
-                    
-                    # Waktu terbaru di urutan atas
-                    pilihan_waktu.filter.list = sorted(timestamps_local, reverse=True) 
+                    # Hanya bangun ulang daftar waktu jika 'Dibuat Oleh' berubah atau list masih kosong
+                    if selected_creator != self._cached_created_by or not pilihan_waktu.filter.list:
+                        if self._cached_created_by is not None and selected_creator != self._cached_created_by:
+                            pilihan_waktu.value = None
+
+                        creator_items = [
+                            item for item in self._cached_api_data
+                            if item.get('created_by') == selected_creator and item.get('created_at')
+                        ]
+                        creator_items.sort(key=lambda x: x['created_at'], reverse=True)
+                        
+                        new_time_list = [
+                            self.format_waktu_upload(item['created_at']) for item in creator_items
+                        ]
+                        pilihan_waktu.filter.list = new_time_list
+                        self._cached_created_by = selected_creator
+
+                        # Jaga pilihan yang sudah ada jika list diperbarui setelah jeda > 1 menit
+                        current_waktu = pilihan_waktu.valueAsText
+                        if current_waktu and current_waktu not in new_time_list:
+                            raw_ts = current_waktu.split(" (")[0]
+                            matched = next((t for t in new_time_list if t.startswith(raw_ts)), None)
+                            if matched:
+                                pilihan_waktu.value = matched
                 else:
                     pilihan_waktu.filter.list = []
+                    self._cached_created_by = None
                     if pilihan_waktu.valueAsText is not None:
                         pilihan_waktu.value = None
             else:
                 created_by.filter.list = []
-                pilihan_waktu.filter.list = []  
+                pilihan_waktu.filter.list = []
+                self._cached_created_by = None
+
     def updateMessages(self, parameters):
         return
 
@@ -954,19 +973,19 @@ class Unduh_Workspace(object):
         
         user_data = get_user_data(CREDENTIAL_KEY)
         server = get_user_data(PREFERRED_SERVER_KEY)
-        use_production = True if server == "Produksi" or server == None else False
+        use_production = True if server == "Produksi" or server is None else False
         token = user_data.get(AUTH_KEY, None)
 
         data_response = self.call_sipenta_api(token, nomor_berkas, use_production)
         data_list = data_response.get("data", [])
 
+        # Ambil timestamp asli sebelum tanda kurung " ("
+        selected_timestamp = waktu_upload.split(" (")[0]
+
         # Cari public_url yang sesuai dengan input user
         target_url = None
         for item in data_list:
-            # Konversi created_at dari JSON (UTC) ke Lokal untuk dibandingkan dengan input UI
-            json_local_time = self.utc_to_local_string(item.get("created_at"))
-            
-            if item.get("created_by") == created_by and json_local_time == waktu_upload:
+            if item.get("created_by") == created_by and item.get("created_at") == selected_timestamp:
                 target_url = item.get("public_url")
                 break
         
@@ -976,7 +995,7 @@ class Unduh_Workspace(object):
 
         # Proses Download File ZIP
         arcpy.AddMessage(f"Mulai mengunduh file workspace dari: {target_url}")
-        safe_timestamp = waktu_upload.replace(":", "").replace(" ", "_").replace("-", "")
+        safe_timestamp = selected_timestamp.replace(":", "").replace(" ", "_").replace("-", "")
         zip_filename = f"workspace_{safe_timestamp}.zip"
         zip_file_path = os.path.join(output_path, zip_filename)
 
@@ -1016,24 +1035,42 @@ class Unduh_Workspace(object):
         
         return
     
-    def utc_to_local_string(self, utc_time_str):
-        """Mengubah string UTC (GMT+0) menjadi string Waktu Lokal sistem."""
-        if not utc_time_str:
+    def format_waktu_upload(self, wib_time_str):
+        """Menggabungkan waktu server (WIB) dengan selisih waktu relatif."""
+        if not wib_time_str:
             return ""
         try:
-            # 1. Parse string ke objek datetime
-            dt_utc = datetime.strptime(utc_time_str, "%Y-%m-%d %H:%M:%S")
-            
-            # 2. Tetapkan bahwa waktu ini adalah UTC
-            dt_utc = dt_utc.replace(tzinfo=timezone.utc)
-            
-            # 3. Konversi ke waktu lokal laptop (astimezone tanpa argumen otomatis mendeteksi local timezone)
-            dt_local = dt_utc.astimezone()
-            
-            # 4. Format kembali menjadi string
-            return dt_local.strftime("%Y-%m-%d %H:%M:%S")
-        except Exception:
-            return utc_time_str # Fallback ke waktu asli jika parsing gagal
+            wib_tz = timezone(timedelta(hours=7))
+            dt_wib = datetime.strptime(wib_time_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=wib_tz)
+            now_wib = datetime.now(wib_tz)
+
+            diff = now_wib - dt_wib
+            total_seconds = int(diff.total_seconds())
+
+            if total_seconds < 60:
+                rel_str = "(Semenit lalu)"
+            elif total_seconds < 3600:
+                menit = total_seconds // 60
+                rel_str = f"({menit} Menit Lalu)"
+            elif total_seconds < 86400:
+                jam = total_seconds // 3600
+                rel_str = f"({jam} Jam Lalu)"
+            else:
+                hari = total_seconds // 86400
+                if hari < 30:
+                    rel_str = f"({hari} Hari Lalu)"
+                elif hari < 365:
+                    bulan = hari // 30
+                    rel_str = f"({bulan} Bulan Lalu)"
+                else:
+                    tahun = hari // 365
+                    rel_str = f"({tahun} Tahun Lalu)"
+
+            return f"{wib_time_str} {rel_str}"
+        except Exception as e:
+            arcpy.AddWarning(f"Gagal memformat waktu: {e}")
+            return wib_time_str
+
     def call_sipenta_api(self, token, nomor_berkas, use_production=True):
         test_url = f"https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan/workspace?no_berkas={nomor_berkas}"
         prod_url = f"https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan/workspace?no_berkas={nomor_berkas}"
@@ -1041,7 +1078,6 @@ class Unduh_Workspace(object):
 
         try:
             headers = {"Authorization": f"Bearer {token}"}
-            # Jika token kosong, headers dapat dihilangkan atau disesuaikan
             response = requests.get(url, headers=headers, timeout=60)
             response.raise_for_status()
             data = response.json()
@@ -1181,7 +1217,8 @@ class Unduh_Workspace(object):
                             if file.lower() == 'config.json' or file.lower() == PROJECT_CONFIG_FILE_NAME.lower():
                                 config_path = os.path.join(root, file)
                                 break
-                        if config_path: break
+                        if config_path:
+                            break
                     
                     if config_path:
                         is_json_format = config_path.lower().endswith('.json')
@@ -1234,7 +1271,7 @@ class Unduh_Workspace(object):
         except Exception as e:
             arcpy.AddError(f"Error saat memproses file zip: {e}")
             return False, None
-
+              
 class Cek_Zona_Awal(object):
     def __init__(self):
         self.label = "Cek Aturan Zona Berdasarkan Persil"

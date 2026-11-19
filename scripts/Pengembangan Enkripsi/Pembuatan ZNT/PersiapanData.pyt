@@ -568,7 +568,13 @@ class Masukkan_Data_Dasar_Pembuatan_ZNT(object):
             str_skala = f"1 : {nilai_skala}"
             arcpy.management.CalculateField(zl_temp_path, "SKALA", f"'{str_skala}'", "PYTHON3")
 
-        arcpy.management.CalculateField(zl_temp_path, "NOZN", "!OBJECTID!", "PYTHON3")
+        desc = arcpy.Describe(zl_temp_path)
+        oid_field_name = desc.OIDFieldName
+
+        if oid_field_name:
+            arcpy.management.CalculateField(zl_temp_path, "NOZN", f"!{oid_field_name}!", "PYTHON3")
+        else:
+            arcpy.AddWarning("Dataset ini tidak memiliki field OID bawaan.")
 
         # PERBAIKAN 2: Menggunakan format string yang lebih aman dengan double quote ("{}")
         kota_val = str(config_dan_paths.get('kota', ''))

@@ -224,7 +224,6 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
         filter_surveyor = parameters[2].value
         surveyor_list_str = parameters[3].valueAsText
 
-        # Membersihkan string multivalue (contoh: "'Surveyor A';'Surveyor B'")
         selected_surveyors = []
         if filter_surveyor and surveyor_list_str:
             selected_surveyors = [s.strip("'").strip() for s in surveyor_list_str.split(";")]
@@ -506,7 +505,7 @@ class Ambil_Titik_Sampel_Dari_Sipenta(object):
                 arcpy.AddWarning('Tidak terdapat titik sampel individual tambahan')
         
         else:
-            arcpy.AddWarning("Tidak ada data Titik_Sampel_Individual ditemukan atau dataset tidak tersedia.")
+            arcpy.AddMessage("Tidak ada data Titik_Sampel_Individual ditemukan atau dataset tidak tersedia.")
 
         # Kondisi 4: Mendapatkan nomor sampel terakhir dari data API dan menyimpannya ke config untuk referensi di masa depan
 

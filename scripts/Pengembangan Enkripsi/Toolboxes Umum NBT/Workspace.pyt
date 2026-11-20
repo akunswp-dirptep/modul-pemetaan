@@ -406,7 +406,7 @@ class Edit_Konfigurasi_Umum_Workspace(object):
                 config_data["dataset_path"] = os.path.join(
                     ws_folder, "ZoneNilaiTanah.gdb", "znt_ds"
                 )
-                arcpy.AddMessage("? Path Workspace, GDB, dan Dataset telah disesuaikan.")
+                arcpy.AddMessage("Path Workspace, GDB, dan Dataset telah disesuaikan.")
 
                 # Update Folder Connections di Catalog ArcGIS Pro
                 aprx = arcpy.mp.ArcGISProject("CURRENT")
@@ -423,11 +423,11 @@ class Edit_Konfigurasi_Umum_Workspace(object):
                         folder_connections, validate=True
                     )
                     arcpy.AddMessage(
-                        f"? Folder {ws_folder} berhasil ditambahkan ke Folder Connections."
+                        f"Folder {ws_folder} berhasil ditambahkan ke Folder Connections."
                     )
                 else:
                     arcpy.AddMessage(
-                        "?? Folder ini sudah terhubung di Catalog ArcGIS Pro."
+                        "Folder ini sudah terhubung di Catalog ArcGIS Pro."
                     )
 
                 # Set Layer Output ke Peta
@@ -437,17 +437,17 @@ class Edit_Konfigurasi_Umum_Workspace(object):
                 if arcpy.Exists(zona_layer_path):
                     arcpy.SetParameter(5, zona_layer_path)  # Index 5 = out_layer
                     arcpy.AddMessage(
-                        "?? Layer Zona_Layer berhasil dimuat ke dalam peta."
+                        "Layer Zona_Layer berhasil dimuat ke dalam peta."
                     )
                 else:
                     arcpy.AddWarning(
-                        f"?? Zona_Layer tidak ditemukan di: {zona_layer_path}"
+                        f"Zona_Layer tidak ditemukan di: {zona_layer_path}"
                     )
 
             # 4. Tulis kembali konfigurasi
             system_utils.setup_project_config(config_data, config_path)
 
-            arcpy.AddMessage("? Konfigurasi workspace berhasil disimpan!")
+            arcpy.AddMessage("Konfigurasi workspace berhasil disimpan!")
             arcpy.AddMessage(f"   -> Tahun Penilaian: {THNNILAI}")
             arcpy.AddMessage(f"   -> Lokasi: {WADMKK}, {WADMPR}")
 
@@ -637,7 +637,7 @@ class Edit_Skoring_Kelas_Jalan_Workspace(object):
             system_utils.setup_project_config(config_data, config_path)
 
             # 5. Pesan sukses
-            arcpy.AddMessage("? Konfigurasi skoring kelas jalan berhasil disimpan!")
+            arcpy.AddMessage("Konfigurasi skoring kelas jalan berhasil disimpan!")
             arcpy.AddMessage(f"   -> Setapak: {val_setapak}")
             arcpy.AddMessage(f"   -> Lokal Sekunder: {val_lokal_sekunder}")
             arcpy.AddMessage(f"   -> Lokal Primer: {val_lokal_primer}")
@@ -760,7 +760,7 @@ class Edit_Skoring_Zonasi_Workspace(object):
             system_utils.setup_project_config(config_data, config_path)
 
             # 6. Pesan sukses
-            arcpy.AddMessage("? Konfigurasi skoring zonasi berhasil diperbarui!")
+            arcpy.AddMessage("Konfigurasi skoring zonasi berhasil diperbarui!")
             arcpy.AddMessage("Daftar Skoring Zonasi saat ini:")
             for k, v in new_zonasi_dict.items():
                 arcpy.AddMessage(f"   -> {k}: {v}")

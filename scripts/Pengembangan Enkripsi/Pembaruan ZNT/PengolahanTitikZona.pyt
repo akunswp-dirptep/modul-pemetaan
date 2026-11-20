@@ -1335,9 +1335,6 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
     def isLicensed(self):
         return True
 
-    # ===============================
-    # ? UTIL
-    # ===============================
     def _get_field_name(self, layer_path, expected):
         for f in arcpy.ListFields(layer_path):
             if f.name.lower() == expected.lower():
@@ -1372,9 +1369,7 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
                 time.sleep(1)
                 arcpy.ClearWorkspaceCache_management()
 
-    # ===============================
-    # ? MAIN EXECUTE
-    # ===============================
+
     def execute(self, parameters, messages):
         import arcpy, os, sys, gc, time
 
@@ -1416,7 +1411,7 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
         # ===============================
         self._validate_non_negative_nilai(tz_path, 'Titik_Zona')
         self._validate_non_negative_nilai(ts_path, 'Titik_Sampel')
-        arcpy.AddMessage("? Tidak ada nilai negatif pada Titik Zona dan Titik Sampel")
+        arcpy.AddMessage("Tidak ada nilai negatif pada Titik Zona dan Titik Sampel")
 
         # ===============================
         # VALIDASI NOZN
@@ -1432,11 +1427,9 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
             arcpy.AddWarning(f"Terdapat Duplikasi NOZN:\n {dup}")
             sys.exit(0)
 
-        arcpy.AddMessage("? Tidak ada duplikasi NOZN pada Zona Layer")
+        arcpy.AddMessage("Tidak ada duplikasi NOZN pada Zona Layer")
 
-        # ===============================
-        # ? SPATIAL JOIN (IN MEMORY)
-        # ===============================
+
         zout = "in_memory/zona_join"
         sout = "in_memory/sampel_join"
 
@@ -1524,7 +1517,7 @@ class Periksa_Kesesuaian_Titik_Dan_Zona_Pembaruan:
             arcpy.AddWarning(f"Terdapat cluster yang tidak memiliki titik zona:\n {invalid_cluster}")
             sys.exit(0)
 
-        arcpy.AddMessage("? Semua validasi berhasil")
+        arcpy.AddMessage("Semua validasi berhasil")
 
         # ===============================
         # CLEANUP

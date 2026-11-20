@@ -323,7 +323,7 @@ class Hitung_Indeks_Rata_Rata(object):
         else:
 
             messages.addMessage(
-                "? Validasi cluster OK"
+                "Validasi cluster OK"
             )
 
         # =================================================
@@ -1002,7 +1002,7 @@ class Hitung_Nilai_Prediksi(object):
                     )
 
         messages.addMessage(
-            "? Nilai NBT berhasil dihitung"
+            "Nilai NBT berhasil dihitung"
         )
 
         # =================================================

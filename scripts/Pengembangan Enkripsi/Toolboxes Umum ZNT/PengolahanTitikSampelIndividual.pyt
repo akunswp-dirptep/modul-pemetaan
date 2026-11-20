@@ -836,7 +836,7 @@ class Perhitungan_Nilai_Data_Individual(object):
                 arcpy.AddError(f"Pembanding {idx} ('{pembanding}') tidak ditemukan di layer Pembanding.")
                 sys.exit(1)
 
-        arcpy.AddMessage("? Semua input valid. Titik individual dan pembanding ditemukan di layer masing-masing.")
+        arcpy.AddMessage("Semua input valid. Titik individual dan pembanding ditemukan di layer masing-masing.")
 
         data_individual = self.dapatkan_data_sampel(ns_individual, titik_sampel_individual_path)
 
@@ -1911,7 +1911,7 @@ class Otomatisasi_Penilaian_Titik_Individual(object):
                     row[6] = pembanding_str
                     cursor.updateRow(row)
 
-        arcpy.AddMessage(f"? Penilaian selesai. Nilai pasar tersimpan: {data_penilaian_individual['harga_tanah_Rp']}")
+        arcpy.AddMessage(f"Penilaian selesai. Nilai pasar tersimpan: {data_penilaian_individual['harga_tanah_Rp']}")
 
         # ==========================================
         # 5. TERAPKAN SIMBOLOGI
@@ -2406,18 +2406,18 @@ class Lihat_Titik_Pembanding(object):
         if arcpy.Exists(layer_sampel):
             arcpy.management.SelectLayerByAttribute(layer_sampel, "NEW_SELECTION", where_clause)
             count_sampel_terpilih = int(arcpy.management.GetCount(layer_sampel).getOutput(0))
-            arcpy.AddMessage(f"? Menyeleksi {count_sampel_terpilih} titik terkait di layer '{layer_sampel}'.")
+            arcpy.AddMessage(f"Menyeleksi {count_sampel_terpilih} titik terkait di layer '{layer_sampel}'.")
         
         if arcpy.Exists(layer_zona):
             arcpy.management.SelectLayerByAttribute(layer_zona, "ADD_TO_SELECTION", where_clause)
             count_zona_terpilih = int(arcpy.management.GetCount(layer_zona).getOutput(0))
             if count_zona_terpilih > 0:
-                arcpy.AddMessage(f"? Menyeleksi {count_zona_terpilih} titik terkait di layer '{layer_zona}'.")
+                arcpy.AddMessage(f"Menyeleksi {count_zona_terpilih} titik terkait di layer '{layer_zona}'.")
 
         # Jika user memilih dari Titik_Sampel_Individual, pastikan titik itu tetap terseleksi juga
         if target_layer == layer_individual:
             where_clause_ind = f"no_sampel = {no_sampel_ind}"
             arcpy.management.SelectLayerByAttribute(layer_individual, "NEW_SELECTION", where_clause_ind)
 
-        arcpy.AddMessage("\n? Selesai! Titik individual beserta pembandingnya kini telah tersorot (ter-select) di peta.")
+        arcpy.AddMessage("\nSelesai! Titik individual beserta pembandingnya kini telah tersorot (ter-select) di peta.")
         return

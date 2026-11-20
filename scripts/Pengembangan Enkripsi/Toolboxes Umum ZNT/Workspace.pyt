@@ -16,7 +16,7 @@ from zntutils.system_utils import setup_project_config, get_all_config, get_logi
 from zntutils.system_utils import get_user_data, setup_user_data, get_all_berkas_id, clear_user_data
 from apputils.loggerlib import ToolLogger
 from zntutils.constant import PROJECT_CONFIG_FILE_NAME
-
+from zntutils import zona_layer as zonalayer
 def current_year():
     try:
         return int(datetime.now().year)
@@ -223,30 +223,37 @@ class Buat_Workspace(object):
         return
 
 class Edit_Workspace(object):
+    SKALA_MAP = {
+        2500: "1:2.500",
+        5000: "1:5.000",
+        10000: "1:10.000",
+        25000: "1:25.000",
+    }
+
     def __init__(self):
         self.label = "Edit Workspace"
         self.description = "Tool untuk membaca dan mengedit konfigurasi workspace ZNT."
         self.canRunInBackground = False
 
     def getParameterInfo(self):
-
+        # Parameter 0: Folder Workspace
         workspace_folder = arcpy.Parameter(
             displayName="Pilih Folder Workspace",
             name="workspace_folder",
             datatype="DEFolder",
             parameterType="Required",
-            direction="Input"
+            direction="Input",
         )
 
-        # Parameter 1: Checkbox Perbarui Path & Tampilkan Folder
+        # Parameter 1: Checkbox Perbarui Path & Muat Layer
         update_path = arcpy.Parameter(
             displayName="Perbarui lokasi folder workspace",
             name="update_path",
             datatype="GPBoolean",
             parameterType="Optional",
-            direction="Input"
+            direction="Input",
         )
-        update_path.value = False 
+        update_path.value = False
 
         # Parameter 2: Skala
         skala = arcpy.Parameter(
@@ -254,10 +261,10 @@ class Edit_Workspace(object):
             name="skala",
             datatype="GPString",
             parameterType="Required",
-            direction="Input"
+            direction="Input",
         )
         skala.filter.type = "ValueList"
-        skala.filter.list = ["1:2.500", "1:5.000", "1:10.000", "1:25.000"]
+        skala.filter.list = list(self.SKALA_MAP.values())
 
         # Parameter 3: Provinsi
         provinsi = arcpy.Parameter(
@@ -265,10 +272,10 @@ class Edit_Workspace(object):
             name="provinsi",
             datatype="GPString",
             parameterType="Required",
-            direction="Input"
+            direction="Input",
         )
         provinsi.filter.type = "ValueList"
-        provinsi.filter.list = NAMA_PROVINSI 
+        provinsi.filter.list = NAMA_PROVINSI
 
         # Parameter 4: Kabupaten/Kota
         kab_kota = arcpy.Parameter(
@@ -276,8 +283,9 @@ class Edit_Workspace(object):
             name="kab_kota",
             datatype="GPString",
             parameterType="Required",
-            direction="Input"
+            direction="Input",
         )
+        kab_kota.filter.type = "ValueList"
 
         # Parameter 5: Tahun Penilaian
         tahun_penilaian = arcpy.Parameter(
@@ -285,18 +293,26 @@ class Edit_Workspace(object):
             name="tahun_penilaian",
             datatype="GPLong",
             parameterType="Required",
-            direction="Input"
+            direction="Input",
         )
 
-        # Parameter 6: Parameter Output untuk menampilkan layer (BARU)
+        # Parameter 6: Output Layer (Derived)
         out_layer = arcpy.Parameter(
             name="out_layer",
             datatype="GPFeatureLayer",
             parameterType="Derived",
-            direction="Output"
+            direction="Output",
         )
 
-        return [workspace_folder, update_path, skala, provinsi, kab_kota, tahun_penilaian, out_layer]
+        return [
+            workspace_folder,
+            update_path,
+            skala,
+            provinsi,
+            kab_kota,
+            tahun_penilaian,
+            out_layer,
+        ]
 
     def isLicensed(self):
         return True
@@ -308,125 +324,179 @@ class Edit_Workspace(object):
         kab_param = parameters[4]
         thn_param = parameters[5]
 
-        # 1. BACA & TAMPILKAN DATA LAMA KETIKA FOLDER DIPILIH
+        # 1. Baca & tampilkan data lama ketika folder workspace dipilih
         if ws_param.value and not ws_param.hasBeenValidated:
             ws_folder = ws_param.valueAsText
             config_path = os.path.join(ws_folder, PROJECT_CONFIG_FILE_NAME)
-            
+
             if os.path.exists(config_path):
-                try:
-                    config_data = get_all_config(config_path)
-                    
-                    if isinstance(config_data, dict):
-                        skala_val = config_data.get("skala")
-                        if skala_val and not skala_param.altered:
-                            if skala_val == 2500: skala_param.value = "1:2.500"
-                            elif skala_val == 5000: skala_param.value = "1:5.000"
-                            elif skala_val == 10000: skala_param.value = "1:10.000"
-                            elif skala_val == 25000: skala_param.value = "1:25.000"
+                config_data = get_all_config(config_path)
+                if isinstance(config_data, dict):
+                    skala_val = config_data.get("skala")
+                    if skala_val is not None and not skala_param.altered:
+                        try:
+                            skala_label = self.SKALA_MAP.get(int(skala_val))
+                            if skala_label:
+                                skala_param.value = skala_label
+                        except (ValueError, TypeError):
+                            pass
 
-                        if not prov_param.altered:
-                            prov_param.value = config_data.get("WADMPR")
-                            
-                        if not kab_param.altered:
-                            kab_param.value = config_data.get("WADMKK")
-                            
-                        if not thn_param.altered:
-                            thn_param.value = config_data.get("THNNILAI")
-                            
-                except Exception as e:
-                    pass
+                    if not prov_param.altered:
+                        prov_param.value = config_data.get("WADMPR")
 
-        # 2. LOGIKA DROPDOWN PROVINSI -> KABUPATEN
+                    if not kab_param.altered:
+                        kab_param.value = config_data.get("WADMKK")
+
+                    if not thn_param.altered:
+                        thn_param.value = config_data.get("THNNILAI")
+
+        # 2. Filter dropdown Kabupaten/Kota berdasarkan Provinsi
         prov = prov_param.valueAsText
         if prov:
-            kab_param.filter.type = "ValueList"
-            kab_param.filter.list = KAB_KOTA.get(prov, []) 
+            kab_list = KAB_KOTA.get(prov, [])
+            kab_param.filter.list = kab_list
+            if kab_param.valueAsText and kab_param.valueAsText not in kab_list:
+                kab_param.value = None
         else:
             kab_param.filter.list = []
+            kab_param.value = None
 
     def updateMessages(self, parameters):
         ws_param = parameters[0]
         if ws_param.value:
             config_path = os.path.join(ws_param.valueAsText, PROJECT_CONFIG_FILE_NAME)
             if not os.path.exists(config_path):
-                ws_param.setErrorMessage("File konfigurasi (config) tidak ditemukan di dalam folder ini.")
-        return
+                ws_param.setErrorMessage(
+                    "File konfigurasi (config) tidak ditemukan di dalam folder ini."
+                )
 
     def execute(self, parameters, messages):
         ws_folder = parameters[0].valueAsText
-        update_path_flag = parameters[1].value 
+        update_path_flag = bool(parameters[1].value)
         skala_text = parameters[2].valueAsText
-        WADMPR = parameters[3].valueAsText
-        WADMKK = parameters[4].valueAsText
-        THNNILAI = parameters[5].valueAsText
+        wadmpr = parameters[3].valueAsText
+        wadmkk = parameters[4].valueAsText
+        thnnilai = parameters[5].valueAsText
 
         config_path = os.path.join(ws_folder, PROJECT_CONFIG_FILE_NAME)
-
         if not os.path.exists(config_path):
             arcpy.AddError("Proses dihentikan: File konfigurasi tidak ditemukan.")
             return
 
         try:
-            # 1. Baca data lama
+            # 1. Baca konfigurasi lama
             config_data = get_all_config(config_path)
-            
             if not isinstance(config_data, dict):
                 arcpy.AddError("Format file konfigurasi tidak valid atau rusak.")
                 return
 
-            # 2. Mapping nilai teks skala ke integer
+            # 2. Konversi teks skala ke integer
             try:
-                skala_int = int(skala_text.split(":")[1].replace(".", ""))
-            except Exception:
+                skala_int = int(skala_text.split(":")[1].replace(".", "").strip())
+            except (IndexError, ValueError, AttributeError):
                 arcpy.AddError(f"Gagal memproses nilai skala: {skala_text}")
                 return
 
-            # 3. Timpa informasi atribut
+            # 3. Perbarui atribut konfigurasi
             config_data["skala"] = skala_int
-            config_data["WADMPR"] = WADMPR
-            config_data["WADMKK"] = WADMKK
-            config_data["THNNILAI"] = THNNILAI
+            config_data["WADMPR"] = wadmpr
+            config_data["WADMKK"] = wadmkk
+            config_data["THNNILAI"] = thnnilai
 
-            # 4. LOGIKA PERBARUI PATH, FOLDER CONNECTIONS, & MUAT LAYER
+            # 4. Perbarui path workspace lebih dulu sebelum mengakses Zona_Layer
             if update_path_flag:
-                # Update Dictionary
+                gdb_path = os.path.join(ws_folder, "ZoneNilaiTanah.gdb")
+                dataset_path = os.path.join(gdb_path, "znt_ds")
+
                 config_data["ws_path"] = ws_folder
-                config_data["gdb_path"] = os.path.join(ws_folder, "ZoneNilaiTanah.gdb")
-                config_data["dataset_path"] = os.path.join(ws_folder, "ZoneNilaiTanah.gdb", "znt_ds")
-                arcpy.AddMessage("? Path Workspace, GDB, dan Dataset telah disesuaikan dengan folder ini.")
+                config_data["gdb_path"] = gdb_path
+                config_data["dataset_path"] = dataset_path
+                arcpy.AddMessage(
+                    "Path Workspace, GDB, dan Dataset telah disesuaikan dengan folder ini."
+                )
+                self._tambah_folder_connection(ws_folder)
 
-                # Update Folder Connections di UI ArcGIS Pro
-                aprx = arcpy.mp.ArcGISProject("CURRENT")
-                folder_connections = aprx.folderConnections
+            # 5. Perbarui field SKALA & susunan field pada Zona_Layer
+            dataset_path = config_data.get("dataset_path")
+            zona_layer_path = (
+                os.path.join(dataset_path, "Zona_Layer") if dataset_path else ""
+            )
 
-                if not any(fc['connectionString'] == ws_folder for fc in folder_connections):
-                    folder_connections.append({
-                        'connectionString': ws_folder,
-                        'isHomeFolder': False
-                    })
-                    aprx.updateFolderConnections(folder_connections, validate=True)
-                    arcpy.AddMessage(f"? Folder {ws_folder} berhasil ditambahkan ke Folder Connections.")
-                else:
-                    arcpy.AddMessage("?? Folder ini sudah terhubung di Catalog ArcGIS Pro.")
-
-                # Tambahkan Zona_Layer ke Peta (BARU)
-                zona_layer_path = os.path.join(config_data["dataset_path"], "Zona_Layer")
-                if arcpy.Exists(zona_layer_path):
-                    arcpy.SetParameter(6, zona_layer_path) # Set parameter output pada indeks ke-6
-                    arcpy.AddMessage("?? Layer Zona_Layer berhasil dimuat ke dalam peta.")
-                else:
-                    arcpy.AddWarning(f"?? Zona_Layer tidak ditemukan di: {zona_layer_path}")
-
-            # 5. Tulis kembali konfigurasi ke lokasi folder
+            if zona_layer_path and arcpy.Exists(zona_layer_path):
+                self._update_zona_layer(zona_layer_path, skala_int)
+                if update_path_flag:
+                    arcpy.SetParameter(6, zona_layer_path)
+                    arcpy.AddMessage("Layer Zona_Layer berhasil dimuat ke dalam peta.")
+            else:
+                arcpy.AddWarning(
+                    f"Zona_Layer tidak ditemukan di: {zona_layer_path}. Pembaruan atribut layer dilewati."
+                )
+            arcpy.SetParameter(6, zona_layer_path)
+            arcpy.AddMessage("Layer Zona_Layer berhasil dimuat ke dalam peta.")
+            # 6. Simpan kembali konfigurasi proyek
             setup_project_config(config_data, config_path)
-            
-            arcpy.AddMessage("? Konfigurasi workspace berhasil disimpan!")
-            arcpy.AddMessage(f"  -> Skala: {skala_int}")
-            arcpy.AddMessage(f"  -> Lokasi: {WADMKK}, {WADMPR}")
+            arcpy.AddMessage("Konfigurasi workspace berhasil disimpan.")
+            arcpy.AddMessage(f"  -> Skala  : 1:{skala_int:,}".replace(",", "."))
+            arcpy.AddMessage(f"  -> Lokasi : {wadmkk}, {wadmpr}")
+            arcpy.AddMessage(f"  -> Tahun  : {thnnilai}")
 
         except Exception as e:
             arcpy.AddError(f"Terjadi kesalahan saat mengedit file konfigurasi: {e}")
+
+    def _update_zona_layer(self, zona_layer_path, skala_int):
+        """Menambahkan/mengisi field SKALA dan merapikan urutan field Zona_Layer."""
+        in_table_fields = [f.name.upper() for f in arcpy.ListFields(zona_layer_path)]
+        if "SKALA" not in in_table_fields:
+            arcpy.management.AddField(zona_layer_path, "SKALA", "TEXT", field_length=50)
+
+        nilai_skala = f"{skala_int:,}".replace(",", ".")
+        str_skala = f"1 : {nilai_skala}"
+        arcpy.management.CalculateField(
+            zona_layer_path, "SKALA", f"'{str_skala}'", "PYTHON3"
+        )
+
+        if "NILAIZN_LAMA" in in_table_fields:
+            urutan_field_baru = [
+                "WADMPR", "WADMKK", "SKALA", "THNNILAI", "NOZN", "cluster", "JNSZN",
+                "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA",
+                "Keterangan", "NILAIZN_LAMA", "NILBULAT_LAMA", "NILMIN", "NILMAKS",
+                "JMLNILAI", "SMPBKREL", "SMPBAKU", "NILAIZN", "NILBULAT",
+                "indeks_nilai_tanah", "Luas_M2",
+            ]
+        else:
+            urutan_field_baru = [
+                "WADMPR", "WADMKK", "SKALA", "THNNILAI", "cluster", "NOZN", "JNSZN",
+                "PENGGUNAAN", "HISTZONE", "JMLSMPL", "JENISSAMPEL", "BEDA_ZONA",
+                "NILMIN", "NILMAKS", "JMLNILAI", "SMPBKREL", "SMPBAKU",
+                "NILAIZN", "NILBULAT", "Luas_M2",
+            ]
+
+        zonalayer.reorder_fields(zona_layer_path, urutan_field_baru)
+
+    def _tambah_folder_connection(self, ws_folder):
+        """Menambahkan folder workspace ke Folder Connections pada proyek ArcGIS Pro aktif."""
+        try:
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            folder_connections = aprx.folderConnections
+            target_norm = os.path.normpath(ws_folder).lower()
+
+            sudah_terhubung = any(
+                os.path.normpath(fc.get("connectionString", "")).lower() == target_norm
+                for fc in folder_connections
+            )
+
+            if not sudah_terhubung:
+                folder_connections.append(
+                    {"connectionString": ws_folder, "isHomeFolder": False}
+                )
+                aprx.updateFolderConnections(folder_connections, validate=True)
+                arcpy.AddMessage(
+                    f"Folder {ws_folder} berhasil ditambahkan ke Folder Connections."
+                )
+            else:
+                arcpy.AddMessage("Folder ini sudah terhubung di Catalog ArcGIS Pro.")
+        except Exception as e:
+            arcpy.AddWarning(f"Gagal memperbarui Folder Connections: {e}")
 
 class Import_Workspace(object):
 

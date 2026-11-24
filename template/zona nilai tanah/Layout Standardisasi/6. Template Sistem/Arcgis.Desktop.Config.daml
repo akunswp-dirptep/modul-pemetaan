@@ -75,9 +75,9 @@
 					
 				</group>
 				<group id="group_integrasi_znt" caption="Integrasi ZNT">
-					<button refID="ButtonUnduhZNT"/>
-					<button refID="ButtonPenggabunganZNTManual"/>
-					<button refID="ButtonUnggahZNT"/>
+					<button refID="ButtonUnduhDataIntegrasi"/>
+					<button refID="ButtonPenggabunganDataIntegrasi"/>
+					<button refID="ButtonUnggahIntegrasikeSipenta"/>
 				</group>
 				<group id="portofolio" caption="Mock Up">
 					<button refID="ButtonUnduhTile" size="large" />
@@ -1160,23 +1160,23 @@
 					</args>
 					<tooltip heading="Unduh Data Dari Sipenta">Tool untuk mengunduh data pemetaan berdasarkan nomor berkas</tooltip>
 				</button>
-				<button id="ButtonUnduhZNT" caption="Unduh Data ZNT dari Sipenta" smallImage="C:\PenilaianTanah\icons\unduhznt.png" largeImage="C:\PenilaianTanah\icons\unduhznt.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUnduhDataIntegrasi" caption="Unduh Data Integrasi dari Sipenta" smallImage="C:\PenilaianTanah\icons\unduhznt.png" largeImage="C:\PenilaianTanah\icons\unduhznt.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Tools OGIS Internal\Python Toolboxes\UnduhZNT.pyt\Unduh_ZNT" name="Unduh Data ZNT dari Sipenta" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\IntegrasiZNT.pyt\Unduh_Data_Integrasi_Dari_Sipenta" name="Unduh Data Integrasi Dari Sipenta" xmlns=""/>
 					</args>
-					<tooltip heading="Unduh Data ZNT dari Sipenta">Menu untuk mengunduh data ZNT dari Sipenta</tooltip>
+					<tooltip heading="Unduh Data Integrasi Dari Sipenta">Menu untuk mengunduh data Integrasi dari Sipenta</tooltip>
 				</button>
-				<button id="ButtonPenggabunganZNTManual" caption="Gabungkan Dua Layer ZNT" smallImage="C:\PenilaianTanah\icons\mergezntaction.png" largeImage="C:\PenilaianTanah\icons\mergezntaction.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonPenggabunganDataIntegrasi" caption="Gabungkan Data Integrasi" smallImage="C:\PenilaianTanah\icons\mergezntaction.png" largeImage="C:\PenilaianTanah\icons\mergezntaction.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\IntegrasiZNT.pyt\Penggabungan_ZNT_Manual" name="Gabungkan Dua Layer ZNT" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\IntegrasiZNT.pyt\Penggabungan_Data_Integrasi_Manual" name="Gabungkan Data Integrasi" xmlns=""/>
 					</args>
-					<tooltip heading="Gabungkan Dua Layer ZNT">Menu untuk menggabungkan data ZNT yang telah dibuat dengan ZNT sebelumnya secara Manual</tooltip>
+					<tooltip heading="Gabungkan Data Integrasi">Menu untuk menggabungkan data integrasi</tooltip>
 				</button>
-				<button id="ButtonUnggahZNT" caption="Unggah ZNT Akhir ke Sipenta" smallImage="C:\PenilaianTanah\icons\logobpn.png" largeImage="C:\PenilaianTanah\icons\logobpn.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+				<button id="ButtonUnggahIntegrasikeSipenta" caption="Unggah Data Integrasi ke Sipenta" smallImage="C:\PenilaianTanah\icons\logobpn.png" largeImage="C:\PenilaianTanah\icons\logobpn.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>
-						<params toolPath="C:\PenilaianTanah\scripts\Tools OGIS Internal\Python Toolboxes\UploadZNTGabungan.pyt\Upload_ZNT_Gabungan" name="Unggah ZNT Akhir ke Sipenta" xmlns=""/>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Sistem Aplikasi\IntegrasiZNT.pyt\Unggah_Data_Integrasi_Ke_Sipenta" name="Unggah Data Integrasi ke Sipenta" xmlns=""/>
 					</args>
-					<tooltip heading="Unggah ZNT Akhir ke Sipenta">Menu untuk mengunggah data ZNT gabungan ke Sipenta</tooltip>
+					<tooltip heading="Unggah Data Integrasi ke Sipenta">Menu untuk mengunggah data gabungan ke Sipenta</tooltip>
 				</button>
 			<!-- Button Pembuatan NBT (Restorasi) -->
 			<!-- Menu Pengolahan Titik Sampel-->

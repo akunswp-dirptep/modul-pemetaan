@@ -5,6 +5,8 @@ PENILAIAN TANAH (SIPENTA) - CATATAN RILIS
 Versi: 6.16
 ==================================================
 
+[PENAMBAHAN FITUR]
+1. Menambahkan Fitur Untuk Integrasi
 
 [PENYESUAIAN FITUR]
 1. Memunculkan Fitur Pembaruan dan Pembuatan NBT

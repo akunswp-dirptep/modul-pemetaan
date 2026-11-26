@@ -367,7 +367,8 @@
 					largeImage="C:\PenilaianTanah\icons\calculate.png"
 					smallImage="C:\PenilaianTanah\icons\calculate.png">
 					<tooltip heading="Pengolahan ZNT">Pengolahan Peta Pembuatan Zona Nilai Tanah.</tooltip>
-					<button refID="ButtonHitungZNT"/>									
+					<button refID="ButtonHitungZNT"/>
+					<button refID="ButtonDownloadDataNearby"/>									
 				</menu>
 
 				<menu id="menu_layout_dan_upload_znt" caption="Layout dan Upload" extendedCaption="Layout dan Upload" keytip="TA"         
@@ -479,6 +480,7 @@
 					<tooltip heading="Pengolahan ZNT">Pengolahan Peta Pembaruan Zona Nilai Tanah.</tooltip>
 					<button refID="ButtonHitungZonaDariDataOutlier"/>
 					<button refID="ButtonHitungZNTUpdate"/>
+					<button refID="ButtonDownloadDataNearby"/>
 				</menu>
 
 				<menu id="menu_pengolahan_layout_dan_upload_pembaruan_znt" caption="Layout dan Upload" extendedCaption="Layout dan Upload" keytip="TA"         
@@ -1059,6 +1061,12 @@
 						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\PeriksaDanSesuaikanJenisZona.pyt\Periksa_Jenis_Zona" name="Periksa Jenis Zona" xmlns=""/>
 					</args>
 					<tooltip heading="Periksa Jenis Zona">Menu untuk memeriksa jenis zona pada zona layer berdasarkan jenis zona titik sampel.</tooltip>
+				</button>
+				<button id="ButtonDownloadDataNearby" caption="Unduh Data Nearby" smallImage="C:\PenilaianTanah\icons\bentukpersil.png" largeImage="C:\PenilaianTanah\icons\bentukpersil.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
+					<args>
+						<params toolPath="C:\PenilaianTanah\scripts\Pengembangan Enkripsi\Toolboxes Umum ZNT\LayoutDanUpload.pyt\Unduh_Data_Nearby" name="Unduh Data Nearby" xmlns=""/>
+					</args>
+					<tooltip heading="Unduh Data Nearby">Menu untuk mengunduh data Nearby.</tooltip>
 				</button>
 				<button id="ButtonEditJenisZona" caption="Sesuaikan Atribut Jenis Zona (Lanjutan)" smallImage="C:\PenilaianTanah\icons\editattribute.png" largeImage="C:\PenilaianTanah\icons\editattribute.png" isCustomCommand="true" assembly="" className="esri_geoprocessing_module:Commands.ExecuteGPToolButton" extendedCaption="" helpContextID="">
 					<args>

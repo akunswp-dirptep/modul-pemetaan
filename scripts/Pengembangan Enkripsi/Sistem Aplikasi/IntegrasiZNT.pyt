@@ -1549,16 +1549,6 @@ class Unduh_Data_Integrasi_Dari_Sipenta(object):
                     )
                     created_fc_paths.extend(fc_paths)
 
-                # Jika ditemukan nomor berkas Sipenta, tarik dan konversi data nearby-nya
-                for no_berkas in berkas_sipenta_list:
-                    nearby_paths = self._fetch_and_convert_nearby(
-                        no_berkas=no_berkas,
-                        token=token,
-                        output_folder=output_folder,
-                        used_names=used_names
-                    )
-                    created_fc_paths.extend(nearby_paths)
-
             finally:
                 arcpy.env.overwriteOutput = prev_overwrite
 

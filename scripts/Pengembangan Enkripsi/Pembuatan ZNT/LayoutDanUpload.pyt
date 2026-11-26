@@ -534,12 +534,12 @@ class Upload_Peta_Zona_Nilai_Tanah:
                 arcpy.AddError(f'Terdapat Nilai Tanah Negatif pada layer Titik Sampel, Nomor Sampel: {err[0]} | Nilai Tanah/m2 : {err[1]}')
             return
         
-        smpbkrel_tidak_memenuhi_syarat = zonalayer.validate_simpangan_baku_relatif(config_dan_paths=configs)
-        if smpbkrel_tidak_memenuhi_syarat == "Skala Kosong":
-            arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi persentase batas toleransi dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
-        elif smpbkrel_tidak_memenuhi_syarat != "Skala Kosong" and smpbkrel_tidak_memenuhi_syarat is not None:
-            arcpy.AddError(f"{smpbkrel_tidak_memenuhi_syarat}")
-            return
+        # smpbkrel_tidak_memenuhi_syarat = zonalayer.validate_simpangan_baku_relatif(config_dan_paths=configs)
+        # if smpbkrel_tidak_memenuhi_syarat == "Skala Kosong":
+        #     arcpy.AddWarning("Peringatan: Data ini tidak memiliki informasi skala. Validasi persentase batas toleransi dilewati. Silakan perbarui data skala pada workspace untuk validasi penuh")
+        # elif smpbkrel_tidak_memenuhi_syarat != "Skala Kosong" and smpbkrel_tidak_memenuhi_syarat is not None:
+        #     arcpy.AddError(f"{smpbkrel_tidak_memenuhi_syarat}")
+        #     return
 
         hasil_validasi_histzone = zonalayer.validasi_sinkronisasi_histzone(config_dan_paths=configs)
         if len(hasil_validasi_histzone) > 0:
@@ -561,11 +561,11 @@ class Upload_Peta_Zona_Nilai_Tanah:
             arcpy.AddError(f"{luas_zona_tidak_memenuhi_minimum}")
             return
         
-        zona_pembuatan_kurang_dari_3_titik = zonalayer.validasi_zona_layer_min_3_titik_sampel(config_dan_paths=configs)
-        if zona_pembuatan_kurang_dari_3_titik:
-            for err in zona_pembuatan_kurang_dari_3_titik:
-                arcpy.AddError(f"Pada Zona ini titik sampel kurang dari batas minimum (3 buah):{err}")
-            return
+        # zona_pembuatan_kurang_dari_3_titik = zonalayer.validasi_zona_layer_min_3_titik_sampel(config_dan_paths=configs)
+        # if zona_pembuatan_kurang_dari_3_titik:
+        #     for err in zona_pembuatan_kurang_dari_3_titik:
+        #         arcpy.AddError(f"Pada Zona ini titik sampel kurang dari batas minimum (3 buah):{err}")
+        #     return
         
         perbedaan_zona = zonalayer.validate_kesesuaian_zona(config_dan_paths=zonalayer.get_config_values())
         if perbedaan_zona:

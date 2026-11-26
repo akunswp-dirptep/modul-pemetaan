@@ -1,4 +1,4 @@
-﻿import arcpy, requests, json, sys, os, datetime
+﻿import arcpy, requests, json, sys, os, datetime, tempfile, gc
 arcpy.env.outputZFlag = "Disabled"
 arcpy.env.outputMFlag = "Disabled" 
 script_dir = os.path.dirname(__file__)
@@ -29,7 +29,8 @@ class Toolbox:
                       Tampilkan_Jenis_Penggunaan_Pada_Zona,
                       Tampilkan_Jenis_Penggunaan_Dengan_Transparansi_Pada_Zona,
                       Upload_Layout_Ke_Sipenta,
-                      Tambah_Kotak_TTE]
+                      Tambah_Kotak_TTE,
+                      Unduh_Data_Nearby]
 
 class Cek_Topologi(object):
     def __init__(self):
@@ -1344,3 +1345,472 @@ class Tambah_Kotak_TTE(object):
                 arcpy.AddMessage('Tidak ditemukan Kab/Kota valid')
                 return 'KAB/KOTA'
 
+class Unduh_Data_Nearby(object):
+    def __init__(self):
+        self.label = "Unduh Data Nearby"
+        self.description = (
+            "Tool untuk mengunduh data pemetaan nearby (Data Terkini & Data Lampau) "
+            "dari server Sipenta berdasarkan Nomor Berkas dan menyimpannya ke dalam "
+            "Geodatabase Zona Layer (ZoneNilaiTanah.gdb)."
+        )
+        self.canRunInBackground = True
+
+    def getParameterInfo(self):
+        berkas_list = get_all_berkas_id()
+        berkas_show = [f"{b[0]}" for b in berkas_list] if berkas_list else []
+        if not berkas_show:
+            berkas_show = ['Tidak ada berkas yang dapat dipilih']
+
+        # Parameter 0: Nomor Berkas
+        nomor_berkas = arcpy.Parameter(
+            displayName="Nomor Berkas",
+            name="nomor_berkas",
+            datatype="GPString",
+            parameterType="Required",
+            direction="Input"
+        )
+        nomor_berkas.filter.type = "ValueList"
+        nomor_berkas.filter.list = berkas_show
+
+        if berkas_list:
+            preferred_berkas = get_user_data(PREFERRED_BERKAS_ID)
+            nomor_berkas.value = preferred_berkas if preferred_berkas in berkas_show else berkas_show[0]
+        else:
+            nomor_berkas.value = 'Tidak ada berkas yang dapat dipilih'
+
+        # Parameter 1: Target Feature Dataset
+        target_dataset = arcpy.Parameter(
+            displayName="Target Feature Dataset",
+            name="target_dataset",
+            datatype="DEFeatureDataset",
+            parameterType="Required",
+            direction="Input"
+        )
+        default_ds = self._detect_active_znt_dataset()
+        if default_ds and arcpy.Exists(default_ds):
+            target_dataset.value = default_ds
+
+        # Parameter 2: Output Feature Class (Derived)
+        output_nearby_fcs = arcpy.Parameter(
+            displayName="Feature Class Hasil Nearby",
+            name="output_nearby_fcs",
+            datatype="DEFeatureClass",
+            parameterType="Derived",
+            direction="Output",
+            multiValue=True
+        )
+
+        # Parameter 3: Penjelasan / Informasi Tools
+        penjelasan = arcpy.Parameter(
+            displayName="Informasi Tools",
+            name="penjelasan",
+            datatype="GPString",
+            parameterType="Optional",
+            direction="Input"
+        )
+        penjelasan.value = self._get_info_text(is_logged_in=False)
+
+        return [nomor_berkas, target_dataset, output_nearby_fcs, penjelasan]
+
+    def isLicensed(self):
+        return True
+
+    def updateParameters(self, parameters):
+        nomor_berkas = parameters[0]
+        target_dataset = parameters[1]
+        penjelasan = parameters[3]
+
+        is_login = get_user_data(CREDENTIAL_KEY)
+
+        if is_login is None:
+            nomor_berkas.enabled = False
+            target_dataset.enabled = False
+            penjelasan.enabled = True
+            penjelasan.value = self._get_info_text(is_logged_in=False)
+        else:
+            nomor_berkas.enabled = True
+            target_dataset.enabled = True
+            penjelasan.enabled = True
+            penjelasan.value = self._get_info_text(is_logged_in=True)
+
+            if not target_dataset.valueAsText:
+                default_ds = self._detect_active_znt_dataset()
+                if default_ds and arcpy.Exists(default_ds):
+                    target_dataset.value = default_ds
+
+    def updateMessages(self, parameters):
+        nomor_berkas = parameters[0]
+        target_dataset = parameters[1]
+
+        if nomor_berkas.valueAsText == 'Tidak ada berkas yang dapat dipilih':
+            nomor_berkas.setErrorMessage(
+                "Tidak ada nomor berkas yang tersedia. Silakan periksa akun atau sinkronisasi berkas Anda."
+            )
+
+        if target_dataset.valueAsText:
+            ds_path = target_dataset.valueAsText
+            if "zonenilaitanah.gdb" not in ds_path.lower() and not ds_path.lower().endswith(".gdb"):
+                target_dataset.setWarningMessage(
+                    "Disarankan memilih Feature Dataset 'znt_ds' di dalam ZoneNilaiTanah.gdb."
+                )
+
+    def execute(self, parameters, messages):
+        nomor_berkas = parameters[0].valueAsText
+        target_dataset = parameters[1].valueAsText
+
+        user_data = get_user_data(CREDENTIAL_KEY)
+        if not user_data:
+            arcpy.AddError("Anda belum login. Silakan login terlebih dahulu.")
+            return
+
+        token = user_data.get(AUTH_KEY, None)
+        if not token:
+            arcpy.AddError("Token autentikasi tidak ditemukan. Silakan login ulang.")
+            return
+
+        if not nomor_berkas or nomor_berkas == 'Tidak ada berkas yang dapat dipilih':
+            arcpy.AddError("Nomor berkas tidak valid.")
+            return
+
+        if not arcpy.Exists(target_dataset):
+            arcpy.AddError(f"Target Feature Dataset tidak ditemukan: {target_dataset}")
+            return
+
+        used_names = self._get_existing_fc_names(target_dataset)
+
+        arcpy.AddMessage(f"Memulai proses unduh data nearby untuk Nomor Berkas: {nomor_berkas}")
+        arcpy.AddMessage(f"Lokasi penyimpanan: {target_dataset}")
+
+        nearby_fc_paths = self._fetch_and_convert_nearby(
+            no_berkas=nomor_berkas,
+            token=token,
+            output_dataset=target_dataset,
+            used_names=used_names
+        )
+
+        gc.collect()
+        try:
+            arcpy.management.ClearWorkspaceCache()
+        except Exception:
+            pass
+
+        if nearby_fc_paths:
+            arcpy.AddMessage(f"Berhasil menyimpan {len(nearby_fc_paths)} layer ke GDB Zona Layer:")
+            for fc in nearby_fc_paths:
+                arcpy.AddMessage(f"  - {fc}")
+
+            self._add_layers_safely_to_map(nearby_fc_paths)
+            arcpy.SetParameter(2, nearby_fc_paths)
+            arcpy.AddMessage("Proses selesai. Silakan centang layer pada panel Contents untuk menampilkannya.")
+        else:
+            arcpy.AddWarning("Tidak ada layer nearby yang berhasil diunduh atau dikonversi.")
+
+    # =========================================================================
+    # HELPER METHODS
+    # =========================================================================
+
+    def _add_layers_safely_to_map(self, fc_paths):
+        """Menambahkan layer ke peta aktif dalam kondisi uncheck (visible=False) agar ringan."""
+        try:
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            active_map = aprx.activeMap
+            if active_map is None:
+                return
+
+            for fc_path in fc_paths:
+                fc_name = os.path.basename(fc_path)
+                for existing_lyr in active_map.listLayers(fc_name):
+                    active_map.removeLayer(existing_lyr)
+
+                lyr = active_map.addDataFromPath(fc_path)
+                if lyr is not None:
+                    lyr.visible = False
+        except Exception as e:
+            arcpy.AddWarning(f"Layer tersimpan di GDB, namun gagal ditambahkan otomatis ke TOC: {e}")
+
+    def _get_info_text(self, is_logged_in=False):
+        status_msg = (
+            "FUNGSI TOOLS:\n"
+            "Mengunduh data pemetaan sekitar (Nearby) dari server Sipenta "
+            "berdasarkan Nomor Berkas yang dipilih, lalu menyimpannya ke dalam "
+            "Feature Dataset GDB Zona Layer (ZoneNilaiTanah.gdb\\znt_ds):\n"
+            "1. Nearby_Data_Terkini (data berkas terkini)\n"
+            "2. Nearby_Data_Lampau (data historis/dashboard)\n"
+        )
+        if not is_logged_in:
+            header = "⚠️ Login terlebih dahulu untuk mengakses fitur ini.\n\n"
+        else:
+            header = "✅ Siap digunakan. Pilih Nomor Berkas dan pastikan Target GDB mengarah ke znt_ds.\n\n"
+
+        footer = (
+            "\nDirektorat Penilaian Tanah dan Ekonomi Pertanahan,\n"
+            "Kementerian ATR/BPN.\n"
+            f"Tahun: {datetime.datetime.now().year}"
+        )
+        return header + status_msg + footer
+
+    def _get_pemetaan_base_url(self):
+        server = get_user_data(PREFERRED_SERVER_KEY)
+        use_production = True if server in ["Produksi", None] else False
+        if use_production:
+            return "https://sipenta.atrbpn.go.id/tatausaha/api/pemetaan"
+        return "https://belajar.atrbpn.go.id/sipenta/tatausaha-2/api/pemetaan"
+
+    def _detect_active_znt_dataset(self):
+        """Mencoba mendeteksi path ZoneNilaiTanah.gdb\\znt_ds dari project ArcGIS Pro yang sedang terbuka."""
+        try:
+            aprx = arcpy.mp.ArcGISProject("CURRENT")
+            candidate_folders = [aprx.homeFolder] + [
+                fc.get("connectionString") for fc in aprx.folderConnections if fc.get("connectionString")
+            ]
+            for folder in candidate_folders:
+                if not folder or not os.path.exists(folder):
+                    continue
+                config_file = os.path.join(folder, PROJECT_CONFIG_FILE_NAME)
+                if os.path.exists(config_file):
+                    cfg = get_all_config(config_file)
+                    if isinstance(cfg, dict) and cfg.get("dataset_path"):
+                        if arcpy.Exists(cfg["dataset_path"]):
+                            return cfg["dataset_path"]
+
+                ds_candidate = os.path.join(folder, "ZoneNilaiTanah.gdb", "znt_ds")
+                if arcpy.Exists(ds_candidate):
+                    return ds_candidate
+        except Exception:
+            pass
+        return None
+
+    def _get_existing_fc_names(self, target_dataset):
+        """Mengambil semua nama Feature Class di dalam GDB induk agar nama baru tidak bentrok."""
+        used = set()
+        try:
+            desc = arcpy.Describe(target_dataset)
+            gdb_path = os.path.dirname(target_dataset) if desc.dataType == "FeatureDataset" else target_dataset
+
+            arcpy.env.workspace = gdb_path
+            for fc in arcpy.ListFeatureClasses() or []:
+                used.add(fc.lower())
+            for ds in arcpy.ListDatasets("", "Feature") or []:
+                for fc in arcpy.ListFeatureClasses("", "", ds) or []:
+                    used.add(fc.lower())
+        except Exception:
+            pass
+        return used
+
+    def _fetch_and_convert_nearby(self, no_berkas, token, output_dataset, used_names):
+        arcpy.AddMessage(
+            f"Mengambil data nearby untuk nomor berkas '{no_berkas}' "
+            f"(mohon tunggu, ukuran data bisa cukup besar)..."
+        )
+
+        api_url = f"{self._get_pemetaan_base_url()}/nearby"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json"
+        }
+        params = {"no_berkas": no_berkas}
+
+        try:
+            response = requests.get(api_url, headers=headers, params=params, timeout=(30, 300))
+            response.raise_for_status()
+
+            raw_text = response.text.strip()
+            if not raw_text:
+                arcpy.AddWarning(
+                    f"Server mengembalikan respons kosong (HTTP {response.status_code}) "
+                    f"dari URL: {response.url}"
+                )
+                return []
+
+            try:
+                json_data = response.json()
+            except ValueError:
+                preview = raw_text[:300].replace("\n", " ")
+                arcpy.AddWarning(
+                    f"Respons server bukan JSON yang valid (HTTP {response.status_code}). "
+                    f"URL: {response.url} | Isi respons: {preview}"
+                )
+                return []
+
+            if not json_data.get("success"):
+                msg = json_data.get("message", "Gagal mengambil data nearby dari server.")
+                arcpy.AddWarning(f"Data nearby untuk berkas '{no_berkas}' gagal diambil: {msg}")
+                return []
+
+            nearby_data = json_data.get("data") or {}
+            geojson_berkas = nearby_data.get("geojson_berkas") or nearby_data.get("berkas")
+            geojson_dashboard = nearby_data.get("geojson_dashboard") or nearby_data.get("dashboard")
+
+            nearby_fc_paths = []
+
+            if geojson_berkas:
+                nearby_fc_paths.extend(
+                    self._convert_geojson_to_fc(
+                        geojson_data=geojson_berkas,
+                        base_label="Nearby_Data_Terkini",
+                        output_dataset=output_dataset,
+                        used_names=used_names,
+                        fallback_index=1,
+                        log_title=f"Nearby Berkas ({no_berkas})"
+                    )
+                )
+            else:
+                arcpy.AddWarning(f"Tidak ditemukan geojson_berkas pada data nearby '{no_berkas}'.")
+
+            if geojson_dashboard:
+                nearby_fc_paths.extend(
+                    self._convert_geojson_to_fc(
+                        geojson_data=geojson_dashboard,
+                        base_label="Nearby_Data_Lampau",
+                        output_dataset=output_dataset,
+                        used_names=used_names,
+                        fallback_index=2,
+                        log_title=f"Nearby Dashboard ({no_berkas})"
+                    )
+                )
+            else:
+                arcpy.AddWarning(f"Tidak ditemukan geojson_dashboard pada data nearby '{no_berkas}'.")
+
+            return nearby_fc_paths
+
+        except requests.exceptions.HTTPError as e:
+            resp = e.response
+            message = ""
+            try:
+                message = resp.json().get("message", "")
+            except Exception:
+                message = resp.text[:200] if resp is not None else ""
+            status_code = resp.status_code if resp is not None else "Unknown"
+            if status_code == 403 and "expired" in message.lower():
+                clear_user_data()
+                arcpy.AddError("Token Anda kadaluarsa, silakan login ulang.")
+            else:
+                arcpy.AddWarning(
+                    f"Gagal mengambil data nearby untuk berkas '{no_berkas}' "
+                    f"(HTTP {status_code}): {message or str(e)}"
+                )
+            return []
+        except Exception as e:
+            arcpy.AddWarning(
+                f"Terjadi kesalahan saat mengunduh/mengonversi data nearby '{no_berkas}': {str(e)}"
+            )
+            return []
+
+    def _convert_geojson_to_fc(
+        self,
+        geojson_data,
+        base_label,
+        output_dataset,
+        used_names,
+        fallback_index=1,
+        log_title=""
+    ):
+        created_fcs = []
+        if isinstance(geojson_data, str):
+            try:
+                geojson_obj = json.loads(geojson_data)
+            except json.JSONDecodeError:
+                arcpy.AddWarning(f"[{log_title}] Format GeoJSON tidak valid.")
+                return []
+        elif isinstance(geojson_data, dict):
+            geojson_obj = geojson_data
+        else:
+            arcpy.AddWarning(f"[{log_title}] Tipe data GeoJSON tidak dikenali.")
+            return []
+
+        features = geojson_obj.get("features", [])
+        if not features:
+            arcpy.AddWarning(f"[{log_title}] Data GeoJSON kosong (0 fitur).")
+            return []
+
+        grouped_features = {}
+        for feat in features:
+            geom = feat.get("geometry") or {}
+            gtype = geom.get("type", "Unknown")
+            if gtype in ("Polygon", "MultiPolygon"):
+                key = "Polygon"
+            elif gtype in ("Point", "MultiPoint"):
+                key = "Point"
+            elif gtype in ("LineString", "MultiLineString"):
+                key = "Polyline"
+            else:
+                continue
+            grouped_features.setdefault(key, []).append(feat)
+
+        if not grouped_features:
+            arcpy.AddWarning(f"[{log_title}] Tidak ada fitur dengan geometri valid.")
+            return []
+
+        target_sr = None
+        try:
+            target_sr = arcpy.Describe(output_dataset).spatialReference
+        except Exception:
+            pass
+
+        multi_geom = len(grouped_features) > 1
+
+        for geom_type, feats in grouped_features.items():
+            fc_base = f"{base_label}_{geom_type}" if multi_geom else base_label
+            fc_name = self._generate_unique_fc_name(fc_base, used_names, fallback_index)
+            out_fc_path = os.path.join(output_dataset, fc_name)
+
+            temp_geojson = None
+            try:
+                sub_geojson = {
+                    "type": "FeatureCollection",
+                    "features": feats
+                }
+                if "crs" in geojson_obj:
+                    sub_geojson["crs"] = geojson_obj["crs"]
+
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".geojson", delete=False, encoding="utf-8"
+                ) as tmp:
+                    json.dump(sub_geojson, tmp)
+                    temp_geojson = tmp.name
+
+                del sub_geojson
+
+                arcpy.AddMessage(f"[{log_title}] Mengonversi {len(feats)} fitur ({geom_type}) -> {fc_name}...")
+
+                with arcpy.EnvManager(outputCoordinateSystem=target_sr):
+                    arcpy.conversion.JSONToFeatures(
+                        in_json_file=temp_geojson,
+                        out_features=out_fc_path,
+                        geometry_type=geom_type.upper()
+                    )
+
+                try:
+                    arcpy.management.AddSpatialIndex(out_fc_path)
+                except Exception:
+                    pass
+
+                used_names.add(fc_name.lower())
+                created_fcs.append(out_fc_path)
+
+            except Exception as e:
+                arcpy.AddWarning(f"[{log_title}] Gagal mengonversi {fc_name}: {str(e)}")
+            finally:
+                if temp_geojson and os.path.exists(temp_geojson):
+                    try:
+                        os.remove(temp_geojson)
+                    except Exception:
+                        pass
+
+        del geojson_obj, features, grouped_features
+        gc.collect()
+
+        return created_fcs
+
+    def _generate_unique_fc_name(self, base_name, used_names, fallback_index=1):
+        """Menghasilkan nama Feature Class yang valid di GDB dan tidak bentrok dengan yang sudah ada."""
+        clean_name = arcpy.ValidateTableName(base_name)
+        if clean_name.lower() not in used_names:
+            return clean_name
+
+        counter = fallback_index
+        while True:
+            candidate = f"{clean_name}_{counter}"
+            if candidate.lower() not in used_names:
+                return candidate
+            counter += 1
